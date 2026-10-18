@@ -449,8 +449,8 @@ def build_dll(code: bytes, exports: list[int], *,
     Layout: [124 header][usize u32][V-section 28][code (4-aligned)]
             [import section: one u32 == 0][code relocs?][export table N*u32].
 
-    With `exe=True` this becomes the EXE-with-imports/exports variant (M7:
-    EFILE.EXE, TARGETTYPE exexp): uid1 = UID1_EXE, no FLAG_DLL, and the process
+    With `exe=True` this becomes the EXE-with-imports/exports variant
+    (EFILE.EXE, TARGETTYPE exexp): uid1 = UID1_EXE, no FLAG_DLL, and the process
     fields (`stack_size`/`heap_min`/`heap_max`/`priority`, from the .mmp) apply.
     Everything else — import blocks, export table, relocs — is byte-identical
     mechanism; the loader paths differ only in process creation.

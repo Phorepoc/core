@@ -82,7 +82,7 @@ _STLPORT_X32_FLAGS = ["-include", "symcpp.h"]
 
 
 def _qx(root: str, mmp: str, deffile=None, **kw) -> dict:
-    """A Qt Mobility / Qt extensions component (S4.5): its in-source qmake-generated mmp
+    """A Qt Mobility / Qt extensions component: its in-source qmake-generated mmp
     (tools/phorepoc-s4/qtm_configure_symbian.sh, qte_configure_symbian.sh) and its frozen EABI .def."""
     d = dict(mmp=os.path.join(root, mmp), flags=_HBFLAGS + _S4EXPORTS, defs=_QTDEFS, allow_wsd=True, cdriver=True,
              rtti=True, x32_flags=_S4UNDEFS)
