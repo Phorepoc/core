@@ -1,0 +1,89 @@
+# python3 tools/mif_gen.py @tools/mif_dirs.txt -- the bld.inf dirs whose icon targets the x86 ROM ships,
+# in order, after the default AvKon run. The last three are bld.infs Phonebook2/group #includes: they
+# must run after it (see mif_gen's docstring).
+baseline/symbian-rcl3/oss.FCL.sf.app.contacts/ccservices/cmsservices/presencetrafficlights/group
+baseline/symbian-rcl3/oss.FCL.sf.app.contacts/logsui/group
+baseline/symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Phonebook2/ccapplication/ccadetailsviewplugin/group
+baseline/symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Phonebook2/group
+baseline/symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Phonebook/group
+baseline/symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Speeddial/group
+baseline/symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Speeddial/speeddialgsplugin/group
+baseline/symbian-rcl3/oss.FCL.sf.app.files/deviceencryption/DevEncGsPlugin/group
+baseline/symbian-rcl3/oss.FCL.sf.app.files/deviceencryption/DevEncUi/group
+baseline/symbian-rcl3/oss.FCL.sf.app.files/filemanager/group
+baseline/symbian-rcl3/oss.FCL.sf.app.helps/csxhelp/group
+baseline/symbian-rcl3/oss.FCL.sf.app.organizer/calendarui/application/group
+baseline/symbian-rcl3/oss.FCL.sf.app.organizer/calendarui/multicaluidialog/group
+baseline/symbian-rcl3/oss.FCL.sf.app.organizer/calendarui/organizerplugin/aiagendaplugin2/group
+baseline/symbian-rcl3/oss.FCL.sf.app.organizer/calendarui/settings/GsPlugin/group
+baseline/symbian-rcl3/oss.FCL.sf.app.organizer/clock2/clockui/alarmeditorapp/group
+baseline/symbian-rcl3/oss.FCL.sf.app.organizer/clock2/clockui/uilayer/group
+baseline/symbian-rcl3/oss.FCL.sf.app.organizer/notepad/notepad1/group
+baseline/symbian-rcl3/oss.FCL.sf.app.organizer/searchfw/group
+baseline/symbian-rcl3/oss.FCL.sf.app.organizer/searchui/group
+baseline/symbian-rcl3/oss.FCL.sf.app.utils/extras/about/aboutgsplugin/group
+baseline/symbian-rcl3/oss.FCL.sf.app.utils/extras/about/group
+baseline/symbian-rcl3/oss.FCL.sf.app.utils/extras/calcsoft/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.phonesrv/engines/vmbxengine/group
+baseline/symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Phonebook2/remotecontactlookup/contactactionservice/callplugin/group
+baseline/symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Phonebook2/remotecontactlookup/contactactionservice/sendplugin/group
+baseline/symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Phonebook2/remotecontactlookup/engine/group
+# Messaging
+baseline/symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/mce/group
+baseline/symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/mceextraitems/group
+baseline/symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/msgavkon/muiu_internal/group
+baseline/symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/msgeditor/group
+baseline/symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/smsui/group
+baseline/symbian-rcl3/oss.FCL.sf.app.messaging/email/mail/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/apengine/apsettingshandlerui/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/cmmanager/cmmgr/Framework/Group
+baseline/symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/connectionutilities/ConnectionDialogs/group
+baseline/symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/unieditor/utils/bld
+baseline/symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/unieditor/application/bld
+baseline/symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/mmsui/group
+baseline/symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/smilui/group
+# input methods
+baseline/symbian-rcl3/oss.FCL.sf.mw.inputmethods/fep/aknfep/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.inputmethods/textinput/peninputarc/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.inputmethods/textinput/peninputcommonctrls/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.inputmethods/textinput/peninputgenericitut/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.inputmethods/textinput/peninputgenericvkb/group
+# Settings
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSApplication
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSAppsPlugin
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSConPlugin
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSDeviceManagementPlugin
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSDisplayPlugin
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSFramework
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSGenPlugin
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSPrslnPlugin
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSSecurityPlugin
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSTelPlugin
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/profilesservices/FileList/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/profilesservices/MediaFileList/group
+# Themes
+baseline/symbian-rcl3/oss.FCL.sf.mw.classicui/psln/Group
+baseline/symbian-rcl3/oss.FCL.sf.mw.classicui/psln/PslnGSPlugin/group
+# SysAp
+baseline/symbian-rcl3/oss.FCL.sf.mw.appsupport/coreapplicationuis/SysAp/Group
+baseline/symbian-rcl3/oss.FCL.sf.mw.appsupport/coreapplicationuis/powersaveutilities/group
+# the S60 browser
+baseline/symbian-rcl3/oss.FCL.sf.mw.web/browserutilities/connectionmanager/Group
+baseline/symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webkit
+baseline/symbian-rcl3/oss.FCL.sf.mw.web/webengine/webkitutils/group
+baseline/symbian-rcl3/oss.FCL.sf.app.webuis/browserui/browser/Group
+baseline/symbian-rcl3/oss.FCL.sf.app.webuis/browserui/browser/group
+# mmp START BITMAP targets (bmconv .mbm files)
+baseline/symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/platform/platform.mmp
+# the Phone app: bubble/call-status icons, dialer, Settings > Call
+baseline/symbian-rcl3/oss.FCL.sf.app.phone/phoneapp/phoneui/group
+baseline/symbian-rcl3/oss.FCL.sf.app.phone/phoneuis/BubbleManager/Group
+baseline/symbian-rcl3/oss.FCL.sf.app.phone/phoneuis/dialer/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSCallPlugin
+# the Push MTM: its icon makefile PushMtmIcons.mk
+baseline/symbian-rcl3/oss.FCL.sf.app.webuis/pushmtm/Group
+# the software installer UI + Application manager (SWI)
+baseline/symbian-rcl3/oss.FCL.sf.mw.appinstall/appinstaller/AppinstUi/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.appinstall/appinstaller/AppMngr2/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.appinstall/appinstaller/AppMngr2/Sisx/group
+baseline/symbian-rcl3/oss.FCL.sf.mw.appinstall/appinstaller/AppMngr2/Widget/group

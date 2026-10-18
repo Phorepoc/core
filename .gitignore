@@ -1,0 +1,5 @@
+build/
+symbian/
+os/
+__pycache__/
+.work/
