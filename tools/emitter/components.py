@@ -2677,7 +2677,7 @@ def rom_name(key: str, targettype: str = "dll") -> str:
 
 
 def _check_duplicate_keys(path: str = __file__) -> None:
-    """A repeated key in the COMPONENTS literal silently replaces the earlier entry (X4.51: the Clock
+    """A repeated key in the COMPONENTS literal silently replaces the earlier entry (the Clock
     app registered as "clock" displaced classicui's clock.dll, and only a ROM link noticed). Refuse it.
     (Also run over components_s4.py: its "stsserver" once hid a second one, S4.7.)"""
     import ast
