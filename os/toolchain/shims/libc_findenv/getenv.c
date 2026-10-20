@@ -8,4 +8,4 @@
 #undef inline
 #define inline
 #define __inline   /* a prefix/e32 header maps `inline` to __inline */
-#include "../../../baseline/symbian-2010/oss.FCL.sf.os.ossrv/genericopenlibs/openenvcore/libc/src/stdlib/getenv.c"
+#include <symbian-2010/oss.FCL.sf.os.ossrv/genericopenlibs/openenvcore/libc/src/stdlib/getenv.c>

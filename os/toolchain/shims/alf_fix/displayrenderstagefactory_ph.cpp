@@ -7,4 +7,4 @@
 #include "displayrenderstage.h"
 #include "panic.h"
 #define BaseConstructL(e) BaseConstructL(e); RDebug::Printf("PH: alf: alfopenwfrs factory ConstructL (compositor)")
-#include "../../../baseline/symbian-2010/oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/plugins/openwfcrs/src/displayrenderstagefactory.cpp"
+#include <symbian-2010/oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/plugins/openwfcrs/src/displayrenderstagefactory.cpp>

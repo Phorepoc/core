@@ -59,7 +59,7 @@ static void PhIniFilter(TDes& aLine)
 
 #define TrimAll() TrimAll(); PhIniFilter(readLine)
 #ifdef PH_WS_NGA
-#include "../../../baseline/symbian-2010/oss.FCL.sf.os.graphics/windowing/windowserver/nga/SERVER/INIFILE.CPP"
+#include <symbian-2010/oss.FCL.sf.os.graphics/windowing/windowserver/nga/SERVER/INIFILE.CPP>
 #else
-#include "../../../baseline/symbian-2010/oss.FCL.sf.os.graphics/windowing/windowserver/nonnga/SERVER/inifile.cpp"
+#include <symbian-2010/oss.FCL.sf.os.graphics/windowing/windowserver/nonnga/SERVER/inifile.cpp>
 #endif

@@ -9,4 +9,4 @@
 // and the frozen hitchcocku.DEF exports no vtable. alfappservercore.dll and huirenderpluginvg.dll (inline copy
 // constructor of the handle) then reference `vtable for THuiTextureHandle` -> a loud unimpl stub. Defining the class's
 // (trivial: a name, two sizes) members here gives each client its own, consistent vtable.
-#include "../../../baseline/symbian-2010/oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/coretoolkit/src/HuiTextureHandle.cpp"
+#include <symbian-2010/oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/coretoolkit/src/HuiTextureHandle.cpp>

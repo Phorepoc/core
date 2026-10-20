@@ -10,7 +10,7 @@
 #include <e32debug.h>
 #include <e32base.h>
 #include <stdarg.h>
-#include "../../../baseline/symbian-2010/oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/CommonInc/alflogger.h"
+#include <symbian-2010/oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/CommonInc/alflogger.h>
 #define PH_ALFLOG 1
 #undef __ALFLOGSTRING
 #undef __ALFLOGSTRING1

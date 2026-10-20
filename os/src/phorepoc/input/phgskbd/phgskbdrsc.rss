@@ -13,7 +13,7 @@ NAME    PHKB
 #include <gsapp.rsg>
 #include <gscommon.rh>
 // the GS-wide menus and the setting-page list editor (r_gs_menubar_change_exit, r_setting_listbox ...), as every GS plug-in does
-#include "../../../../baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/Data/GSCommonResources.rss"
+#include <symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/Data/GSCommonResources.rss>
 
 RESOURCE RSS_SIGNATURE
     {

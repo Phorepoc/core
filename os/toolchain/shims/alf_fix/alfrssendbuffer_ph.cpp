@@ -16,4 +16,4 @@ struct TPhAlfStarter
 		}
 	};
 #define AlfServerStarter TPhAlfStarter
-#include "../../../baseline/symbian-2010/oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/AlfRenderStage/src/alfrssendbuffer.cpp"
+#include <symbian-2010/oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/AlfRenderStage/src/alfrssendbuffer.cpp>
