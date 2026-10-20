@@ -48,6 +48,7 @@ KHS = "oss.FCL.sf.os.kernelhwsrv/kernel/eka/compsupp/"
 _SSM = "oss.FCL.sf.os.devicesrv/sysstatemgmt"
 NET = "oss.FCL.sf.os.networkingsrv"
 from paths import OS_ROOT, SYMBIAN, BUILD, EPOC32_ROOT  # noqa: E402
+from paths import resolve as _resolve_src  # noqa: E402  ("baseline/..." -> the Symbian source)
 
 BUILTIN = {
     "euser": ("euser.dll", BE.DEF_PATH),
@@ -104,7 +105,7 @@ STLPORT_X32_FLAGS = ["-include", "symcpp.h"]
 _KEEPNULL = "-fno-delete-null-pointer-checks"
 # components whose sources include the trace compiler's generated OstTraceDefinitions.h (not in the
 # release): our traces-off stand-in, after every real include dir -- toolchain/shims/ost_off
-OST_OFF = ["-idirafter", os.path.join(OS_ROOT, "toolchain/shims/ost_off")]
+OST_OFF = ["-I", os.path.join(OS_ROOT, "toolchain/shims/ost_off")]   # -I: ahead of casefix, which links a package's own (tracing-on) copy
 # generated headers the release carries only in its API reference export tree (featureuids.h, from
 # featuredatabase.xml): searched LAST, after every real include dir
 API_REF_LAST = ["-idirafter", os.path.join(SYMBIAN, "symbian-2010/oss.API_REF.Public_API/epoc32/include")]
@@ -297,7 +298,7 @@ COMPONENTS = {
     # "keyrouter.dll" (wsini KEYROUTERPLUGIN overrides) and LEAVES without it -- the NGA boot's EWsPanicFailedToInitialise
     "keyrouter": dict(mmp=f"{G}/windowing/windowserverplugins/keyeventrouting/group/keyeventrouting.mmp", nga=True,
                       drop=["keyrouter.cpp"], extra=["toolchain/shims/keyrouter_board/keyrouter.cpp"],   # no combined power/end key
-                      flags=["-iquote", os.path.join(OS_ROOT, f"baseline/symbian-2010/{G}/windowing/windowserverplugins/keyeventrouting/src")]),
+                      flags=["-iquote", _resolve_src(f"baseline/symbian-2010/{G}/windowing/windowserverplugins/keyeventrouting/src")]),
     "remotegc_nga": dict(mmp=f"{G}/windowing/windowserver/group/RemoteGc_nga.mmp", nga=True,
                          rom="remotegc_nga.dll", rom_as="remotegc.dll"),
     # switcher -- WSERV's own default fader lightens: 128 / 255). Selected by wsini FADER + PLUGINS EXTENDEDFADER
@@ -1436,7 +1437,7 @@ COMPONENTS = {
                                                            "toolchain/shims/tonehwdevice_board/nokiatoneseq.cpp",
                                                            # U5: .rng ringing tones -- the release's Smart Messaging parser
                                                            "toolchain/shims/tonehwdevice_board/ringbcconverter.cpp"],
-                         flags=["-I", os.path.join(OS_ROOT, _RINGBC, "inc"), "-I", os.path.join(OS_ROOT, _RINGBC, "src")]),
+                         flags=["-I", os.path.join(_resolve_src(_RINGBC), "inc"), "-I", os.path.join(_resolve_src(_RINGBC), "src")]),
     # Q0 (see _MIXQ0 above): the userland mixer behind the adapter's RSoundSc; exports (mdasoundadapter.def) unchanged
     "mdasoundadapter": dict(mmp="oss.FCL.sf.adapt.NokiaMMAudioReference/mmdevicefw/mdf/mmpfiles/audio/mdasoundadapter.mmp",
                             **_MDASND_MIX, **_a0("SYMBIAN_SOUNDADAPTER_DEBUG", "PHMIX_TRACE")),

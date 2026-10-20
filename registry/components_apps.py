@@ -9,19 +9,20 @@ Paths are relative to baseline/symbian-2010 like components.py ("../symbian-rcl3
 import os
 
 from paths import OS_ROOT, SYMBIAN, BUILD, EPOC32_ROOT  # noqa: E402
+from paths import resolve as _resolve_src  # noqa: E402  ("baseline/..." -> the Symbian source)
 
 
 # Video Player headers that no bld.inf export puts on our include path: the Helix stub APIs (MMF scaling / ROP custom commands) and the
 # videoplayer_plat APIs (file details dialog, startup message)
 _VP = "baseline/symbian-2010/oss.FCL.sf.app.videoplayer/videoplayer_plat/"
 _HX = "baseline/symbian-2010/oss.FCL.sf.mw.helix/helix_ren/helix_stub/"
-_VP_INC = ["-I", os.path.join(OS_ROOT, _HX + "MMFScalingCustomCommands/inc"), "-I", os.path.join(OS_ROOT, _HX + "rop_custom_commands_api/inc"),
-           "-I", os.path.join(OS_ROOT, _VP + "video_player_file_details_dialog_api/inc"), "-I", os.path.join(OS_ROOT, _VP + "videoplayer_startup_api/inc")]
+_VP_INC = ["-I", _resolve_src(_HX + "MMFScalingCustomCommands/inc"), "-I", _resolve_src(_HX + "rop_custom_commands_api/inc"),
+           "-I", _resolve_src(_VP + "video_player_file_details_dialog_api/inc"), "-I", _resolve_src(_VP + "videoplayer_startup_api/inc")]
 
 _VRP = "baseline/symbian-rcl3/oss.FCL.sf.app.voicerec/"
 _VR_INC = ["-I", os.path.join(OS_ROOT, "shim/apps-inc"), "-DRD_MULTIPLE_DRIVE"]
 for _d in ("voicerec_plat/voicerecorder_public_constants_api/inc", "voicerec_plat/new_file_service_api/inc", "voicerecorder/help/inc"):
-    _VR_INC += ["-I", os.path.join(OS_ROOT, _VRP + _d)]
+    _VR_INC += ["-I", _resolve_src(_VRP + _d)]
 _VR_INC += ["-I", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.app.camera/camera_plat/camcorder_ui_constants_api/inc")]
 _VR_RSC = [_VRP + "voicerec_plat/voicerecorder_public_constants_api/inc", _VRP + "voicerecorder/loc",
            "baseline/symbian-rcl3/oss.FCL.sf.app.musicplayer/mpxplugins/viewplugins/views/waitnotedialog/loc"]
@@ -127,14 +128,14 @@ COMPONENTS = {
     # My Videos: the collection plug-in (MDS-backed) + the Hg list main view + its view plug-in (mpxvideoplayer opens it at start)
     "vcxmyvideoscollectionplugin": dict(mmp="oss.FCL.sf.app.videoplayer/videocollection/mpxmyvideoscollection/group/vcxmyvideoscollectionplugin.mmp", flags=_VP_INC),
     "vcxhgmyvideos": dict(mmp="oss.FCL.sf.app.videoplayer/videocollection/hgmyvideos/group/vcxhgmyvideos.mmp",
-                          flags=_VP_INC + ["-I", os.path.join(OS_ROOT, _VP + "videocollection_api/inc"), "-I", os.path.join(OS_ROOT, "shim/apps-inc"),
+                          flags=_VP_INC + ["-I", _resolve_src(_VP + "videocollection_api/inc"), "-I", os.path.join(OS_ROOT, "shim/apps-inc"),
                                        "-I", os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.app.videoplayer/videofeeds/vccommon/help/inc")],
                           rsc_incs=["baseline/symbian-2010/oss.FCL.sf.app.videoplayer/videofeeds/vccommon/loc"]),
     "vcxhgmyvideosplugin": dict(mmp="oss.FCL.sf.app.videoplayer/videocollection/hgmyvideosplugin/group/vcxhgmyvideosplugin.mmp", flags=_VP_INC),
     # the My Videos overlay-indicator ECOM plugin (interface 0x20029FC4): CMyVideosIndicator::NewL leaves -17004 without it,
     # and the leave through the half-built model handler crashed the Videos thread (KERN-EXEC 3, eip 0x269)
     "myvideosindicatorplugin": dict(mmp="oss.FCL.sf.app.videoplayer/videocollection/myvideosindicatorplugin/group/myvideosindicatorplugin.mmp",
-                                     flags=_VP_INC + ["-I", os.path.join(OS_ROOT, _VP + "videocollection_api/inc")],
+                                     flags=_VP_INC + ["-I", _resolve_src(_VP + "videocollection_api/inc")],
                                      rsc_incs=["baseline/symbian-2010/oss.FCL.sf.app.videoplayer/videoplayer_plat/videocollection_api/inc"]),
     # --- Voice Recorder (app.voicerec RCL_3): the app + 3 own libs, over AudioInputRouting (mmaudio devsound extensions)
     "audioinputrouting": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/audiorouting/Input/AudioInputBase/group/AudioInput.mmp"),
