@@ -904,30 +904,10 @@ COMPONENTS = {
     # SSM_TEST=phevidtest ROM_TAIL="mmcommonutils,devvideo,puresolverutils,codecapiresolver,phevdec,pheffmpeg,phevidctl,phevidtest" (+ the MMF
     # client libs the ROM lacks: mediaclientvideo, mmfcontrollerframework, mmfstdsourceandsinkplugin, mmfaudiooutput ...)
     "phevidctl": dict(mmp=os.path.join(OS_ROOT, "src/phevidctl/phevidctl.mmp")),
-    # OURS (V4 audio): the LGPL FFmpeg AAC decoder as its OWN replaceable DLL (phevidctl loads it with RLibrary; never static-linked
-    # into the controller). Archives: ARCH=arm bash tools/codecpack/ffmpeg_media.sh (NEON build: RECONF=1 FFASM=1). ARM_VFP=1 ph component build -arch arm pheffmpeg
-    "pheffmpeg": dict(mmp=os.path.join(OS_ROOT, "src/pheffmpeg/pheffmpeg.mmp"), device=True, cdriver=True, allow_wsd=True, static_ctors=True,
-                      rtti=False, defs=["__SOFTFP="], vfp=True, rom="pheffmpeg.dll", device_rom=True,
-                      **{"def": os.path.join(OS_ROOT, "src/pheffmpeg/pheffmpeg.def")},
-                      arm_archives=[f".codecpack/media-arm/lib/{a}.a" for a in ("libavcodec", "libswresample", "libavutil")]),
-    # FFmpeg x32 media archives (ARCH=x32 bash tools/codecpack/ffmpeg_media.sh) as the replaceable LGPL DLL; phevdec_sw = the
-    # phevdec decoder device with PHE_SW (calls pheffmpeg's PheVid* ordinals), built to the same ROM name phevdec.dll. x32 only
-    # (`ph component build pheffmpeg_x32 phevdec_sw`); an ARM ROM keeps the VE phevdec.
-    "pheffmpeg_x32": dict(mmp=os.path.join(OS_ROOT, "src/pheffmpeg/pheffmpeg.mmp"), cdriver=True, allow_wsd=True, static_ctors=True,
-                          rtti=False, rom="pheffmpeg.dll", **{"def": os.path.join(OS_ROOT, "src/pheffmpeg/pheffmpeg.def")},
-                          x32_archives=[".codecpack/media-x32/lib/libavcodec.a", ".codecpack/media-x32-c/lib/libswresample.a", ".codecpack/media-x32/lib/libavutil.a"]   # swresample from the C-only build (ARCH=x32 ffmpeg_media.sh without FFASM, copied to media-x32-c): its asm faulted under VirtualBox
-                          + [f"thirdparty/x86/cxxrt/{a}.a" for a in ("libphcompat", "libgcc")]),
+    # the FFmpeg DLL (pheffmpeg) and its test moved to the codecpack repository (LGPL; installed separately)
     "phevidtest": dict(mmp=os.path.join(OS_ROOT, "src/phevidtest/phevidtest.mmp"), test=True,
                        rom_data=["resource\\phevde\\vmain.mp4=.vde-test/vmain.mp4",
                                  "resource\\phevde\\vbase.mp4=.vde-test/vbase.mp4"]),
-    # FFmpeg media-set test (ffmpeg-vlc-plan.md F1): libavformat + libavcodec (LGPL archives from tools/codecpack/ffmpeg_media.sh)
-    #   ARCH=arm bash tools/codecpack/ffmpeg_media.sh; bash tools/codecpack/make_fft_samples.sh; ARM_VFP=1 ph component build -arch arm phefftest
-    "phefftest": dict(mmp=os.path.join(OS_ROOT, "src/phefftest/phefftest.mmp"), test=True, device=True, cdriver=True, allow_wsd=True,
-                      static_ctors=True, rtti=False, defs=["__SOFTFP="], vfp=True, stack=0x40000,
-                      arm_archives=[f".codecpack/media-arm/lib/{a}.a" for a in ("libavformat", "libavcodec", "libswscale", "libswresample", "libavutil")],
-                      rom_data=["resource\\phefftest\\s264.mp4=.fft-test/s264.mp4",
-                                "resource\\phefftest\\svp8.webm=.fft-test/svp8.webm",
-                                "resource\\phefftest\\s264p.mp4=.fft-test/s264p.mp4"]),
     "svgtest": dict(mmp=os.path.join(OS_ROOT, "src/svgtest/svgtest.mmp"), test=True),
     # OURS: software-OpenVG stack probe (VGI surface -> clear/fill -> bitmap -> pixels on serial)
     "libcprobe": dict(mmp=os.path.join(OS_ROOT, "src/libcprobe/libcprobe.mmp"), defs=["__SOFTFP="]),
@@ -2637,9 +2617,7 @@ if os.environ.get("PHOREPOC_QT48") == "1":
     _check_duplicate_keys(_QT48.__file__)
     COMPONENTS.update(_QT48.COMPONENTS)
 
-# PHOREPOC_CODECPACK=1: the optional codec pack (AAC; source + instructions only, never in a prebuilt image)
-if os.environ.get("PHOREPOC_CODECPACK") == "1":
-    import components_codecpack as _CP  # noqa: E402
+# the optional codec pack (AAC, FFmpeg) is its own repository, built in as a layer (codecpack: PHOREPOC_ADAPTATIONS)
 
 import components_apps as _APPS  # noqa: E402
 _check_duplicate_keys(_APPS.__file__)
