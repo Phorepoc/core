@@ -1045,7 +1045,8 @@ COMPONENTS = {
                        **{"def": "oss.FCL.sf.os.graphics/openvg/openvginterface/eabi/libopenvgu11u.def"}),
     # O2 (openvg-plan.md): the GPU engine (OpenVG on GLES2). Loaded with RLibrary by the RI (riPhvg.cpp) only when the
     # mode property is 1; the board deltas riRasterizer/riImage/riPixelPipe/riPhvg of sflibopenvgrefimpl are its hooks.
-    "phvg": dict(mmp=os.path.join(OS_ROOT, "src/phvg/phvg.mmp"), vfp=True, allow_wsd=True, rom="phvg.dll",
+    # nga=True: it runs on GLES2 through libEGL, which only an NGA ROM carries
+    "phvg": dict(mmp=os.path.join(OS_ROOT, "src/phvg/phvg.mmp"), nga=True, vfp=True, allow_wsd=True, rom="phvg.dll",
                  defs=["__declspec(x)="], **{"def": os.path.join(OS_ROOT, "src/phvg/phvg.def")}),
     # O2 test: a clear + solid-path scene through phvg and through the reference implementation, "PH: vg2" lines
     "vgprobe2": dict(mmp=os.path.join(OS_ROOT, "src/vgprobe2/vgprobe2.mmp"), test=True, defs=["__declspec(x)="],
