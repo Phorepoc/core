@@ -1,0 +1,13 @@
+// sistest.exe -- OURS: the client of sistestdll.dll (sistest.cpp)
+TARGET			sistest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE5510002
+CAPABILITY		NONE
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			sistest.cpp
+
+LIBRARY			euser.lib sistestdll.lib

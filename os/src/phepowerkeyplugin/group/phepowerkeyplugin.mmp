@@ -1,0 +1,46 @@
+// phepowerkeyplugin.mmp -- OURS: a Control Panel (GS) page "Power key" -- what a short / a long press of the power key does
+// (CenRep 0xE70157B0 keys 1 and 2, read by SysAp at every press: src/phorepoc-arm/board/cenrep/e70157b0.txt).
+// Modelled on GSAutoKeyguardPlugin (same ECOM interface, same CGSBaseView / CGSBaseContainer frame).
+#include <platform_paths.hrh>
+#include <data_caging_paths.hrh>
+
+CAPABILITY          CAP_ECOM_PLUGIN
+TARGET              phepowerkeyplugin.dll
+TARGETTYPE          PLUGIN
+UID                 0x10009D8D 0xE70157B1
+VENDORID            VID_DEFAULT
+
+SOURCEPATH          ../src
+SOURCE              phepowerkeypluginimplementationtable.cpp
+SOURCE              phepowerkeyplugin.cpp
+SOURCE              phepowerkeyplugincontainer.cpp
+
+USERINCLUDE         ../inc
+USERINCLUDE         ../data
+APP_LAYER_SYSTEMINCLUDE
+
+START RESOURCE      ../data/E70157B1.rss
+TARGET              phepowerkeyplugin.rsc
+END
+
+START RESOURCE      ../data/phepowerkeypluginrsc.rss
+HEADER
+TARGETPATH          RESOURCE_FILES_DIR
+LANGUAGE_IDS
+END
+
+LIBRARY   euser.lib
+LIBRARY   ecom.lib
+LIBRARY   efsrv.lib
+LIBRARY   avkon.lib
+LIBRARY   bafl.lib
+LIBRARY   cone.lib
+LIBRARY   eikcoctl.lib
+LIBRARY   eikcore.lib
+LIBRARY   egul.lib
+LIBRARY   eikdlg.lib            // CEikDialog::PrepareLC (the setting page): omitted = a link stub = EUSRNIMP
+LIBRARY   commonengine.lib      // RConeResourceLoader
+LIBRARY   centralrepository.lib
+LIBRARY   gsframework.lib       // CGSBaseView / CGSBaseContainer
+LIBRARY   gslistbox.lib         // CGSListBoxItemTextArray
+LIBRARY   gsecomplugin.lib      // CGSPluginInterface

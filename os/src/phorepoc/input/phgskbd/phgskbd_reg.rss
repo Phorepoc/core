@@ -1,0 +1,26 @@
+// phgskbd_reg.rss -- OURS (Phorepoc): ECom registration of the keyboard Settings entry. Interface 0x10207236 = a General
+// Settings plug-in; default_data = the parent view (0x10207237 = the "General" list), opaque_data = the order in it.
+#include <registryinfo.rh>
+
+RESOURCE REGISTRY_INFO theInfo
+    {
+    dll_uid = 0xE7015820;
+    interfaces =
+        {
+        INTERFACE_INFO
+            {
+            interface_uid = 0x10207236;
+            implementations =
+                {
+                IMPLEMENTATION_INFO
+                    {
+                    implementation_uid = 0xE7015821;
+                    version_no = 1;
+                    display_name = "Keyboards";
+                    default_data = "0x10207237";
+                    opaque_data = "25";
+                    }
+                };
+            }
+        };
+    }

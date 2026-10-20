@@ -1,0 +1,19 @@
+// phvg.mmp -- OURS: phvg.dll, the OpenVG-on-GLES2 engine (phvg.cpp; docs/phorepoc/openvg-plan.md O2). Loaded at run
+// time by the OpenVG reference implementation (RLibrary, only when the GPU mode is switched on), never linked by it.
+TARGET			phvg.dll
+TARGETTYPE		dll
+UID				0x1000008d 0xE70157C0
+
+CAPABILITY		All -Tcb
+VENDORID		0
+
+EPOCALLOWDLLDATA
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			phvg.cpp
+
+LIBRARY			euser.lib libEGL.lib libGLESv2.lib
+
+SMPSAFE

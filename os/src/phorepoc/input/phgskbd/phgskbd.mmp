@@ -1,0 +1,31 @@
+// phgskbd.mmp -- OURS (Phorepoc): the keyboard Settings (GS) entry (see phgskbd.h)
+#include <data_caging_paths.hrh>
+
+TARGET			phgskbd.dll
+TARGETTYPE		plugin
+UID				0x10009D8D 0xE7015820
+
+CAPABILITY		CAP_ECOM_PLUGIN
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+APP_LAYER_SYSTEMINCLUDE
+SYSTEMINCLUDE	/epoc32/include/ecom
+USERINCLUDE		. ../phimreg
+
+SOURCEPATH		.
+SOURCE			phgskbd.cpp
+
+START RESOURCE	phgskbd_reg.rss
+TARGET			phgskbd.rsc
+END
+
+START RESOURCE	phgskbdrsc.rss
+DEPENDS gsapp.rsg
+HEADER
+TARGETPATH		RESOURCE_FILES_DIR
+LANGUAGE_IDS
+END
+
+LIBRARY			euser.lib avkon.lib cone.lib eikcore.lib eikcoctl.lib ecom.lib centralrepository.lib bafl.lib
+LIBRARY			GSFramework.lib GSEcomPlugin.lib phimreg.lib

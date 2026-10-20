@@ -1,0 +1,14 @@
+// mp3hwdevice.mmp -- OURS: the MP3 -> PCM16 HW device (A3F reference adaptation, a CMMFSwCodecWrapper)
+TARGET			mp3hwdevice.dll
+TARGETTYPE		plugin
+UID				0x10009D8D 0x1020658E
+CAPABILITY		ALL -Tcb
+VENDORID		0
+
+SOURCEPATH		../src
+SOURCE			mp3hwdevice.cpp
+START RESOURCE	mp3hwdevice.rss
+TARGET			mp3hwdevice.rsc
+END
+OS_LAYER_SYSTEMINCLUDE
+LIBRARY			euser.lib ecom.lib mmfswcodecwrapper.lib mmfserverbaseclasses.lib

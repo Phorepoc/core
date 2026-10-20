@@ -1,0 +1,11 @@
+// ntpsync.mmp -- OURS: SNTP client daemon for the Path C board (see ntpsync.cpp)
+TARGET			ntpsync.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015711
+CAPABILITY		NetworkServices WriteDeviceData ReadDeviceData
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			ntpsync.cpp
+LIBRARY			euser.lib esock.lib insock.lib commdb.lib

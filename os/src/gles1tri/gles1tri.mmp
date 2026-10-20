@@ -1,0 +1,21 @@
+// gles1tri.mmp -- OURS: the OpenGL ES 1.1 (fixed-function) sample (gles1tri.cpp): libEGL.dll + libGLESv1_CM.dll,
+// the ABIs most Symbian^3 games use.
+TARGET			gles1tri.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015772
+
+CAPABILITY		None
+VENDORID		0
+
+EPOCHEAPSIZE	0x100000 0x4000000
+EPOCSTACKSIZE	0x20000
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			gles1tri.cpp
+
+LIBRARY			euser.lib ws32.lib libm.lib
+LIBRARY			libEGL.lib libGLESv1_CM.lib
+
+SMPSAFE

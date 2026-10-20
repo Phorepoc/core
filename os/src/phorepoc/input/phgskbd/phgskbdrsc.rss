@@ -1,0 +1,38 @@
+// phgskbdrsc.rss -- OURS (Phorepoc): the view, title and one radio-button setting page of the keyboard Settings entry
+NAME    PHKB
+
+#include <bldvariant.hrh>
+#include <avkon.loc>
+#include <avkon.mbg>
+#include <avkon.rsg>
+#include <eikon.rsg>
+#include <uikon.rh>
+#include <gsapp.rsg>
+#include <gscommon.rh>
+// the GS-wide menus and the setting-page list editor (r_gs_menubar_change_exit, r_setting_listbox ...), as every GS plug-in does
+#include "../../../../baseline/symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/Data/GSCommonResources.rss"
+
+RESOURCE RSS_SIGNATURE
+    {
+    }
+
+RESOURCE AVKON_VIEW r_phgskbd_view
+    {
+    menubar = r_gs_menubar_change_exit;
+    cba = R_GS_SOFTKEYS_OPTIONS_BACK_CHANGE;
+    }
+
+RESOURCE TITLE_PANE r_phgskbd_title
+    {
+    txt = "Keyboards";
+    }
+
+// one page serves every setting: the caller passes the items and the current index
+RESOURCE AVKON_SETTING_PAGE r_phgskbd_setting_page
+    {
+    number = EAknSettingPageNoOrdinalDisplayed;
+    label = "Select";
+    softkey_resource = R_AVKON_SOFTKEYS_OK_CANCEL__OK;
+    type = EAknSetListBox;
+    editor_resource_id = r_setting_listbox;
+    }

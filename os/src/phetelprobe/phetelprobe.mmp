@@ -1,0 +1,11 @@
+// phetelprobe.mmp -- OURS (telephony T1): the user-side ETel smoke test against the fake modem (see phetelprobe.cpp)
+TARGET			phetelprobe.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015730
+CAPABILITY		All -TCB
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phetelprobe.cpp
+LIBRARY			euser.lib etel.lib etelmm.lib

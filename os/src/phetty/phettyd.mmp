@@ -1,0 +1,17 @@
+// phettyd.mmp -- OURS: the developer tty daemon (phettyd.cpp; docs/phorepoc/phetty-plan.md)
+#include <platform_paths.hrh>
+
+TARGET			phettyd.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015901
+CAPABILITY		all -tcb
+VENDORID		0
+
+SOURCEPATH		.
+SOURCE			phettyd.cpp
+
+APP_LAYER_SYSTEMINCLUDE
+LIBRARY			euser.lib centralrepository.lib
+
+EPOCHEAPSIZE	0x20000 0x400000
+EPOCSTACKSIZE	0x4000

@@ -1,0 +1,15 @@
+// phedevmenu.hrh -- OURS: ids of the developer menu
+#ifndef PHEDEVMENU_HRH
+#define PHEDEVMENU_HRH
+enum TPheDevMenuItems
+	{
+	EPheItemShell = 1,
+	EPheItemCpShortcut,
+	EPheItemGuardTimeout,
+	EPheItemRenderer
+	};
+enum TPheDevMenuCommands
+	{
+	EPheDevCmdChange = 0x6200
+	};
+#endif

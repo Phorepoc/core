@@ -1,0 +1,12 @@
+// phebrlaunch.mmp -- OURS: opens BrowserNG (0x10008D39) on a URL once apparc and the window server are up.
+// SSM_TEST=phebrlaunch (ROM_ARCH=arm) stages it as ssmtest.exe, started by the SSM non-critical list: the phone's BOOTLIST equivalent.
+TARGET			phebrlaunch.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015790
+CAPABILITY		all -tcb
+VENDORID		0
+
+APP_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phebrlaunch.cpp
+LIBRARY			euser.lib apgrfx.lib apparc.lib

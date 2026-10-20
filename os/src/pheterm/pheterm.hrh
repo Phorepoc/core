@@ -1,0 +1,12 @@
+// pheterm.hrh -- OURS: command ids of the Terminal app
+#ifndef PHETERM_HRH
+#define PHETERM_HRH
+enum TPheTermCommands
+	{
+	EPheCmdNew = 0x6100,
+	EPheCmdNext = 0x6101,
+	EPheCmdClose = 0x6102,
+	EPheCmdTty1 = 0x6110,    // 0x6110 .. 0x6117 = tty 1 .. 8 (pheterm.cpp relies on consecutive values)
+	EPheCmdTty2, EPheCmdTty3, EPheCmdTty4, EPheCmdTty5, EPheCmdTty6, EPheCmdTty7, EPheCmdTty8
+	};
+#endif

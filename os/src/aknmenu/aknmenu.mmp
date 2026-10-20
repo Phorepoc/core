@@ -1,0 +1,20 @@
+// aknmenu.mmp -- OURS: interim S60 launcher (see aknmenu.cpp)
+#include <platform_paths.hrh>
+TARGET			aknmenu.exe
+TARGETTYPE		exe
+UID				0x100039CE 0xE7015704
+CAPABILITY		all -tcb
+VENDORID		0
+SOURCEPATH		.
+SOURCE			aknmenu.cpp
+START RESOURCE	aknmenu.rss
+HEADER
+TARGETPATH		/resource/apps
+END
+START RESOURCE	aknmenu_reg.rss
+TARGETPATH		/private/10003a3f/apps
+END
+USERINCLUDE		.
+APP_LAYER_SYSTEMINCLUDE
+LIBRARY			euser.lib apparc.lib apgrfx.lib cone.lib eikcore.lib avkon.lib eikcoctl.lib eikctl.lib bafl.lib ws32.lib gdi.lib aknskins.lib
+EPOCSTACKSIZE	0x5000

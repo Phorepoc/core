@@ -1,0 +1,25 @@
+// E70157B1.rss -- ECOM registration of the Power key Control Panel page (OURS)
+#include <ecom/registryinfo.rh>
+
+RESOURCE REGISTRY_INFO theInfo
+    {
+    dll_uid     = 0xE70157B1;
+    interfaces  =
+        {
+        INTERFACE_INFO
+            {
+            interface_uid   = 0x10207236;   // the GS plug-in interface (CGSPluginInterface)
+            implementations =
+                {
+                IMPLEMENTATION_INFO
+                    {
+                    implementation_uid  = 0xE70157B2;
+                    version_no          = 1;
+                    display_name        = "Power key";
+                    default_data        = "0x10207237";   // parent: KGSGenPluginUid = the Device (General) folder
+                    opaque_data         = "60";           // order number: after the stock pages
+                    }
+                };
+            }
+        };
+    }

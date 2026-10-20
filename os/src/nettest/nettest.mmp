@@ -1,0 +1,12 @@
+// nettest.mmp -- OURS: the Path C networking smoke test (see nettest.cpp)
+TARGET			nettest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015710
+CAPABILITY		NetworkServices ReadUserData WriteUserData ReadDeviceData WriteDeviceData NetworkControl
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			nettest.cpp
+LIBRARY			euser.lib efsrv.lib esock.lib insock.lib commdb.lib extendedconnpref.lib netmeta.lib
+MW_LAYER_SYSTEMINCLUDE

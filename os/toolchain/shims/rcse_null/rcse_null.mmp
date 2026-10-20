@@ -1,0 +1,17 @@
+// rcse_null.mmp -- OURS: null VoIP profile registry (see rcse_null.cpp). UIDs as the real one (sf.app.iptelephony richcallsettingsengine/rcse2/group/rcse.mmp).
+#include <platform_paths.hrh>
+
+TARGET			rcse.dll
+TARGETTYPE		dll
+UID				0x1000008D 0x10202869
+
+CAPABILITY		CAP_GENERAL_DLL
+VENDORID		VID_DEFAULT
+
+SOURCEPATH		.
+SOURCE			rcse_null.cpp
+
+SYSTEMINCLUDE	../unreleased_inc
+MW_LAYER_SYSTEMINCLUDE
+
+LIBRARY			euser.lib

@@ -1,0 +1,11 @@
+//
+// cmail.hlp.hrh -- OURS (not Symbian source): the help-context header of S60 Email ("cmail"), which
+// the release never shipped (CSXHelp Utilities generated it from the Email help project). Only the
+// two contexts Phonebook2's remote contact lookup dialogs use, in the tool's own format: the context
+// string is the constant's name without its leading K (as every generated *.hlp.hrh in the release).
+//
+#ifndef __CMAIL_HLP_HRH__
+#define __CMAIL_HLP_HRH__
+_LIT(KRLOOK_HLP_INFO_VIEW, "RLOOK_HLP_INFO_VIEW"); //
+_LIT(KRLOOK_HLP_RESULT_VIEW, "RLOOK_HLP_RESULT_VIEW"); //
+#endif

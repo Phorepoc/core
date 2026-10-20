@@ -1,0 +1,33 @@
+// pheterm.mmp -- OURS: the on-screen terminal: an Avkon app drawing a phettyd tty (pheterm.cpp)
+#include <platform_paths.hrh>
+
+TARGET			pheterm.exe
+TARGETTYPE		exe
+UID				0x100039CE 0xE7015900
+
+CAPABILITY		all -tcb
+VENDORID		0
+
+SOURCEPATH		.
+SOURCE			pheterm.cpp
+SOURCEPATH		../phetty
+SOURCE			pheclient.cpp
+
+SOURCEPATH		.
+START RESOURCE	pheterm.rss
+HEADER
+TARGETPATH		/resource/apps
+END
+
+START RESOURCE	pheterm_reg.rss
+TARGETPATH		/private/10003a3f/apps
+END
+
+USERINCLUDE		.
+USERINCLUDE		../phetty
+APP_LAYER_SYSTEMINCLUDE
+
+LIBRARY			euser.lib apparc.lib cone.lib eikcore.lib avkon.lib eikcoctl.lib ws32.lib gdi.lib
+
+EPOCSTACKSIZE	0x8000
+EPOCHEAPSIZE	0x10000 0x800000

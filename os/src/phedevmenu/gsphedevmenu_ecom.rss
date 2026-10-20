@@ -1,0 +1,25 @@
+// gsphedevmenu_ecom.rss -- OURS: ECOM registration of the Control Panel developer-menu entry
+#include <ecom/registryinfo.rh>
+
+RESOURCE REGISTRY_INFO theInfo
+	{
+	dll_uid     = 0xE7015A02;
+	interfaces  =
+		{
+		INTERFACE_INFO
+			{
+			interface_uid   = 0x10207236;   // CGSPluginInterface
+			implementations =
+				{
+				IMPLEMENTATION_INFO
+					{
+					implementation_uid  = 0xE7015A03;
+					version_no          = 1;
+					display_name        = "Developer menu";
+					default_data        = "0x10283317";   // parent: Device (KGSDeviceManagementPluginUid, as the RFS plug-in)
+					opaque_data         = "90";           // order number: last
+					}
+				};
+			}
+		};
+	}

@@ -666,12 +666,12 @@ COMPONENTS = {
     # Without it the full system target is 0 -- SysAp's "system lights on" lit nothing and Active Idle never saw the
     # control logic will be broken if the plugin is dropped from the image"
     "hwrmdefaultlighttargetmodifierplugin": dict(mmp="oss.FCL.sf.os.devicesrv/resourcemgmt/hwrmtargetmodifierplugin/group/hwrmdefaultlighttargetmodifierplugin.mmp"),
-    # silent on boards without it, as the stub's): src/phorepoc-arm/a64/hwrm/PowerStatePlugin.cpp
+    # silent on boards without it, as the stub's): src/hwrm/PowerStatePlugin.cpp
     "hwrmstubplugins": dict(mmp="oss.FCL.sf.adapt.stubs/systemswstubs/hwrmstubplugins/group/HWRMStubPlugins.mmp",
                             # + the light plug-in = OURS: the primary display through the display HAL (backlight
-                            # on/off + brightness): src/phorepoc-arm/a64/hwrm/LightPlugin.cpp
+                            # on/off + brightness): src/hwrm/LightPlugin.cpp
                             drop=["PowerStatePlugin.cpp", "LightPlugin.cpp"],
-                            extra=["src/phorepoc-arm/a64/hwrm/PowerStatePlugin.cpp", "src/phorepoc-arm/a64/hwrm/LightPlugin.cpp"],
+                            extra=["src/hwrm/PowerStatePlugin.cpp", "src/hwrm/LightPlugin.cpp"],
                             libs=["hal.lib", "centralrepository.lib"]),   # (the boot guard timeout, developer menu key 3)
     # key-sound anim plug-in deps: tactile click plug-in + HWRM light client (client side only)
     "tactilearearegistry": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.hapticsservices/tactilefeedback/tactilearearegistry/group/tactilearearegistry.mmp"),
@@ -689,7 +689,6 @@ COMPONENTS = {
     "sensrvutil": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensorserver/group/sensrvutil.mmp"),
     "sensordatacompensator": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensordatacompensator/group/sensordatacompensator.mmp"),
     "orientationssy": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/orientationssy/group/OrientationSsy.mmp"),
-    "ssya64": dict(mmp=os.path.join(OS_ROOT, "src/ssya64/group/ssya64.mmp")),
     "sensrvserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensorserver/group/sensrvserver.mmp",
                          rom="sensorserver.exe"),   # KSensrvExeName
     # Symbian Foundation's no-audio stem (incubator.stemkit/breakdeps) + our one-hunk tone-player fix stood in
@@ -891,35 +890,11 @@ COMPONENTS = {
     "peninputcommonlayout": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.inputmethods/textinput/peninputcommonlayout/group/peninputcommonlayout.mmp"),   # <- peninputgenericvkb.mmp
     # OURS: file-server semantics probe (create/replace/rename/delete on C:)
     "fstest": dict(mmp=os.path.join(OS_ROOT, "src/fstest/fstest.mmp")),
-    # OURS (NGA G1a): RDisplayChannel flip test -- red/blue composition buffers, vblank-paced post rate
-    "tdispflip": dict(mmp=os.path.join(OS_ROOT, "src/tdispflip/tdispflip.mmp"), test=True),
     "dsatest": dict(mmp=os.path.join(OS_ROOT, "src/dsatest/dsatest.mmp"), test=True),
-    # OURS (GPU G3-K2): the first Mali-400 frame -- a GP + PP clear job built by hand, pixel-checked, shown
-    "tmaliclear": dict(mmp=os.path.join(OS_ROOT, "src/tmaliclear/tmaliclear.mmp"), test=True),
-    # OURS (NGA G1b): the LoadLogicalDevice freeze probe
-    "tldd": dict(mmp=os.path.join(OS_ROOT, "src/tldd/tldd.mmp"), test=True),
     # opens BrowserNG on a URL at boot (SSM_TEST=phebrlaunch): the phone has no C:ootui.txt cycle
     "phebrlaunch": dict(mmp=os.path.join(OS_ROOT, "src/phebrlaunch/phebrlaunch.mmp"), test=True),
-    "btprobe": dict(mmp=os.path.join(OS_ROOT, "src/btprobe/btprobe.mmp"), test=True),
-    # CPIN/CSQ/COPS, AT+QPOWD; "PH: modem" lines. ARM_VFP=1 ./ph arm phemodemtest; MODEM=1 SSM_TEST=phemodemtest
-    "phemodemtest": dict(mmp=os.path.join(OS_ROOT, "src/phemodemtest/phemodemtest.mmp"), test=True),
     "phetelprobe": dict(mmp=os.path.join(OS_ROOT, "src/phetelprobe/phetelprobe.mmp")),
     "phesmsprobe": dict(mmp=os.path.join(OS_ROOT, "src/phesmsprobe/phesmsprobe.mmp")),   # OURS: telephony T1, the SMS stack over the fake modem
-    # Bluetooth rung R2: powers the 2010 stack on (RBTPowerControl -> bt_v2.prt -> corehci -> hctl_h5) and reads BD_ADDR
-    "btpower": dict(mmp=os.path.join(OS_ROOT, "src/btpower/btpower.mmp"), test=True),
-    # Bluetooth rung R4: Bluetooth on through the S60 engine (CBTEngSettings -> btengsrv -> the stack), visible, named
-    "btengon": dict(mmp=os.path.join(OS_ROOT, "src/btengon/btengon.mmp"), test=True),
-    "senstest": dict(mmp=os.path.join(OS_ROOT, "src/senstest/senstest.mmp"), test=True),
-    # OURS (VDU V4): the DevVideo decoder hw device (ECOM, interface 0x101FB4BE) on the A64 Video Engine: H.264 + MPEG-2;
-    # src/phevdec/phevdec.h. Needs devvideo + puresolverutils + codecapiresolver (+ ecom) in the ROM.
-    "phevdec": dict(mmp=os.path.join(OS_ROOT, "src/phevdec/phevdec.mmp")),
-    # OURS (VDU V4): drives the phevdec plug-in through CMMFDevVideoPlay over the phevdetest clips ("PH: dvp");
-    # SSM_TEST=phevdectest ROM_TAIL="devvideo,puresolverutils,codecapiresolver,phevdec,phevdectest"
-    "phevdectest": dict(mmp=os.path.join(OS_ROOT, "src/phevdectest/phevdectest.mmp"), test=True, stack=0x20000,   # the plug-in decodes on this thread's stack
-                        rom_data=["resource\\phevde\\ipb.m2v=src/phevdetest/data/ipb.m2v",
-                                  "resource\\phevde\\ipb.nv12=src/phevdetest/data/ipb.nv12"] +
-                                 [f"resource\\phevde\\{s}.{x}=src/phevdetest/data/{s}.{x}"
-                                  for s in ("hbase", "hmain", "hh8x8", "hcqm", "hhigh", "hmbaffm", "hmbaffh", "hpaff1", "hpaff2", "hpaff3", "hpaff4", "hpaffl") for x in ("h264", "fnv")]),
     # OURS (VDU V4): the MMF video play controller for MP4/3GP (ECOM 0x101F4F47; mp4demux -> CMMFDevVideoPlay -> phevdec ->
     # NV12 -> DSA); phevidtest plays .vde-test/*.mp4 through CVideoPlayerUtility (tools/vdu/make_vde_test.sh makes them).
     # SSM_TEST=phevidtest ROM_TAIL="mmcommonutils,devvideo,puresolverutils,codecapiresolver,phevdec,pheffmpeg,phevidctl,phevidtest" (+ the MMF
@@ -938,32 +913,9 @@ COMPONENTS = {
                           rtti=False, rom="pheffmpeg.dll", **{"def": os.path.join(OS_ROOT, "src/pheffmpeg/pheffmpeg.def")},
                           x32_archives=[".codecpack/media-x32/lib/libavcodec.a", ".codecpack/media-x32-c/lib/libswresample.a", ".codecpack/media-x32/lib/libavutil.a"]   # swresample from the C-only build (ARCH=x32 ffmpeg_media.sh without FFASM, copied to media-x32-c): its asm faulted under VirtualBox
                           + [f"thirdparty/x86/cxxrt/{a}.a" for a in ("libphcompat", "libgcc")]),
-    "phevdec_sw": dict(mmp=os.path.join(OS_ROOT, "src/phevdec/phevdec_sw.mmp"), rom="phevdec.dll", allow_wsd=True),   # (stage-timing statics)
-    # OURS (vm-gpu-options.md S2): the first user of the SVGA3D kernel driver (RVmwSvgaChannel): object tables / MOB / GB surface / screen target / DX context /
-    # GPU clear on the VirtualBox VMSVGA device (VBOX_3D=1). SSM_TEST=phesvgatest (x86 only)
-    "phesvgatest": dict(mmp=os.path.join(OS_ROOT, "src/phesvgatest/phesvgatest.mmp"), test=True),
     "phevidtest": dict(mmp=os.path.join(OS_ROOT, "src/phevidtest/phevidtest.mmp"), test=True,
                        rom_data=["resource\\phevde\\vmain.mp4=.vde-test/vmain.mp4",
                                  "resource\\phevde\\vbase.mp4=.vde-test/vbase.mp4"]),
-    # decoded back with the phevdec cores; "PH: venc" lines. SSM_TEST=phevenctest (no ROM data, no extra ROM_TAIL)
-    "phevenctest": dict(mmp=os.path.join(OS_ROOT, "src/phevenctest/phevenctest.mmp"), test=True),
-    # OURS (VE encoder rung 2, ve-encoder-plan.md section 11): 640x480 + 1280x720, IDR + 15 P, fixed QP 28 and rate control, decoded back
-    # with the phevdec cores; "PH: venc2" lines. SSM_TEST=phevenctest2 (no ROM data, no extra ROM_TAIL)
-    "phevenctest2": dict(mmp=os.path.join(OS_ROOT, "src/phevenctest2/phevenctest2.mmp"), test=True),
-    "phevdetest": dict(mmp=os.path.join(OS_ROOT, "src/phevdetest/phevdetest.mmp"), test=True,
-                       rom_data=["resource\\phevde\\t320.m2v=src/phevdetest/data/t320.m2v",
-                                 "resource\\phevde\\t320.nv12=src/phevdetest/data/t320.nv12",
-                                 "resource\\phevde\\ipb.m2v=src/phevdetest/data/ipb.m2v",
-                                 "resource\\phevde\\ipb.nv12=src/phevdetest/data/ipb.nv12"] +
-                                [f"resource\\phevde\\{s}.{x}=src/phevdetest/data/{s}.{x}"
-                                 for s in ("hbase", "hmain", "hh8x8", "hcqm", "hhigh", "hmbaffm", "hmbaffh", "hpaff1", "hpaff2", "hpaff3", "hpaff4", "hpaffl") for x in ("h264", "fnv")]),   # VE driver test (VDU V0-V3)
-    # hardware-scaled into the panel, DE register readback + 240 vblank-paced flips; "PH: de2ov" lines, ends PH: de2ov PASS/FAIL.
-    #   ARM_VFP=1 CPUS=4 JOBS=4 ./ph arm phedetest ; SSM_TEST=phedetest (no ROM data, no extra ROM_TAIL; needs the kernel with a64deov.cpp)
-    "phedetest": dict(mmp=os.path.join(OS_ROOT, "src/phedetest/phedetest.mmp"), test=True),
-    # GPU plan G6b: RSgImage <-> GLES2 zero copy (eglCreatePixmapSurface / eglCreateImageKHR on an RSgImage*); "PH: sg" lines.
-    #   ARM_VFP=1 ./ph arm phgl libegl phesgtest   (+ the Mali LDD for EMaliCtrlImportAddress); SSM_TEST=phesgtest
-    "phesgtest": dict(mmp=os.path.join(OS_ROOT, "src/phesgtest/phesgtest.mmp"), test=True),
-    "phedrives": dict(mmp=os.path.join(OS_ROOT, "src/phedrives/phedrives.mmp"), test=True),
     # FFmpeg media-set test (ffmpeg-vlc-plan.md F1): libavformat + libavcodec (LGPL archives from tools/codecpack/ffmpeg_media.sh)
     #   ARCH=arm bash tools/codecpack/ffmpeg_media.sh; bash tools/codecpack/make_fft_samples.sh; ARM_VFP=1 ./ph arm phefftest
     "phefftest": dict(mmp=os.path.join(OS_ROOT, "src/phefftest/phefftest.mmp"), test=True, device=True, cdriver=True, allow_wsd=True,
@@ -972,18 +924,7 @@ COMPONENTS = {
                       rom_data=["resource\\phefftest\\s264.mp4=.fft-test/s264.mp4",
                                 "resource\\phefftest\\svp8.webm=.fft-test/svp8.webm",
                                 "resource\\phefftest\\s264p.mp4=.fft-test/s264p.mp4"]),
-    #   NEON: the colour-conversion intrinsics need -march=armv7-a -mfpu=neon-vfpv4 (softfp: links with the rest of the ROM; D16-D31 are saved)
-    "pheencbench": dict(mmp=os.path.join(OS_ROOT, "src/pheencbench/pheencbench.mmp"), test=True, device=True, cdriver=True, allow_wsd=True,
-                        static_ctors=True, rtti=False, defs=["__SOFTFP="], stack=0x40000,
-                        flags=["-march=armv7-a", "-mfpu=neon-vfpv4", "-mfloat-abi=softfp", "-mword-relocations"],
-                        arm_archives=[".codecpack/openh264-arm/lib/libopenh264enc.a"]),
     "svgtest": dict(mmp=os.path.join(OS_ROOT, "src/svgtest/svgtest.mmp"), test=True),
-    # PDD, the networks listed; SSM_TEST=wlantest
-    "wlantest": dict(mmp=os.path.join(OS_ROOT, "src/wlantest/wlantest.mmp"), test=True),
-    # RConnection::Start, DHCP, DNS + HTTP); SSM_TEST=wlanjoin; the network from C:\wlanjoin.txt "<ssid>|<psk>"
-    "wlanjoin": dict(mmp=os.path.join(OS_ROOT, "src/wlanjoin/wlanjoin.mmp"), test=True),
-    # through the "PhFs.A64" LDD); started by the SSM's non-critical list (r_cmd_phfs)
-    "phfs": dict(mmp=os.path.join(OS_ROOT, "src/phfs/phfs.mmp")),
     # OURS: software-OpenVG stack probe (VGI surface -> clear/fill -> bitmap -> pixels on serial)
     "libcprobe": dict(mmp=os.path.join(OS_ROOT, "src/libcprobe/libcprobe.mmp"), defs=["__SOFTFP="]),
     "xmlprobe": dict(mmp=os.path.join(OS_ROOT, "src/xmlprobe/xmlprobe.mmp"), defs=["__SOFTFP=", "__declspec(x)="]),
@@ -1371,9 +1312,6 @@ COMPONENTS = {
         ("wlannif", "wlannwif/group/wlanproto.mmp", dict(rom="wlannif.nif")),
         ("wlannwif", "wlannwif/group/wlannwif.mmp", {}),
     ]},
-    # without it); the release's stub for now, OURS (firmware + MAC) with the chip core
-    # HAL) -- wlmserver refuses the stub's 00:E0:DE:AD:BE:EF. The 2010 stub: oss.FCL.sf.adapt.stubs/wlanhwinit_stub
-    "wlanhwinit": dict(mmp=os.path.join(OS_ROOT, "src/wlanhwinit/group/wlanhwinit.mmp")),
     "eapolwpxstub": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.accesssec/eapol/eapol_framework/eapol_symbian/group/eapolwpxstub.mmp"),
     # eap_am_tools_symbian.cpp brace-initialises a va_list (GCC: cannot convert int to __va_list) -> the shim copy
     "eapol": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.accesssec/eapol/eapol_framework/eapol_symbian/group/eapol.mmp",
@@ -1402,10 +1340,6 @@ COMPONENTS = {
     "corehci_symbian": dict(mmp="oss.FCL.sf.os.bt/bthci/hci2implementations/corehcis/symbian/group/corehci_symbian.mmp"),
     "qdp_symbian": dict(mmp="oss.FCL.sf.os.bt/bthci/hci2implementations/qdps/symbian/group/qdp_symbian.mmp"),
     "initialisor_symbian": dict(mmp="oss.FCL.sf.os.bt/bthci/hci2implementations/initialisors/symbian/group/initialisor_symbian.mmp"),
-    # OURS: the H5 (three-wire UART) HCTL for the RTL8723CS on UART1, forked from hctl_bcsp (src/hctl_h5)
-    "hctl_h5": dict(mmp=os.path.join(OS_ROOT, "src/hctl_h5/group/hctl_h5.mmp")),
-    # OURS (R3): the Realtek initialisor = the firmware patch download + the 1.5 Mbaud switch (src/initialisor_rtl)
-    "initialisor_rtl": dict(mmp=os.path.join(OS_ROOT, "src/initialisor_rtl/group/initialisor_rtl.mmp")),
     "btmanserver": dict(mmp="oss.FCL.sf.os.bt/bluetoothmgmt/btmgr/BTManServer/BTManServer.mmp"),
     "sdpdatabase": dict(mmp="oss.FCL.sf.os.bt/bluetooth/btsdp/database/sdpdatabase.mmp"),
     "sdpagent": dict(mmp="oss.FCL.sf.os.bt/bluetooth/btsdp/agent/sdpagent.mmp"),
@@ -1432,12 +1366,6 @@ COMPONENTS = {
     "ecam": dict(mmp="oss.FCL.sf.os.mm/imagingandcamerafws/camerafw/mmpfiles/ECam.mmp"),
     "ecampluginsupport": dict(mmp="oss.FCL.sf.os.mm/imagingandcamerafws/camerafw/mmpfiles/ECamPluginSupport.mmp"),
     "ecamtestplugin": dict(mmp="oss.FCL.sf.os.mm/mmplugins/cameraplugins/mmpfiles/TestCamera.mmp"),
-    # phecam (camera-plan.md C1): the TestCamera plug-in with its pixel source replaced by RDevCameraSc (the 2010 shared-chunk camera driver, built into ekern on x86). Generated
-    # CAMERA_RAW=1: Bayer raw8 + our debayer (camera-plan.md "the reference uses RAW"; kernel side A64DEFS=-DA64_CAMERA_RAW)
-    "phecam": dict(mmp=os.path.join(OS_ROOT, "src/phecam/phecam.mmp"), defs=(["PHE_CAM_RAW"] if os.environ.get("CAMERA_RAW") == "1" else [])),
-    # a minimal CCamera client with a full-screen viewfinder (SSM_TEST=phecamtest): the C0/C1 proof when the S60 test app is not usable
-    "phecamtest": dict(mmp=os.path.join(OS_ROOT, "src/phecamtest/phecamtest.mmp"), test=True),
-    "testcameraapp": dict(mmp=os.path.join(OS_ROOT, "src/phecam/testcameraapp.mmp"), rsc_incs=["toolchain/shims/techview_rh"]),
     # DevVideo (CMMFDevVideoPlay + the hw-device base classes + ECOM plugin glue): VDU V4 -- phevdec is a decoder hw device
     "devvideo": dict(mmp="oss.FCL.sf.os.mm/mmhais/videohai/devvideo/mmpfiles/DevVideo/DevVideo.mmp"),
     "puresolverutils": dict(mmp="oss.FCL.sf.os.mm/mmdevicefw/mdf/mmpfiles/puresolverutils.mmp"),   # <- devvideo (FindDecodersL asks the codec-API resolver for PUs first)

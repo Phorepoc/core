@@ -1,0 +1,8 @@
+// aknmenu_reg.rss -- OURS: application registration
+#include <appinfo.rh>
+UID2 KUidAppRegistrationResourceFile
+UID3 0xE7015704
+RESOURCE APP_REGISTRATION_INFO
+	{
+	app_file = "aknmenu";
+	}

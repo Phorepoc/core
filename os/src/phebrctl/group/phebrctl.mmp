@@ -1,0 +1,28 @@
+// phebrctl.mmp -- OURS (Phorepoc, docs/phorepoc/browser-p2-brctl-map.md, P2): the BrCtl facade over WebKit 2.54. Built to the
+// ROM name browserengine.dll with the old engine's UIDs: BrowserNG, Messaging's HTML viewer and Help load it by name and call
+// CreateBrowserControlL (ordinal 1, the only export any client imports). The engine is a PREBUILT set of archives (tools/
+// phorepoc-x86/cxxrt: build_webcore.sh phengine -> package_web.sh -> .phorepoc-x86-build/cxxrt/web/*.a), linked through the
+// registry's x32_archives; compiled here: the facade, the Symbian-API shim (phebsym.cpp) and ph_throw.cpp.
+TARGET			browserengine.dll
+TARGETTYPE		dll
+UID				0x1000008D 0x101F8712
+CAPABILITY		ALL -Tcb
+EPOCALLOWDLLDATA
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+OS_LAYER_LIBC_SYSTEMINCLUDE
+APP_LAYER_SYSTEMINCLUDE
+USERINCLUDE		../../../tools/phorepoc-x86/cxxrt/webkit/phwebview
+
+SOURCEPATH		..
+SOURCE			phebrctl.cpp phebsym.cpp
+SOURCEPATH		../../../tools/phorepoc-x86/cxxrt
+SOURCE			ph_throw.cpp
+
+LIBRARY			euser.lib cone.lib fbscli.lib gdi.lib ws32.lib esock.lib eikcoctl.lib eikctl.lib fepbase.lib
+LIBRARY			libc.lib libm.lib libpthread.lib
+#ifdef MARM
+LIBRARY			efsrv.lib commdb.lib centralrepository.lib
+#endif
+UNPAGED
+SMPSAFE

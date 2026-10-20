@@ -1,0 +1,12 @@
+// playtest.mmp -- OURS (audio U4): plays an audio file through CMdaAudioPlayerUtility; the file-playback test
+TARGET			playtest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE701571A
+CAPABILITY		MultimediaDD UserEnvironment
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			playtest.cpp
+LIBRARY			euser.lib mediaclientaudio.lib

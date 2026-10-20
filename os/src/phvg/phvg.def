@@ -1,0 +1,14 @@
+EXPORTS
+	PhvgInit @ 1 NONAME
+	PhvgLivePtr @ 2 NONAME
+	PhvgState @ 3 NONAME
+	PhvgUpload @ 4 NONAME
+	PhvgFill @ 5 NONAME
+	PhvgClear @ 6 NONAME
+	PhvgDirty @ 7 NONAME
+	PhvgReadback @ 8 NONAME
+	PhvgInvalidate @ 9 NONAME
+	PhvgForget @ 10 NONAME
+	PhvgStats @ 11 NONAME
+	PhvgReadDirect @ 12 NONAME
+	PhvgDrawImage @ 13 NONAME

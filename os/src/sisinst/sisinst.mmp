@@ -1,0 +1,12 @@
+// sisinst.mmp -- OURS (X4.86): silent SIS install through the real S60 installer; the SWI regression test
+TARGET			sisinst.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015716
+CAPABILITY		TrustedUI
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			sisinst.cpp
+LIBRARY			euser.lib swinstcli.lib

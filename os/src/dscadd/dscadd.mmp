@@ -1,0 +1,12 @@
+// dscadd.mmp -- OURS: register a program in the S60 startup list (DSC store), as SWI's startuplistupdater does
+TARGET			dscadd.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015714
+CAPABILITY		ReadDeviceData WriteDeviceData
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			dscadd.cpp
+LIBRARY			euser.lib dscstore.lib

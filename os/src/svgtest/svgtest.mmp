@@ -1,0 +1,16 @@
+// svgtest.mmp -- OURS (2026-10-12): decodes the SVG entries of .mif files as the icon server does (the SVG-Tiny icon bug)
+TARGET			svgtest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015737
+CAPABILITY		All -TCB
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SYSTEMINCLUDE		/epoc32/include/platform/xml
+USERINCLUDE		../../baseline/symbian-2010/oss.FCL.sf.mw.svgt/svgt_plat/svgt_api/inc
+SOURCEPATH		.
+SOURCE			svgtest.cpp
+LIBRARY			euser.lib efsrv.lib fbscli.lib svgengine.lib gdi.lib
+
+SMPSAFE

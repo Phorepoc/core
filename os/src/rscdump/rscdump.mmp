@@ -1,0 +1,11 @@
+// rscdump.mmp -- OURS: dump the readable strings of a resource file through bafl's own reader (see rscdump.cpp)
+TARGET			rscdump.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015715
+CAPABILITY		AllFiles
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			rscdump.cpp
+LIBRARY			euser.lib efsrv.lib bafl.lib

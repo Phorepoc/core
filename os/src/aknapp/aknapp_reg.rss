@@ -1,0 +1,10 @@
+// aknapp_reg.rss -- OURS: application registration
+#include <appinfo.rh>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0xE7015703
+
+RESOURCE APP_REGISTRATION_INFO
+	{
+	app_file = "aknapp";
+	}

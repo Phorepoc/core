@@ -1,0 +1,22 @@
+// phkbd.mmp -- OURS (Phorepoc): the phkbd keyboard, a pen input server layout plug-in (see phkbd_layout.h)
+TARGET			phkbd.dll
+TARGETTYPE		plugin
+UID				0x10009D8D 0xE7015802
+
+CAPABILITY		CAP_ECOM_PLUGIN
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+MW_LAYER_SYSTEMINCLUDE
+SYSTEMINCLUDE	/epoc32/include/ecom
+USERINCLUDE		. ../phimreg
+
+SOURCEPATH		.
+SOURCE			phkbd_proxy.cpp phkbd_layout.cpp phkbd_board.cpp
+
+START RESOURCE	phkbd.rss
+TARGET			phkbd.rsc
+END
+
+LIBRARY			euser.lib ws32.lib gdi.lib fbscli.lib bitgdi.lib cone.lib ecom.lib
+LIBRARY			peninputlayoutinterface.lib peninputlayoutcontrol.lib phimreg.lib

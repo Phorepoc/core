@@ -1,0 +1,15 @@
+// wsblit.mmp -- OURS: the window server bitmap-drawing test grid (see wsblit.cpp)
+TARGET			wsblit.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015702
+
+CAPABILITY		all -tcb
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			wsblit.cpp
+
+LIBRARY			euser.lib ws32.lib gdi.lib fbscli.lib bitgdi.lib
+
+VENDORID		0

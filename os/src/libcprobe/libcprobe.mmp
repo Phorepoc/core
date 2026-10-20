@@ -1,0 +1,11 @@
+// libcprobe.mmp -- OURS: P.I.P.S. libc/libm/libpthread probe (see libcprobe.cpp)
+TARGET			libcprobe.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015707
+CAPABILITY		all -tcb
+VENDORID		0
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+OS_LAYER_LIBC_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			libcprobe.cpp
+LIBRARY			euser.lib libc.lib libm.lib libpthread.lib

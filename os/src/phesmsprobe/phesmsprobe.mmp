@@ -1,0 +1,11 @@
+// phesmsprobe.mmp -- OURS (telephony T1): the SMS stack over the fake modem (see phesmsprobe.cpp)
+TARGET			phesmsprobe.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015732
+CAPABILITY		All -TCB
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phesmsprobe.cpp
+LIBRARY			euser.lib efsrv.lib esock.lib gsmu.lib smsu.lib estor.lib

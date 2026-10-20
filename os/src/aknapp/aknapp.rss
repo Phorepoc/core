@@ -1,0 +1,32 @@
+// aknapp.rss -- OURS: application resource for the minimal Avkon app
+NAME AKNA
+
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.rsg>
+#include "aknapp.hrh"
+
+RESOURCE RSS_SIGNATURE { }
+RESOURCE TBUF r_default_document_name { buf = ""; }
+
+RESOURCE EIK_APP_INFO
+	{
+	menubar = r_aknapp_menubar;
+	cba = R_AVKON_SOFTKEYS_OPTIONS_EXIT;
+	}
+
+RESOURCE MENU_BAR r_aknapp_menubar
+	{
+	titles = { MENU_TITLE { menu_pane = r_aknapp_menu; } };
+	}
+
+RESOURCE MENU_PANE r_aknapp_menu
+	{
+	items =
+		{
+		MENU_ITEM { command = EAknAppCmdHello; txt = "Say hello"; },
+		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
+		};
+	}
+
+RESOURCE TBUF r_aknapp_hello { buf = "Hello from a from-source Symbian UI"; }

@@ -1,0 +1,21 @@
+// vgprobe2.mmp -- OURS: OpenVG O2 test (vgprobe2.cpp): the same scene through the GPU engine (phvg) and the reference
+// implementation, both behind the standard libEGL + libOpenVG.
+TARGET			vgprobe2.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157C1
+CAPABILITY		None
+VENDORID		0
+
+EPOCHEAPSIZE	0x100000 0x1000000
+EPOCSTACKSIZE	0x10000
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+SYSTEMINCLUDE	/epoc32/include/vg
+MACRO			__OPENVGHEADERS_USE_VG_1_1
+
+SOURCEPATH		.
+SOURCE			vgprobe2.cpp
+
+LIBRARY			euser.lib libEGL.lib libOpenVG.lib libOpenVGU.lib fbscli.lib
+
+SMPSAFE

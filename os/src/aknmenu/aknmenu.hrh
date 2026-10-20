@@ -1,0 +1,9 @@
+// aknmenu.hrh -- OURS: command ids
+#ifndef AKNMENU_HRH
+#define AKNMENU_HRH
+enum TAknMenuCommands
+	{
+	EAknMenuCmdOpen = 0x6000,
+	EAknMenuCmdRefresh
+	};
+#endif

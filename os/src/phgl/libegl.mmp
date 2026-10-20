@@ -1,0 +1,20 @@
+// libegl.mmp -- OURS: libEGL.dll, the frozen EGL 1.4 ABI (libegl14U.def, UID 0x10281AB8 = KUidEGLDllUidValue) as a
+// dispatcher over phgl.dll (libegl_front.cpp, hand-written: reusable syncs and the display live here, the GL work
+// is forwarded). Replaces the 2010 libegl_ref.dll in the NGA ROM.
+TARGET			libEGL.dll
+TARGETTYPE		dll
+UID				0x1000008d 0x10281AB8
+
+CAPABILITY		All -Tcb
+VENDORID		0
+
+EPOCALLOWDLLDATA
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			phgl_front.cpp libegl_front.cpp
+
+LIBRARY			euser.lib
+
+SMPSAFE

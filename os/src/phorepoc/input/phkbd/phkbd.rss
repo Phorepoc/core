@@ -1,0 +1,43 @@
+// phkbd.rss -- OURS (Phorepoc): ECom registration of phkbd.dll
+//  * a pen-input layout implementation (interface 0x102072FC: the pen input server's layout plug-ins)
+//  * a registry entry (interface 0xE7015801 = PHIM_ENTRY_INTERFACE, src/phorepoc/input/phimreg/phimreg.h): "this keyboard
+//    exists, serves mode PM, opens layout L, sorts at priority P". PM=128 is EPluginInputModePortraitFSQ.
+#include <registryinfo.rh>
+
+RESOURCE REGISTRY_INFO theInfo
+    {
+    dll_uid = 0xE7015802;
+    interfaces =
+        {
+        INTERFACE_INFO
+            {
+            interface_uid = 0x102072FC;
+            implementations =
+                {
+                IMPLEMENTATION_INFO
+                    {
+                    implementation_uid = 0xE7015803;
+                    version_no = 1;
+                    display_name = "phkbd QWERTY";
+                    default_data = "1||16||33||37||42||50||57||54||93||94||96";
+                    opaque_data = "16||33||37||42||50||57||54||93||94||96";
+                    }
+                };
+            },
+        INTERFACE_INFO
+            {
+            interface_uid = 0xE7015801;
+            implementations =
+                {
+                IMPLEMENTATION_INFO
+                    {
+                    implementation_uid = 0xE7015810;
+                    version_no = 1;
+                    display_name = "Phorepoc QWERTY (phkbd)";
+                    default_data = "phkbd";
+                    opaque_data = "PM=128;L=0xE7015803;P=10";
+                    }
+                };
+            }
+        };
+    }

@@ -1,0 +1,13 @@
+// vgprobe.mmp -- OURS: software-OpenVG stack probe (see vgprobe.cpp)
+TARGET			vgprobe.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015706
+CAPABILITY		all -tcb
+VENDORID		0
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+MW_LAYER_SYSTEMINCLUDE_SYMBIAN
+SYSTEMINCLUDE	/epoc32/include/platform/vg /epoc32/include/vg
+MACRO			__OPENVGHEADERS_USE_VG_1_1
+SOURCEPATH		.
+SOURCE			vgprobe.cpp
+LIBRARY			euser.lib fbscli.lib libvgi.lib libopenvg_sw.lib libopenvgu_sw.lib

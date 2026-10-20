@@ -1,0 +1,10 @@
+// sigtest.mmp -- OURS: request-signal bookkeeping test for the Path C port (see sigtest.cpp)
+TARGET			sigtest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015713
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			sigtest.cpp
+LIBRARY			euser.lib

@@ -1,0 +1,26 @@
+// mp3hwdevice.rss -- OURS: ECom registration of the MP3 -> PCM16 HW device (mp3hwdevice.cpp)
+#include <ecom/registryinfo.rh>
+#include <mmf/plugin/mmfplugininterfaceuids.hrh>
+
+RESOURCE REGISTRY_INFO theInfo
+	{
+	dll_uid = 0x1020658E;			// Mp3ToPcm16CodecDllUid (refacladapt hwdeviceimplementationuids.hrh)
+	interfaces =
+		{
+		INTERFACE_INFO
+			{
+			interface_uid = KMmfUidPluginInterfaceHwDevice;
+			implementations =
+				{
+				IMPLEMENTATION_INFO
+					{
+					implementation_uid = 0x1020658F;	// KUidHwCodecMP3DecToPCM16
+					version_no = 1;
+					display_name = "MP3 -> PCM16 (Phorepoc: Aricent plug-in over minimp3)";
+					default_data = " MP3, P16";		// source, destination FourCC
+					opaque_data = "";
+					}
+				};
+			}
+		};
+	}

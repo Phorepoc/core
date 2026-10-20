@@ -1,0 +1,181 @@
+// phedevmenu.rss -- OURS: the developer settings list (phedevmenu.cpp)
+NAME PHDM
+
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.rsg>
+#include "phedevmenu.hrh"
+
+RESOURCE RSS_SIGNATURE { }
+RESOURCE TBUF r_default_document_name { buf = ""; }
+
+RESOURCE EIK_APP_INFO
+	{
+	menubar = r_phedevmenu_menubar;
+	cba = R_AVKON_SOFTKEYS_OPTIONS_EXIT;
+	status_pane = r_phedevmenu_status_pane;
+	}
+
+RESOURCE STATUS_PANE_APP_MODEL r_phedevmenu_status_pane
+	{
+	panes =
+		{
+		SPANE_PANE
+			{
+			id = EEikStatusPaneUidTitle;
+			type = EAknCtTitlePane;
+			resource = r_phedevmenu_title_pane;
+			}
+		};
+	}
+
+RESOURCE TITLE_PANE r_phedevmenu_title_pane
+	{
+	txt = "Developer menu";
+	}
+
+RESOURCE MENU_BAR r_phedevmenu_menubar
+	{
+	titles = { MENU_TITLE { menu_pane = r_phedevmenu_menu; } };
+	}
+
+RESOURCE MENU_PANE r_phedevmenu_menu
+	{
+	items =
+		{
+		MENU_ITEM { command = EPheDevCmdChange; txt = "Change"; },
+		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
+		};
+	}
+
+RESOURCE AVKON_SETTING_ITEM_LIST r_phedevmenu_items
+	{
+	items =
+		{
+		AVKON_SETTING_ITEM
+			{
+			identifier = EPheItemShell;
+			setting_page_resource = r_phedevmenu_shell_page;
+			associated_resource = r_phedevmenu_shell_texts;
+			name = "UI shell";
+			},
+		AVKON_SETTING_ITEM
+			{
+			identifier = EPheItemCpShortcut;
+			setting_page_resource = r_phedevmenu_cp_page;
+			associated_resource = r_phedevmenu_cp_texts;
+			name = "Control Panel shortcut";
+			},
+		AVKON_SETTING_ITEM
+			{
+			identifier = EPheItemRenderer;
+			setting_page_resource = r_phedevmenu_render_page;
+			associated_resource = r_phedevmenu_render_texts;
+			name = "UI renderer";
+			},
+		AVKON_SETTING_ITEM
+			{
+			identifier = EPheItemGuardTimeout;
+			setting_page_resource = r_phedevmenu_guard_page;
+			name = "Boot guard timeout (s)";
+			}
+		};
+	}
+
+RESOURCE AVKON_SETTING_PAGE r_phedevmenu_shell_page
+	{
+	label = "UI shell";
+	type = EAknCtPopupSettingList;
+	editor_resource_id = r_phedevmenu_popup_list;
+	}
+
+RESOURCE AVKON_SETTING_PAGE r_phedevmenu_render_page
+	{
+	label = "UI renderer";
+	hint_text = "Takes effect after reboot. Alfred needs GPU acceleration; without it Classic is faster.";
+	type = EAknCtPopupSettingList;
+	editor_resource_id = r_phedevmenu_popup_list;
+	}
+
+RESOURCE AVKON_POPUP_SETTING_TEXTS r_phedevmenu_render_texts
+	{
+	setting_texts_resource = r_phedevmenu_render_values;
+	popped_up_texts_resource = r_phedevmenu_render_popup;
+	}
+
+RESOURCE ARRAY r_phedevmenu_render_values
+	{
+	items =
+		{
+		AVKON_ENUMERATED_TEXT { value = 0; text = "Classic"; },
+		AVKON_ENUMERATED_TEXT { value = 1; text = "Alfred (GPU)"; }
+		};
+	}
+
+RESOURCE ARRAY r_phedevmenu_render_popup
+	{
+	items = { LBUF { txt = "Classic"; }, LBUF { txt = "Alfred (GPU)"; } };
+	}
+
+RESOURCE AVKON_SETTING_PAGE r_phedevmenu_cp_page
+	{
+	label = "Control Panel shortcut";
+	type = EAknCtPopupSettingList;
+	editor_resource_id = r_phedevmenu_popup_list;
+	}
+
+RESOURCE AVKON_SETTING_PAGE r_phedevmenu_guard_page
+	{
+	label = "Boot guard timeout (s)";
+	type = EAknCtIntegerEdwin;
+	editor_resource_id = r_phedevmenu_guard_editor;
+	}
+
+RESOURCE POPUP_SETTING_LIST r_phedevmenu_popup_list { }
+
+RESOURCE AVKON_INTEGER_EDWIN r_phedevmenu_guard_editor
+	{
+	maxlength = 4;
+	min = 30;
+	max = 3600;
+	}
+
+RESOURCE AVKON_POPUP_SETTING_TEXTS r_phedevmenu_shell_texts
+	{
+	setting_texts_resource = r_phedevmenu_shell_values;
+	popped_up_texts_resource = r_phedevmenu_shell_popup;
+	}
+
+RESOURCE ARRAY r_phedevmenu_shell_values
+	{
+	items =
+		{
+		AVKON_ENUMERATED_TEXT { value = 0; text = "Symbian^3"; },
+		AVKON_ENUMERATED_TEXT { value = 1; text = "Symbian^4"; }
+		};
+	}
+
+RESOURCE ARRAY r_phedevmenu_shell_popup
+	{
+	items = { LBUF { txt = "Symbian^3"; }, LBUF { txt = "Symbian^4"; } };
+	}
+
+RESOURCE AVKON_POPUP_SETTING_TEXTS r_phedevmenu_cp_texts
+	{
+	setting_texts_resource = r_phedevmenu_onoff_values;
+	popped_up_texts_resource = r_phedevmenu_onoff_popup;
+	}
+
+RESOURCE ARRAY r_phedevmenu_onoff_values
+	{
+	items =
+		{
+		AVKON_ENUMERATED_TEXT { value = 0; text = "Off"; },
+		AVKON_ENUMERATED_TEXT { value = 1; text = "On"; }
+		};
+	}
+
+RESOURCE ARRAY r_phedevmenu_onoff_popup
+	{
+	items = { LBUF { txt = "Off"; }, LBUF { txt = "On"; } };
+	}

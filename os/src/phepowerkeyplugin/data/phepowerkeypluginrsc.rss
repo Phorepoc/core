@@ -1,0 +1,129 @@
+// phepowerkeypluginrsc.rss -- resources of the Power key Control Panel page (OURS; plain English, no .loc)
+// Modelled on GSAutoKeyguardPluginRsc.rss.
+
+NAME    PHPK // 4 letter ID
+
+#include <avkon.loc>
+#include <avkon.mbg>
+#include <avkon.rsg>
+#include <eikcore.rsg>
+#include <uikon.rh>
+#include <eikon.rh>
+#include <eikon.rsg>
+#include <avkon.rh>
+#include <gscommon.rh>      // GS_FEATURE_ARRAY / GS_FEATURE
+
+#include "phepowerkeyplugin.hrh"
+#include <gscommon.hrh>     // EGSCmdAppChange, EGSListBoxItemTypeIsDynamic
+
+RESOURCE RSS_SIGNATURE
+    {
+    }
+
+RESOURCE TBUF r_phepk_view_caption
+    {
+    buf = "Power key";
+    }
+
+RESOURCE TITLE_PANE r_phepk_view_title
+    {
+    txt = "Power key";
+    }
+
+RESOURCE CBA r_phepk_softkeys_options_back__change
+    {
+    buttons =
+        {
+        CBA_BUTTON {id = EAknSoftkeyOptions; txt = text_softkey_option;},
+        CBA_BUTTON {id = EAknSoftkeyBack;    txt = text_softkey_back;},
+        CBA_BUTTON {id = EAknSoftkeyChange;  txt = "Change";}
+        };
+    }
+
+RESOURCE AVKON_VIEW r_phepk_view
+    {
+    menubar = r_phepk_menubar;
+    cba = r_phepk_softkeys_options_back__change;
+    }
+
+RESOURCE MENU_BAR r_phepk_menubar
+    {
+    titles =
+        {
+        MENU_TITLE { menu_pane = r_phepk_menu_exit; },
+        MENU_TITLE { menu_pane = r_phepk_menu_change; }
+        };
+    }
+
+RESOURCE MENU_PANE r_phepk_menu_exit
+    {
+    items =
+        {
+        MENU_ITEM { command = EAknCmdExit; txt = qtn_options_exit; }
+        };
+    }
+
+RESOURCE MENU_PANE r_phepk_menu_change
+    {
+    items =
+        {
+        MENU_ITEM { command = EGSCmdAppChange; txt = qtn_options_change; flags = EEikMenuItemAction; }
+        };
+    }
+
+// the two settings; the value text is dynamic (set from the repository)
+RESOURCE GS_FEATURE_ARRAY r_phepk_lbx
+    {
+    items =
+        {
+        GS_FEATURE
+            {
+            txt = " \tShort press\t\t";
+            item = EPhePkShortPress;
+            type = EGSListBoxItemTypeIsDynamic;
+            },
+        GS_FEATURE
+            {
+            txt = " \tLong press (hold 2 s)\t\t";
+            item = EPhePkLongPress;
+            type = EGSListBoxItemTypeIsDynamic;
+            }
+        };
+    }
+
+// the value names, index = the CenRep value (0 / 1 / 2)
+RESOURCE ARRAY r_phepk_values
+    {
+    items =
+        {
+        LBUF { txt = "Power menu"; },
+        LBUF { txt = "Lock / unlock"; },
+        LBUF { txt = "Switch off"; }
+        };
+    }
+
+RESOURCE AVKON_SETTING_PAGE r_phepk_short_setting_page
+    {
+    number = EAknSettingPageNoOrdinalDisplayed;
+    label = "Short press";
+    softkey_resource = R_AVKON_SOFTKEYS_OK_CANCEL__OK;
+    type = EAknSetListBox;
+    editor_resource_id = r_phepk_setting_listbox;
+    }
+
+RESOURCE AVKON_SETTING_PAGE r_phepk_long_setting_page
+    {
+    number = EAknSettingPageNoOrdinalDisplayed;
+    label = "Long press (hold 2 s)";
+    softkey_resource = R_AVKON_SOFTKEYS_OK_CANCEL__OK;
+    type = EAknSetListBox;
+    editor_resource_id = r_phepk_setting_listbox;
+    }
+
+// single choice (radio buttons): no EEikListBoxMultipleSelection
+RESOURCE LISTBOX r_phepk_setting_listbox
+    {
+    flags = 0;
+    }
+
+// End of File

@@ -1,0 +1,15 @@
+// phettyctl.mmp -- OURS: phettyd test client (phettyctl.cpp): drives a tty from the debug port, headless
+#include <platform_paths.hrh>
+
+TARGET			phettyctl.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015903
+CAPABILITY		all -tcb
+VENDORID		0
+
+SOURCEPATH		.
+SOURCE			phettyctl.cpp pheclient.cpp
+
+APP_LAYER_SYSTEMINCLUDE
+LIBRARY			euser.lib
+EPOCSTACKSIZE	0x8000

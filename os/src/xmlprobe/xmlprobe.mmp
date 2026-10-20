@@ -1,0 +1,11 @@
+// xmlprobe.mmp -- OURS: libxml2 / XML Engine DOM probe (see xmlprobe.cpp)
+TARGET			xmlprobe.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015708
+CAPABILITY		all -tcb
+VENDORID		0
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+OS_LAYER_LIBXML2_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			xmlprobe.cpp
+LIBRARY			euser.lib xmlenginedom.lib

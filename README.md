@@ -1,15 +1,28 @@
 # core
 
-The Phorepoc OS and the data that describes it: the component registry that says how each Symbian component is
-built from its real `.mmp`, and the pinned Symbian source. The tools that turn these into images for x86-64 (x32) and
-ARM live in the [pdk](https://github.com/Phorepoc/pdk); build with its `ph`.
+The Phorepoc OS and the data that describes it: our changes to Symbian and our own components (`os/`), the component
+registry that says how each Symbian component is built from its real `.mmp`, and the pinned Symbian source. The tools
+that turn these into images for x86-64 (x32) and ARM live in the [pdk](https://github.com/Phorepoc/pdk); build with its
+`ph`.
 
-The OS overlay (our changed Symbian files) and our own components arrive in `os/`; the device repos (adaptations)
-pin a tagged release of this one.
+What every board shares is here. Hardware lives in the adaptation repos, which are built together with core:
+
+| adaptation | what |
+|---|---|
+| [adaptation-x86-64](https://github.com/Phorepoc/adaptation-x86-64) | the x86-64 kernel port (x32 ABI) |
+| [adaptation-pc](https://github.com/Phorepoc/adaptation-pc) | PCs: QEMU, VirtualBox, real hardware |
+| [adaptation-a64](https://github.com/Phorepoc/adaptation-a64) | the Allwinner A64 SoC drivers |
+| [adaptation-pinephone](https://github.com/Phorepoc/adaptation-pinephone) | the PINE64 PinePhone |
 
 ## Layout
 
 ```
+os/
+  toolchain/shims/       our replacement copies of Symbian source files, one directory per change
+  toolchain/{overlay,kinc,generated,dll_rt,euser_dll}   headers and runtime pieces every image builds with
+  src/                   our own components (pheshell, phetty, phgl, phvg ...) and their tests
+  shim/                  stand-in headers for interfaces the 2010 release did not ship
+  tools/                 OS data the ROM recipe reads (central repository files), the Mesa and third-party ports
 registry/
   components.py          the registry: one entry per component, built from its real .mmp
   components_*.py        more entries: apps, codec pack, development menu, phetty, Qt 4.8, Symbian^4
@@ -25,24 +38,24 @@ The pdk finds this repository through `PHOREPOC_CORE` (default: the `core` folde
 | variable | meaning | default |
 |---|---|---|
 | `PHOREPOC_CORE` | this repository | `../core` from the pdk |
+| `PHOREPOC_ADAPTATIONS` | the adaptation checkouts to build with core (a path list): their `os/` is laid over this one's, their `registry/` adds their components | none |
 | `PHOREPOC_SYMBIAN` | Symbian source: `symbian-2010/<package>`, `symbian-rcl3/<package>` | `symbian/` (filled by `fetch.sh`) |
 | `PHOREPOC_BUILD` | every generated file: `epoc32/`, `casefix/`, `x32img/`, `arm/`, `rsc/` ... | `build/` |
-| `PHOREPOC_OS_ROOT` | our overlay and components: `toolchain/{shims,overlay,kinc,generated}`, `src/`, the board and port files | `os/` |
-
-`PHOREPOC_OS_ROOT` is temporary: until the overlay and our components move into `os/`, it has to point at a checkout
-that still holds them. The registry itself is complete; entries whose files are not there cannot be built yet.
+| `PHOREPOC_OS_ROOT` | this repository's OS tree | `os/` |
 
 ## Building
 
-From the pdk checkout:
+From the pdk checkout, for the PC image:
 
 ```sh
 go build -o ph ./cmd/ph
+export PHOREPOC_ADAPTATIONS=../adaptation-x86-64:../adaptation-pc
 ./ph fetch                  # Symbian source -> core/symbian/
-./ph export                 # epoc32/include tree
-./ph casefix                # case-insensitive include links
-./ph build palette estor    # x32 images -> core/build/x32img/
-./ph arm palette estor      # ARM images
+./ph export --all           # epoc32/include tree (runs casefix too)
+./ph mbg --all              # icon id headers
+./ph rsc --all              # resources (.rsc + .rsg headers)
+./ph all                    # every component -> core/build/x32img/
+./ph rom                    # the ROM
 ./ph help
 ```
 
@@ -51,4 +64,4 @@ the same inputs give the same bytes, which `ph tests` checks against another bui
 
 ## Licence
 
-Eclipse Public License 1.0 (see `LICENSE`).
+Eclipse Public License 1.0 (see `LICENSE`), except third-party files that say otherwise in their headers.

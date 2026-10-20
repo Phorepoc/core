@@ -1,0 +1,13 @@
+; rcseu.def -- OURS: ordinals of our null rcse.dll, only what the release's clients use (NOT the
+; ordinals of the real RCSE, sf.app.iptelephony/richcallsettingsengine/rcse2/eabi/rcseu.def)
+EXPORTS
+	_ZN20CRCSEProfileRegistry4NewLEv @ 1 NONAME
+	_ZN20CRCSEProfileRegistry5NewLCEv @ 2 NONAME
+	_ZN20CRCSEProfileRegistryD0Ev @ 3 NONAME
+	_ZN20CRCSEProfileRegistryD1Ev @ 4 NONAME
+	_ZN20CRCSEProfileRegistryD2Ev @ 5 NONAME
+	_ZN20CRCSEProfileRegistry16FindByServiceIdLEmR12RPointerArrayI17CRCSEProfileEntryE @ 6 NONAME
+	_ZN17CRCSEProfileEntry4NewLEv @ 7 NONAME
+	_ZN17CRCSEProfileEntryD0Ev @ 8 NONAME
+	_ZN17CRCSEProfileEntryD1Ev @ 9 NONAME
+	_ZN17CRCSEProfileEntryD2Ev @ 10 NONAME

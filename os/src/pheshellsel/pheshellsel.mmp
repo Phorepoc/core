@@ -1,0 +1,11 @@
+// pheshellsel.mmp -- OURS (UI shell selector at boot, docs/phorepoc/devmenu.md "UI shell"): starts S^3 or S^4 per the dev menu
+TARGET			pheshellsel.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157B6
+CAPABILITY		all -tcb
+VENDORID		0
+
+APP_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			pheshellsel.cpp
+LIBRARY			euser.lib efsrv.lib centralrepository.lib apgrfx.lib apparc.lib

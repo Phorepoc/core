@@ -1,0 +1,12 @@
+// phedevmenu_reg.rss -- OURS: Developer menu registration. Hidden: not in the launcher grid; opened by the dialer code
+// *#3386633# (the Phone app's secret-code path) or the Control Panel shortcut
+#include <appinfo.rh>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0xE7015A00
+
+RESOURCE APP_REGISTRATION_INFO
+	{
+	app_file = "phedevmenu";
+	hidden = KAppIsHidden;
+	}

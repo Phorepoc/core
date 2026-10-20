@@ -1,0 +1,8 @@
+// aknapp.hrh -- OURS: command ids
+#ifndef AKNAPP_HRH
+#define AKNAPP_HRH
+enum TAknAppCommands
+	{
+	EAknAppCmdHello = 0x6000
+	};
+#endif

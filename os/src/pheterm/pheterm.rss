@@ -1,0 +1,40 @@
+// pheterm.rss -- OURS: Terminal application resource: Options menu = new / next / close tty + direct switch to tty 1..8
+NAME PHTM
+
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.rsg>
+#include "pheterm.hrh"
+
+RESOURCE RSS_SIGNATURE { }
+RESOURCE TBUF r_default_document_name { buf = ""; }
+
+RESOURCE EIK_APP_INFO
+	{
+	menubar = r_pheterm_menubar;
+	cba = R_AVKON_SOFTKEYS_OPTIONS_EXIT;
+	}
+
+RESOURCE MENU_BAR r_pheterm_menubar
+	{
+	titles = { MENU_TITLE { menu_pane = r_pheterm_menu; } };
+	}
+
+RESOURCE MENU_PANE r_pheterm_menu
+	{
+	items =
+		{
+		MENU_ITEM { command = EPheCmdNew; txt = "New tty"; },
+		MENU_ITEM { command = EPheCmdNext; txt = "Next tty"; },
+		MENU_ITEM { command = EPheCmdClose; txt = "Close tty"; },
+		MENU_ITEM { command = EPheCmdTty1; txt = "Switch to tty 1"; },
+		MENU_ITEM { command = EPheCmdTty2; txt = "Switch to tty 2"; },
+		MENU_ITEM { command = EPheCmdTty3; txt = "Switch to tty 3"; },
+		MENU_ITEM { command = EPheCmdTty4; txt = "Switch to tty 4"; },
+		MENU_ITEM { command = EPheCmdTty5; txt = "Switch to tty 5"; },
+		MENU_ITEM { command = EPheCmdTty6; txt = "Switch to tty 6"; },
+		MENU_ITEM { command = EPheCmdTty7; txt = "Switch to tty 7"; },
+		MENU_ITEM { command = EPheCmdTty8; txt = "Switch to tty 8"; },
+		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
+		};
+	}

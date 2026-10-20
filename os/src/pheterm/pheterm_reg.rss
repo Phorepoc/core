@@ -1,0 +1,10 @@
+// pheterm_reg.rss -- OURS: Terminal application registration (shows in the launcher grid = the Menu key's existing menu)
+#include <appinfo.rh>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0xE7015900
+
+RESOURCE APP_REGISTRATION_INFO
+	{
+	app_file = "pheterm";
+	}

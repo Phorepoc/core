@@ -1,0 +1,31 @@
+// pheshell.mmp -- OURS: ESHELL (the real etshell sources, unmodified) whose console is a phettyd tty (docs/phorepoc/phetty-plan.md).
+// MACRO Console=PheConsole turns the one Console::NewL(...) in CShell::NewL into PheConsole::NewL (the real <e32cons.h> then
+// declares it under the new name; pheconsole.cpp defines it and is the console). Started by phettyd with the tty id in process parameter slot 3.
+#include <platform_paths.hrh>
+
+TARGET			pheshell.exe
+TARGETTYPE		exe
+UID				0x00000000 0xE7015902
+CAPABILITY		all -tcb
+VENDORID		0
+
+MACRO			Console=PheConsole
+
+SOURCEPATH		../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/etshell
+SOURCE			ts_com.cpp ts_data.cpp ts_edshl.cpp ts_main.cpp ts_utl.cpp ts_deps.cpp ts_clicomp.cpp
+SOURCEPATH		../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/sfile
+SOURCE			sf_inflate.cpp sf_decomp.cpp
+SOURCEPATH		.
+SOURCE			pheconsole.cpp
+SOURCEPATH		../phetty
+SOURCE			pheclient.cpp
+
+USERINCLUDE		../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/inc
+USERINCLUDE		../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/sfile
+USERINCLUDE		../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/kernel/eka/include
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+LIBRARY			euser.lib efsrv.lib hal.lib
+
+EPOCSTACKSIZE	0x8000
+SMPSAFE

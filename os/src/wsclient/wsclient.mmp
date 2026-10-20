@@ -1,0 +1,15 @@
+// wsclient.mmp -- OURS: minimal native WSERV client (see wsclient.cpp)
+TARGET			wsclient.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015701
+
+CAPABILITY		all -tcb
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			wsclient.cpp
+
+LIBRARY			euser.lib ws32.lib gdi.lib fbscli.lib
+
+VENDORID		0

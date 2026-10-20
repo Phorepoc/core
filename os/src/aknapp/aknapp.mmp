@@ -1,0 +1,28 @@
+// aknapp.mmp -- OURS: minimal S60 Avkon application (see aknapp.cpp)
+#include <platform_paths.hrh>
+
+TARGET			aknapp.exe
+TARGETTYPE		exe
+UID				0x100039CE 0xE7015703
+
+CAPABILITY		all -tcb
+VENDORID		0
+
+SOURCEPATH		.
+SOURCE			aknapp.cpp
+
+START RESOURCE	aknapp.rss
+HEADER
+TARGETPATH		/resource/apps
+END
+
+START RESOURCE	aknapp_reg.rss
+TARGETPATH		/private/10003a3f/apps
+END
+
+USERINCLUDE		.
+APP_LAYER_SYSTEMINCLUDE
+
+LIBRARY			euser.lib apparc.lib cone.lib eikcore.lib avkon.lib eikcoctl.lib ws32.lib gdi.lib
+
+EPOCSTACKSIZE	0x5000

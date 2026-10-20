@@ -1,0 +1,28 @@
+// phedevmenu.mmp -- OURS: the hidden developer settings application (phedevmenu.cpp; docs/phorepoc/devmenu.md)
+#include <platform_paths.hrh>
+
+TARGET			phedevmenu.exe
+TARGETTYPE		exe
+UID				0x100039CE 0xE7015A00
+
+CAPABILITY		all -tcb
+VENDORID		0
+
+SOURCEPATH		.
+SOURCE			phedevmenu.cpp
+
+START RESOURCE	phedevmenu.rss
+HEADER
+TARGETPATH		/resource/apps
+END
+
+START RESOURCE	phedevmenu_reg.rss
+TARGETPATH		/private/10003a3f/apps
+END
+
+USERINCLUDE		.
+APP_LAYER_SYSTEMINCLUDE
+
+LIBRARY			euser.lib apparc.lib cone.lib eikcore.lib avkon.lib eikcoctl.lib ws32.lib gdi.lib centralrepository.lib aknskins.lib efsrv.lib
+
+EPOCSTACKSIZE	0x5000

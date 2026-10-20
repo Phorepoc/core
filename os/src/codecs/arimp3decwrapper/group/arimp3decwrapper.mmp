@@ -1,0 +1,13 @@
+// arimp3decwrapper.mmp -- OURS: the MP3 decoder library behind the release's Aricent MP3 plug-in (minimp3, CC0)
+TARGET			arimp3decwrapper.dll
+TARGETTYPE		dll
+UID				0x1000008d 0xE701571B
+CAPABILITY		ALL -Tcb
+VENDORID		0
+
+SOURCEPATH		../src
+SOURCE			arimp3decwrapper.cpp
+USERINCLUDE		../../../../baseline/symbian-2010/oss.FCL.sf.adapt.codecs.aricent/mp3_dec/arimp3decwrapper/export_hdr
+OS_LAYER_SYSTEMINCLUDE
+OS_LAYER_LIBC_SYSTEMINCLUDE			// minimp3: <stdint.h>, <string.h> (memcpy/memset come from euser)
+LIBRARY			euser.lib

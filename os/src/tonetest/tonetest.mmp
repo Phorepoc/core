@@ -1,0 +1,12 @@
+// tonetest.mmp -- OURS (X4.89): a DevSound tone through the whole audio chain; the audio regression test
+TARGET			tonetest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015719
+CAPABILITY		MultimediaDD UserEnvironment
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			tonetest.cpp
+LIBRARY			euser.lib mmfdevsound.lib

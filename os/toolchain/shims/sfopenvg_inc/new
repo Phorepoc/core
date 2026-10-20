@@ -1,0 +1,8 @@
+// OURS: stand-in for <new> when building the sfopenvg reference implementation against estlib
+// (no P.I.P.S. libstdcpp). The toolchain's own <new> re-defines the placement operators that
+// e32cmn.inl already provides; the RI only needs the std::bad_alloc NAME (its catch clauses are
+// compiled out -- see emitter/components.py "sflibopenvgrefimpl").
+#ifndef SFOPENVG_SHIM_NEW
+#define SFOPENVG_SHIM_NEW
+namespace std { class bad_alloc {}; }
+#endif

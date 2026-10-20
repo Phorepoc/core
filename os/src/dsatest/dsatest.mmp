@@ -1,0 +1,15 @@
+// dsatest.mmp -- OURS (docs/phorepoc/dsa-nga-plan.md C1): direct screen access probe (see dsatest.cpp)
+TARGET			dsatest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015710
+
+CAPABILITY		all -tcb
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			dsatest.cpp
+
+LIBRARY			euser.lib ws32.lib gdi.lib fbscli.lib bitgdi.lib scdv.lib
+
+VENDORID		0

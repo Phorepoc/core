@@ -1,0 +1,11 @@
+// phemenuwarm.mmp -- OURS (Applications grid, first open): pre-warm the launcher's icons at boot (phemenuwarm.cpp)
+TARGET			phemenuwarm.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157B2
+CAPABILITY		all -tcb
+VENDORID		0
+
+APP_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phemenuwarm.cpp
+LIBRARY			euser.lib efsrv.lib apgrfx.lib ws32.lib apparc.lib hal.lib

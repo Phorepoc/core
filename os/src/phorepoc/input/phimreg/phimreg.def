@@ -1,0 +1,9 @@
+EXPORTS
+	PhImList @ 1 NONAME
+	PhImActive @ 2 NONAME
+	PhImSetActive @ 3 NONAME
+	PhImResolve @ 4 NONAME
+	PhImNext @ 5 NONAME
+	PhImModeOfLayout @ 6 NONAME
+	PhImGetSetting @ 7 NONAME
+	PhImSetSetting @ 8 NONAME

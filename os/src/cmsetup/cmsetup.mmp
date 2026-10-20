@@ -1,0 +1,12 @@
+// cmsetup.mmp -- OURS: S60 connection-settings bring-up for the Path C board (see cmsetup.cpp)
+TARGET			cmsetup.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015712
+CAPABILITY		NetworkControl NetworkServices ReadDeviceData WriteDeviceData
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			cmsetup.cpp
+LIBRARY			euser.lib cmmanager.lib commsdatcreator.lib commsdat.lib cmmanagerdatabase.lib

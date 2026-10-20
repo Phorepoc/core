@@ -1,0 +1,12 @@
+// phepowerkeyplugin.hrh -- OURS
+#ifndef PHEPOWERKEYPLUGIN_HRH
+#define PHEPOWERKEYPLUGIN_HRH
+
+// the list items (GS feature ids)
+enum
+    {
+    EPhePkShortPress = 0,
+    EPhePkLongPress
+    };
+
+#endif

@@ -1,0 +1,12 @@
+// phvolume.mmp -- OURS (audio V0, docs/phorepoc/audio-mixing-plan.md 3.3): volume keys -> master volume
+TARGET			phvolume.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157A1
+CAPABILITY		WriteDeviceData ReadDeviceData
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+USERINCLUDE		../../toolchain/shims/mdasoundadapter_mix
+SOURCEPATH		.
+SOURCE			phvolume.cpp
+LIBRARY			euser.lib

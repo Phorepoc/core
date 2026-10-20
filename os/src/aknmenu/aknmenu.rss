@@ -1,0 +1,26 @@
+// aknmenu.rss -- OURS: application resource for the interim launcher
+NAME AKNM
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.rsg>
+#include "aknmenu.hrh"
+RESOURCE RSS_SIGNATURE { }
+RESOURCE TBUF r_default_document_name { buf = ""; }
+RESOURCE EIK_APP_INFO
+	{
+	menubar = r_aknmenu_menubar;
+	cba = R_AVKON_SOFTKEYS_OPTIONS_EXIT;
+	}
+RESOURCE MENU_BAR r_aknmenu_menubar
+	{
+	titles = { MENU_TITLE { menu_pane = r_aknmenu_menu; } };
+	}
+RESOURCE MENU_PANE r_aknmenu_menu
+	{
+	items =
+		{
+		MENU_ITEM { command = EAknMenuCmdOpen; txt = "Open"; },
+		MENU_ITEM { command = EAknMenuCmdRefresh; txt = "Refresh"; },
+		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
+		};
+	}

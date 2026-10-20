@@ -1,0 +1,19 @@
+// phevidctl.mmp -- OURS (VDU rung V4, docs/phorepoc/vdu-plan.md): the MMF video play controller for MP4 / 3GP (ECOM
+// plug-in, interface 0x101F4F47) -> CMMFDevVideoPlay -> the phevdec A64 Video Engine decoder. Contract: phevidctl.h.
+TARGET			phevidctl.dll
+TARGETTYPE		PLUGIN
+UID				0x10009D8D 0xE70157D0
+CAPABILITY		All -TCB
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+OS_LAYER_LIBC_SYSTEMINCLUDE
+USERINCLUDE		. ../phorepoc-arm/a64/display
+SOURCEPATH		.
+SOURCE			phevidctl.cpp mp4demux.cpp
+
+START RESOURCE	E70157D0.rss
+TARGET			phevidctl.rsc
+END
+
+LIBRARY			euser.lib hal.lib mmfserverbaseclasses.lib mmfcontrollerframework.lib mmfstandardcustomcommands.lib devvideo.lib ws32.lib gdi.lib scdv.lib  mmfdevsound.lib hal.lib

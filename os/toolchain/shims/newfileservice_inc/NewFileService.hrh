@@ -1,0 +1,14 @@
+// OURS: NewFileService.hrh -- the S60 "new file service" (camera / voice recorder embedding) media-type
+// enum. Its package (the S60 new-file-service API) is not in the 2010 open-source drop; messaging's
+// MsgAttachmentUtils.h includes it for one parameter type. Values as in the public S60 SDK header.
+#ifndef NEWFILESERVICE_HRH
+#define NEWFILESERVICE_HRH
+
+enum TNewServiceFileType
+    {
+    ENewFileServiceImage = 0,
+    ENewFileServiceVideo,
+    ENewFileServiceAudio
+    };
+
+#endif

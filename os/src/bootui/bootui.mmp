@@ -1,0 +1,11 @@
+// bootui.mmp -- OURS: minimal system starter for the UI bring-up ROM (see bootui.cpp)
+TARGET			bootui.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015704
+CAPABILITY		all -tcb
+VENDORID		0
+
+APP_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			bootui.cpp
+LIBRARY			euser.lib efsrv.lib domaincli.lib akncapserverclient.lib etel.lib apgrfx.lib hwrmlightclient.lib ws32.lib apparc.lib
