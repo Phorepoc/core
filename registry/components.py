@@ -1665,35 +1665,8 @@ COMPONENTS = {
     "gsecomplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSFramework/GSEcomPlugin.mmp"),   # Logs.mmp
     # securesocket) + its token provider/cache. The 2010 TLS is TLS 1.0-era; Goal U's modern-TLS ssl.dll
     "securesocket": dict(mmp="oss.FCL.sf.os.networkingsrv/networksecurity/tls/group/SecureSocket.mmp"),
-    "ssl_ph": dict(mmp=os.path.join(OS_ROOT, "shim/phorepoc/ssl_mbed.mmp"), rom="ssl.dll",
-                   cdriver=True, allow_wsd=True,
-                   **{"def": "oss.FCL.sf.os.networkingsrv/networksecurity/tls/eabi/sslU.def"},
-                   defs=["MBEDTLS_CONFIG_FILE=<phorepoc_mbedtls_config.h>", "__SOFTFP=", "MBEDTLS_PLATFORM_MS_TIME_ALT"],
-                   rom_data=["resource\\ssl\\ca-bundle.crt=thirdparty/x86/res/ca-bundle.crt"],
-                   extra=sorted(os.path.relpath(p, OS_ROOT).replace(os.sep, "/") for p in __import__("glob").glob(
-                       os.path.join(OS_ROOT, "shim/build/_deps/mbedtls-src/library/*.c")))),
-    "libssl_ph": dict(mmp=os.path.join(OS_ROOT, "shim/phorepoc/libssl_mbed/libssl_mbed.mmp"), rom="libssl.dll",
-                      cdriver=True, allow_wsd=True,
-                      **{"def": "oss.FCL.sf.os.ossrv/ssl/libssl/eabi/libsslu.def"},
-                      defs=["MBEDTLS_CONFIG_FILE=<phorepoc_mbedtls_config.h>", "__SOFTFP=", "MBEDTLS_PLATFORM_MS_TIME_ALT",
-                            "PHOREPOC_LIBSSL_TRACE"],
-                      extra=sorted(os.path.relpath(p, OS_ROOT).replace(os.sep, "/") for p in __import__("glob").glob(
-                          os.path.join(OS_ROOT, "shim/build/_deps/mbedtls-src/library/*.c")))),
-    "ssl": dict(mmp="oss.FCL.sf.os.networkingsrv/networksecurity/tls/group/SSL.MMP",
-                **({} if os.environ.get("SSL_2010") else {
-                    "x32_mmp": os.path.join(OS_ROOT, "shim/phorepoc/ssl_mbed.mmp"),
-                    "def": "oss.FCL.sf.os.networkingsrv/networksecurity/tls/eabi/sslU.def",
-                    "x32_archives": ["thirdparty/x86/lib/libmbedtls.a"],
-                    "rom_data": ["resource\\ssl\\ca-bundle.crt=thirdparty/x86/res/ca-bundle.crt"]})),
-    # Goal U: Open C's libssl.dll (OpenSSL 0.9.8g ABI: QtNetwork, javassl, Internet Radio) with TLS 1.2/1.3 from
-    # `ssl` entry puts in the ROM (\resource\ssl\ca-bundle.crt). Clients name it `LIBRARY libssl_mbed.lib`.
-    "libssl_mbed": dict(mmp=os.path.join(OS_ROOT, "shim/phorepoc/libssl_mbed/libssl_mbed.mmp"), rom="libssl.dll",
-                        cdriver=True, allow_wsd=True,
-                        **{"def": "oss.FCL.sf.os.ossrv/ssl/libssl/eabi/libsslu.def"},
-                        defs=["__SOFTFP=", "PHOREPOC_LIBSSL_TRACE"],
-                        x32_archives=["thirdparty/x86/lib/libmbedtls.a"]),
-    # OURS: the OpenSSL 0.9.8 API smoke test over libssl_mbed (TCP + TLS to example.com:443, "[ssltest]" lines)
-    "ssltest": dict(mmp=os.path.join(OS_ROOT, "src/ssltest/ssltest.mmp"), defs=["__SOFTFP="]),
+    "ssl": dict(mmp="oss.FCL.sf.os.networkingsrv/networksecurity/tls/group/SSL.MMP"),   # the 2010 TLS; the tls layer swaps in ours (EXTEND)
+    # libssl.dll (OpenSSL 0.9.8 API) with modern TLS, ssl_ph / libssl_ph (ARM) and their tests: the tls repository (a layer)
     # tlsprovider.h includes tlsprovider_log.h, which lives beside the sources (abld put the source dir on the include
     "tlsprovider": dict(mmp="oss.FCL.sf.os.networkingsrv/networksecurity/tlsprovider/group/tlsprovider.mmp",
                         flags=["-I", os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.os.networkingsrv/networksecurity/tlsprovider/source/tlsprovider")]),
