@@ -11,7 +11,7 @@ Source fonts (all SIL Open Font License 1.1, third_party/fonts/noto/; nothing pr
     Big5 level 1 (traditional, 4808 common hanzi), KS X 1001 hangul + symbols and the CJK/fullwidth punctuation blocks,
     no hinting, no layout features: ~3 MB instead of 16 MB.
 Written under their own family names (the OFL reserved font name "Noto" is kept: unmodified-name subsets are allowed).
-The engine finds them by coverage (SkFontMgr_Custom::onMatchFamilyStyleCharacter, patched in tools/phorepoc-x86/cxxrt/
+The engine finds them by coverage (SkFontMgr_Custom::onMatchFamilyStyleCharacter, patched in the webkit-symbian repository's 
 webkit/patch.py); staged in resource/phweb/fonts (NOT under Resource/Fonts: the S60 font store stalled the boot, phone boot 675).
 """
 import os
