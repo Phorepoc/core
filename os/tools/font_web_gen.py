@@ -12,7 +12,7 @@ Source fonts (all SIL Open Font License 1.1, third_party/fonts/noto/; nothing pr
     no hinting, no layout features: ~3 MB instead of 16 MB.
 Written under their own family names (the OFL reserved font name "Noto" is kept: unmodified-name subsets are allowed).
 The engine finds them by coverage (SkFontMgr_Custom::onMatchFamilyStyleCharacter, patched in the webkit-symbian repository's 
-webkit/patch.py); staged in resource/phweb/fonts (NOT under Resource/Fonts: the S60 font store stalled the boot, phone boot 675).
+recipes/patch.py); staged in resource/phweb/fonts (NOT under Resource/Fonts: the S60 font store stalled the boot, phone boot 675).
 """
 import os
 import shutil
