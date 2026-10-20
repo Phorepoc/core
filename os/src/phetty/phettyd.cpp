@@ -35,6 +35,10 @@ struct TPendRead
 	const CPheSession* iOwner;
 	};
 
+// keys a tty holds while its shell is busy: a whole pasted command line (PhoneLab tty_write sends one at once; 64 lost the
+// middle of any line over ~64 characters)
+static const TInt KKeyQueue = 1024;
+
 class CTty : public CBase
 	{
 public:
@@ -63,7 +67,7 @@ public:
 	TBuf<32> iTitle;
 	TUint8 iRing[KPheTtyRing];
 	TUint32 iEnd;
-	TPheKey iKeys[64];
+	TPheKey iKeys[KKeyQueue];
 	TInt iKHead, iKCount;
 	RMessage2 iConMsg;
 	TBool iConPending;
@@ -285,12 +289,9 @@ void CTty::QueueKey(TUint aCode, TUint aMods)
 		iConMsg.Complete(r);
 		return;
 		}
-	if (iKCount == 64)
-		{
-		iKHead = (iKHead + 1) % 64;
-		iKCount--;
-		}
-	TInt at = (iKHead + iKCount) % 64;
+	if (iKCount == KKeyQueue)
+		return;                          // full: drop the NEWEST key (a pasted line loses its tail, never its middle)
+	TInt at = (iKHead + iKCount) % KKeyQueue;
 	iKeys[at].iCode = aCode;
 	iKeys[at].iMods = aMods;
 	iKCount++;
@@ -307,7 +308,7 @@ void CTty::ConRead(const RMessage2& aMsg, const CPheSession* aOwner)
 		{
 		TPheKeyBuf kb;
 		kb() = iKeys[iKHead];
-		iKHead = (iKHead + 1) % 64;
+		iKHead = (iKHead + 1) % KKeyQueue;
 		iKCount--;
 		TInt r = aMsg.Write(1, kb);
 		aMsg.Complete(r);
