@@ -1,0 +1,5 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
+// csxhelp/vorec.hlp.hrh: the bld.inf export of voicerec help (found via -I of its inc dir)
+#include <vorec.hlp.hrh>

@@ -1,0 +1,129 @@
+// OURS DIAGNOSTIC copy of the rcl3 COEPRIV.CPP (toolchain/shims/cone_diag): CCoeRedrawer::RunError panics CONE
+// 9000 - <the leave code> instead of CONE 9, to tell a leave during redraw from CCoeEnv::RunL's WSERV error (also 9).
+// Copyright (c) 1997-2009 Nokia Corporation and/or its subsidiary(-ies).
+// All rights reserved.
+// This component and the accompanying materials are made available
+// under the terms of "Eclipse Public License v1.0"
+// which accompanies this distribution, and is available
+// at the URL "http://www.eclipse.org/legal/epl-v10.html".
+//
+// Initial Contributors:
+// Nokia Corporation - initial contribution.
+//
+// Contributors:
+//
+// Description:
+//
+
+#include "coepriv.h"
+#include "coepanic.h"
+#include <coecntrl.h>	// class CCoeControl
+
+
+LOCAL_C TBool IsHandleValid(TUint aHandle)
+	{
+	return (aHandle&3)==0;
+	}
+
+//
+// CCoeView class
+//
+
+CCoeView* CCoeView::NewLC(MCoeView& aView)
+	{
+	CCoeView* self=new(ELeave) CCoeView(aView);
+	CleanupStack::PushL(self);
+	return self;
+	}
+
+CCoeView::CCoeView(MCoeView& aView) : iView(aView)
+	{
+	}
+
+
+
+//
+// class CCoeRedrawer
+//
+
+CCoeRedrawer::CCoeRedrawer(RWsSession& aWsSession)
+	:CActive(EActivePriorityRedrawEvents),
+	 iWsSession(aWsSession),
+	 iFirstRunL(ETrue)
+	{
+	CActiveScheduler::Add(this);
+	Queue();
+	}
+
+CCoeRedrawer::~CCoeRedrawer()
+	{
+	Cancel();
+	}
+
+void CCoeRedrawer::Queue()
+	{
+	iWsSession.RedrawReady(&iStatus);
+	SetActive();
+	}
+
+void CCoeRedrawer::RunL()
+	{
+    User::LeaveIfError( iStatus.Int() );
+
+	TWsRedrawEvent redraw;
+	iWsSession.GetRedraw(redraw);
+	const TUint handle = redraw.Handle();
+	__ASSERT_ALWAYS(IsHandleValid(handle), Panic(ECoePanicInvalidHandle)); 
+	CCoeControl* window=REINTERPRET_CAST(CCoeControl*,handle);
+	Queue();
+#if defined(_DEBUG)
+	if (window)
+		{
+		TRAPD(err, window->HandleRedrawEvent(redraw.Rect()));
+		__ASSERT_ALWAYS(err==KErrNone,Panic(ECoePanicLeaveWithoutTrapDuringRedraw));
+		}
+#else
+	if (window)
+		window->HandleRedrawEvent(redraw.Rect());
+#endif
+	iWsSession.Flush();	//flush the window-server client-side buffer *after* HandleRedrawEvent has done any drawing
+
+#if defined(USE_IH_RAISE_EVENT)
+	const TInt appStartupInstrumentationEventIdBase=CCoeEnv::Static()->AppStartupInstrumentationEventIdBase();
+	if (appStartupInstrumentationEventIdBase!=0)
+		{
+		IH_DECLARE( lInstrumentationHandler );
+		IH_CREATE( lInstrumentationHandler );
+		IH_RAISE_EVENT( lInstrumentationHandler, appStartupInstrumentationEventIdBase+MTestInstrumentation::TIDOffsetEndApplicationFirstRedraw );
+		IH_DELETE( lInstrumentationHandler );
+		}
+#endif
+	if (iFirstRunL)
+		{
+		iFirstRunL=EFalse;
+		}
+	}
+
+void CCoeRedrawer::DoCancel()
+	{
+	iWsSession.RedrawReadyCancel();
+	}
+
+/**
+  Log the error (debug builds) before panicking.
+  The panic code is consistent with that in CCoeEnv::RunL().
+ */
+TInt CCoeRedrawer::RunError( TInt aError )
+    {
+#ifdef _DEBUG
+    RDebug::Print( _L("CCoeRedrawer's iStatus = %d"), iStatus.Int() );
+#endif
+
+    User::Panic( _L("CONE"), 9000 - aError );   // OURS diag (2026-10-08): the redraw leave code, e.g. 9001 = KErrNotFound
+    (void)&Panic;
+    aError = KErrNone;
+
+    return aError;
+    }
+
+
