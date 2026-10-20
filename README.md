@@ -16,7 +16,8 @@ What every board shares is here. Hardware lives in the adaptation repos, which a
 
 Separate repositories, built in the same way when wanted: [mesa-symbian](https://github.com/Phorepoc/mesa-symbian)
 (OpenGL ES through Mesa, MIT) and [codecpack](https://github.com/Phorepoc/codecpack) (FFmpeg and OpenH264, LGPL/BSD;
-installed separately, never part of an image).
+installed separately, never part of an image), and [tls](https://github.com/Phorepoc/tls)
+(SSL.DLL and libssl.dll over mbedTLS, Apache-2.0; without it the 2010 TLS builds).
 
 ## Layout
 
