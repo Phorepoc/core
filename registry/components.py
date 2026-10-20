@@ -1457,61 +1457,7 @@ COMPONENTS = {
     "mixtest": dict(mmp=os.path.join(OS_ROOT, "src/mixtest/mixtest.mmp"), test=True),
     # OURS (audio V0): volume keys -> master volume (P&S KPhAudioMasterVolume, applied by the mixer on the real channel)
     "phvolume": dict(mmp=os.path.join(OS_ROOT, "src/phvolume/phvolume.mmp")),
-    # (tools/phorepoc-x86/cxxrt/: build_libstdcxx.sh, build_cxxtest.sh -> thirdparty/x86/cxxrt/*.a). eh=True: x32_exe_eh.ld keeps
-    # .eh_frame + the LSDAs in the code segment (eh_register.cpp hands them to libgcc's unwinder).
-    "cxx17test": dict(mmp=os.path.join(OS_ROOT, "tools/phorepoc-x86/cxxrt/group/cxx17test.mmp"), allow_wsd=True, static_ctors=True,
-                      eh=os.environ.get("CXX_EH", "0") == "1", rtti=True, defs=["__SOFTFP="], stack=0x14000,
-                      x32_archives=[f"thirdparty/x86/cxxrt/{a}.a" for a in ("cxx17test", "libstdc++", "libgcc_eh", "libgcc")]),
-    # tools/phorepoc-x86/cxxrt/{build_jsc,package_jsc,compat/build_phcompat}.sh + the Symbian shim phsym.cpp (compiled here).
-    "jsc": dict(mmp=os.path.join(OS_ROOT, "tools/phorepoc-x86/cxxrt/group/jsc.mmp"), allow_wsd=True, static_ctors=True,
-                rtti=False, defs=["__SOFTFP="], stack=0x100000,   # flexible-model PP::MaxUserThreadStack = 1 MB (a bigger one: Create -40 KErrTooBig)
-                x32_archives=[f"thirdparty/x86/cxxrt/{a}.a" for a in ("libjscmain", "libJavaScriptCore", "libWTF", "libbmalloc",
-                              "libicui18n", "libicuuc", "libicudata", "libphcompat", "libstdc++", "libgcc_eh", "libgcc")]),
-    # P1 page test (browser-plan.md section 9): WebCore + PAL + JSC + Skia + deps, prebuilt by build_webcore.sh + package_web.sh
-    "phwebtest": dict(mmp=os.path.join(OS_ROOT, "tools/phorepoc-x86/cxxrt/group/phwebtest.mmp"), allow_wsd=True, static_ctors=True,
-                      rtti=False, defs=["__SOFTFP="], stack=0x100000,
-                      # curl's CA bundle (CurlSSLHandleSymbian.cpp: z:/resource/ssl/ca-bundle.crt)
-                      rom_data=["resource\\ssl\\ca-bundle.crt=thirdparty/x86/res/ca-bundle.crt"],
-                      x32_archives=[f"thirdparty/x86/cxxrt/web/lib{a}.a" for a in (
-                          "phwebmain", "WebCore", "PAL", "JavaScriptCore", "WTF", "bmalloc", "Skia", "freetype", "harfbuzz-icu", "harfbuzz",
-                          "xslt", "xml2", "sqlite3", "webpdemux", "webp", "sharpyuv", "jpeg", "curl", "ssl", "crypto", "icui18n", "icuuc", "icudata")]
-                      + [f"thirdparty/x86/lib/{a}.a" for a in ("libpng", "libnspsl")]
-                      + [f"thirdparty/x86/cxxrt/web/libz.a"]
-                      + [f"thirdparty/x86/cxxrt/{a}.a" for a in ("libphcompat", "libstdc++", "libgcc_eh", "libgcc")]),
-    # P2 (browser-p2-brctl-map.md): the BrCtl facade over WebKit -- OURS, built to the old engine's ROM name browserengine.dll
-    # (BrowserNG / Messaging / Help load it by name, CreateBrowserControlL = ordinal 1). `ph component build phebrctl` REPLACES the old
-    # engine's image (ph component build browserengine restores it). Engine archives: build_webcore.sh phengine + package_web.sh.
-    "phebrctl": dict(mmp=os.path.join(OS_ROOT, "src/phebrctl/group/phebrctl.mmp"), rom="browserengine.dll",
-                     **{"def": os.path.join(OS_ROOT, "src/phebrctl/eabi/browserengineu.def")},
-                     allow_wsd=True, static_ctors=True, rtti=False, defs=["__SOFTFP="],
-                     x32_archives=[f"thirdparty/x86/cxxrt/web/lib{a}.a" for a in (
-                         "phengine", "WebCore", "PAL", "JavaScriptCore", "WTF", "bmalloc", "Skia", "freetype", "harfbuzz-icu", "harfbuzz",
-                         "xslt", "xml2", "sqlite3", "webpdemux", "webp", "sharpyuv", "jpeg", "curl", "ssl", "crypto", "icui18n", "icuuc", "icudata")]
-                     + [f"thirdparty/x86/lib/{a}.a" for a in ("libpng", "libnspsl")]
-                     + ["thirdparty/x86/cxxrt/web/libz.a"]
-                     + [f"thirdparty/x86/cxxrt/{a}.a" for a in ("libphcompat", "libstdc++", "libgcc_eh", "libgcc")]),
-    # JSC with the JIT; tools/phorepoc-x86/cxxrt/drun-arm.sh builds every archive into thirdparty/arm/)
-    "phwebtest_arm": dict(mmp=os.path.join(OS_ROOT, "tools/phorepoc-x86/cxxrt/group/phwebtest.mmp"), rom="phwebtest.exe", device=True,
-                          allow_wsd=True, static_ctors=True, rtti=False, defs=["__SOFTFP="], stack=0x100000,
-                          rom_data=["resource\\ssl\\ca-bundle.crt=thirdparty/x86/res/ca-bundle.crt"],
-                          arm_archives=[f"thirdparty/arm/cxxrt/web/lib{a}.a" for a in (
-                              "phwebmain", "WebCore", "PAL", "JavaScriptCore", "WTF", "bmalloc", "Skia", "freetype", "harfbuzz-icu", "harfbuzz",
-                              "xslt", "xml2", "sqlite3", "webpdemux", "webp", "sharpyuv", "jpeg", "curl", "ssl", "crypto", "icui18n", "icuuc", "icudata")]
-                          + [f"thirdparty/arm/lib/{a}.a" for a in ("libpng", "libnspsl")]
-                          + ["thirdparty/arm/cxxrt/web/libz.a"]
-                          + [f"thirdparty/arm/cxxrt/{a}.a" for a in ("libphcompat", "libstdc++")]),   # (libgcc: the device link's own -- the toolchain's v7 one has MOVW relocations)
-    # drun-arm.sh). rom=browserengine.dll REPLACES the old engine in an ROM_ARCH=arm ROM; `device_rom` = it ships in every ARM
-    # ROM (a plain `device` key only ships as the SSM_TEST boot test). Carries the curl CA bundle itself (phwebtest_arm is not in the ROM).
-    "phebrctl_arm": dict(mmp=os.path.join(OS_ROOT, "src/phebrctl/group/phebrctl.mmp"), rom="browserengine.dll", device=True, device_rom=True,
-                         **{"def": os.path.join(OS_ROOT, "src/phebrctl/eabi/browserengineu.def")},
-                         allow_wsd=True, static_ctors=True, rtti=False, defs=["__SOFTFP="],
-                         rom_data=["resource\\ssl\\ca-bundle.crt=thirdparty/x86/res/ca-bundle.crt"],
-                         arm_archives=[f"thirdparty/arm/cxxrt/web/lib{a}.a" for a in (
-                             "phengine", "WebCore", "PAL", "JavaScriptCore", "WTF", "bmalloc", "Skia", "freetype", "harfbuzz-icu", "harfbuzz",
-                             "xslt", "xml2", "sqlite3", "webpdemux", "webp", "sharpyuv", "jpeg", "curl", "ssl", "crypto", "icui18n", "icuuc", "icudata")]
-                         + [f"thirdparty/arm/lib/{a}.a" for a in ("libpng", "libnspsl")]
-                         + ["thirdparty/arm/cxxrt/web/libz.a"]
-                         + [f"thirdparty/arm/cxxrt/{a}.a" for a in ("libphcompat", "libstdc++")]),
+    # the C++ runtime (cxx17test) and the browser engine (jsc, phwebtest, phebrctl): the cxxrt and webkit-symbian repositories (layers)
     # --- MP3 (audio.md "Codec policy"): the S60 MP3 controller (advanced audio controller family) -> DevSound " MP3"
     # -> OUR MP3 HW device -> the release's Aricent MP3 plug-in -> OUR decoder library (minimp3, CC0)
     "mp3audioplaycontrollerplugin": dict(mmp="oss.FCL.sf.mw.mmmw/mmfenh/advancedaudiocontroller/audiocontrollerpluginsvariant/mp3audioplaycontroller/Group/MP3AudioPlayControllerPlugin.mmp"),
