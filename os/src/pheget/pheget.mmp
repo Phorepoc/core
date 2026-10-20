@@ -1,0 +1,17 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
+// pheget.mmp -- OURS: the download app's engine + command line (indexes -> download -> SHA-256 -> silent install)
+TARGET			pheget.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157F8
+CAPABILITY		TrustedUI NetworkServices
+VENDORID		0
+EPOCHEAPSIZE	0x10000 0x1000000
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+USERINCLUDE		.
+SOURCEPATH		.
+SOURCE			pheget.cpp pheget_engine.cpp phejson.cpp
+LIBRARY			euser.lib efsrv.lib bafl.lib esock.lib http.lib inetprotutil.lib hash.lib swinstcli.lib

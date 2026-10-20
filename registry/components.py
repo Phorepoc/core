@@ -928,6 +928,9 @@ COMPONENTS = {
     "cmsetup": dict(mmp=os.path.join(OS_ROOT, "src/cmsetup/cmsetup.mmp"), flags=["-I", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/dbcreator/inc"), "-I", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/cmmanager/cmmgr/database/inc")]),
     "ntpsync": dict(mmp=os.path.join(OS_ROOT, "src/ntpsync/ntpsync.mmp")),
     "sisinst": dict(mmp=os.path.join(OS_ROOT, "src/sisinst/sisinst.mmp")),
+    # OURS: the download app (engine + command line): indexes -> download -> SHA-256 -> silent install. The board
+    # adaptation adds z:\resource\phorepoc\device.txt (board + arch) through EXTEND.
+    "pheget": dict(mmp=os.path.join(OS_ROOT, "src/pheget/pheget.mmp")),
     "tonetest": dict(mmp=os.path.join(OS_ROOT, "src/tonetest/tonetest.mmp"), test=True),
     # --- vector graphics: what the default skin's backgrounds + every real icon need (next: vgrenderer,
     "svgengine": dict(mmp="oss.FCL.sf.mw.svgt/svgtopt/SVG/SVGEngine/group/SVGEngine.mmp",
