@@ -14,6 +14,10 @@ What every board shares is here. Hardware lives in the adaptation repos, which a
 | [adaptation-a64](https://github.com/Phorepoc/adaptation-a64) | the Allwinner A64 SoC drivers |
 | [adaptation-pinephone](https://github.com/Phorepoc/adaptation-pinephone) | the PINE64 PinePhone |
 
+Separate repositories, built in the same way when wanted: [mesa-symbian](https://github.com/Phorepoc/mesa-symbian)
+(OpenGL ES through Mesa, MIT) and [codecpack](https://github.com/Phorepoc/codecpack) (FFmpeg and OpenH264, LGPL/BSD;
+installed separately, never part of an image).
+
 ## Layout
 
 ```
@@ -22,10 +26,10 @@ os/
   toolchain/{overlay,kinc,generated,dll_rt,euser_dll}   headers and runtime pieces every image builds with
   src/                   our own components (pheshell, phetty, phgl, phvg ...) and their tests
   shim/                  stand-in headers for interfaces the 2010 release did not ship
-  tools/                 OS data the ROM recipe reads (central repository files), the Mesa and third-party ports
+  tools/                 OS data the ROM recipe reads (central repository files), third-party build recipes
 registry/
   components.py          the registry: one entry per component, built from its real .mmp
-  components_*.py        more entries: apps, codec pack, development menu, phetty, Qt 4.8, Symbian^4
+  components_*.py        more entries: apps, development menu, phetty, Qt 4.8, Symbian^4
   rom_heap.tsv           heap and stack sizes of the ROM executables
   mif_dirs.txt           the directories whose icons go into .mif files
 sources.lock, fetch.sh   the Symbian source: pinned commits of the Phorepoc forks, fetched into symbian/
