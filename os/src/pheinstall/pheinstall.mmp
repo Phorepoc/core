@@ -1,0 +1,16 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
+// pheinstall.mmp -- install a SIS file silently (pheinstall.cpp): the device half of `ph package install`.
+// TrustedUI: what RSWInstSilentLauncher::SilentInstall requires of its caller.
+TARGET			pheinstall.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157F8
+CAPABILITY		TrustedUI
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			pheinstall.cpp
+LIBRARY			euser.lib swinstcli.lib
