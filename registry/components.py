@@ -60,7 +60,7 @@ BUILTIN = {
 _SFVG = "oss.FCL.sf.os.graphics/openvg/openvgrefimplementation/sfopenvg/group/"
 _OENV = "oss.FCL.sf.os.ossrv/genericopenlibs/openenvcore/"
 _ALF = "oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/"
-# ALF_LOG=1 ./ph arm alfrenderstage alfappservercore alfdecoderserverclient_real: the release's own RDebug::Print logging
+# ALF_LOG=1 ph component build -arch arm alfrenderstage alfappservercore alfdecoderserverclient_real: the release's own RDebug::Print logging
 # (alflogger.h _ALF_LOGGING) -- "CAlfRenderStage: ready to rock", connect/bridge steps; per-frame lines too, so first boots only
 _ALFLOG = dict(defs=["_ALF_LOGGING"]) if os.environ.get("ALF_LOG") == "1" else {}
 _ALFRC = os.environ.get("ALF_RC", "c")
@@ -901,14 +901,14 @@ COMPONENTS = {
     # client libs the ROM lacks: mediaclientvideo, mmfcontrollerframework, mmfstdsourceandsinkplugin, mmfaudiooutput ...)
     "phevidctl": dict(mmp=os.path.join(OS_ROOT, "src/phevidctl/phevidctl.mmp")),
     # OURS (V4 audio): the LGPL FFmpeg AAC decoder as its OWN replaceable DLL (phevidctl loads it with RLibrary; never static-linked
-    # into the controller). Archives: ARCH=arm bash tools/codecpack/ffmpeg_media.sh (NEON build: RECONF=1 FFASM=1). ARM_VFP=1 ./ph arm pheffmpeg
+    # into the controller). Archives: ARCH=arm bash tools/codecpack/ffmpeg_media.sh (NEON build: RECONF=1 FFASM=1). ARM_VFP=1 ph component build -arch arm pheffmpeg
     "pheffmpeg": dict(mmp=os.path.join(OS_ROOT, "src/pheffmpeg/pheffmpeg.mmp"), device=True, cdriver=True, allow_wsd=True, static_ctors=True,
                       rtti=False, defs=["__SOFTFP="], vfp=True, rom="pheffmpeg.dll", device_rom=True,
                       **{"def": os.path.join(OS_ROOT, "src/pheffmpeg/pheffmpeg.def")},
                       arm_archives=[f".codecpack/media-arm/lib/{a}.a" for a in ("libavcodec", "libswresample", "libavutil")]),
     # FFmpeg x32 media archives (ARCH=x32 bash tools/codecpack/ffmpeg_media.sh) as the replaceable LGPL DLL; phevdec_sw = the
     # phevdec decoder device with PHE_SW (calls pheffmpeg's PheVid* ordinals), built to the same ROM name phevdec.dll. x32 only
-    # (`./ph build pheffmpeg_x32 phevdec_sw`); an ARM ROM keeps the VE phevdec.
+    # (`ph component build pheffmpeg_x32 phevdec_sw`); an ARM ROM keeps the VE phevdec.
     "pheffmpeg_x32": dict(mmp=os.path.join(OS_ROOT, "src/pheffmpeg/pheffmpeg.mmp"), cdriver=True, allow_wsd=True, static_ctors=True,
                           rtti=False, rom="pheffmpeg.dll", **{"def": os.path.join(OS_ROOT, "src/pheffmpeg/pheffmpeg.def")},
                           x32_archives=[".codecpack/media-x32/lib/libavcodec.a", ".codecpack/media-x32-c/lib/libswresample.a", ".codecpack/media-x32/lib/libavutil.a"]   # swresample from the C-only build (ARCH=x32 ffmpeg_media.sh without FFASM, copied to media-x32-c): its asm faulted under VirtualBox
@@ -917,7 +917,7 @@ COMPONENTS = {
                        rom_data=["resource\\phevde\\vmain.mp4=.vde-test/vmain.mp4",
                                  "resource\\phevde\\vbase.mp4=.vde-test/vbase.mp4"]),
     # FFmpeg media-set test (ffmpeg-vlc-plan.md F1): libavformat + libavcodec (LGPL archives from tools/codecpack/ffmpeg_media.sh)
-    #   ARCH=arm bash tools/codecpack/ffmpeg_media.sh; bash tools/codecpack/make_fft_samples.sh; ARM_VFP=1 ./ph arm phefftest
+    #   ARCH=arm bash tools/codecpack/ffmpeg_media.sh; bash tools/codecpack/make_fft_samples.sh; ARM_VFP=1 ph component build -arch arm phefftest
     "phefftest": dict(mmp=os.path.join(OS_ROOT, "src/phefftest/phefftest.mmp"), test=True, device=True, cdriver=True, allow_wsd=True,
                       static_ctors=True, rtti=False, defs=["__SOFTFP="], vfp=True, stack=0x40000,
                       arm_archives=[f".codecpack/media-arm/lib/{a}.a" for a in ("libavformat", "libavcodec", "libswscale", "libswresample", "libavutil")],
@@ -1493,8 +1493,8 @@ COMPONENTS = {
                       + [f"thirdparty/x86/cxxrt/web/libz.a"]
                       + [f"thirdparty/x86/cxxrt/{a}.a" for a in ("libphcompat", "libstdc++", "libgcc_eh", "libgcc")]),
     # P2 (browser-p2-brctl-map.md): the BrCtl facade over WebKit -- OURS, built to the old engine's ROM name browserengine.dll
-    # (BrowserNG / Messaging / Help load it by name, CreateBrowserControlL = ordinal 1). `./ph build phebrctl` REPLACES the old
-    # engine's image (./ph build browserengine restores it). Engine archives: build_webcore.sh phengine + package_web.sh.
+    # (BrowserNG / Messaging / Help load it by name, CreateBrowserControlL = ordinal 1). `ph component build phebrctl` REPLACES the old
+    # engine's image (ph component build browserengine restores it). Engine archives: build_webcore.sh phengine + package_web.sh.
     "phebrctl": dict(mmp=os.path.join(OS_ROOT, "src/phebrctl/group/phebrctl.mmp"), rom="browserengine.dll",
                      **{"def": os.path.join(OS_ROOT, "src/phebrctl/eabi/browserengineu.def")},
                      allow_wsd=True, static_ctors=True, rtti=False, defs=["__SOFTFP="],

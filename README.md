@@ -45,22 +45,20 @@ The pdk finds this repository through `PHOREPOC_CORE` (default: the `core` folde
 
 ## Building
 
-From the pdk checkout, for the PC image:
+With the pdk's `ph` (its [command reference](https://github.com/Phorepoc/pdk/tree/main/docs/ph)), for the PC image:
 
 ```sh
-go build -o ph ./cmd/ph
-export PHOREPOC_ADAPTATIONS=../adaptation-x86-64:../adaptation-pc
-./ph fetch                  # Symbian source -> core/symbian/
-./ph export --all           # epoc32/include tree (runs casefix too)
-./ph mbg --all              # icon id headers
-./ph rsc --all              # resources (.rsc + .rsg headers)
-./ph all                    # every component -> core/build/x32img/
-./ph rom                    # the ROM
-./ph help
+ph source fetch                        # Symbian source -> core/symbian/
+ph source export -a                    # the include tree (and the case links)
+ph source mbg -a                       # icon id headers
+ph component resources -A -b pc        # resources (.rsc + .rsg headers)
+ph component build -A -b pc            # every component -> core/build/x32img/
+ph image rom -b pc                     # the ROM
 ```
 
-Every command runs in the toolchain container (or directly when already inside one). Build output is deterministic:
-the same inputs give the same bytes, which `ph tests` checks against another build.
+`-b pc` builds core with the PC's adaptation repositories (`ph board list`). Every command runs in the toolchain
+container (or directly when already inside one). Build output is deterministic: the same inputs give the same bytes,
+which `ph image compare` checks against another build.
 
 ## Licence
 
