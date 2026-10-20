@@ -1,4 +1,4 @@
-build/
-symbian/
+/build/
+/symbian/
 __pycache__/
 .work/

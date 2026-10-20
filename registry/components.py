@@ -2658,8 +2658,12 @@ COMPONENTS.update(_DEVMENU.COMPONENTS)
 
 # The adaptations built with core (PHOREPOC_ADAPTATIONS; their registry/ dirs are on sys.path, paths.py): each one's
 # registry/components_<name>.py adds the board's own components. A key may not be defined twice.
+# Its optional EXTEND table adds the board's hardware to a core component without redefining it:
+# {key: dict(drop=[source basenames], extra=[OS paths], ...)} -- list values are appended, others set
+# (phgl: adaptation-a64 swaps the null GPU channel for the Mali one).
 import importlib as _il  # noqa: E402
 import paths as _P  # noqa: E402
+_EXTEND = []
 for _reg in _P.ADAPTATION_REGISTRIES:
     for _f in sorted(os.listdir(_reg)):
         if _f.startswith("components_") and _f.endswith(".py"):
@@ -2667,6 +2671,12 @@ for _reg in _P.ADAPTATION_REGISTRIES:
             for _k in _m.COMPONENTS:
                 assert _k not in COMPONENTS, f"{_reg}/{_f}: key already registered: {_k}"
             COMPONENTS.update(_m.COMPONENTS)
+            _EXTEND += [(f"{_reg}/{_f}", _k, _v) for _k, _v in getattr(_m, "EXTEND", {}).items()]
+for _src, _k, _v in _EXTEND:
+    assert _k in COMPONENTS, f"{_src}: EXTEND of an unknown component: {_k}"
+    _c = COMPONENTS[_k] = dict(COMPONENTS[_k])
+    for _field, _val in _v.items():
+        _c[_field] = list(_c.get(_field) or []) + list(_val) if isinstance(_val, list) else _val
 
 # Staged as sflibopenvgrefimpl.dll at ALF>=s2 in place of the default one.
 if _ALFTRACE:

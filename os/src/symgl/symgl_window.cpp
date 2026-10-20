@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: EPL-1.0
 
 // symgl_window.cpp -- OURS (2026-10-09, GPU plan G2/G5): the Symbian side of Mesa's EGL window surfaces
-// (tools/mesa/symbian/include/symgl_native.h is the seam; egl_symbian.c + sym_frontend.c call it).
+// (symgl_native.h is the seam; mesa-symbian's egl_symbian.c + sym_frontend.c call it).
 //
 // NGA path (the window server composes surfaces): the window gets a SurfaceManager surface of SYMGL_NBUF buffers as
 // its BACKGROUND SURFACE (the recipe of adapt.SimulatorGraphics guestegl.cpp eglCreateWindowSurface/eglSwapBuffers).
