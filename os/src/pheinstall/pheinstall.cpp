@@ -9,7 +9,8 @@
 // RSWInstSilentLauncher::SilentInstall (SwiUI, the release's installer launcher API): no dialogs; upgrades,
 // overwrites, packages that are not signed by a trusted root and the capabilities the package asks for are allowed
 // (Phorepoc's install server decides what an untrusted package may do: swipolicy.ini). The target drive defaults
-// to C:. Prints one "[pheinstall] ..." line on the debug log and exits with the installer's result (0 = installed).
+// to C:. Prints "[pheinstall] ..." lines on the debug log (the last: "installed" or "failed <code>") and exits with the
+// installer's result (0 = installed).
 #include <e32base.h>
 #include <e32debug.h>
 #include <swinstapi.h>
@@ -35,11 +36,21 @@ static TInt InstallL(const TDesC& aFile, TChar aDrive)
 	TInstallOptionsPckg pckg(opt);
 
 	RSWInstSilentLauncher launcher;
-	User::LeaveIfError(launcher.Connect());
+	TInt r = launcher.Connect();
+	RDebug::Printf("[pheinstall] installer connect %d", r);
+	User::LeaveIfError(r);
 	CleanupClosePushL(launcher);
-	TInt r = launcher.SilentInstall(aFile, pckg);
+	r = launcher.SilentInstall(aFile, pckg);
 	CleanupStack::PopAndDestroy(&launcher);
 	return r;
+	}
+
+// the debug log carries 8-bit RDebug::Printf lines (a 16-bit RDebug::Print does not reach it)
+static void Report(const TDesC& aFile, const char* aWhat, TInt aValue)
+	{
+	TBuf8<256> f;
+	f.Copy(aFile.Left(255));
+	RDebug::Printf("[pheinstall] %s: %s %d", f.PtrZ(), aWhat, aValue);
 	}
 
 TInt E32Main()
@@ -57,6 +68,7 @@ TInt E32Main()
 		drive = rest[0];
 		drive.UpperCase();
 		}
+	Report(cmd, "command line, length", cmd.Length());
 	TInt err = KErrArgument;
 	if (file.Length())
 		{
@@ -66,9 +78,9 @@ TInt E32Main()
 			err = r;
 		}
 	if (err)
-		RDebug::Print(_L("[pheinstall] %S: failed %d"), &file, err);
+		Report(file, "failed", err);
 	else
-		RDebug::Print(_L("[pheinstall] %S: installed on %c:"), &file, (TUint)drive);
+		Report(file, "installed, drive", (TInt)(TUint)drive);
 	delete cleanup;
 	return err;
 	}
