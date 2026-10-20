@@ -1,5 +1,5 @@
 /*
- * PasteboardSymbian.cpp -- OURS (Phorepoc, docs/phorepoc/browser-plan.md section 9): WebCore::Pasteboard for the Symbian port, the generic
+ * PasteboardSymbian.cpp -- OURS (Phorepoc): WebCore:Pasteboard for the Symbian port, the generic
  * shape of Pasteboard.h (context only, no platform members). A process-wide store of typed strings (text/plain, text/html,
  * text/uri-list): copy and paste work inside the browser. The system clipboard (CClipboard, the Symbian side) plugs in here later.
  */

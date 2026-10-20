@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// pheshellsel.cpp -- OURS: the boot-time UI shell selector (docs/phorepoc/devmenu.md "UI shell").
+// pheshellsel.cpp -- OURS: the boot-time UI shell selector.
 // SSM's security-check list starts this in the idle slot (r_cmd_idle, deferred wait-for-signal, restart monitored) instead of
 // ailaunch.exe. It reads the developer-menu repository (src/phedevmenu/phedevmenu.h): key 6 = the shells this image carries
 // (SHELLS= at build time), key 1 = the user's choice, and starts that shell:

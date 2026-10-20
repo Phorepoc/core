@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// vgegltest.cpp -- OURS: OpenVG O1 test (docs/phorepoc/openvg-plan.md). Creates a VG context through the STANDARD
+// vgegltest.cpp -- OURS: OpenVG O1 test. Creates a VG context through the STANDARD
 // libEGL (eglBindAPI(EGL_OPENVG_API), pbuffer surface) + libOpenVG/libOpenVGU, draws a filled cubic path, a linear
 // gradient rect (vguRect) and an alpha circle, reads the pixels back and prints "PH: vg" lines with a checksum.
 // The same drawing is then made through the reference implementation DIRECTLY (libegl_sw.dll / libopenvg_sw.dll /

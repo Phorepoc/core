@@ -23,7 +23,6 @@
 //  - a certificate that fails verification: attended dialog mode asks the user through the S60 security dialog
 //    (MSecurityDialog::ServerAuthenticationFailure), as the 2010 TLS provider does; unattended mode refuses it.
 // Trust anchors: z:\resource\ssl\ca-bundle.crt (the Mozilla roots, ROM data) -- the CACerts.dat bridge is P2.
-// Docs: docs/phorepoc/x86-64-port.md (X4.101-X4.103).
 #define MBEDTLS_CONFIG_FILE "phorepoc_mbedtls_config.h"
 
 #include <e32base.h>

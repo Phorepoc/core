@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// phvolume.cpp -- OURS (audio V0, docs/phorepoc/audio-mixing-plan.md 3.3): the volume-key service.
+// phvolume.cpp -- OURS (audio V0, 3.3): the volume-key service.
 //
 // The KeyPublisherPlugin (a WSERV animation DLL, loaded by SysAp) CONSUMES the hardware volume keys and publishes them
 // to Publish&Subscribe (category KPSUidMediaKeysEventNotifier, key KMediaKeysVolumeKeyEvent): up/down x clicked,

@@ -1,5 +1,5 @@
 /*
- * PhEngineApi.h -- OURS (Phorepoc, docs/phorepoc/browser-p2-brctl-map.md): the C seam between the BrCtl facade (src/phebrctl, Symbian
+ * PhEngineApi.h -- OURS (Phorepoc): the C seam between the BrCtl facade (src/phebrctl, Symbian
  * C++ on the real e32 include line) and the WebKit engine (PhEngine.cpp, WebCore on the pure Open C line). Plain C, POD arguments,
  * UTF-16 strings (a Symbian TDesC16 goes straight through). This header must include neither e32 nor WebKit headers.
  *

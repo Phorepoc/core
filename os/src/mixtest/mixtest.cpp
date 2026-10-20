@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// mixtest.cpp -- OURS (audio A0/Q0, docs/phorepoc/audio-mixing-plan.md 1.3): TWO audio clients at once.
+// mixtest.cpp -- OURS (audio A0/Q0, 1.3): TWO audio clients at once.
 //
 //   thread "mixmusic": CMdaAudioOutputStream, a 440 Hz sine in 4 KB buffers for ~6 s     (the "music" client)
 //   thread "mixfx"   : CMdaAudioPlayerUtility on a 880 Hz WAV, 0.4 s long, replayed once a second, 5 times (the "effects")

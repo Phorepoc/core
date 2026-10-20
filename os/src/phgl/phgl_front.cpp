@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: EPL-1.0
 
 // phgl_front.cpp -- OURS: the lazy binding of a Khronos ABI front (libEGL.dll / libGLESv2.dll / libGLESv1_CM.dll)
-// to the Mesa backend, phgl.dll (the vendor backend is bound at load, docs/phorepoc/
-// gpu-driver-architecture.md). phgl.dll is loaded once per process, on the first call of a front function that
+// to the Mesa backend, phgl.dll (the vendor backend is bound at load). phgl.dll is loaded once per process, on the first call of a front function that
 // needs it (that thread -- the process's GL thread -- keeps the library handle for the life of the process).
 #include <e32std.h>
 #include <e32debug.h>

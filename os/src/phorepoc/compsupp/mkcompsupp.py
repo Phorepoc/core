@@ -6,7 +6,7 @@
 drtaeabi.dll is the DLL every SDK-built Symbian application imports for the EHABI unwinder, the C++ exception
 semantics (__cxa_*), RTTI, the __aeabi_* integer/memory helpers and TCppRTExceptionsGlobals. The release builds it with
 RVCT: ARM's reference EHABI sources (kernel/eka/compsupp/symaehabi, "ARM EABI LICENCE.txt") plus RVCT's proprietary
-libraries (c_5.l / cpprt_5.l). Here the same sources are built with GCC (docs/phorepoc/compsupp-runtime.md):
+libraries (c_5.l / cpprt_5.l). Here the same sources are built with GCC:
 
   symaehabi/*  <- baseline symaehabi/*, copied and edited by EXACT replacements (each must match exactly once, so a moved
                   anchor fails loudly, as mkswi.py does). What changes is only what RVCT's compiler accepted and GCC does not:

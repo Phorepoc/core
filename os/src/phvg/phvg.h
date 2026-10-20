@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: EPL-1.0 */
 
 // phvg.h -- OURS: the interface between the OpenVG reference implementation (sflibopenvgrefimpl, riPhvg.cpp) and the
-// GPU engine DLL phvg.dll (docs/phorepoc/openvg-plan.md, O2). The engine is surface-agnostic: it never sees an RI
+// GPU engine DLL phvg.dll (O2). The engine is surface-agnostic: it never sees an RI
 // object, only an opaque cookie (the RI Surface*) and plain pixel buffers (RGBA8, PREMULTIPLIED, sRGB-encoded values,
 // row 0 = surface y 0, exactly the RI's own row order).
 #ifndef PHVG_H

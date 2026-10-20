@@ -3,7 +3,7 @@
 
 // libopenvg.mmp -- OURS: libOpenVG.dll, the real Symbian^3 name of the OpenVG 1.1 DLL (frozen ABI: openvginterface/eabi/
 // libopenvg11u.def), so consumers linking libOpenVG.lib (HWVG, rendervg10, nvgdecoder) resolve unchanged. Milestone O1
-// (docs/phorepoc/openvg-plan.md): still SOFTWARE -- it is the 2010 libopenvg_sw facade (sfopenvg/openvg/openvg.cpp,
+//: still SOFTWARE -- it is the 2010 libopenvg_sw facade (sfopenvg/openvg/openvg.cpp,
 // unmodified) over sflibopenvgrefimpl, the Khronos reference implementation. The _sw twin stays for the icon pipeline.
 #include <vg/openvguids.hrh>
 

@@ -1,7 +1,7 @@
 /* Copyright The Phorepoc Authors
  * SPDX-License-Identifier: EPL-1.0 */
 
-// ph_mixsc.h -- OURS (audio Q0, docs/phorepoc/audio-mixing-plan.md 2.1/2.2). FORCE-INCLUDED (-include) into every
+// ph_mixsc.h -- OURS (audio Q0, 2.1/2.2). FORCE-INCLUDED (-include) into every
 // translation unit of mdasoundadapter.dll. It declares RMixSoundSc, a virtual SoundSc channel with the exact RSoundSc
 // call surface the 2010 adapter uses, then #defines RSoundSc to it, so the UNMODIFIED mdasoundadapterbody.cpp opens
 // "its" TX unit 0 / RX unit 4 on the userland mixer (phmixer.cpp) instead of the exclusive kernel LDD channel. Every

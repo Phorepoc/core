@@ -1,7 +1,7 @@
 /* Copyright The Phorepoc Authors
  * SPDX-License-Identifier: EPL-1.0 */
 
-// nokiatoneseq.h -- OURS (PHOREPOC board delta, docs/phorepoc/audio.md "Key clicks"): Nokia tone sequences -> the
+// nokiatoneseq.h -- OURS (PHOREPOC board delta): Nokia tone sequences -> the
 // reference tone HW device's own SQNC format.
 //
 // Avkon's system sounds (the key click, confirmation/warning/error tones, the network tones: AvkonSystemSounds.ra)

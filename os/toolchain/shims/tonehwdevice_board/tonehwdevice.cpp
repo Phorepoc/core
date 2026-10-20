@@ -22,7 +22,7 @@
 #include <ecom/implementationproxy.h> // For making it ECom plugin
 #include "tonehwdevice.h"
 
-// PHOREPOC board delta (docs/phorepoc/audio.md "Key clicks"): the release's reference tone HW device, plus Nokia
+// PHOREPOC board delta: the release's reference tone HW device, plus Nokia
 // tone sequences -- Avkon's system sounds (key click, warning, confirmation, network tones) are Nokia byte-coded
 // sequences, which this reference plug-in rejected ("only supports its own sequence format"). ReadToneData converts
 // one to the SQNC format (nokiatoneseq.cpp); the converted copy is owned through the thread's TLS slot (one tone

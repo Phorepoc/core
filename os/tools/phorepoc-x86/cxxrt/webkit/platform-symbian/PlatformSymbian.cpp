@@ -1,5 +1,5 @@
 /*
- * PlatformSymbian.cpp -- OURS (Phorepoc, docs/phorepoc/browser-plan.md section 9): the small WebCore platform hooks of the Symbian port.
+ * PlatformSymbian.cpp -- OURS (Phorepoc): the small WebCore platform hooks of the Symbian port.
  *   SystemFontDatabase   system-font shorthands (`font: menu`, ...): the S60 UI's sans-serif at 16px (GLib asks GSettings; we have
  *                        no settings service yet -- the theme's font size comes later).
  *   MIMETypeRegistry     extension <-> type table (no system MIME database on Symbian; the apparc recognisers answer by content,

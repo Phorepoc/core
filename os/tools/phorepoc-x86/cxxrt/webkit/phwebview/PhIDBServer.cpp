@@ -1,7 +1,7 @@
 /*
 
  * PhIDBServer.cpp -- OURS (Phorepoc), adapted from WebKitLegacy's InProcessIDBServer.cpp at tag wpewebkit-2.54.1
- * (in-process IndexedDB for the single-process WebCore embedding: docs/phorepoc/browser-plan.md section 9). Original notice follows.
+ * (in-process IndexedDB for the single-process WebCore embedding). Original notice follows.
  *
  * Copyright (C) 2015 Apple Inc. All rights reserved.
  *

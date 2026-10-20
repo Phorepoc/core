@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// phmixer.cpp -- OURS (audio Q0, docs/phorepoc/audio-mixing-plan.md section 2): the userland mixer behind RMixSoundSc.
+// phmixer.cpp -- OURS (audio Q0): the userland mixer behind RMixSoundSc.
 //
 // Every RMdaDevSound::Open in the audio server process opens a virtual TX channel here (ph_mixsc.h swaps RSoundSc for
 // RMixSoundSc in the unmodified 2010 mdasoundadapter). A mixer thread sums all channels into 48 kHz stereo S16 and plays

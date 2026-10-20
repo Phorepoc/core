@@ -1,5 +1,5 @@
 /*
- * PhEngine.cpp -- OURS (Phorepoc, docs/phorepoc/browser-p2-brctl-map.md): the WebKit engine behind the BrCtl facade (src/phebrctl).
+ * PhEngine.cpp -- OURS (Phorepoc): the WebKit engine behind the BrCtl facade (src/phebrctl).
  * The in-process WebCore embedding of phwebtest.cpp turned into a service: one thread (ph_eng_main) owns every WebCore object; the
  * facade (UI thread) talks to it through the C API in PhEngineApi.h -- a command queue in, an event queue + a pixel buffer out.
  * Each view is a Page with its own frame loader client; navigation events are derived from the loader (policy decisions, the

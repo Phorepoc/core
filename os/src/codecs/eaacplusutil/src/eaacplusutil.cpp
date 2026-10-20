@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// eaacplusutil.cpp -- OURS (the optional AAC codec pack, docs/phorepoc/audio.md): the AAC stream-header utility the S60
+// eaacplusutil.cpp -- OURS (the optional AAC codec pack): the AAC stream-header utility the S60
 // AAC controller uses (mmaudio_plat/eaacplusutil_api). The release ships only a stub (os.mmaudio/eaacplusutil_stub:
 // every call returns KErrNone and fills nothing in); this parses the headers for real, behind that stub's frozen
 // export list. Header parsing only -- decoding is the Aricent plug-in + ariheaacdecwrapper.

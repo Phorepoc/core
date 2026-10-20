@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// vgprobe2.cpp -- OURS: OpenVG O2 test (docs/phorepoc/openvg-plan.md). One scene that uses ONLY what the GPU engine
+// vgprobe2.cpp -- OURS: OpenVG O2 test. One scene that uses ONLY what the GPU engine
 // (phvg) implements -- vgClear (full + partial) and solid-colour vgDrawPath(FILL): cubic blob, curves, a pentagram
 // non-zero and even-odd, a donut with a hole (even-odd) and a filled one (non-zero), translucent SRC_OVER fills -- is
 // drawn through the standard libEGL + libOpenVG twice: with the process mode property = 0 (the reference implementation)

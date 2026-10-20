@@ -1,7 +1,7 @@
 /* Copyright The Phorepoc Authors
  * SPDX-License-Identifier: EPL-1.0 */
 
-// phetty.h -- OURS (phe prefix): the developer tty daemon (docs/phorepoc/phetty-plan.md).
+// phetty.h -- OURS (phe prefix): the developer tty daemon.
 // One server process (phettyd) owns up to KPheTtyMax ttys. Each tty = a scrollback of ANSI bytes (what the shell's console
 // wrote), a key queue (what the user typed) and a shell process (pheshell = ESHELL with its console redirected to the tty).
 // Observers (the on-screen pheterm, a PhoneLab bridge, phettyctl) read the byte stream by sequence number and inject keys.

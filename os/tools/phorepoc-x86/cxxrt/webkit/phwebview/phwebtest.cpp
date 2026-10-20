@@ -1,5 +1,5 @@
 /*
- * phwebtest.cpp -- OURS (Phorepoc, docs/phorepoc/browser-plan.md section 9): milestone 1 of the in-process embedding. A WebCore Page with
+ * phwebtest.cpp -- OURS (Phorepoc): milestone 1 of the in-process embedding. A WebCore Page with
  * WebCore's empty clients (the SVGImage pattern), an in-memory HTML document written straight into the main frame (no network), layout,
  * then: the render tree as text (parse + style + layout), and a Skia raster paint of the frame view (pixel statistics + c:/data/page.ppm).
  * Output goes to stdout (phsym.cpp replays it to the serial log as "[js] | ...").

@@ -1,7 +1,7 @@
 # Copyright The Phorepoc Authors
 # SPDX-License-Identifier: EPL-1.0
 
-"""components_qt48 -- Qt 4.8.7 for the S^3 firmware (docs/phorepoc/qt48-build.md), merged into components.COMPONENTS.
+"""components_qt48 -- Qt 4.8.7 for the S^3 firmware, merged into components.COMPONENTS.
 
 Keys are qt48_*; ROM names are the real Qt names (QtCore.dll ...). The mmps are the ones qmake GENERATES
 (tools/phorepoc-qt48/qt_configure_symbian.sh + qt_mocables.sh), copied into the source module directory they were

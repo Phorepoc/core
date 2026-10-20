@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// phevidctl.cpp -- OURS (VDU rung V4, docs/phorepoc/vdu-plan.md): the MMF video play controller for MP4 / 3GP.
+// phevidctl.cpp -- OURS (VDU rung V4): the MMF video play controller for MP4 / 3GP.
 // Structure and call order follow the 2010 AviPlayController (baseline/symbian-2010/oss.FCL.sf.os.mmaudio/mmplugins/
 // mmfwplugins/src/Plugin/Controller/Video/AviPlayController): AddDataSourceL opens the clip and reports OpenComplete;
 // MvpcPrepare / PrimeL initialise DevVideo; PlayL starts DevVideo and the input feed; MdvpoNewBuffers refills; MdvpoStreamEnd
@@ -1726,7 +1726,7 @@ TBool CPheVidCtl::Draw(const TVideoPicture& aPic)
 	}
 
 // --------------------------------------------------------------------------------------------------------------------
-// the DE2 video plane (docs/phorepoc/de2-overlay-plan.md): one hardware scale from the decoded NV12 picture straight to the
+// the DE2 video plane: one hardware scale from the decoded NV12 picture straight to the
 // panel, instead of the CPU conversion above. Only when the whole destination rectangle is visible (no dialog over it), the
 // UI is portrait, and the kernel has the PheDeOv driver; anything else falls back to the CDirectScreenBitmap path.
 

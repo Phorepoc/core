@@ -3,7 +3,7 @@
 
 // inifile_board.cpp -- OURS: WSERV's REAL INIFILE.CPP (unmodified, #included) plus the UI renderer switch.
 //
-// One Wsini.ini carries both render-stage chains (docs/phorepoc/devmenu.md): a line starting "CLASSIC:" belongs to the Classic
+// One Wsini.ini carries both render-stage chains: a line starting "CLASSIC:" belongs to the Classic
 // chain, "ALFRED:" to the Alfred (alf server + Hitchcock) chain, anything else to both. While the file is parsed, the lines of
 // the other chain are blanked and the prefix of the chosen one is removed, so the rest of WSERV (PLUGINS, RENDERSTAGES, the
 // plug-in sections) sees an ordinary Wsini.ini. The chain comes from the developer menu's CenRep key 4 (0xE7015A01), read here

@@ -1,5 +1,5 @@
 /*
- * ResourceHandleSymbian.cpp -- OURS (Phorepoc, docs/phorepoc/browser-plan.md P1 step B, 2026-10-12): the in-process
+ * ResourceHandleSymbian.cpp -- OURS (Phorepoc, step B, 2026-10-12): the in-process
  * (WebKitLegacy-style) network path. WPE's ResourceHandle under USE(CURL) is a block of ASSERT_NOT_REACHED stubs -- upstream,
  * only the network process drives CurlRequest (NetworkDataTaskCurl). This file implements ResourceHandle on CurlRequest so
  * ResourceLoader::start() (main resource + subresources, via PhLoaderStrategy) loads over curl + OpenSSL in the web process.

@@ -1,4 +1,4 @@
-// jsc.mmp -- OURS: P1 spike (docs/phorepoc/browser-plan.md): the JavaScriptCore shell (WebKit 2.54.1 JSCOnly, CLoop, no JIT) as an Open C EXE.
+// jsc.mmp -- OURS: P1 spike: the JavaScriptCore shell (WebKit 2.54.1 JSCOnly, CLoop, no JIT) as an Open C EXE.
 // The engine is a PREBUILT set of archives (build_jsc.sh -> package_jsc.sh -> .phorepoc-x86-build/cxxrt/*.a), linked via the registry's
 // x32_archives; only the Symbian-API shim (phsym.cpp) is compiled here, on the real Symbian line.
 TARGET			jsc.exe

@@ -1,5 +1,5 @@
 // OURS delta (toolchain/shims/audiocodec_gainfix): the 2010 refacladapt audiocodec.cpp with ONE fix at CAudioCodec::SetGain
-// (`totalGain =+` -> `+=`; docs/phorepoc/research/sound-2010.md (b) MUST 2). Everything else is the unmodified file.
+// (`totalGain =+` -> `+=`; (b) MUST 2). Everything else is the unmodified file.
 //audiocodec.cpp
 
 // Copyright (c) 2006-2009 Nokia Corporation and/or its subsidiary(-ies).

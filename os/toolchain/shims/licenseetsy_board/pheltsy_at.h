@@ -1,7 +1,7 @@
 /* Copyright The Phorepoc Authors
  * SPDX-License-Identifier: EPL-1.0 */
 
-// pheltsy_at.h -- OURS (2026-10-17, modem rungs M2/M3, docs/phorepoc/telephony-plan.md sections 14-15): the AT engine
+// pheltsy_at.h -- OURS (2026-10-17, modem rungs M2/M3, 14-15): the AT engine
 // of "pheltsy", the AT-based licensee TSY that grows out of the fake modem (classic MMessageRouter contract kept;
 // the engine shape decision is in telephony-plan.md section 15). Compiled only with PHELTSY=1 (-DPHE_LTSY on
 // licenseetsy); the default build is the plain fake modem.

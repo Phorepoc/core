@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// phedevmenu.cpp -- OURS: the hidden developer settings application (docs/phorepoc/devmenu.md).
+// phedevmenu.cpp -- OURS: the hidden developer settings application.
 // An Avkon settings list (CAknSettingItemList) whose values live in the CenRep repository KPheDevMenuRepoUid:
 //   UI shell (S^3 | S^4, only those the image carries: key 6), Control Panel shortcut (off | on), boot guard timeout (seconds).
 // Opened by the dialer secret code *#3386633# through the Phone app's real code path (tools/patch_phone_devmenu.py)

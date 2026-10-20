@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# build_webcore.sh [ninja target] -- P1 page layer (docs/phorepoc/browser-plan.md section 9): WebKit's `Symbian` port (OURS:
+# build_webcore.sh [ninja target] -- P1 page layer: WebKit's `Symbian` port (OURS:
 # webkit/port/) = JSC as in build_jsc.sh + PAL + WebCore (curl/mbedTLS, Skia CPU, HarfBuzz/FreeType, ICU) for x32 over Open C.
 # IN-CONTAINER (phorepoc-jsc):  host: JOBS=4 bash tools/phorepoc-x86/cxxrt/drun2.sh /repo/tools/phorepoc-x86/cxxrt/build_webcore.sh [target]
 # (log to a FILE, never pipe into head). Default target: WebCore. CONFIGURE_ONLY=1 stops after cmake. RECONF=1 re-runs cmake.

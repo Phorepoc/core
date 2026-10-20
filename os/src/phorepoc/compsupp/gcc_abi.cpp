@@ -3,7 +3,7 @@
 
 // gcc_abi.cpp -- OURS: the RVCT-only pieces of the release's drtaeabi.dll, written for GCC
 // (kernel/eka/compsupp/rvct/{drtaeabi,aeabimem,type_info}.cpp use __asm blocks, $Sub$$ symbol aliasing and
-// #pragma import, which GCC has none of). Same functions, same exports; docs/phorepoc/compsupp-runtime.md.
+// #pragma import, which GCC has none of). Same functions, same exports;.
 //
 // What is NOT here because it is GCC's own, linked in from libsupc++/libgcc and exported at the release's ordinals:
 // the RTTI class vtables/typeinfos (fundamental, pointer, class, si/vmi ...), __dynamic_cast, __cxa_vec_*, the

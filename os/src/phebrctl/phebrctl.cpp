@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// phebrctl.cpp -- OURS (Phorepoc, docs/phorepoc/browser-p2-brctl-map.md): browserengine.dll's replacement. Ordinal 1,
+// phebrctl.cpp -- OURS (Phorepoc): browserengine.dll's replacement. Ordinal 1,
 // CreateBrowserControlL, hands BrowserNG (and Messaging, Help, ...) a CBrCtlInterface that shows pages rendered by WebKit 2.54
 // (WebCore + JSC + Skia, tools/phorepoc-x86/cxxrt) on an engine thread of its own. See browser-p2-brctl-map.md for the contract.
 #include "phebrctl.h"

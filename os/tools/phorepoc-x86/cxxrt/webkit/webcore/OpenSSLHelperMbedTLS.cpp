@@ -1,5 +1,5 @@
 /*
- * OpenSSLHelperMbedTLS.cpp -- OURS (Phorepoc, docs/phorepoc/browser-plan.md section 9). The `OpenSSL::` helper interface of
+ * OpenSSLHelperMbedTLS.cpp -- OURS (Phorepoc). The `OpenSSL:` helper interface of
  * WebCore's curl backend (OpenSSLHelper.h) implemented on mbedTLS 3.6, the TLS library our curl is built with
  * (tools/phorepoc-x86/curl, mbedtls). With USE(MBEDTLS), OpenSSLHelper.h maps `SSL` to mbedtls_ssl_context and
  * `X509_STORE_CTX` to mbedtls_x509_crt (webkit/patch.py).

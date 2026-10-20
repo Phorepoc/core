@@ -1,5 +1,5 @@
 /*
- * PhPlatformStrategies.cpp -- OURS (Phorepoc, docs/phorepoc/browser-plan.md section 9). See the header. P1 step B: loads over curl (ResourceHandleSymbian.cpp).
+ * PhPlatformStrategies.cpp -- OURS (Phorepoc). See the header. P1 step B: loads over curl (ResourceHandleSymbian.cpp).
  */
 #include "config.h"
 #include "PhPlatformStrategies.h"

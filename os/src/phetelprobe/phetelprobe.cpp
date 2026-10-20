@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// phetelprobe.cpp -- OURS: the telephony T1 smoke test (docs/phorepoc/telephony-plan.md, T1). Not Symbian source.
+// phetelprobe.cpp -- OURS: the telephony T1 smoke test (T1). Not Symbian source.
 //
 // Walks ETel the way the Phone app / Messaging / Contacts do, against whatever TSY the ROM carries (today: the
 // licensee stub with the fake modem, toolchain/shims/licenseetsy_board), and logs every step to the debug port:

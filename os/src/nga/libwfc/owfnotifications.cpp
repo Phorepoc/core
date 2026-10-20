@@ -49,7 +49,7 @@
 #include "owfnotifications.h"
 #include <graphics/symbianstream.h>
 #include <e32debug.h>
-// PH: tracing for the DSA hang hunt (docs/phorepoc/dsa-nga-plan.md C2): temporary, rate-limited, "PH:" lines go to PhoneLab
+// PH: tracing for the DSA hang hunt: temporary, rate-limited, "PH:" lines go to PhoneLab
 static TInt PhCbCount;
 static TInt PhUpdCount;
 #define PH_EARLY(counter) (++(counter) <= 60 || (counter) % 200 == 0)

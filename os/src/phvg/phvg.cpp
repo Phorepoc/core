@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// phvg.cpp -- OURS: "phvg", the OpenVG-on-GLES2 engine (docs/phorepoc/openvg-plan.md, milestone O2).
+// phvg.cpp -- OURS: "phvg", the OpenVG-on-GLES2 engine (milestone O2).
 //
 // What it is: a small GPU back end for the Khronos reference implementation. The RI keeps the whole OpenVG API, the
 // state machine and the path geometry (flattening, transform); for what phvg implements it hands over the already

@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// pheshellsel.mmp -- OURS (UI shell selector at boot, docs/phorepoc/devmenu.md "UI shell"): starts S^3 or S^4 per the dev menu
+// pheshellsel.mmp -- OURS (UI shell selector at boot): starts S^3 or S^4 per the dev menu
 TARGET			pheshellsel.exe
 TARGETTYPE		exe
 UID				0x1000007a 0xE70157B6

@@ -1,7 +1,7 @@
 # Copyright The Phorepoc Authors
 # SPDX-License-Identifier: EPL-1.0
 
-"""components_devmenu -- OURS: the hidden developer menu (docs/phorepoc/devmenu.md). Merged into components.COMPONENTS."""
+"""components_devmenu -- OURS: the hidden developer menu. Merged into components.COMPONENTS."""
 import os
 
 from paths import OS_ROOT, SYMBIAN, BUILD, EPOC32_ROOT  # noqa: E402

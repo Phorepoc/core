@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// ariheaacdecwrapper.cpp -- OURS, part of the OPTIONAL AAC codec pack (docs/phorepoc/audio.md "Codec policy": AAC is a
+// ariheaacdecwrapper.cpp -- OURS, part of the OPTIONAL AAC codec pack (AAC is a
 // grey area -> published as source + build instructions only, never in a prebuilt image; tools/codecpack/).
 //
 // The HE-AAC decoder library the release's Aricent plug-in links (oss.FCL.sf.adapt.codecs.aricent/heaac_dec: only its

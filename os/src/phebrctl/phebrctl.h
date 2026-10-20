@@ -1,7 +1,7 @@
 /* Copyright The Phorepoc Authors
  * SPDX-License-Identifier: EPL-1.0 */
 
-// phebrctl.h -- OURS (Phorepoc, docs/phorepoc/browser-p2-brctl-map.md): the BrCtl facade. A CBrCtlInterface (the UNMODIFIED RCL3
+// phebrctl.h -- OURS (Phorepoc): the BrCtl facade. A CBrCtlInterface (the UNMODIFIED RCL3
 // BrCtlInterface.h) over the WebKit engine thread (PhEngineApi.h). One CPhBrCtl per browser tab = one engine view.
 #ifndef PHEBRCTL_H
 #define PHEBRCTL_H

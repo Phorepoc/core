@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// playtest.cpp -- OURS (audio U4, docs/phorepoc/audio.md): plays an audio FILE through the real MMF client
+// playtest.cpp -- OURS (audio U4): plays an audio FILE through the real MMF client
 // (CMdaAudioPlayerUtility -> the controller the MMF picks for the file: WAV = mmfaudiocontroller, MP3 = the
 // advanced audio controller -> DevSound -> A3F -> the HwDevice for the file's FourCC -> ... -> the AC'97 PDD).
 //

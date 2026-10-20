@@ -1,6 +1,6 @@
 // ph_throw.cpp -- OURS (Path C, x86 / x32): libstdc++'s throws become readable errors.
 //
-// C++ exceptions do not work in our x32 E32 images yet (docs/phorepoc/browser-plan.md, "Not working: C++ exceptions": ld
+// C++ exceptions do not work in our x32 E32 images yet ("Not working: C++ exceptions": ld
 // rewrites .eh_frame and the emitter relocates it with stale offsets), and the engine is -fno-exceptions anyway. libstdc++
 // still throws on its own behalf -- std::mutex::lock -> std::system_error, std::vector -> length_error, new -> bad_alloc --
 // and an uncatchable throw died somewhere in the unwinder with the cause lost (2026-10-13). Every such throw goes through one

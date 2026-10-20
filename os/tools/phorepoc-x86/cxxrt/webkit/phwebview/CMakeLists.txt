@@ -1,4 +1,4 @@
-# phwebview -- OURS (Phorepoc, docs/phorepoc/browser-plan.md section 9): the in-process WebCore embedding. Milestone 1: phwebtest
+# phwebview -- OURS (Phorepoc): the in-process WebCore embedding. Milestone 1: phwebtest
 # (in-memory HTML -> layout -> Skia raster). The executable is an ELF the E32 emitter re-links (cxxrt package step); unresolved
 # symbols are allowed here (build_webcore.sh linker flags) and their list is the platform-hook census.
 add_executable(phwebtest
@@ -15,7 +15,7 @@ target_compile_definitions(phwebtest PRIVATE BUILDING_WITH_CMAKE=1 HAVE_CONFIG_H
     STATICALLY_LINKED_WITH_JavaScriptCore STATICALLY_LINKED_WITH_WTF STATICALLY_LINKED_WITH_bmalloc)
 target_link_libraries(phwebtest PRIVATE WebCore)
 
-# the BrCtl facade's engine (docs/phorepoc/browser-p2-brctl-map.md): the same embedding as a service, packaged as an archive
+# the BrCtl facade's engine: the same embedding as a service, packaged as an archive
 # (package_web.sh -> libphengine.a) that the `phebrctl` registry component (browserengine.dll) links
 add_library(phengine STATIC
     PhDatabaseProvider.cpp

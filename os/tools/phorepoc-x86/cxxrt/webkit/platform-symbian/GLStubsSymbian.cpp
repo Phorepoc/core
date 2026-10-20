@@ -1,5 +1,5 @@
 /*
- * GLStubsSymbian.cpp -- OURS (Phorepoc, docs/phorepoc/browser-plan.md section 9). The Symbian port paints on the CPU (Skia raster) with
+ * GLStubsSymbian.cpp -- OURS (Phorepoc). The Symbian port paints on the CPU (Skia raster) with
  * accelerated compositing off, so there is no GL display, context, fence, texture or composited GraphicsLayer. WebKit's Skia painting
  * code still references the GPU types; these definitions satisfy the link and report "no GPU" wherever a caller can take no for an
  * answer (sharedDisplayIfExists, isSupported, MakeEGL). The rest is unreachable without compositing and stops loudly if ever reached.

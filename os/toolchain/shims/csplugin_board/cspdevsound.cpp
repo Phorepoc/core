@@ -1,4 +1,4 @@
-// Phorepoc board copy (OURS delta, telephony T1, docs/phorepoc/telephony-plan.md): ROM has no MODM DevSound codec and no
+// Phorepoc board copy (OURS delta, telephony T1): ROM has no MODM DevSound codec and no
 // TelephonyAudioRouting server yet (call audio = stage T7), so a missing audio route must not stop the CS call provider.
 /*
 * Copyright (c) 2006 Nokia Corporation and/or its subsidiary(-ies). 

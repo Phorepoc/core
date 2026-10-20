@@ -1,5 +1,5 @@
 /*
- * PhPlatformStrategies.h -- OURS (Phorepoc, docs/phorepoc/browser-plan.md section 9): the process-wide WebCore::PlatformStrategies of the
+ * PhPlatformStrategies.h -- OURS (Phorepoc): the process-wide WebCore:PlatformStrategies of the
  * in-process embedding (upstream, WebKitLegacy's WebPlatformStrategies played this role; WebKit2's lives in the web process).
  * Milestone 1 (in-memory HTML): the loader strategy loads nothing; the curl-backed one (CurlRequest -> ResourceLoader callbacks)
  * replaces it next. No pasteboard yet, no media (ENABLE_VIDEO/WEB_AUDIO are off), blobs minimal.

@@ -1,4 +1,4 @@
-// phwebtest.mmp -- OURS: P1 (docs/phorepoc/browser-plan.md section 9): the WebKit page test (WebCore + JSC + Skia, wpewebkit 2.54.1)
+// phwebtest.mmp -- OURS: P1: the WebKit page test (WebCore + JSC + Skia, wpewebkit 2.54.1)
 // as an Open C EXE: in-memory HTML -> render tree text + a Skia raster paint (d:/page.ppm). The engine is a PREBUILT set of
 // archives (build_webcore.sh -> package_web.sh -> .phorepoc-x86-build/cxxrt/web/*.a), linked via the registry's x32_archives;
 // only the Symbian-API shim (phsym.cpp) is compiled here, as for jsc.mmp.

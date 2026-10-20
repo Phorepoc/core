@@ -11,7 +11,7 @@
 // Contributors:
 //
 // Phorepoc board copy (OURS delta on the EPL original): the licensee TSY stub's mock handler, extended in
-// telephony stage T1 (docs/phorepoc/telephony-plan.md) with a FAKE MODEM (CFakeModem below): registration, signal,
+// telephony stage T1 with a FAKE MODEM (CFakeModem below): registration, signal,
 // operator, IMEI/IMSI, mobile-originated and incoming calls, SMS loopback. Earlier deltas: the X4.72 lock info,
 // the 2026-10-12 hardening (one-shot requests fail instead of hanging).
 
@@ -999,7 +999,7 @@ OstTraceDef1(OST_TRACE_CATEGORY_DEBUG, TRACE_INTERNALS, CMMMOCKMESSHANDLER_EXTFU
             ret = KErrNone;
             break;
 
-        // Phorepoc hardening (2026-10-12, docs/phorepoc/telephony-stub.md): ONE-SHOT requests the mock used to accept and never
+        // Phorepoc hardening (2026-10-12): ONE-SHOT requests the mock used to accept and never
         // complete (its "return KErrNone without complete" group) -- every caller waited forever (the phonebook / SIM store,
         // call settings, SMS store). A phone with no modem and no SIM answers them at once: not supported. CTSY completes the
         // client with the error returned from ExtFuncL, so no data package is needed.

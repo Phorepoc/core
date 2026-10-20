@@ -1,4 +1,4 @@
-// cxx17test.mmp -- OURS: P0 spike (docs/phorepoc/browser-plan.md): a C++20 program on libstdc++ 13 (built from the GCC source over Open C,
+// cxx17test.mmp -- OURS: P0 spike: a C++20 program on libstdc++ 13 (built from the GCC source over Open C,
 // tools/phorepoc-x86/cxxrt/) -- std::string/containers/threads/exceptions. The standard-C++ part is a PREBUILT archive
 // (build_libstdcxx.sh + build_cxxtest.sh -> .phorepoc-x86-build/cxxrt/*.a), linked via the registry's x32_archives.
 TARGET			cxx17test.exe

@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// phettyd.cpp -- OURS: the developer tty daemon (docs/phorepoc/phetty-plan.md, V1).
+// phettyd.cpp -- OURS: the developer tty daemon (V1).
 // Owns the ttys. A tty = scrollback of ANSI bytes + key queue + a pheshell process (eshell with its console on the tty).
 // Started by the SSM non-critical list (r_cmd_phettyd) or on demand by a client (RPheTty::Connect). The CenRep key
 // KPheTtyCenRepUid/1 (PHETTY=on|off at ROM build) turns the autostart off; "force" on the command line ignores it.

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: EPL-1.0
 
 // gsphedevmenu.mmp -- OURS: the Control Panel (GS) plug-in that lists "Developer menu" (under Device) when the
-// shortcut setting is on, and starts the hidden settings app (gsphedevmenu.cpp; docs/phorepoc/devmenu.md)
+// shortcut setting is on, and starts the hidden settings app (gsphedevmenu.cpp)
 #include <data_caging_paths.hrh>
 #include <platform_paths.hrh>
 

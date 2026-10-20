@@ -1,5 +1,5 @@
 /*
- * AXObjectCacheSymbian.cpp -- OURS (Phorepoc, docs/phorepoc/browser-plan.md section 9): the platform half of WebCore's accessibility cache
+ * AXObjectCacheSymbian.cpp -- OURS (Phorepoc): the platform half of WebCore's accessibility cache
  * without an assistive-technology bridge (Symbian has no AT-SPI; a screen-reader bridge would post these to the S60 accessibility
  * framework later). Wrappers are attached as on the PlayStation port (AccessibilityObjectPlayStation.cpp, used as is); every platform
  * notification is dropped. The PlayStation AXObjectCache file forwards to PlayStation-only ChromeClient hooks, hence this copy.

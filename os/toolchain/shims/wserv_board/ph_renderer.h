@@ -1,7 +1,7 @@
 /* Copyright The Phorepoc Authors
  * SPDX-License-Identifier: EPL-1.0 */
 
-// ph_renderer.h -- OURS: the UI renderer switch (docs/phorepoc/devmenu.md, "UI renderer").
+// ph_renderer.h -- OURS: the UI renderer switch ("UI renderer").
 // WSERV (inifile_board.cpp) reads the developer-menu CenRep key and publishes the answer here; the alf clients that must work
 // without an alf server (alf_fix/alfdecoderserverclient_ph.cpp) read it.
 #ifndef PH_RENDERER_H

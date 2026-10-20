@@ -1,4 +1,4 @@
-# OptionsSymbian.cmake -- OURS (Phorepoc, docs/phorepoc/browser-plan.md section 9): the `Symbian` WebKit port. Copied to
+# OptionsSymbian.cmake -- OURS (Phorepoc): the `Symbian` WebKit port. Copied to
 # Source/cmake/ by webkit/apply_patches.sh. JSC exactly as the JSCOnly build (CLoop, no JIT, static, system malloc, generic run
 # loop -- the WTF/JSC/bmalloc Platform files include the JSCOnly ones, which carry our seams), plus WebCore + PAL on curl/mbedTLS,
 # Skia (CPU raster), HarfBuzz/FreeType/ICU. No WebKit2, no WebKitLegacy (both multi-process or Apple-only upstream): the

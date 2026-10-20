@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// dsatest.cpp -- OURS (docs/phorepoc/dsa-nga-plan.md C1): CDirectScreenAccess + CDirectScreenBitmap, the way a game
+// dsatest.cpp -- OURS: CDirectScreenAccess + CDirectScreenBitmap, the way a game
 // (SkyForce) drives the screen under the NGA window server, with every step logged ("PH: dsa ...", forwarded to
 // PhoneLab). Draws a known pattern so a screenshot proves the path end to end:
 //   rows 0..3 bands (each 1/16 of the height): pure red, pure green, pure blue (fully opaque, alpha 0xFF)

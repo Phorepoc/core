@@ -2,7 +2,7 @@
  * Copyright The Phorepoc Authors
  * SPDX-License-Identifier: EPL-1.0 */
 
-// phevidctl.h -- OURS (VDU rung V4, docs/phorepoc/vdu-plan.md): the MMF video PLAY controller for MP4 / 3GP files.
+// phevidctl.h -- OURS (VDU rung V4): the MMF video PLAY controller for MP4 / 3GP files.
 //
 // What it is: a CMMFController plug-in (ECOM interface 0x101F4F47) that CVideoPlayerUtility (mediaclientvideo) loads for an
 // .mp4 / .m4v / .3gp file, exactly the way the 2010 tree's AviPlayController serves .avi (derived from

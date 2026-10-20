@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: EPL-1.0
 
 # build_mbedtls.sh -- mbedTLS 3.6 for Path C (amd64, x32) on Open C: curl's TLS backend for NetSurf's https
-# (docs/phorepoc/netsurf-port.md). Runs INSIDE phorepoc-x86, like build_curl.sh:
+#. Runs INSIDE phorepoc-x86, like build_curl.sh:
 #
 #   host:  R="$(pwd -W)"; MSYS_NO_PATHCONV=1 docker.exe run --rm -v "$R":/repo \
 #              -v "$R/.phorepoc-x86-build":/out phorepoc-x86 bash /repo/tools/phorepoc-x86/mbedtls/build_mbedtls.sh

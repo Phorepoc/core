@@ -11,7 +11,7 @@
 // Contributors:
 //
 // Description:
-// mmrcserverrulemanager.cpp -- OURS delta of the 2010 file (audio Q0, docs/phorepoc/audio-mixing-plan.md 2.6):
+// mmrcserverrulemanager.cpp -- OURS delta of the 2010 file (audio Q0):
 // DecisionRule always answers EAlwaysProcess, so MMRC never denies or preempts a second concurrent audio client;
 // the userland mixer (toolchain/shims/mdasoundadapter_mix) sums them. Everything else is the original, unchanged.
 // 

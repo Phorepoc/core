@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: EPL-1.0
 
-// phvg.mmp -- OURS: phvg.dll, the OpenVG-on-GLES2 engine (phvg.cpp; docs/phorepoc/openvg-plan.md O2). Loaded at run
+// phvg.mmp -- OURS: phvg.dll, the OpenVG-on-GLES2 engine (phvg.cpp). Loaded at run
 // time by the OpenVG reference implementation (RLibrary, only when the GPU mode is switched on), never linked by it.
 TARGET			phvg.dll
 TARGETTYPE		dll

@@ -124,7 +124,7 @@ static void PhAlfStartWatch()
 #define RenameThread(n) RenameThread(n) + (RDebug::Printf("PH: alf: alfredserver thread running, frame %x", (TUint)__builtin_frame_address(0)), PhAlfStartWatch(), PH_PHVG_ON(), 0)
 #define ConstructL() ConstructL(); RDebug::Printf("PH: alf: alfredserver thread: CAlfAppUi::ConstructL returned, scheduler starting")
 
-// UI_RENDERER=both (docs/phorepoc/devmenu.md): in the Classic chain there is NO alf server, but the real clients (homescreen's effect observer
+// UI_RENDERER=both: in the Classic chain there is NO alf server, but the real clients (homescreen's effect observer
 // CAlfEffectObserver::NewL, CAlfBufferFlush, ...) still run and used to LEAVE -1 on Connect (alf-plan.md "no client-only stage"). WSERV
 // (wserv_board/inifile_board.cpp) publishes the chosen renderer; while it says Classic, "server not found" is a soft success: the session
 // stays unopened and every send on it answers KErrNotReady (async: the request completes with it) -- an inert client, as the null one.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# build_jsc.sh -- P1 (docs/phorepoc/browser-plan.md): JavaScriptCore alone (WebKit JSCOnly, CLoop, no JIT) for Path C x32 over Open C +
+# build_jsc.sh -- P1: JavaScriptCore alone (WebKit JSCOnly, CLoop, no JIT) for Path C x32 over Open C +
 # libstdc++ + ICU, on the "pure Open C" line (mk_pure_wrappers.sh). IN-CONTAINER (phorepoc-jsc); source in docker volume `wkvol` (/wv).
 #   host: bash tools/phorepoc-x86/cxxrt/drun2.sh /repo/tools/phorepoc-x86/cxxrt/build_jsc.sh [target]   (log to a FILE, never pipe into head)
 # Prereqs (in order): build_libstdcxx.sh, mk_pure_wrappers.sh, build_icu.sh (-> /wv/icu-x32/inst). Patches: webkit/apply_patches.sh.

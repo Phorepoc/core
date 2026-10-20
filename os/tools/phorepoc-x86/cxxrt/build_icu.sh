@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# build_icu.sh -- ICU 74.2 for x32 over Open C (P1 of docs/phorepoc/browser-plan.md). IN-CONTAINER (phorepoc-jsc), after build_libstdcxx.sh
+# build_icu.sh -- ICU 74.2 for x32 over Open C (P1 of ). IN-CONTAINER (phorepoc-jsc), after build_libstdcxx.sh
 # + mk_pure_wrappers.sh. 1) native build (host tools: icupkg/genrb/pkgdata, data built with icu_filter.json = en only, no translit/rbnf/dictionaries),
 # 2) cross build for x32 with the pure-Open-C wrapper (link tests fail by design -> every function "absent"; ICU has portable fallbacks).
 # Output: $V/icu-x32/{include,lib/libicu{uc,i18n,data}.a}. Source: third_party/icu/icu4c-74_2-src.tgz (gitignored).

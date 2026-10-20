@@ -1,5 +1,5 @@
 /*
- * EditorSymbian.cpp -- OURS (Phorepoc, docs/phorepoc/browser-plan.md section 9): the platform half of WebCore::Editor (copy/paste), after
+ * EditorSymbian.cpp -- OURS (Phorepoc): the platform half of WebCore:Editor (copy/paste), after
  * editing/glib/EditorGLib.cpp without the GLib SelectionData path: the selection goes to the Pasteboard as plain text + markup
  * (PasteboardSymbian.cpp); paste goes through WebCore's webContentFromPasteboard (markup first, then plain text).
  */
