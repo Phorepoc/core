@@ -22,7 +22,7 @@ static TInt Run()
 	TPtrC drv = lex.NextToken();
 	if (file.Length() == 0)
 		{
-		RDebug::Printf("[sisinst] usage: sisinst <path.sis> [drive]");
+		RDebug::Printf("PH: [sisinst] usage: sisinst <path.sis> [drive]");
 		return KErrArgument;
 		}
 	SwiUI::TInstallOptions opts;
@@ -45,13 +45,13 @@ static TInt Run()
 	TInt err = launcher.Connect();
 	TBuf8<128> f8;
 	f8.Copy(file.Left(128));
-	RDebug::Printf("[sisinst] %S: connect %d", &f8, err);
+	RDebug::Printf("PH: [sisinst] %S: connect %d", &f8, err);
 	if (err == KErrNone)
 		{
 		err = launcher.SilentInstall(file, pckg);
 		launcher.Close();
 		}
-	RDebug::Printf("[sisinst] %S: %s (%d)", &f8, err == KErrNone ? "INSTALLED" : "FAILED", err);
+	RDebug::Printf("PH: [sisinst] %S: %s (%d)", &f8, err == KErrNone ? "INSTALLED" : "FAILED", err);
 	return err;
 	}
 
@@ -64,7 +64,7 @@ GLDEF_C TInt E32Main()
 		TRAPD(leave, err = Run());
 		if (leave != KErrNone)
 			{
-			RDebug::Printf("[sisinst] left %d", leave);
+			RDebug::Printf("PH: [sisinst] left %d", leave);
 			err = leave;
 			}
 		delete cleanup;

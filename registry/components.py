@@ -923,8 +923,6 @@ COMPONENTS = {
     "sistestdll": dict(mmp=os.path.join(OS_ROOT, "src/sistest/sistestdll.mmp"), sis=True, allow_wsd=True),
     "sistest": dict(mmp=os.path.join(OS_ROOT, "src/sistest/sistest.mmp"), sis=True),
     "rscdump": dict(mmp=os.path.join(OS_ROOT, "src/rscdump/rscdump.mmp")),
-    # OURS: install a SIS file silently (the device half of `ph package install`; RSWInstSilentLauncher)
-    "pheinstall": dict(mmp=os.path.join(OS_ROOT, "src/pheinstall/pheinstall.mmp")),
     "dscadd": dict(mmp=os.path.join(OS_ROOT, "src/dscadd/dscadd.mmp"),
                    flags=["-I", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.appsupport/applaunchservices/aftermarketappstarter/inc")]),
     "cmsetup": dict(mmp=os.path.join(OS_ROOT, "src/cmsetup/cmsetup.mmp"), flags=["-I", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/dbcreator/inc"), "-I", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/cmmanager/cmmgr/database/inc")]),
