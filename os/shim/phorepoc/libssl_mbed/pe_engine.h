@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 /* pe_engine.h -- OURS (Goal U): the mbedTLS side of the libssl.dll drop-in, behind a plain C interface.
  *
  * The OpenSSL 0.9.8 side (ossl_ssl.c) never includes an mbedTLS header and this side never includes an OpenSSL one:

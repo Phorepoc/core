@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // libcprobe.cpp -- OURS: probe of the from-source P.I.P.S. stack (libc -> backend, libm, libpthread).
 // A native E32Main exe (no mcrt0): each step prints its result to the debug port, so a fault
 // names the layer -- formatted output (varargs + gdtoa), heap, qsort, stdio on C:, time, libm, pthreads.

@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // OURS: FBServ binds fbsrasterizer.dll ordinal 1 = CFbsRasterizer::New() (FBS's frozen
 // fbsrasterizeru.def). S60's SvgtFbsRasterizer names its factory CSvgtFbsRasterizer::New() and its
 // own .def is not part of the 2010 release -- bridge the two.

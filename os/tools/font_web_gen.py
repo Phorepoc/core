@@ -1,3 +1,6 @@
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: EPL-1.0
+
 r"""font_web_gen -- the web-script fallback faces the BrowserNG engine (WebKit/Skia) uses for text the S60 faces lack (2026-10-16).
 
     py tools/font_web_gen.py [outdir]          (default .font-gen/web/)

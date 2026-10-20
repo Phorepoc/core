@@ -1,4 +1,7 @@
 #!/bin/sh
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: EPL-1.0
+
 # fetch.sh -- fetch every package of sources.lock at its pinned commit from the Phorepoc forks into symbian/<tree>/<package>.
 # Shallow (one commit each, fetched by sha); safe to re-run: a package already at its commit is skipped.
 # SOURCES_URL=<base> uses another place than https://github.com/Phorepoc; PHOREPOC_SYMBIAN=<dir> another target than symbian/.

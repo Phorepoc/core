@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // pheffmpeg.mmp -- OURS (docs/phorepoc/vdu-plan.md V4 audio, ffmpeg-vlc-plan.md): the LGPL FFmpeg media set (libavcodec +
 // libavutil archives from tools/codecpack/ffmpeg_media.sh) as its OWN replaceable DLL, so the EPL/OURS controller
 // (phevidctl.dll) is never statically linked with LGPL code: a user can swap pheffmpeg.dll alone. phevidctl loads it with

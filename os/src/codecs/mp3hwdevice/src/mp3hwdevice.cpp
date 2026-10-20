@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // mp3hwdevice.cpp -- OURS (audio, docs/phorepoc/audio.md "Codec policy"): the MP3 -> PCM16 HW device of the A3F
 // reference adaptation. audiocodec.dll picks a CMMFHwDevice ECom plug-in by FourCC (" MP3" -> " P16"); the release
 // configures one (refacladapt/data/HwDev0x1020658FMp3DecDefault.rss, Nokia's implementation UID 0x1020658F) whose

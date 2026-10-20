@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // fstest.mmp -- OURS: file-server semantics probe (see fstest.cpp)
 TARGET			fstest.exe
 TARGETTYPE		exe

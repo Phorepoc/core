@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phetelaudio.cpp -- OURS (telephony T1): the telephony audio routing server host, with a policy that accepts every route.
 //
 // S60's call UI (the Phone engine's CPEAudioData, the CS call provider, CTSY) asks CTelephonyAudioRouting for the

@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // tlsconnection_mbed.cpp -- OURS (Goal U, Path C): the modern-TLS SSL.DLL drop-in on the REAL Symbian ABI.
 //
 // securesocket.dll (the 2010 release, unmodified) loads SSL.DLL BY NAME and calls its ordinals as plain function

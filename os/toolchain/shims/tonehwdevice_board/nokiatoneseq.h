@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // nokiatoneseq.h -- OURS (PHOREPOC board delta, docs/phorepoc/audio.md "Key clicks"): Nokia tone sequences -> the
 // reference tone HW device's own SQNC format.
 //

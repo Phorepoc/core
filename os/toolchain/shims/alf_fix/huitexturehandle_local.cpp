@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // huitexturehandle_local.cpp -- OURS (not Symbian source): a private copy of THuiTextureHandle (the REAL
 // coretoolkit/src/HuiTextureHandle.cpp, unmodified) compiled into the clients of hitchcock.dll that copy the class.
 //

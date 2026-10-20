@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // Phorepoc (toolchain/shims/cookiemanager_board): the release file with one fix -- "IsPresent() ? Extract() : KNullDesC8()"
 // has a TDesC8 VALUE type (C++ [expr.cond]), so GCC sliced the Extract() TPtrC8 and the request path/host/port/scheme
 // lost their pointers (every cookie match read garbage). The KNullDesC8 / default-port arms are wrapped in TPtrC8( ).

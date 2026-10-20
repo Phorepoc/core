@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // svgtest.mmp -- OURS (2026-10-12): decodes the SVG entries of .mif files as the icon server does (the SVG-Tiny icon bug)
 TARGET			svgtest.exe
 TARGETTYPE		exe

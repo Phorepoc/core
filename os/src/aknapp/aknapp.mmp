@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // aknapp.mmp -- OURS: minimal S60 Avkon application (see aknapp.cpp)
 #include <platform_paths.hrh>
 

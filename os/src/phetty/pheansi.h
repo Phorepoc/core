@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // pheansi.h -- OURS: a minimal ANSI/VT screen model (header-only): feed it a tty's byte stream, read back the cell grid.
 // Handles what pheconsole.cpp emits and what a shell commonly needs: printable UTF-8, CR LF BS TAB, CSI A B C D H f J K m,
 // ?25h/l. Wrap is deferred as in xterm (a character at the last column sets a pending wrap).

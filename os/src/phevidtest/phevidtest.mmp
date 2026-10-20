@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phevidtest.mmp -- OURS (VDU rung V4, docs/phorepoc/vdu-plan.md): plays an MP4 through CVideoPlayerUtility -> phevidctl ->
 // phevdec and reports frames / fps ("PH: vid" lines). SSM_TEST=phevidtest stages it at boot. Contract: phevidtest.cpp.
 TARGET			phevidtest.exe

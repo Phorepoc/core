@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // ph_alflog.h -- OURS: -include'd into the ALF components (emitter/components.py _ALFTRACE): the release's __ALFLOGSTRING*
 // macros (alflogger.h, empty in a release build) become "PH:"-prefixed RDebug::Printf lines -- the kernel log keeps only
 // "PH:" lines -- so a hang during the alf bring-up is located. Throttled PER LOG SITE (the literal's address): the first

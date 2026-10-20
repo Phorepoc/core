@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // ph_audio_props.h -- OURS (audio V0, docs/phorepoc/audio-mixing-plan.md 3.3): the Publish&Subscribe contract between the
 // volume-key service (src/phvolume, the writer) and the userland mixer (phmixer.cpp inside mdasoundadapter.dll, the
 // reader/applier). Plain constants, no includes beyond e32std.h, so both sides take it unmodified.

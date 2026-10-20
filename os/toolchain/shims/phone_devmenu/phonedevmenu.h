@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // phonedevmenu.h -- OURS: the developer-menu secret code *#3386633# ("DEVMODE" on T9), through the Phone app's real
 // secret-code path (docs/phorepoc/devmenu.md). The three files tools/patch_phone_devmenu.py patches share these.
 #ifndef PHONEDEVMENU_H

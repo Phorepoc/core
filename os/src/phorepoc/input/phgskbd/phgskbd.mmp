@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phgskbd.mmp -- OURS (Phorepoc): the keyboard Settings (GS) entry (see phgskbd.h)
 #include <data_caging_paths.hrh>
 

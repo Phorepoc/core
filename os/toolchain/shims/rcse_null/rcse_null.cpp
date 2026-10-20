@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // rcse_null.cpp -- OURS (not Symbian source): a null VoIP profile registry (RCSE).
 //
 // The real rcse.dll keeps the VoIP/SIP profiles a phone's internet-telephony settings create; it was

@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // mp3hwdevice.mmp -- OURS: the MP3 -> PCM16 HW device (A3F reference adaptation, a CMMFSwCodecWrapper)
 TARGET			mp3hwdevice.dll
 TARGETTYPE		plugin

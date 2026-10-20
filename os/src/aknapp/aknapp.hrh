@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // aknapp.hrh -- OURS: command ids
 #ifndef AKNAPP_HRH
 #define AKNAPP_HRH

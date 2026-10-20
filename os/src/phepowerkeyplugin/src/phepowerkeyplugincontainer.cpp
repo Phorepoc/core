@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phepowerkeyplugincontainer.cpp -- OURS: the list container of the Power key page (after GSAutoKeyguardPluginContainer)
 #include <bldvariant.hrh>
 #include <aknlists.h>

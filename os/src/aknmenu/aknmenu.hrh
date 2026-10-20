@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // aknmenu.hrh -- OURS: command ids
 #ifndef AKNMENU_HRH
 #define AKNMENU_HRH

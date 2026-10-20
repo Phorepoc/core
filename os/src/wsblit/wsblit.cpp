@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // wsblit.cpp -- OURS (2026-10-09, GPU plan G1c): a bitmap-drawing test grid for the window server. The first NGA
 // boot of the S60 UI on the PinePhone drew text and the wallpaper but no icons and no skin frames (the masked /
 // alpha bitmap paths). Each numbered cell below is one CWindowGc bitmap call (source display mode, mask mode,

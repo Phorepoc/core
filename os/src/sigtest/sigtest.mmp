@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // sigtest.mmp -- OURS: request-signal bookkeeping test for the Path C port (see sigtest.cpp)
 TARGET			sigtest.exe
 TARGETTYPE		exe

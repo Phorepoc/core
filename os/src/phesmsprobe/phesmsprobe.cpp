@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phesmsprobe.cpp -- OURS: telephony T1, the SMS stack over the fake modem (docs/phorepoc/telephony-plan.md).
 //
 // The same walk Messaging's SMS server (smss) does, minus the message store: an SMS socket (the SMS protocol module smsprot.prt,

@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // phepowerkeyplugin.h -- OURS: the Power key Control Panel page (view)
 #ifndef PHEPOWERKEYPLUGIN_H
 #define PHEPOWERKEYPLUGIN_H

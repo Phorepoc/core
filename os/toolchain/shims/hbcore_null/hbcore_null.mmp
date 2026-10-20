@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // hbcore_null.mmp -- OURS: null Orbit core (see hbcore_null.cpp); the ordinal table is the REAL
 // sf.mw.hb src/hbcore/defs/eabi/HbCoreu.def.
 TARGET			hbcore.dll

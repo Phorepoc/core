@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phvolume.mmp -- OURS (audio V0, docs/phorepoc/audio-mixing-plan.md 3.3): volume keys -> master volume
 TARGET			phvolume.exe
 TARGETTYPE		exe

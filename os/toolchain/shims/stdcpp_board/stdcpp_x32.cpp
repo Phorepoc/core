@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // stdcpp_x32.cpp -- OURS (Path C board, x32): what the RVCT/GCCE builds of Open C++ (ossrv/stdcpp, libstdcpp.dll)
 // got from their toolchains and our ELF GCC does not provide.
 //

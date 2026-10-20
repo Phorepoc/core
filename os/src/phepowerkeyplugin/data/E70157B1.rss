@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // E70157B1.rss -- ECOM registration of the Power key Control Panel page (OURS)
 #include <ecom/registryinfo.rh>
 

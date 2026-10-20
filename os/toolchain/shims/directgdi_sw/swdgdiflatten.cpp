@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // swdgdiflatten.cpp -- OURS (2026-10-09, GPU plan G1c): extended bitmaps for the SOFTWARE DirectGDI adapter.
 //
 // The NGA window server draws every window through DirectGDI (windowserverplugins/openwfc directgdigcwrapper.cpp).

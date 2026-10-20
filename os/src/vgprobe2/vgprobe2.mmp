@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // vgprobe2.mmp -- OURS: OpenVG O2 test (vgprobe2.cpp): the same scene through the GPU engine (phvg) and the reference
 // implementation, both behind the standard libEGL + libOpenVG.
 TARGET			vgprobe2.exe

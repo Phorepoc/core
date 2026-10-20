@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // OURS: the REAL openwfcrs/displayrenderstagefactory.cpp with "PH:" lines at factory construction / stage creation.
 #include <e32debug.h>
 #include "displayrenderstagefactory.h"

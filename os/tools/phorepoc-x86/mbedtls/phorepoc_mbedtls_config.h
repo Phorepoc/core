@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 /* phorepoc_mbedtls_config.h -- OURS (Path C, docs/phorepoc/netsurf-port.md): mbedTLS 3.6 for curl's mbedTLS backend
  * on Open C / P.I.P.S. (amd64 x32) -- NetSurf's https. The algorithm set is the Goal U modern-TLS port's
  * (shim/port/symbian_mbedtls_config.h: TLS 1.2 client, ECDHE, AES-GCM, ChaCha20-Poly1305, SNI, EMS, ETM) -- one TLS

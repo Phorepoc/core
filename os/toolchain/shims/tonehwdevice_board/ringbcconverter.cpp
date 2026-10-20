@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // ringbcconverter.cpp -- OURS (PHOREPOC board delta, audio U5): the release's own Nokia Smart Messaging ringing-tone
 // parser, CRingBCNSMConverter (app.messaging smartmessaging/ringbc, the ringing-tone BIO control's), compiled into
 // the tone HW device so nokiatoneseq.cpp can play .rng files. Unchanged; this wrapper only quiets its trace:

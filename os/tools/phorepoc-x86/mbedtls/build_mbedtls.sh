@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: EPL-1.0
+
 # build_mbedtls.sh -- mbedTLS 3.6 for Path C (amd64, x32) on Open C: curl's TLS backend for NetSurf's https
 # (docs/phorepoc/netsurf-port.md). Runs INSIDE phorepoc-x86, like build_curl.sh:
 #

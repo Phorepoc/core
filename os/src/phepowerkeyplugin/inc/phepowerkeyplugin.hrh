@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phepowerkeyplugin.hrh -- OURS
 #ifndef PHEPOWERKEYPLUGIN_HRH
 #define PHEPOWERKEYPLUGIN_HRH

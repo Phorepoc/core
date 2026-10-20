@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phgskbd_reg.rss -- OURS (Phorepoc): ECom registration of the keyboard Settings entry. Interface 0x10207236 = a General
 // Settings plug-in; default_data = the parent view (0x10207237 = the "General" list), opaque_data = the order in it.
 #include <registryinfo.rh>

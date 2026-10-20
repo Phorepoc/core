@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // pheterm_reg.rss -- OURS: Terminal application registration (shows in the launcher grid = the Menu key's existing menu)
 #include <appinfo.rh>
 

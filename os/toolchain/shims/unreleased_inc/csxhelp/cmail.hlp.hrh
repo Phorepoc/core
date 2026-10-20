@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 //
 // cmail.hlp.hrh -- OURS (not Symbian source): the help-context header of S60 Email ("cmail"), which
 // the release never shipped (CSXHelp Utilities generated it from the Email help project). Only the

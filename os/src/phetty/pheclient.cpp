@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // pheclient.cpp -- OURS: RPheTty, the client side of phettyd (see phetty.h)
 #include "phetty.h"
 

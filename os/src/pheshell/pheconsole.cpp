@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // pheconsole.cpp -- OURS: the console eshell talks to inside pheshell: a CColorConsoleBase whose screen is a phettyd tty.
 // Output: the console calls become ANSI/VT bytes (CUP, EL, ED, SGR, cursor show/hide) in the tty's scrollback; the cursor is
 // tracked here (ewsrv's text-console rules: LF = CR+LF, CR to column 0, wrap at the right edge, scroll at the bottom), and

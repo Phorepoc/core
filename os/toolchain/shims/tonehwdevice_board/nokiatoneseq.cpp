@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // nokiatoneseq.cpp -- OURS (PHOREPOC board delta): Nokia tone sequences -> SQNC (see nokiatoneseq.h).
 //
 // The Nokia format, as AvkonSystemSounds.ra documents it opcode by opcode (all 34 Avkon sounds use only these):

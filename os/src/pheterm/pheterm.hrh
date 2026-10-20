@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // pheterm.hrh -- OURS: command ids of the Terminal app
 #ifndef PHETERM_HRH
 #define PHETERM_HRH

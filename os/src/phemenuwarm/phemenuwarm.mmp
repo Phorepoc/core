@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phemenuwarm.mmp -- OURS (Applications grid, first open): pre-warm the launcher's icons at boot (phemenuwarm.cpp)
 TARGET			phemenuwarm.exe
 TARGETTYPE		exe

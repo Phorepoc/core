@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // cmsetup.mmp -- OURS: S60 connection-settings bring-up for the Path C board (see cmsetup.cpp)
 TARGET			cmsetup.exe
 TARGETTYPE		exe

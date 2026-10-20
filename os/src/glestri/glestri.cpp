@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // glestri.cpp -- OURS (2026-10-09, GPU plan G2): the first OpenGL ES 2.0 program on our Symbian -- Mesa
 // (softpipe, no GPU) behind EGL, statically linked (emitter/components.py `glestri`). A full-screen RWindow, a
 // rotating colour triangle over a slowly cycling background, "[glestri] N frames in T ms" every ~2 s in the log.

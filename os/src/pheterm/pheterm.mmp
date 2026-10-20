@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // pheterm.mmp -- OURS: the on-screen terminal: an Avkon app drawing a phettyd tty (pheterm.cpp)
 #include <platform_paths.hrh>
 

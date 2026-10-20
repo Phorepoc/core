@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // fstest.cpp -- OURS: probe of the file-server operations a persisting server relies on
 // (Central Repository's commit = write temp file, close, RFs::Replace over the target).
 // Prints each step's result to the debug port.

@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // sistestdll.dll -- OURS: an x32 DLL shipped in a SIS (sistestdll.cpp)
 TARGET			sistestdll.dll
 TARGETTYPE		dll

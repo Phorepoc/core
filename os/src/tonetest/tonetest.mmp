@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // tonetest.mmp -- OURS (X4.89): a DevSound tone through the whole audio chain; the audio regression test
 TARGET			tonetest.exe
 TARGETTYPE		exe

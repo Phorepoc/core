@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // aknmenu.cpp -- OURS: an INTERIM S60 launcher on the from-source stack. It asks the real
 // AppList server (apsexe, RApaLsSession) for the installed applications, shows them in a real
 // Avkon selection list and starts the chosen one. The real launcher is the Symbian^3 matrixmenu;

@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // phimreg.h -- OURS (Phorepoc): the input-method registry.
 //
 // An Android-like "input method framework" on top of the 2010 pen input stack: several keyboards are installed side

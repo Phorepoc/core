@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // nettest.mmp -- OURS: the Path C networking smoke test (see nettest.cpp)
 TARGET			nettest.exe
 TARGETTYPE		exe

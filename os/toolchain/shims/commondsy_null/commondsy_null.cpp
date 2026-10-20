@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // commondsy_null.cpp -- OURS (not Symbian source): a null DSY (Domestic OS licensee plug-in) with the
 // REAL commondsyU.DEF ordinal table.
 //

@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 /* pe_engine.c -- OURS (Goal U): the mbedTLS 3.6 engine under the libssl.dll drop-in (see pe_engine.h).
  *
  * One pe_conn = one mbedtls_ssl_context + its own mbedtls_ssl_config (so each SSL's SNI, trust anchors and client

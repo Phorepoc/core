@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // pheshell.mmp -- OURS: ESHELL (the real etshell sources, unmodified) whose console is a phettyd tty (docs/phorepoc/phetty-plan.md).
 // MACRO Console=PheConsole turns the one Console::NewL(...) in CShell::NewL into PheConsole::NewL (the real <e32cons.h> then
 // declares it under the new name; pheconsole.cpp defines it and is the console). Started by phettyd with the tty id in process parameter slot 3.

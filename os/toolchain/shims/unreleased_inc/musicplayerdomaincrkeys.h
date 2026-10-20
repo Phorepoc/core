@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // musicplayerdomaincrkeys.h -- OURS (not Symbian source): a reconstruction of S60 Music Player's
 // central-repository key header, which the 2010 release never shipped (Phonebook2's DRM manager and
 // the MMS viewer / SMIL player include it). Searched LAST (components.py UNRELEASED_INC).

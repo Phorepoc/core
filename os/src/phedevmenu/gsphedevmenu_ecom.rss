@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // gsphedevmenu_ecom.rss -- OURS: ECOM registration of the Control Panel developer-menu entry
 #include <ecom/registryinfo.rh>
 

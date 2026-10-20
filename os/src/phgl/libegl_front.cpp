@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // libegl_front.cpp -- OURS: libEGL.dll, the frozen EGL 1.4 ABI (libegl14U.def) as a DISPATCHER over phgl.dll (Mesa):
 //   - the display, initialisation, errors and EGL_KHR_reusable_sync are handled HERE, without phgl.dll: the window
 //     server's openwfc render stage (openwfcwrapper.cpp: eglGetDisplay + eglInitialize + reusable syncs for its

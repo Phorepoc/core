@@ -1,3 +1,6 @@
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: EPL-1.0
+
 """mkcompsupp.py -- regenerate OUR build of the ARM compiler-support runtime (drtaeabi.dll) from the 2010 baseline.
 
 drtaeabi.dll is the DLL every SDK-built Symbian application imports for the EHABI unwinder, the C++ exception

@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phedevmenu.cpp -- OURS: the hidden developer settings application (docs/phorepoc/devmenu.md).
 // An Avkon settings list (CAknSettingItemList) whose values live in the CenRep repository KPheDevMenuRepoUid:
 //   UI shell (S^3 | S^4, only those the image carries: key 6), Control Panel shortcut (off | on), boot guard timeout (seconds).

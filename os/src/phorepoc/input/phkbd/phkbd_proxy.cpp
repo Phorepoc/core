@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phkbd_proxy.cpp -- OURS (Phorepoc): the ECom entry points of phkbd.dll
 #include <e32base.h>
 #include <implementationproxy.h>

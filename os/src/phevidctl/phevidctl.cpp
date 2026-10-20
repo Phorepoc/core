@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phevidctl.cpp -- OURS (VDU rung V4, docs/phorepoc/vdu-plan.md): the MMF video play controller for MP4 / 3GP.
 // Structure and call order follow the 2010 AviPlayController (baseline/symbian-2010/oss.FCL.sf.os.mmaudio/mmplugins/
 // mmfwplugins/src/Plugin/Controller/Video/AviPlayController): AddDataSourceL opens the clip and reports OpenComplete;

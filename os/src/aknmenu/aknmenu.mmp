@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // aknmenu.mmp -- OURS: interim S60 launcher (see aknmenu.cpp)
 #include <platform_paths.hrh>
 TARGET			aknmenu.exe

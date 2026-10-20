@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // ssltest.cpp -- OURS (Goal U): drives Open C's OpenSSL 0.9.8 API the way its real users do (javassl: a socket fd;
 // Qt: SSL_CTX_new(SSLv23_client_method()) + SNI + SSL_get_peer_certificate), against the mbedTLS libssl.dll drop-in
 // (shim/phorepoc/libssl_mbed). Not Symbian source.

@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // aknapp.cpp -- OURS: the smallest real S60 application on the from-source Avkon:
 // CAknApplication -> CAknDocument -> CAknAppUi -> one window-owning view control.
 // Status pane, softkeys (Options/Exit) and the Options menu come from Avkon itself.

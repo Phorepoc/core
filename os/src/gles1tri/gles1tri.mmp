@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // gles1tri.mmp -- OURS: the OpenGL ES 1.1 (fixed-function) sample (gles1tri.cpp): libEGL.dll + libGLESv1_CM.dll,
 // the ABIs most Symbian^3 games use.
 TARGET			gles1tri.exe

@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // pheterm.cpp -- OURS: Terminal, the on-screen face of the developer tty daemon (docs/phorepoc/phetty-plan.md, V1).
 // An Avkon app registered in the launcher grid (= the Menu key's existing menu); its Options menu lists the ttys:
 // New tty / Next tty / Close tty / Switch to tty 1..8. The screen is a CPheScreen fed from the tty's byte stream

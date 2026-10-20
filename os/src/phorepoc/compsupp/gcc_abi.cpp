@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // gcc_abi.cpp -- OURS: the RVCT-only pieces of the release's drtaeabi.dll, written for GCC
 // (kernel/eka/compsupp/rvct/{drtaeabi,aeabimem,type_info}.cpp use __asm blocks, $Sub$$ symbol aliasing and
 // #pragma import, which GCC has none of). Same functions, same exports; docs/phorepoc/compsupp-runtime.md.

@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phedevmenu.hrh -- OURS: ids of the developer menu
 #ifndef PHEDEVMENU_HRH
 #define PHEDEVMENU_HRH

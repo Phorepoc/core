@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // sisinst.mmp -- OURS (X4.86): silent SIS install through the real S60 installer; the SWI regression test
 TARGET			sisinst.exe
 TARGETTYPE		exe

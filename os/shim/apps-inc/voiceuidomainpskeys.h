@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // OURS (a stand-in): the Voice UI accessory-monitor Publish&Subscribe keys. The open release does not carry
 // voiceuidomainpskeys.h; FM Radio's system-event detector only subscribes to the key (slide/cover open-close), which
 // nothing publishes here. The UID/values are placeholders, not the Nokia ones.

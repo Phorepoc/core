@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phepowerkeyplugin.mmp -- OURS: a Control Panel (GS) page "Power key" -- what a short / a long press of the power key does
 // (CenRep 0xE70157B0 keys 1 and 2, read by SysAp at every press: src/phorepoc-arm/board/cenrep/e70157b0.txt).
 // Modelled on GSAutoKeyguardPlugin (same ECOM interface, same CGSBaseView / CGSBaseContainer frame).

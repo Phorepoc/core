@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // coneapp.mmp -- OURS: minimal CONE (control environment) application, no Uikon
 TARGET			coneapp.exe
 TARGETTYPE		exe

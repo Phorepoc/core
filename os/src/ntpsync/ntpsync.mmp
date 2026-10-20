@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // ntpsync.mmp -- OURS: SNTP client daemon for the Path C board (see ntpsync.cpp)
 TARGET			ntpsync.exe
 TARGETTYPE		exe

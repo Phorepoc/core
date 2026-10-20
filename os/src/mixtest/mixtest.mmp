@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // mixtest.mmp -- OURS (audio A0/Q0, docs/phorepoc/audio-mixing-plan.md): two concurrent audio clients, the mixing test
 TARGET			mixtest.exe
 TARGETTYPE		exe

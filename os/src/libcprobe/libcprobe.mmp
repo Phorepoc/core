@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // libcprobe.mmp -- OURS: P.I.P.S. libc/libm/libpthread probe (see libcprobe.cpp)
 TARGET			libcprobe.exe
 TARGETTYPE		exe

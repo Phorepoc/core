@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phgskbd.cpp -- OURS (Phorepoc): the Settings (GS) entry for the keyboard framework (see phgskbd.h)
 #include <aknViewAppUi.h>
 #include <aknsettingpage.h>

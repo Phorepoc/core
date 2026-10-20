@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // ssltest.mmp -- OURS (Goal U): the OpenSSL 0.9.8 API smoke test for the mbedTLS libssl.dll drop-in (ssltest.cpp)
 TARGET			ssltest.exe
 TARGETTYPE		exe

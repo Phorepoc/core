@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phkbd_board.cpp -- OURS (Phorepoc): the key area of the phkbd keyboard (see phkbd_board.h)
 #include <coemain.h>
 #include <w32std.h>

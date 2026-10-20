@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // cmsetup.cpp -- OURS: the S60 connection-settings bring-up for the Path C board (X4.68). Not Symbian source.
 //
 // An S60 phone's CommsDat is made at first boot by dbcreator (commsdatstartup: reset CommsDat, create the S60

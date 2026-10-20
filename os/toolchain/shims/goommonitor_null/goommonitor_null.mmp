@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // goommonitor_null.mmp -- OURS: null graphics-OOM monitor (see goommonitor_null.cpp); the ordinal
 // table is the REAL uiacceltk/hitchcock/goommonitor/eabi/goommonitoru.DEF.
 TARGET			goommonitor.dll

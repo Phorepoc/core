@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // libssl_mbed.mmp -- OURS (Goal U): Open C's libssl.dll (OpenSSL 0.9.8g ABI) with modern TLS from mbedTLS 3.6, in
 // place of the 2010 oss.FCL.sf.os.ossrv/ssl/libssl/group/libssl.mmp. Same name, UIDs, capabilities and frozen
 // exports (the registry points the build at the real eabi/libsslu.def); libcrypto.dll stays the release's 0.9.8g.

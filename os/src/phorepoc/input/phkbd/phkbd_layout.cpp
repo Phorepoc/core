@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phkbd_layout.cpp -- OURS (Phorepoc): the phkbd pen-input layout (see phkbd_layout.h)
 #include <e32keys.h>
 #include <e32debug.h>

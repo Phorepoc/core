@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // entropy_symbian.cpp -- OURS (Path C, docs/phorepoc/netsurf-port.md): mbedTLS's entropy source on Symbian
 // (MBEDTLS_ENTROPY_HARDWARE_ALT in phorepoc_mbedtls_config.h). euser's Math::Random(TDes8&) = the kernel's random
 // number generator -- what the Goal U ssl.dll port uses on the device too (shim/port/platform_symbian.c).

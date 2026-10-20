@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // phmixer_core.h -- OURS (audio Q0, docs/phorepoc/audio-mixing-plan.md 2.4): the PURE mixing functions of the userland
 // mixer (phmixer.cpp): dB-code -> gain, streaming polyphase windowed-sinc resampler (mono/stereo S16 -> 48 kHz stereo S32 accumulator;
 // the table: phmixer_sinc.h, tools/gen_phmix_sinc.py),

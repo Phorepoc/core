@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // inifile_board.cpp -- OURS: WSERV's REAL INIFILE.CPP (unmodified, #included) plus the UI renderer switch.
 //
 // One Wsini.ini carries both render-stage chains (docs/phorepoc/devmenu.md): a line starting "CLASSIC:" belongs to the Classic

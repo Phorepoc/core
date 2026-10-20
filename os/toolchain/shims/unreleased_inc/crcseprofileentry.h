@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // crcseprofileentry.h -- OURS (not Symbian source): the VoIP profile entry of the unreleased RCSE
 // registry, reduced to what the release's clients need (a complete type to ResetAndDestroy).
 // See crcseprofileregistry.h.

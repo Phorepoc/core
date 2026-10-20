@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phebrlaunch.mmp -- OURS: opens BrowserNG (0x10008D39) on a URL once apparc and the window server are up.
 // SSM_TEST=phebrlaunch (ROM_ARCH=arm) stages it as ssmtest.exe, started by the SSM non-critical list: the phone's BOOTLIST equivalent.
 TARGET			phebrlaunch.exe

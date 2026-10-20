@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phebsym.cpp -- OURS (src/phebrctl: phsym.cpp for the BrCtl engine DLL: no stdout redirect, no exit()). Original header: phsym.cpp -- OURS (Phorepoc, docs/phorepoc/browser-plan.md P1). The Symbian-API shim of the JSC port: compiled on the REAL Symbian include
 // line (everything else of the engine is on the pure Open C line, where e32 headers must not appear), called through
 // wtf/symbian/PhSymbian.h. All euser: UserHal (RAM size), RThread::StackInfo (stack bounds), User::AllocSize (heap footprint).

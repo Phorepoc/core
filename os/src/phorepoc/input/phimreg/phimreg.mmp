@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phimreg.mmp -- OURS (Phorepoc): the input-method registry DLL (see phimreg.h)
 TARGET			phimreg.dll
 TARGETTYPE		dll

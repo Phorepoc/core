@@ -1,3 +1,6 @@
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: EPL-1.0
+
 """components_apps -- the user-facing applications beyond the S^3 core (docs/phorepoc/apps-inventory.md): the MPX framework,
 the Music Player, then the Video Player and the rest. Merged into components.COMPONENTS unconditionally (a key only
 ships when an image has been built for it, so the default ROMs are unchanged until `./ph build` / `./ph arm` makes one).

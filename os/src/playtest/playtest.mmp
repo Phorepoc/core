@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // playtest.mmp -- OURS (audio U4): plays an audio file through CMdaAudioPlayerUtility; the file-playback test
 TARGET			playtest.exe
 TARGETTYPE		exe

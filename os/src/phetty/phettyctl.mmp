@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phettyctl.mmp -- OURS: phettyd test client (phettyctl.cpp): drives a tty from the debug port, headless
 #include <platform_paths.hrh>
 

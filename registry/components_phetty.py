@@ -1,3 +1,6 @@
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: EPL-1.0
+
 """components_phetty -- OURS: the developer tty daemon (docs/phorepoc/phetty-plan.md). Merged into components.COMPONENTS
 unconditionally (a key only ships when an image has been built for it; PHETTY=exclude drops the four keys from the ROM,
 x32_rom_args.py)."""

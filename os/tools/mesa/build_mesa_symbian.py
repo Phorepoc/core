@@ -1,3 +1,6 @@
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: EPL-1.0
+
 """build_mesa_symbian -- Mesa (baseline/mesa, pinned) compiled for ARM Symbian (GPU plan G2, OURS, 2026-10-09).
 
 Runs INSIDE the phorepoc-mesa container (tools/phorepoc-arm/mesa/Dockerfile), after a meson host configure + build

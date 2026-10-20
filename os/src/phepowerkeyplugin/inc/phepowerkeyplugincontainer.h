@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // phepowerkeyplugincontainer.h -- OURS: the list container of the Power key page
 #ifndef PHEPOWERKEYPLUGINCONTAINER_H
 #define PHEPOWERKEYPLUGINCONTAINER_H

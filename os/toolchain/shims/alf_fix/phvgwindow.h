@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // phvgwindow.h -- OURS: an EGL "window surface" for the alf server's RWindow on the software OpenVG EGL (libEGL_sw = riMiniEGL).
 //
 // Why: Hitchcock's CHuiVg10RenderSurface::CreateSurface calls eglCreateWindowSurface(display, config, RDrawableWindow*, ...).

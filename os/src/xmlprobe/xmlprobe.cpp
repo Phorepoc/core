@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // xmlprobe.cpp -- OURS: probe of the from-source XML stack matrixmenu's suite loader uses
 // (xmlenginedom -> xmlengineutils -> xmlengine = libxml2 -> the P.I.P.S. libc).
 // Parse a menu-suite-shaped document, walk it, read attributes, serialise it back.

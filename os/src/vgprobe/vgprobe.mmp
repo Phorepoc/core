@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // vgprobe.mmp -- OURS: software-OpenVG stack probe (see vgprobe.cpp)
 TARGET			vgprobe.exe
 TARGETTYPE		exe

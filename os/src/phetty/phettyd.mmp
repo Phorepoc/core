@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phettyd.mmp -- OURS: the developer tty daemon (phettyd.cpp; docs/phorepoc/phetty-plan.md)
 #include <platform_paths.hrh>
 

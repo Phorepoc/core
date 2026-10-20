@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phemenuwarm.cpp -- OURS: make the FIRST open of the Applications grid as fast as every later one.
 //
 // Why: the 2010 launcher (matrixmenu) is started at boot, in the

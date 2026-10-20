@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // ph_ritrace.h -- OURS: the RI's (sflibopenvgrefimpl) generated trace lines (tools/alf_instrument.py, riMiniEGL_ph.cpp / riImage_ph.cpp)
 // print only on the alf server thread: the same code runs constantly for WSERV's icon rasteriser and every VG client.
 #ifndef PH_RITRACE_H

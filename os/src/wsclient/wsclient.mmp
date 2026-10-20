@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // wsclient.mmp -- OURS: minimal native WSERV client (see wsclient.cpp)
 TARGET			wsclient.exe
 TARGETTYPE		exe

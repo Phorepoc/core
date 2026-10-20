@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // vgegltest.mmp -- OURS: OpenVG O1 test (see vgegltest.cpp): standard libEGL + libOpenVG/libOpenVGU vs the reference
 TARGET			vgegltest.exe
 TARGETTYPE		exe

@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // phkbd_pages.h -- OURS (Phorepoc): the key pages of phkbd as data (rows of keys with widths in tenths of a key unit).
 // A page is rows; a row's keys are laid out left to right from the row's indent, scaled so a 100-tenth row fills the
 // board width. Adding a language = another table of the same shape (the planned XML -> table generator emits these).

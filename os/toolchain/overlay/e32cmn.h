@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // toolchain/overlay/e32cmn.h -- OURS: include-path overlay in front of the real <e32cmn.h>.
 //
 // We build with -fno-exceptions, so TRAP is the setjmp-style TTrap::Trap/UnTrap pair

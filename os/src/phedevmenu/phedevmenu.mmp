@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phedevmenu.mmp -- OURS: the hidden developer settings application (phedevmenu.cpp; docs/phorepoc/devmenu.md)
 #include <platform_paths.hrh>
 

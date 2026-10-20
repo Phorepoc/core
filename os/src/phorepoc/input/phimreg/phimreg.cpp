@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phimreg.cpp -- OURS (Phorepoc): the input-method registry (see phimreg.h)
 #include <ecom/ecom.h>
 #include <ecom/implementationinformation.h>

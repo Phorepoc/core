@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // ri_fastblit.cpp -- OURS (ALF bring-up, sflibopenvgrefimpl_alf only): a straight-blit fast path for vgDrawImage.
 //
 // Hitchcock's VG canvas gc draws every window as a series of vgDrawImage(texture) with scale +-1 and an integer translation (the dominant canvas

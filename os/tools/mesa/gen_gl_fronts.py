@@ -1,3 +1,6 @@
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: EPL-1.0
+
 """gen_gl_fronts -- the frozen-ABI Khronos DLL fronts over the Mesa backend DLL (GPU plan, gpu-lima-research.md
 section 7 "DLL layout"; the 701 pattern of section 2.1: libEGL/libGLESv2 are thin thunks bound at load to the
 vendor backend). OURS, 2026-10-09.

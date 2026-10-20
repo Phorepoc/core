@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phkbd.mmp -- OURS (Phorepoc): the phkbd keyboard, a pen input server layout plug-in (see phkbd_layout.h)
 TARGET			phkbd.dll
 TARGETTYPE		plugin

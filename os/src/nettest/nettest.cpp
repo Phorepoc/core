@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // nettest.cpp -- OURS: the Path C networking smoke test (X4.48). Not Symbian source.
 //
 // Walks the whole user-side stack once, the way any Symbian application does, and logs each

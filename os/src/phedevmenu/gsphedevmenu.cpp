@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // gsphedevmenu.cpp -- OURS: Control Panel entry for the developer menu (docs/phorepoc/devmenu.md).
 // A GS plug-in whose item is visible only while CenRep KPheDevMenuRepoUid key 2 is 1; selecting it starts the hidden
 // settings application (a dialog-type item: GS calls HandleSelection instead of activating a view).

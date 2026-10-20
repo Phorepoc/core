@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // phkbd_board.h -- OURS (Phorepoc): the key area of the phkbd keyboard.
 //
 // One pen-input control (a CFepUiBaseCtrl) that owns the whole keyboard: it lays the keys out from data (phkbd_pages.h),

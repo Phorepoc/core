@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // hbcore_null.cpp -- OURS (not Symbian source): a null Orbit "device dialog" client with the REAL
 // HbCoreu.def ordinal table.
 //

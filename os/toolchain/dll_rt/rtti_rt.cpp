@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // rtti_rt.cpp -- OURS: the two libc symbols libsupc++'s RTTI support (type_info name
 // comparison in __dynamic_cast) needs. Linked only into RTTI-enabled images
 // (emitter/build_mmp.py `rtti`). No libc on Symbian: keep it freestanding.

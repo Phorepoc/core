@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 /*------------------------------------------------------------------------
  * riPhvg.cpp -- OURS (OpenVG O2, docs/phorepoc/openvg-plan.md): the glue between the Khronos reference implementation
  * and the GPU engine phvg.dll (src/phvg). Part of sflibopenvgrefimpl; the engine DLL is loaded with RLibrary only when

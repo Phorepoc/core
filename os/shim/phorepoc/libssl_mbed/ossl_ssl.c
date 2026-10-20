@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 /* ossl_ssl.c -- OURS (Goal U): a drop-in libssl.dll for Open C's OpenSSL 0.9.8g ABI, with TLS 1.2/1.3 from mbedTLS 3.6.
  *
  * Contract: the 215 frozen ordinals of the 2010 libsslu.def; the public

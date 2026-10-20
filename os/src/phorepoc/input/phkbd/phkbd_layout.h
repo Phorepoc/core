@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // phkbd_layout.h -- OURS (Phorepoc): the phkbd pen-input layout (a full-screen portrait layout: the input context field
 // on top, our key area at the bottom). A plug-in of the pen input server (ECom interface 0x102072FC), picked by the
 // input-method registry (phimreg) like any other keyboard.

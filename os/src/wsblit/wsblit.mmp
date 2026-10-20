@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // wsblit.mmp -- OURS: the window server bitmap-drawing test grid (see wsblit.cpp)
 TARGET			wsblit.exe
 TARGETTYPE		exe

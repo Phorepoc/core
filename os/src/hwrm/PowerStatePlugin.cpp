@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // OURS (PinePhone track, 2026-10-08): HWRM's power-state plug-in for the PinePhone, in place of the adapt.stubs one
 // (systemswstubs/hwrmstubplugins/src/PowerStatePlugin.cpp: never notifies, so Avkon's battery pane stayed empty).
 // Same class and header (proxy.cpp creates it). Every 10 s it reads the battery from the board's power HAL

@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // ossl_trace.cpp -- OURS (Goal U): the libssl.dll drop-in's trace line (C side: ossl_trace() in ossl_ssl.c).
 // PHOREPOC_LIBSSL_TRACE: one RDebug line per handshake result / failure, prefixed "[libssl]".
 #include <e32std.h>

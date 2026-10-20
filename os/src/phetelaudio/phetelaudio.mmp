@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phetelaudio.mmp -- OURS (telephony T1): the telephony audio routing server host + accept-all policy (see phetelaudio.cpp)
 TARGET			phetelaudio.exe
 TARGETTYPE		exe

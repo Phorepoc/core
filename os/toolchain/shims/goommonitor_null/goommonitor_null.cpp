@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // goommonitor_null.cpp — OURS (not Symbian source): a null graphics-OOM monitor with the REAL
 // goommonitoru.DEF ordinal table.
 //

@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phtrace_wfc.cpp -- OURS: exported wfc calls as traced pass-throughs (orientation work, 2026-10-12).
 // libwfc's own wfcapi.c is compiled with -D<name>=ph_real_<name> (emitter/components.py); this file defines the
 // exported names. A WFC_CONTEXT_ROTATION change -- the window server's display render stage rotating the screen for a

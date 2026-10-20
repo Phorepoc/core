@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // OURS: the REAL AlfDecoderServerClient/src/alfdecoderserverclient.cpp with "PH:" lines in the alfredserver thread, plus a SAMPLING WATCHDOG:
 // a second thread ("alfwatch", same process = WSERV) that every 2 s suspends the alf server thread, reads its user registers
 // (RThread::Context) and prints "PH: alf: watch pc=.. lr=.. sp=.." (symbolise with tools/romsym.py against the ROM map), then resumes it. A thread

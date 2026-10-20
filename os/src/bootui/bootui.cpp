@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // bootui.cpp -- OURS: a minimal system starter standing in for S60's SSM/sysstart while
 // the UI stack is brought up. ROLE SINCE X4.72-X4.78: the phone boots with the REAL SSM (BOOT=ssm); bootui is
 // (1) the app-regression cycler, started under SSM from the startup list (DSC, AMA starter) with a C:\bootui.txt

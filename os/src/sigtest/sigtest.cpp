@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // sigtest.cpp -- OURS: request-signal bookkeeping test for the Path C port (X4.68). Not Symbian source.
 //
 // BrowserNG's connection start completed (iStatus 0) but its active object never ran: the thread's request

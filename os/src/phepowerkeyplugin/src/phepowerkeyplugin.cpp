@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phepowerkeyplugin.cpp -- OURS: the Power key Control Panel page (after GSAutoKeyguardPlugin / GSSensorPlugin)
 //
 // Two radio-button settings in CenRep 0xE70157B0 (owner SysAp, which reads them at every key press):

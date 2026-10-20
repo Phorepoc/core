@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phetelprobe.mmp -- OURS (telephony T1): the user-side ETel smoke test against the fake modem (see phetelprobe.cpp)
 TARGET			phetelprobe.exe
 TARGETTYPE		exe

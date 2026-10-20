@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // phedevmenu.h -- OURS: the developer-menu repository (docs/phorepoc/devmenu.md). Shared by the settings app, the
 // Control Panel plug-in and (later) whatever reads a setting at boot: SSM's startup list, the kernel's boot guard.
 #ifndef PHEDEVMENU_H

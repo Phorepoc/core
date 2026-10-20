@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // svgtest.cpp -- OURS (2026-10-12, the SVG-Tiny icon bug): decode every SVG entry of the .mif files given on the command line
 // (default: z:\resource\apps\svgtest.mif) the way the icon server does (AknSvgFormatHandler.cpp: CSvgEngineInterfaceImpl::NewL with
 // an un-created dummy bitmap + ESVGRendererSW, PrepareDom on the entry's bytes, ContentDimensions). Prints "PH:" lines: the kernel

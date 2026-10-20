@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phedevmenu_reg.rss -- OURS: Developer menu registration. Hidden: not in the launcher grid; opened by the dialer code
 // *#3386633# (the Phone app's secret-code path) or the Control Panel shortcut
 #include <appinfo.rh>

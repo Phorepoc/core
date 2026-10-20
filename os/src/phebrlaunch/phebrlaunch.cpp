@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phebrlaunch.cpp -- OURS: launch BrowserNG on a URL at boot (the phone's equivalent of the x86 BOOTLIST '0x10008D39=<url>').
 // The URL is KDefaultUrl (edit + rebuild; one-line change).
 #include <e32base.h>

@@ -1,3 +1,6 @@
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: EPL-1.0
+
 """components_codecpack -- the OPTIONAL codec pack (docs/phorepoc/audio.md "Codec policy"), merged into
 components.COMPONENTS only when PHOREPOC_CODECPACK=1: AAC stays out of the default build, the regression and any
 prebuilt image. Build it yourself: bash tools/codecpack/aac_codecpack.sh, then

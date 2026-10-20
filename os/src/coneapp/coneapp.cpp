@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // coneapp.cpp -- OURS: the smallest application on the real control environment
 // (cone.dll, from source): CCoeEnv owns the WSERV/FBS sessions, the active
 // scheduler and the event loop; a CCoeAppUi owns one window-owning CCoeControl

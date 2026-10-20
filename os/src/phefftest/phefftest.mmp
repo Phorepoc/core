@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phefftest.mmp -- OURS (docs/phorepoc/ffmpeg-vlc-plan.md F1): the FFmpeg media set (LGPL, tools/codecpack/ffmpeg_media.sh) as
 // PREBUILT ARCHIVES (registry arm_archives / x32_archives) linked into an Open C EXE that demuxes + software-decodes the in-ROM
 // samples (Z:\resource\phefftest\) and prints "PH: fft" lines. SSM_TEST=phefftest stages it at boot.

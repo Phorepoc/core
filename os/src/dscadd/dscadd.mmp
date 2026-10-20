@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // dscadd.mmp -- OURS: register a program in the S60 startup list (DSC store), as SWI's startuplistupdater does
 TARGET			dscadd.exe
 TARGETTYPE		exe

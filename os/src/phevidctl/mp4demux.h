@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // mp4demux.h -- OURS (VDU rung V4, docs/phorepoc/vdu-plan.md): a small ISO base media file (MP4 / 3GP / MOV) demuxer core
 // for the phevidctl video controller. Plain C++ (no Symbian types, no allocation, no static data): it reads the moov box
 // from a caller-supplied byte reader, finds the first H.264 ('avc1'/'avc3') video track, and enumerates its samples

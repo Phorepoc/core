@@ -1,3 +1,6 @@
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: EPL-1.0
+
 """components -- the registry build_mmp.py builds from.
 
 Key = the LIBRARY stem clients name in their .mmp (`LIBRARY estor.lib` -> "estor").

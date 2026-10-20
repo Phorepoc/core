@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // phepowerkeypluginimplementationtable.cpp -- OURS: the ECOM proxy table (after GSAutoKeyguardPluginImplementationTable)
 #include <e32std.h>
 #include <ecom/implementationproxy.h>

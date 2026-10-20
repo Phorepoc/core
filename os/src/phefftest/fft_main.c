@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 /* fft_main.c -- OURS (docs/phorepoc/ffmpeg-vlc-plan.md F1): open an in-ROM sample with libavformat over a custom AVIOContext,
    decode every video + audio packet in software with libavcodec, print "PH: fft" lines (streams, codecs, frame counts, a
    checksum of the first decoded video frame, decode ms). Samples: tools/codecpack/make_fft_samples.sh. */

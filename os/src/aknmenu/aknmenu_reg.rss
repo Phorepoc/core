@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // aknmenu_reg.rss -- OURS: application registration
 #include <appinfo.rh>
 UID2 KUidAppRegistrationResourceFile

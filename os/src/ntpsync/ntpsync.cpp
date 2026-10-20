@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // ntpsync.cpp -- OURS: an SNTP client daemon (RFC 4330) for the Path C board (X4.50). Not Symbian source.
 //
 // A phone took its time from the cellular network (NITZ, through the telephony stack); the 2010 tree

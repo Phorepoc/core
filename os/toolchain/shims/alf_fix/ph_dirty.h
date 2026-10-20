@@ -1,3 +1,6 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: EPL-1.0 */
+
 // ph_dirty.h -- OURS (ALF bring-up): the dirty rectangles of the frame CHuiDisplay::Refresh just drew, handed to the swap (phvgwindow.h PhVgSwapBuffers) so that it
 // copies and submits only those rectangles. Shared by the generated HuiDisplay_ph.cpp (writes the list) and HuiVg10RenderSurface_ph.cpp (writes the merged rectangle,
 // reads both); inline functions with a function-local static, so every translation unit of hitchcock / huirenderpluginvg sees one copy per DLL.

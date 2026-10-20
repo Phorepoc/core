@@ -62,4 +62,6 @@ which `ph image compare` checks against another build.
 
 ## Licence
 
-Eclipse Public License 1.0 (see `LICENSE`), except third-party files that say otherwise in their headers.
+Eclipse Public License 1.0 (see `LICENSE`), copyright The Phorepoc Authors (`AUTHORS`, `NOTICE`), except third-party files that say otherwise in their headers.
+
+Contributions are welcome under the same terms: add yourself to `AUTHORS`.

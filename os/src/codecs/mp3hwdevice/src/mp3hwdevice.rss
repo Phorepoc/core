@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // mp3hwdevice.rss -- OURS: ECom registration of the MP3 -> PCM16 HW device (mp3hwdevice.cpp)
 #include <ecom/registryinfo.rh>
 #include <mmf/plugin/mmfplugininterfaceuids.hrh>

@@ -1,3 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
 // commondsy_null.mmp -- OURS: null DSY for the DOS server (see commondsy_null.cpp); UIDs as the real
 // dosservices/commondsy/group/CommonDSY.mmp, ordinal table = the REAL commondsy/EABI/commondsyU.DEF.
 #include <platform_paths.hrh>
