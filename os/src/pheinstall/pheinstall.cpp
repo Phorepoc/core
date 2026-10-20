@@ -37,7 +37,7 @@ static TInt InstallL(const TDesC& aFile, TChar aDrive)
 
 	RSWInstSilentLauncher launcher;
 	TInt r = launcher.Connect();
-	RDebug::Printf("[pheinstall] installer connect %d", r);
+	RDebug::Printf("PH: [pheinstall] installer connect %d", r);
 	User::LeaveIfError(r);
 	CleanupClosePushL(launcher);
 	r = launcher.SilentInstall(aFile, pckg);
@@ -45,12 +45,13 @@ static TInt InstallL(const TDesC& aFile, TChar aDrive)
 	return r;
 	}
 
-// the debug log carries 8-bit RDebug::Printf lines (a 16-bit RDebug::Print does not reach it)
+// the debug log carries 8-bit RDebug::Printf lines (a 16-bit RDebug::Print does not reach it); on the phone only user
+// lines starting "PH:" pass its filter
 static void Report(const TDesC& aFile, const char* aWhat, TInt aValue)
 	{
 	TBuf8<256> f;
 	f.Copy(aFile.Left(255));
-	RDebug::Printf("[pheinstall] %s: %s %d", f.PtrZ(), aWhat, aValue);
+	RDebug::Printf("PH: [pheinstall] %s: %s %d", f.PtrZ(), aWhat, aValue);
 	}
 
 TInt E32Main()
