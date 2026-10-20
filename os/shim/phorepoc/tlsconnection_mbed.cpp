@@ -345,7 +345,7 @@ void CTlsConnection::LoadTrustAnchorsL()
 	RFs fs;
 	User::LeaveIfError(fs.Connect());
 	CleanupClosePushL(fs);
-	// every drive, the loader's order (C: before Z:): Phorepoc ships the bundle as ROM data, a real 701 carries it
+	// every drive, the loader's order (C: before Z:): Phorepoc ships the bundle as ROM data, a stock phone carries it
 	// on C: next to this DLL's eclipsing copy
 	TFindFile find(fs);
 	User::LeaveIfError(find.FindByDir(KCaBundleName, KCaBundleDir));

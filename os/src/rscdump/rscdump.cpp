@@ -3,10 +3,10 @@
 
 // rscdump.cpp -- OURS (X4.79): print the readable strings of every resource in a resource file, decoded by the
 // platform's own reader (bafl RResourceFile: plain, dictionary- and run-length-compressed files alike). For ground
-// truth from a firmware we cannot decompress on the host -- e.g. the 701's compiled SSM command lists (which
+// truth from a firmware we cannot decompress on the host -- e.g. a phone's compiled SSM command lists (which
 // programs the real phone starts at boot), copied onto C: of a scratch disk:
 //
-//     rscdump c:\701\noncriticalcmdlist.rsc [more files ...]
+//     rscdump c:\data\noncriticalcmdlist.rsc [more files ...]
 //
 // Output on the serial log: "[rscdump] <file> #<id> <len> B: <string> | <string> ..." -- 8-bit and 16-bit runs of
 // printable characters (>= 4), which is where a command list's executable names and arguments live.

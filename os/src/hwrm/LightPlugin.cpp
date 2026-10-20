@@ -144,7 +144,7 @@ void CLightPlugin::ProcessCommandL( const TInt aCommandId,
             HWRMLightCommand::TLightsOnSensorCmdPackage senPckg;
             senPckg.Copy(aData);
             if (senPckg().iTarget & KDisplayTarget)
-                DisplayLight(ETrue, 0);	// no ambient light sensor: the current (Brightness setting) level	// the 701: the "Light sensor" slider IS the brightness
+                DisplayLight(ETrue, 0);	// no ambient light sensor: the current (Brightness setting) level	// the "Light sensor" slider IS the brightness
             }
 #ifdef PUBLISH_STATE_INFO
             HWRMLightCommand::TLightsOnSensorCmdPackage pckg;

@@ -28,7 +28,7 @@ for f in "${XFLAGS[@]}"; do [ "$f" = "-w" ] || XF+=("$f"); done
 # (-iquote library/ and mbedTLS's include/ ahead of the Open C line: its stdapis/openssl headers share names)
 XF+=(-Werror=implicit-function-declaration -Werror=implicit-int -Wno-attributes -fmax-errors=5
      "-DMBEDTLS_CONFIG_FILE=\"phorepoc_mbedtls_config.h\"" -iquote "$SRC/library" -I"$HERE" -I"$SRC/include")
-# ARM (the real 701): platform_util.c knows no clock there -> entropy_symbian.cpp's mbedtls_ms_time (as ssl_arm)
+# ARM: platform_util.c knows no clock there -> entropy_symbian.cpp's mbedtls_ms_time (as ssl_arm)
 [ "${NS_ARCH:-x32}" = arm ] && XF+=(-DMBEDTLS_PLATFORM_MS_TIME_ALT)
 
 od=$OUT/obj/libmbedtls; ld=$OUT/logs/libmbedtls

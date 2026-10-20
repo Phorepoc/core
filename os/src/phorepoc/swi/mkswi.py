@@ -19,7 +19,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 # output dir named like the package: emitter/mmp.py variant_for() picks the S60 product variant (SYMBIAN_UNIVERSAL_INSTALL_FRAMEWORK...)
-# by the oss.FCL.sf.mw. path -- the src/belle convention
+# by the oss.FCL.sf.mw. path
 OUT = os.path.join(HERE, "oss.FCL.sf.mw.appinstall-group")
 os.makedirs(OUT, exist_ok=True)
 SWI = os.path.join(REPO, "baseline", "symbian-rcl3", "oss.FCL.sf.mw.appinstall", "installationservices", "swi")

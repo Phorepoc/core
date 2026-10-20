@@ -5,7 +5,7 @@
 // place of the 2010 oss.FCL.sf.os.ossrv/ssl/libssl/group/libssl.mmp. Same name, UIDs, capabilities and frozen
 // exports (the registry points the build at the real eabi/libsslu.def); libcrypto.dll stays the release's 0.9.8g.
 // Phorepoc (x32): mbedTLS is the PREBUILT archive of tools/phorepoc-x86/mbedtls/build_mbedtls.sh (registry
-// `x32_archives`). The real 701 (ARM, libssl_arm): its C sources are compiled in (registry `extra`).
+// `x32_archives`). ARM (libssl_ph): its C sources are compiled in (registry `extra`).
 #include <platform_paths.hrh>
 
 TARGET			libssl.dll
