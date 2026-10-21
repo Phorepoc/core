@@ -23,6 +23,9 @@
 #include <eikmenup.h>
 #include <eikmenub.h>
 #include <eikappui.h>
+#include <eikedwin.h>
+#include <eikbtgpc.h>
+#include <txtfrmat.h>
 #include <avkon.hrh>
 #include <apgcli.h>
 #include <apacmdln.h>
@@ -48,17 +51,17 @@ static const TInt KThumbW = 160, KThumbH = 240;
 static TRgb Rgb(unsigned aC) { return TRgb((aC >> 16) & 0xFF, (aC >> 8) & 0xFF, aC & 0xFF); }
 
 // ---- the search engines: chosen on first launch, none preselected; %s = the query ---------------------------------------
-struct TPbSearch { const char* iName; const char* iTemplate; };
+struct TPbSearch { const char* iName; const char* iTemplate; unsigned iColor; };   // iColor: the lettermark tile (a plain colour, no logo)
 static const TPbSearch KSearches[] =
 	{
-	{ "Google", "https://www.google.com/search?q=%s" },
-	{ "DuckDuckGo", "https://duckduckgo.com/?q=%s" },
-	{ "Bing", "https://www.bing.com/search?q=%s" },
-	{ "Startpage", "https://www.startpage.com/do/search?q=%s" },
-	{ "Brave Search", "https://search.brave.com/search?q=%s" },
-	{ "Ecosia", "https://www.ecosia.org/search?q=%s" },
-	{ "Qwant", "https://www.qwant.com/?q=%s" },
-	{ "Yahoo", "https://search.yahoo.com/search?p=%s" }
+	{ "Google", "https://www.google.com/search?q=%s", 0x4285F4 },
+	{ "DuckDuckGo", "https://duckduckgo.com/?q=%s", 0xDE5833 },
+	{ "Bing", "https://www.bing.com/search?q=%s", 0x008373 },
+	{ "Startpage", "https://www.startpage.com/do/search?q=%s", 0x6573FF },
+	{ "Brave Search", "https://search.brave.com/search?q=%s", 0xFB542B },
+	{ "Ecosia", "https://www.ecosia.org/search?q=%s", 0x4E9A06 },
+	{ "Qwant", "https://www.qwant.com/?q=%s", 0x5C97FF },
+	{ "Yahoo", "https://search.yahoo.com/search?p=%s", 0x6001D2 }
 	};
 static const TInt KSearchCount = sizeof(KSearches) / sizeof(KSearches[0]);   // + "Custom..." as the last row
 
@@ -155,6 +158,22 @@ enum TPbSheetItem
 	ESheetNewTab, ESheetNewPrivate, ESheetFind, ESheetBar, ESheetTheme, ESheetSearch, ESheetStore, ESheetExit, ESheetCount
 	};
 
+// the address editor: a CEikEdwin that can take a text colour (its char format layer is protected)
+class CPbEdwin : public CEikEdwin
+	{
+public:
+	void SetInkL(TRgb aInk)
+		{
+		if (!iCharFormatLayer)
+			return;
+		TCharFormat cf;
+		TCharFormatMask cm;
+		cf.iFontPresentation.iTextColor = aInk;
+		cm.SetAttrib(EAttColor);
+		iCharFormatLayer->SetL(cf, cm);
+		}
+	};
+
 // ---- the container: the whole UI is this one control ------------------------------------------------------------------------------
 class CPbContainer : public CCoeControl
 	{
@@ -170,6 +189,7 @@ public:
 		for (TInt i = 0; i < iTabs.Count(); ++i)
 			delete iTabs[i].iThumb;
 		delete iCallBack;
+		delete iEdit;
 		delete iPageBmp;
 		iTabs.Close();
 		}
@@ -180,6 +200,10 @@ public:
 		CreateWindowL();
 		EnableDragEvents();
 		iCallBack = new (ELeave) CAsyncCallBack(TCallBack(Pump, this), CActive::EPriorityStandard);
+		iEdit = new (ELeave) CPbEdwin;                       // the address editor: in place, inside the bar
+		iEdit->SetContainerWindowL(*this);
+		iEdit->ConstructL(EEikEdwinNoWrap, 0, 255, 1);
+		iEdit->MakeVisible(EFalse);
 		SetRect(aRect);
 		ActivateL();
 #ifdef PHEBROWSER_DUMMY
@@ -267,6 +291,8 @@ public:
 	void ToggleBar() { SetBar(iSet->iBar == EPbBarTop ? EPbBarBottom : EPbBarTop); }
 	TBool GoBackIfPossible()
 		{
+		if (iEditing)
+			{ EndEditL(EFalse); return ETrue; }
 		if (iMode != EModeBrowse)
 			{ iMode = EModeBrowse; DrawDeferred(); return ETrue; }
 		if (iCur >= 0 && iTabs[iCur].iBack)
@@ -283,11 +309,62 @@ public:
 			return;
 		if (iSet->iSearchTemplate.Length() == 0)
 			{ iMode = EModeSearchPick; DrawDeferred(); return; }
-		TBuf<256> u(iTabs[iCur].iUrl);
-		CAknTextQueryDialog* d = CAknTextQueryDialog::NewL(u);
-		if (d->ExecuteLD(R_PHEBROWSER_URL_QUERY))
-			Navigate(u);
+		StartEditL();
 		}
+	// ---- the address bar edits IN PLACE: a CEikEdwin inside the field (the FEP / on-screen keyboard attach to it) ----
+	TRect EditRect(const TPbLayout& l) const
+		{
+		TRect f = FieldRect(l);
+		f.iTl.iX += f.Height() / 2;
+		f.iBr.iX -= f.Height();               // room for the clear (x) button
+		f.Shrink(0, 3);
+		return f;
+		}
+	TRect ClearRect(const TPbLayout& l) const
+		{
+		const TRect f = FieldRect(l);
+		return TRect(f.iBr.iX - f.Height(), f.iTl.iY, f.iBr.iX, f.iBr.iY);
+		}
+	void StartEditL()
+		{
+		const TPbLayout l = Layout();
+		const TPbTokens tk = Tk();
+		iEdit->OverrideColorL(EColorControlBackground, Rgb(tk.iField));
+		iEdit->OverrideColorL(EColorControlText, Rgb(tk.iInk));
+		iEdit->SetBackgroundColorL(Rgb(tk.iField));   // (the editor keeps its skin colours: dark text on white)
+		iEdit->SetRect(EditRect(l));
+		iEdit->SetTextL(&iTabs[iCur].iUrl);
+		iEdit->MakeVisible(ETrue);
+		iEdit->SetFocus(ETrue);
+		iEdit->SelectAllL();                  // select all on focus: typing replaces the address
+		iEditing = ETrue;
+		DrawDeferred();
+		}
+	void EndEditL(TBool aGo)
+		{
+		if (!iEditing)
+			return;
+		HBufC* text = NULL;
+		if (aGo)
+			{
+			const TInt n = iEdit->TextLength();
+			text = HBufC::NewL(n + 1);
+			TPtr p = text->Des();
+			iEdit->GetText(p);
+			}
+		iEdit->SetFocus(EFalse);
+		iEdit->MakeVisible(EFalse);
+		iEditing = EFalse;
+		if (text)
+			{
+			CleanupStack::PushL(text);
+			Navigate(*text);
+			CleanupStack::PopAndDestroy(text);
+			}
+		DrawDeferred();
+		}
+	TInt CountComponentControls() const { return (iEdit && iEditing) ? 1 : 0; }
+	CCoeControl* ComponentControl(TInt) const { return iEdit; }
 	TBool BarAtBottom() const { return iSet->iBar == EPbBarBottom; }
 
 private:
@@ -344,7 +421,7 @@ private:
 		a.Shrink(8, 8);
 		return a;
 		}
-	void SizeChanged() { Relayout(); }
+	void SizeChanged() { if (iEditing) iEdit->SetRect(EditRect(Layout())); Relayout(); }
 	void Relayout()
 		{
 		if (!iApi)
@@ -535,6 +612,19 @@ private:
 		gc.DrawText(fit, r, (r.Height() + f->AscentInPixels() - f->DescentInPixels()) / 2, a, aMargin);
 		gc.DiscardFont();
 		}
+	// A neutral lettermark tile for a search engine: a rounded square in a brand-ish colour with the engine's initial.
+	// Drawn by us -- the companies' logos are trademarks and are NOT shipped (browser-frontend.md, "Icons and trademarks").
+	void Lettermark(CWindowGc& gc, const TRect& r, const TDesC& aName, unsigned aColor) const
+		{
+		gc.SetPenStyle(CGraphicsContext::ENullPen);
+		gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
+		gc.SetBrushColor(Rgb(aColor));
+		gc.DrawRoundRect(r, TSize(r.Height() / 4, r.Height() / 4));
+		TBuf<2> ini;
+		if (aName.Length())
+			ini.Append(aName[0]);
+		Txt(gc, ini, r, CGraphicsContext::ECenter, KRgbWhite);
+		}
 	void Button(CWindowGc& gc, const TRect& r, const TDesC& s, TRgb bg, TRgb fg) const
 		{
 		gc.SetPenStyle(CGraphicsContext::ENullPen);
@@ -604,6 +694,17 @@ private:
 		gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
 		gc.SetBrushColor(Rgb(tk.iField));
 		gc.DrawRoundRect(f, TSize(f.Height() / 2, f.Height() / 2));
+		if (iEditing)                        // the editor draws the text; we draw the clear (x) button
+			{
+			const TPoint c = ClearRect(l).Center();
+			gc.SetPenStyle(CGraphicsContext::ESolidPen);
+			gc.SetPenSize(TSize(2, 2));
+			gc.SetPenColor(Rgb(tk.iDim));
+			gc.DrawLine(TPoint(c.iX - 6, c.iY - 6), TPoint(c.iX + 6, c.iY + 6));
+			gc.DrawLine(TPoint(c.iX - 6, c.iY + 6), TPoint(c.iX + 6, c.iY - 6));
+			gc.SetPenSize(TSize(1, 1));
+			return;
+			}
 		TRect text = f;
 		text.iTl.iX += f.Height() + 2;
 		text.iBr.iX -= f.Height() / 2;
@@ -800,7 +901,19 @@ private:
 			const TRect r(s.iTl.iX, s.iTl.iY + i * KRowH, s.iBr.iX, s.iTl.iY + (i + 1) * KRowH);
 			TBuf<64> lab;
 			SheetLabel(i, lab);
-			Txt(gc, lab, r, CGraphicsContext::ELeft, Rgb(tk.iInk), 16);
+			TInt margin = 16;
+			if (i == ESheetSearch)           // the engine row carries its lettermark
+				{
+				TBuf<48> en;
+				en.Copy(iSet->iSearchName);
+				unsigned col = 0x7A7F88;
+				for (TInt k = 0; k < KSearchCount; ++k)
+					if (iSet->iSearchName == P8(KSearches[k].iName))
+						col = KSearches[k].iColor;
+				Lettermark(gc, TRect(r.iTl.iX + 12, r.iTl.iY + 10, r.iTl.iX + 40, r.iTl.iY + 38), en, col);
+				margin = 52;
+				}
+			Txt(gc, lab, r, CGraphicsContext::ELeft, Rgb(tk.iInk), margin);
 			gc.SetPenStyle(CGraphicsContext::ESolidPen);
 			gc.SetPenColor(Rgb(tk.iField));
 			gc.DrawLine(TPoint(r.iTl.iX, r.iBr.iY - 1), TPoint(r.iBr.iX, r.iBr.iY - 1));
@@ -828,7 +941,8 @@ private:
 			const TRect r = PickRow(i);
 			TBuf<48> n;
 			if (i < KSearchCount) n.Copy(P8(KSearches[i].iName)); else n = _L("Custom address...");
-			Txt(gc, n, r, CGraphicsContext::ELeft, Rgb(tk.iInk), 20);
+			Lettermark(gc, TRect(r.iTl.iX + 16, r.iTl.iY + 6, r.iTl.iX + 48, r.iTl.iY + 38), n, i < KSearchCount ? KSearches[i].iColor : 0x7A7F88);
+			Txt(gc, n, r, CGraphicsContext::ELeft, Rgb(tk.iInk), 64);
 			gc.SetPenStyle(CGraphicsContext::ESolidPen);
 			gc.SetPenColor(Rgb(tk.iField));
 			gc.DrawLine(TPoint(r.iTl.iX + 12, r.iBr.iY - 1), TPoint(r.iBr.iX - 12, r.iBr.iY - 1));
@@ -862,6 +976,20 @@ private:
 			{ iDownPos = aE.iPosition; iDragY = aE.iPosition.iY; iMoved = EFalse; }
 		else if (aE.iType == TPointerEvent::EDrag && Abs(aE.iPosition.iY - iDownPos.iY) > 6)
 			iMoved = ETrue;
+		if (iEditing)
+			{
+			const TPbLayout el = Layout();
+			if (EditRect(el).Contains(aE.iPosition))
+				{ CCoeControl::HandlePointerEventL(aE); return; }      // caret placement, selection: the editor's
+			if (aE.iType == TPointerEvent::EButton1Up)
+				{
+				if (ClearRect(el).Contains(aE.iPosition))
+					{ iEdit->SetTextL(&KNullDesC); iEdit->SetFocus(ETrue); DrawDeferred(); }
+				else if (!FieldRect(el).Contains(aE.iPosition))
+					EndEditL(EFalse);                                   // tap outside = cancel
+				}
+			return;
+			}
 		switch (iMode)
 			{
 		case EModeGrid: GridPointer(aE); return;
@@ -988,6 +1116,31 @@ private:
 		}
 	TKeyResponse OfferKeyEventL(const TKeyEvent& aKey, TEventCode aType)
 		{
+		// no CBA in the full-screen UI: the hardware / touch soft keys (Options, Back) are ours
+		if (aType == EEventKey || aType == EEventKeyUp || aType == EEventKeyDown)
+			{
+			const TBool opt = aKey.iCode == EKeyDevice0 || aKey.iScanCode == EStdKeyDevice0;
+			const TBool back = aKey.iCode == EKeyDevice1 || aKey.iScanCode == EStdKeyDevice1;
+			if (opt || back)
+				{
+				if (aType == EEventKey)
+					{
+					if (opt)
+						{ if (iEditing) EndEditL(EFalse); else if (iMode == EModeSheet) { iMode = EModeBrowse; DrawDeferred(); } else OpenSheet(); }
+					else
+						iEikonEnv->EikAppUi()->HandleCommandL(EAknSoftkeyBack);
+					}
+				return EKeyWasConsumed;
+				}
+			}
+		if (iEditing)
+			{
+			if (aType == EEventKey && (aKey.iCode == EKeyEnter || aKey.iCode == EKeyDevice3 || aKey.iCode == EKeyOK))
+				{ EndEditL(ETrue); return EKeyWasConsumed; }              // Enter = go
+			if (aType == EEventKey && aKey.iCode == EKeyEscape)
+				{ EndEditL(EFalse); return EKeyWasConsumed; }
+			return iEdit->OfferKeyEventL(aKey, aType);
+			}
 		if (aType != EEventKey || iCur < 0 || iMode != EModeBrowse || !iApi || !iTabs[iCur].iUrl.Length())
 			return EKeyWasNotConsumed;
 		const TInt step = Layout().iPage.iH / 3;
@@ -1003,6 +1156,8 @@ private:
 	TPbMode iMode = EModeBrowse;
 	CAsyncCallBack* iCallBack = NULL;
 	CFbsBitmap* iPageBmp = NULL;
+	CPbEdwin* iEdit = NULL;
+	TBool iEditing = EFalse;
 	TInt iDragY = 0, iGridScroll = 0;
 	TPoint iDownPos;
 	TBool iDragging = EFalse, iMoved = EFalse;
@@ -1015,11 +1170,17 @@ public:
 	void ConstructL()
 		{
 		BaseConstructL(EAknEnableSkin);
+		// full screen: no status pane, no CBA -- our own bar has back / menu, and the hardware Options / Back keys are
+		// handled by the container (OfferKeyEventL)
+		if (StatusPane())
+			StatusPane()->MakeVisible(EFalse);
+		if (Cba())
+			Cba()->MakeVisible(EFalse);
 		RDebug::Printf("PH: [phebrowser] AppUi base ok");
 		iSet.Load(iEikonEnv->FsSession());
 		RDebug::Printf("PH: [phebrowser] settings ok, theme=%d bar=%d", iSet.iTheme, (int)iSet.iBar);
 		iView = new (ELeave) CPbContainer;
-		iView->ConstructL(ClientRect(), &iSet);
+		iView->ConstructL(ApplicationRect(), &iSet);
 		RDebug::Printf("PH: [phebrowser] container ok");
 		AddToStackL(iView);
 		}
@@ -1028,6 +1189,18 @@ public:
 		if (iView)
 			RemoveFromStack(iView);
 		delete iView;
+		}
+	void HandleResourceChangeL(TInt aType)       // rotation: stay full screen
+		{
+		CAknAppUi::HandleResourceChangeL(aType);
+		if (aType == KEikDynamicLayoutVariantSwitch && iView)
+			{
+			if (StatusPane())
+				StatusPane()->MakeVisible(EFalse);
+			if (Cba())
+				Cba()->MakeVisible(EFalse);
+			iView->SetRect(ApplicationRect());
+			}
 		}
 	void DynInitMenuPaneL(TInt aResourceId, CEikMenuPane* aPane)
 		{
