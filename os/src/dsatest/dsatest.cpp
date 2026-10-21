@@ -16,7 +16,7 @@
 #include <fbs.h>
 #include <bitdev.h>
 #include <bitstd.h>
-#include <platform/cdsb.h>
+#include <cdsb.h>   // exported to the include root (SYMBIAN_OLD_EXPORT_LOCATION)
 
 static const TInt KFrames = 300;
 

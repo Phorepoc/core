@@ -15,7 +15,7 @@
 #include <e32math.h>
 #include <hal.h>
 #include <w32std.h>
-#include <platform/cdsb.h>
+#include <cdsb.h>   // exported to the include root (SYMBIAN_OLD_EXPORT_LOCATION)
 #include <mmf/common/mmfcontroller.h>
 #include <mmf/server/mmfdatasource.h>
 #include <mmf/server/mmfdatasink.h>
