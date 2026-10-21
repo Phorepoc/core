@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phtrace_wfc.cpp -- OURS: exported wfc calls as traced pass-throughs (orientation work, 2026-10-12).
 // libwfc's own wfcapi.c is compiled with -D<name>=ph_real_<name> (emitter/components.py); this file defines the

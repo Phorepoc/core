@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // wsclient.cpp -- OURS: the smallest native WSERV client. Opens a window-server
 // session, creates a window group + one RWindow, and draws into it with a

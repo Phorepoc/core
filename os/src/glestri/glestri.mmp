@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // glestri.mmp -- OURS: the first OpenGL ES 2.0 program (glestri.cpp), an ordinary client of libEGL.dll +
 // libGLESv2.dll (the frozen 2010 ABIs; behind them phgl.dll = Mesa on the Mali-400).

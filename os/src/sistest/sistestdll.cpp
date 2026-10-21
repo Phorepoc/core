@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // sistestdll.cpp -- OURS: the smallest DLL that proves an x32 DLL loads FROM DISK (a SIS install) under the real
 // F32 loader: an export (the in-code export directory, relocated), writable data and a data pointer (data

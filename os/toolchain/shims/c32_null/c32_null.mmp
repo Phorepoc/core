@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // c32_null.mmp -- OURS: null serial-comms client (see c32_null.cpp); the ordinal table is
 // the REAL serialserver/c32serialserver/eabi/c32U.def.

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // rscdump.cpp -- OURS (X4.79): print the readable strings of every resource in a resource file, decoded by the
 // platform's own reader (bafl RResourceFile: plain, dictionary- and run-length-compressed files alike). For ground

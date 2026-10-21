@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phevidtest.cpp -- OURS (VDU rung V4): plays an MP4 file through the REAL Symbian MMF video player
 // stack -- CVideoPlayerUtility (mediaclientvideo) -> the MMF controller framework -> phevidctl (the MP4 controller, found by

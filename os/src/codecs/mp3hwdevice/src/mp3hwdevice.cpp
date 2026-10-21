@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // mp3hwdevice.cpp -- OURS (audio): the MP3 -> PCM16 HW device of the A3F
 // reference adaptation. audiocodec.dll picks a CMMFHwDevice ECom plug-in by FourCC (" MP3" -> " P16"); the release

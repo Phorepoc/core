@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // symgpu_null.cpp -- OURS: the GPU channel seam of symmali.h for boards without a GPU
 // driver: symmali_open() answers NULL, so Mesa's DRM shim finds no device and phgl renders with softpipe. A board

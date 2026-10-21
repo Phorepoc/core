@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // OURS: the REAL AlfDecoderServerClient/src/alfdecoderserverclient.cpp with "PH:" lines in the alfredserver thread, plus a SAMPLING WATCHDOG:
 // a second thread ("alfwatch", same process = WSERV) that every 2 s suspends the alf server thread, reads its user registers

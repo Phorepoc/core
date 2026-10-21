@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // svgtest.cpp -- OURS (2026-10-12, the SVG-Tiny icon bug): decode every SVG entry of the .mif files given on the command line
 // (default: z:\resource\apps\svgtest.mif) the way the icon server does (AknSvgFormatHandler.cpp: CSvgEngineInterfaceImpl::NewL with

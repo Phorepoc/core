@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // dscadd.cpp -- OURS (X4.78): register a program in S60's startup list (the DSC store), the way SWI's
 // startuplistupdater does for an installed application whose package declares "start at boot"

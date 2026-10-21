@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // OstTraceDefinitions.h -- OURS (not Symbian source). The OST trace compiler GENERATES this header
 // (and <component>Traces.h) into each component's traces/ directory; that output is not part of the

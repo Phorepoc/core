@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // crcseprofileregistry.h -- OURS (not Symbian source): the part of the S60 VoIP "RCSE" profile
 // registry API that the release's clients use (rcse.dll, UID3 0x10202869; the real component and its API are in

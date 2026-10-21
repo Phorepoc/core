@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // phgl_front.h -- OURS: what the generated ABI fronts (gen/lib*_front.cpp: libEGL.dll, libGLESv2.dll,
 // libGLESv1_CM.dll) share -- the lazy binding to phgl.dll (phgl_front.cpp).

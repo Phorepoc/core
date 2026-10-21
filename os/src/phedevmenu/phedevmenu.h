@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // phedevmenu.h -- OURS: the developer-menu repository. Shared by the settings app, the
 // Control Panel plug-in and (later) whatever reads a setting at boot: SSM's startup list, the kernel's boot guard.

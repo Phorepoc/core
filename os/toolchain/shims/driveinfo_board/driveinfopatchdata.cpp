@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // driveinfopatchdata.cpp -- OURS (Phorepoc x86, X4.111): the board's patchable PlatformEnv drive defaults, replacing the 2010
 // source's PlatformEnv/src/driveinfopatchdata.cpp (that file is a platform-variant "patch data" file: a product ROM patches

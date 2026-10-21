@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // toolchain/overlay/e32cmn.inl -- OURS: include-path overlay in front of the real <e32cmn.inl>
 // (e32cmn.h pulls it in with angle brackets, so the overlay directory wins).

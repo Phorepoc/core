@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // rcse_null.mmp -- OURS: null VoIP profile registry (see rcse_null.cpp). UIDs as the real one (sf.app.iptelephony richcallsettingsengine/rcse2/group/rcse.mmp).
 #include <platform_paths.hrh>

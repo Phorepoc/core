@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // sisinst.cpp -- OURS (X4.86): install a SIS package silently through the REAL S60 installer (SWInstSvrUI ->
 // SWI's install server) and print the result on the serial log -- the software-install regression test.

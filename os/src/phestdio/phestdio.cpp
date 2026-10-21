@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phestdio.cpp -- OURS: the Open C stdio server ("stdioserver", started by libc's stdio redirection on a program's
 // first read/write of fd 0/1/2; the protocol of the 2010 client, backend/inc/StdioClient.h). Where the 2010 server

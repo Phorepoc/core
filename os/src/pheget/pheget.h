@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pheget.h -- OURS: the download app's engine (the format: the index repository's schema; the plan: pdk's
 // `ph package`, which does the same from a computer). An index is a JSON file of items, each with its device

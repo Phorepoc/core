@@ -8,5 +8,5 @@ each file to its ROM path; the ROM recipe stages them when this folder is presen
 These files are **generated** from the Symbian^3 sources (`oss.FCL.sf.app.homescreen/idlehomescreen/data/qhd_tch/`,
 the 360x640 touch set, language 00) with Nokia's ThemeInstaller (`oss.FCL.sf.app.homescreentools/themeinstaller`,
 the XML2ODT compiler). Both are EPL-1.0, Copyright (c) Nokia Corporation and/or its subsidiary(-ies); so are these
-outputs. They are kept here so a build needs no Java; the pdk gets its own compiler (a Go port of ThemeInstaller's
+outputs, and they stay EPL-1.0 (stored byte-for-byte, not relicensed). They are kept here so a build needs no Java; the pdk gets its own compiler (a Go port of ThemeInstaller's
 XML2ODT) to regenerate them when a configuration changes.

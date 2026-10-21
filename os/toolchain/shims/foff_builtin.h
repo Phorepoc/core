@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 /* foff_builtin.h -- OURS, force-included (-include) AFTER symbian_gcc_prefix.h by components
  * that use _FOFF in a CONSTANT expression (esock's meta-data attribute tables: static

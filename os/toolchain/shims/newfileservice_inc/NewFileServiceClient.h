@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // OURS: NewFileServiceClient.h -- the S60 "new file service" client (embed Camera / Voice Recorder to
 // capture a new media file). Its package is not in the 2010 open-source drop; messaging's

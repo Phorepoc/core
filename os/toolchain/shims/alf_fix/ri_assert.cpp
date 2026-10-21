@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // ri_assert.cpp -- OURS: sflibopenvgrefimpl_alf only. riDefs.h turns RI_ASSERT into libc assert() (RI_DEBUG is defined); libc's __assert on this
 // board ends in abort() and the thread simply never comes back (S2, 2026-10-16: RIEGLSurface's ctor asserts EGL_BACK_BUFFER and hitchcock asked

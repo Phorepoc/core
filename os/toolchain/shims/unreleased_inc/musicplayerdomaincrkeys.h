@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // musicplayerdomaincrkeys.h -- OURS (not Symbian source): a reconstruction of S60 Music Player's
 // central-repository key header, which the 2010 release never shipped (Phonebook2's DRM manager and

@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // mp4demux.h -- OURS (VDU rung V4): a small ISO base media file (MP4 / 3GP / MOV) demuxer core
 // for the phevidctl video controller. Plain C++ (no Symbian types, no allocation, no static data): it reads the moov box

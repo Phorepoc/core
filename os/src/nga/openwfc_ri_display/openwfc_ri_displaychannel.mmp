@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // openwfc_ri_displaychannel.mmp -- OURS (2026-10-09): the 2010 OpenWF-C "RI display" adapter over RDisplayChannel
 // (oss.FCL.sf.os.graphics/graphicscomposition/openwfc_ri_displaychannel) with pipelined posts: UpdateDisplay() waits

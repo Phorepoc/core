@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pheterm.rss -- OURS: Terminal application resource: Options menu = new / next / close tty + direct switch to tty 1..8
 NAME PHTM

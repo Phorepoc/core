@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 @ device_excdesc.s -- OURS: the TExceptionDescriptor of a `device` image (e32def_private.h), the GCC twin of
 @ uc_exe.cia's Symbian$$CPP$$Exception$$Descriptor. build_mmp.py writes (this - code base) | 1 into the header's

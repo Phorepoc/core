@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // arimp3decwrapper.mmp -- OURS: the MP3 decoder library behind the release's Aricent MP3 plug-in (minimp3, CC0)
 TARGET			arimp3decwrapper.dll

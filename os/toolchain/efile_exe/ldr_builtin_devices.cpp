@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // ldr_builtin_devices.cpp -- OURS (NGA rung G1b): the loader's answer for a
 // device driver that is BUILT INTO the kernel. On a phone every LDD/PDD is a file in Z:\sys\bin, so

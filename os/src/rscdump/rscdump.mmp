@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // rscdump.mmp -- OURS: dump the readable strings of a resource file through bafl's own reader (see rscdump.cpp)
 TARGET			rscdump.exe

@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // ph_frame.h -- OURS (ALF bring-up): a frame counter shared by the generated Hitchcock copies (HuiDisplay_ph.cpp bumps it once per Refresh after the dirty scan,
 // HuiVisual_ph.cpp / HuiCanvasVisual_ph.cpp use it to log every dirty-region report of the sampled frames: "PH: alf: ReportChanged frame N ...").

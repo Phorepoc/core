@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pheshellsel.cpp -- OURS: the boot-time UI shell selector.
 // SSM's security-check list starts this in the idle slot (r_cmd_idle, deferred wait-for-signal, restart monitored) instead of

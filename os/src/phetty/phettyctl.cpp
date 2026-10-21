@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phettyctl.cpp -- OURS: headless phettyd test client. Starts the daemon if needed, waits for tty 1's pheshell, opens tty 2,
 // types into both and prints each tty's screen (via the ANSI model) to the debug port, then checks the ttys kept separate state.

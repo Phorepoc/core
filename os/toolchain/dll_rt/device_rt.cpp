@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // device_rt.cpp -- OURS: the runtime leaves of a `device` image (emitter/build_mmp.py; an image for the REAL phone,
 // C++ exceptions on). The phone's drtaeabi.dll carries the unwinder and the C++ ABI runtime; what g++'s personality

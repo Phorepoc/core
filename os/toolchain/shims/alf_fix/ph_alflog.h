@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // ph_alflog.h -- OURS: -include'd into the ALF components (emitter/components.py _ALFTRACE): the release's __ALFLOGSTRING*
 // macros (alflogger.h, empty in a release build) become "PH:"-prefixed RDebug::Printf lines -- the kernel log keeps only

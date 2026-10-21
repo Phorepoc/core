@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // vgegltest.cpp -- OURS: OpenVG O1 test. Creates a VG context through the STANDARD
 // libEGL (eglBindAPI(EGL_OPENVG_API), pbuffer surface) + libOpenVG/libOpenVGU, draws a filled cubic path, a linear

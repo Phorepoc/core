@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pheterm.cpp -- OURS: Terminal, the on-screen face of the developer tty daemon (V1).
 // An Avkon app registered in the launcher grid (= the Menu key's existing menu); its Options menu lists the ttys:

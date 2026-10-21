@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-1.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // ph_mixsc.h -- OURS (audio Q0, 2.1/2.2). FORCE-INCLUDED (-include) into every
 // translation unit of mdasoundadapter.dll. It declares RMixSoundSc, a virtual SoundSc channel with the exact RSoundSc

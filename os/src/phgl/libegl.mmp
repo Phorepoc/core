@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-1.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // libegl.mmp -- OURS: libEGL.dll, the frozen EGL 1.4 ABI (libegl14U.def, UID 0x10281AB8 = KUidEGLDllUidValue) as a
 // dispatcher over phgl.dll (libegl_front.cpp, hand-written: reusable syncs and the display live here, the GL work
