@@ -1,0 +1,15 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// phestart.mmp -- OURS: start an application through apparc the way the launcher does (a test tool).
+//   phestart <uid-hex | exe name> [document]      e.g. phestart 2003b2ce     phestart skyforcereloaded
+TARGET			phestart.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7016B30
+CAPABILITY		all -tcb
+VENDORID		0
+
+APP_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phestart.cpp
+LIBRARY			euser.lib apgrfx.lib apparc.lib ws32.lib
