@@ -424,7 +424,7 @@ namespace
 	const PheWebEngineApi KApi =
 		{
 		sizeof(PheWebEngineApi), PHE_WEBENGINE_VERSION, "Dummy", "0",
-		PHE_CAP_FIND | PHE_CAP_SNAPSHOT | PHE_CAP_SUSPEND | PHE_CAP_STATE | PHE_CAP_REFLOW, 0,
+		PHE_CAP_FIND | PHE_CAP_SNAPSHOT | PHE_CAP_PRIVATE | PHE_CAP_SUSPEND | PHE_CAP_STATE | PHE_CAP_REFLOW, 0,
 		Init, Shutdown, SetUA, SetIap, MemPressure,
 		NewId, Create, Destroy, Resize, Visible, Suspend, SaveState,
 		Load, Cmd, GetState, GetStr, Poll, DialogReply,

@@ -9,6 +9,7 @@ enum TPheBrowserCommand
 	{
 	EPheBrCmdMenu = 0x7100,
 	EPheBrCmdNewTab,
+	EPheBrCmdNewPrivate,
 	EPheBrCmdCloseTab,
 	EPheBrCmdNextTab,
 	EPheBrCmdBarToggle,

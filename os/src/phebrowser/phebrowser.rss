@@ -29,6 +29,7 @@ RESOURCE MENU_PANE r_phebrowser_menu_pane
 	items =
 		{
 		MENU_ITEM { command = EPheBrCmdNewTab; txt = "New tab"; },
+		MENU_ITEM { command = EPheBrCmdNewPrivate; txt = "New private tab"; },
 		MENU_ITEM { command = EPheBrCmdCloseTab; txt = "Close tab"; },
 		MENU_ITEM { command = EPheBrCmdNextTab; txt = "Next tab"; },
 		MENU_ITEM { command = EPheBrCmdFind; txt = "Find in page"; },
