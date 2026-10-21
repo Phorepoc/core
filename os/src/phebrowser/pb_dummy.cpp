@@ -113,7 +113,9 @@ namespace
 		const TDesC& u = v.iHist[v.iPos];
 		v.iSecurity = u.Left(8).CompareF(_L("https://")) == 0 ? PHE_SEC_SECURE : PHE_SEC_NONE;
 		TInt s = u.Locate(':');
-		TPtrC host = (s >= 0 && u.Length() > s + 3) ? u.Mid(s + 3) : u;
+		TPtrC host(u);                       // (not a ?: of TPtrC and TDesC&: that slices the descriptor)
+		if (s >= 0 && u.Length() > s + 3)
+			host.Set(u.Mid(s + 3));
 		TInt e = host.Locate('/');
 		if (e >= 0)
 			host.Set(host.Left(e));

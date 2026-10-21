@@ -178,23 +178,17 @@ public:
 		{
 		iSet = aSettings;
 		CreateWindowL();
-		RDebug::Printf("PH: [phebrowser] c1 window");
 		EnableDragEvents();
-		RDebug::Printf("PH: [phebrowser] c2 drag");
 		iCallBack = new (ELeave) CAsyncCallBack(TCallBack(Pump, this), CActive::EPriorityStandard);
-		RDebug::Printf("PH: [phebrowser] c3 callback");
 		SetRect(aRect);
-		RDebug::Printf("PH: [phebrowser] c4 setrect");
 		ActivateL();
-		RDebug::Printf("PH: [phebrowser] c5 activate");
 #ifdef PHEBROWSER_DUMMY
 		iApi = PheDummyGetApi(PHE_WEBENGINE_VERSION);
 #endif
-		RDebug::Printf("PH: [phebrowser] c6 api=%x", (unsigned)iApi);
 		if (iApi && iApi->init(Notify, this) == 0)
-			{ RDebug::Printf("PH: [phebrowser] c7 init ok");
+			{
 			NewTabL(KNullDesC, EFalse);       // opens on the new-tab page
-			RDebug::Printf("PH: [phebrowser] c8 newtab ok"); }
+			}
 		else
 			iApi = NULL;                      // no engine: the new-tab page offers the store
 		if (iSet->iSearchTemplate.Length() == 0)
@@ -224,13 +218,10 @@ public:
 		t.iProgress = 0; t.iSecurity = 0; t.iBack = t.iFwd = EFalse; t.iLoading = aUrl.Length() > 0;
 		t.iPrivate = aPrivate;
 		t.iThumb = NULL;
-		RDebug::Printf("PH: [phebrowser] n1");
 		iTabs.AppendL(t);
-		RDebug::Printf("PH: [phebrowser] n2 appended");
 		iCur = iTabs.Count() - 1;
 		const TPbLayout l = Layout();
 		iApi->view_create(t.iView, l.iPage.iW, l.iPage.iH, aPrivate, NULL, 0);   // a private view persists nothing (seam)
-		RDebug::Printf("PH: [phebrowser] n3 view_create %dx%d", l.iPage.iW, l.iPage.iH);
 		if (aUrl.Length())
 			iApi->load(t.iView, aUrl.Ptr(), aUrl.Length());
 		iMode = EModeBrowse;
@@ -364,7 +355,7 @@ private:
 		delete iPageBmp; iPageBmp = NULL;
 		PageChanged();
 		}
-	void PageChanged() { RDebug::Printf("PH: [phebrowser] p1"); CopyPixels(); RDebug::Printf("PH: [phebrowser] p2"); DrawDeferred(); RDebug::Printf("PH: [phebrowser] p3"); }
+	void PageChanged() { CopyPixels(); DrawDeferred(); }
 
 	// ---- address -> URL or search ----
 	void Navigate(const TDesC& aInput)
@@ -531,7 +522,17 @@ private:
 		gc.SetPenStyle(CGraphicsContext::ESolidPen);
 		gc.SetPenColor(c);
 		gc.SetBrushStyle(CGraphicsContext::ENullBrush);
-		gc.DrawText(s, r, (r.Height() + f->AscentInPixels() - f->DescentInPixels()) / 2, a, aMargin);
+		// text wider than the rectangle ends in "..." (never clipped mid-glyph, never off screen)
+		TBuf<160> fit;
+		fit.Copy(s.Left(Min(s.Length(), 160)));
+		const TInt avail = r.Width() - 2 * aMargin - 2;
+		if (f->TextWidthInPixels(fit) > avail)
+			{
+			while (fit.Length() > 0 && f->TextWidthInPixels(fit) + f->TextWidthInPixels(_L("...")) > avail)
+				fit.SetLength(fit.Length() - 1);
+			fit.Append(_L("..."));
+			}
+		gc.DrawText(fit, r, (r.Height() + f->AscentInPixels() - f->DescentInPixels()) / 2, a, aMargin);
 		gc.DiscardFont();
 		}
 	void Button(CWindowGc& gc, const TRect& r, const TDesC& s, TRgb bg, TRgb fg) const
