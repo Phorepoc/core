@@ -466,7 +466,24 @@ TInt COpenWFC_RI_DisplayChannel::UpdateDisplay()
     SymbianStreamAcquireReadBuffer(iCurrentSceneStream, &frontBuffer);
     void* pixelDataPtr = NULL;
     SymbianStreamGetBufferPointer(iCurrentSceneStream, frontBuffer,&pixelDataPtr);
-    Mem::Move(firstPixelAddr, pixelDataPtr, size);
+    // The scene stream is packed (rows of width * 4 bytes); the display's rows may be padded (a64: 1472 B for 360 px,
+    // svpfb_patch.py), so copy row by row when the strides differ. (OURS, 2026-10-22)
+    {
+    const TBool normal = (iNewRotation == EScreenRotate0 || iNewRotation == EScreenRotate180);
+    const TInt rows = normal ? iScreenInfo.iNormalHeight : iScreenInfo.iFlippedHeight;
+    const TInt dstStride = normal ? iScreenInfo.iNormalStride : iScreenInfo.iFlippedStride;
+    const TInt srcStride = (normal ? iScreenInfo.iNormalWidth : iScreenInfo.iFlippedWidth) * 4;
+    if (srcStride == dstStride || srcStride > dstStride)
+        {
+        Mem::Move(firstPixelAddr, pixelDataPtr, size);
+        }
+    else
+        {
+        const TUint8* src = (const TUint8*)pixelDataPtr;
+        for (TInt y = 0; y < rows; ++y)
+            Mem::Copy(firstPixelAddr + y * dstStride, src + y * srcStride, srcStride);
+        }
+    }
     SymbianStreamReleaseReadBuffer(iCurrentSceneStream, frontBuffer);
     iStatCopySum += User::FastCounter() - t1;
     if (++iStatCount % 200 == 0)
