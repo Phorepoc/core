@@ -411,7 +411,8 @@ COMPONENTS = {
     "libm": dict(mmp=_OENV + "libm/group/libm.mmp", cdriver=True, allow_wsd=True, vfp=True, defs=["__SOFTFP="]),
     # ftable.cpp + inc/sysif.h: OURS copies -- the fd table as a flat, pre-reserved array (the segmented one's unlocked
     "backend": dict(mmp=_OENV + "backend/group/backend.mmp", cdriver=True, allow_wsd=True, static_ctors=True, defs=["__SOFTFP="],
-                    incs_first=["toolchain/shims/backend_board/inc"], drop=["ftable.cpp"], extra=["toolchain/shims/backend_board/ftable.cpp"]),
+                    incs_first=["toolchain/shims/backend_board/inc"], arm_incs_first=True,   # (ftable.cpp needs its sysif.h on ARM too)
+                    drop=["ftable.cpp"], extra=["toolchain/shims/backend_board/ftable.cpp"]),
     # mutex.cpp + condvar.cpp: OURS copies fixing the static-initializer race (_InitOnce / _staticCondInit read the state
     "libpthread": dict(mmp=_OENV + "libpthread/group/libpthread.mmp", cdriver=True, allow_wsd=True, static_ctors=True, defs=["__SOFTFP="],
                        drop=["mutex.cpp", "condvar.cpp"], extra=["toolchain/shims/libpthread_board/mutex.cpp", "toolchain/shims/libpthread_board/condvar.cpp"]),

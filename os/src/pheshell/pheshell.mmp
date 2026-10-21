@@ -15,14 +15,17 @@ VENDORID		0
 MACRO			Console=PheConsole
 
 SOURCEPATH		../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/etshell
-SOURCE			ts_com.cpp ts_data.cpp ts_edshl.cpp ts_main.cpp ts_utl.cpp ts_deps.cpp ts_clicomp.cpp
+SOURCE			ts_com.cpp ts_data.cpp ts_main.cpp ts_utl.cpp ts_deps.cpp ts_clicomp.cpp
 SOURCEPATH		../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/sfile
 SOURCE			sf_inflate.cpp sf_decomp.cpp
 SOURCEPATH		.
 SOURCE			pheconsole.cpp
+// ts_edshl.cpp + one line: PheTtyAdoptChild before a started program resumes (its Open C stdio -> this tty)
+SOURCE			ts_edshl_ph.cpp
 SOURCEPATH		../phetty
 SOURCE			pheclient.cpp
 
+USERINCLUDE		../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/etshell
 USERINCLUDE		../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/inc
 USERINCLUDE		../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/sfile
 USERINCLUDE		../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/kernel/eka/include

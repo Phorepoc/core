@@ -93,3 +93,9 @@ TInt RPheTty::ConTitle(TInt aId, const TDesC& aTitle)
 
 TInt RPheTty::ShellState(TInt aId)
 	{ return SendReceive(EPtShellState, TIpcArgs(aId)); }
+
+TInt RPheTty::Adopt(TInt aId, TUint aPid)
+	{ return SendReceive(EPtAdopt, TIpcArgs(aId, (TInt)aPid)); }
+
+TInt RPheTty::TtyOf(TUint aPid)
+	{ return SendReceive(EPtTtyOf, TIpcArgs((TInt)aPid)); }

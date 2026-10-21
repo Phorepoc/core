@@ -17,5 +17,7 @@ COMPONENTS = {
     "pheterm": dict(mmp=os.path.join(OS_ROOT, "src/pheterm/pheterm.mmp")),
     # headless self-test client (SSM_TEST=phettyctl; not in the default ROM)
     "phettyctl": dict(mmp=os.path.join(OS_ROOT, "src/phetty/phettyctl.mmp"), test=True),
+    # the Open C stdio server (stdioserver.exe): a program a phetty shell started writes/reads that tty
+    "phestdio": dict(mmp=os.path.join(OS_ROOT, "src/phestdio/phestdio.mmp"), rom="stdioserver.exe"),
 }
-PHETTY_KEYS = ("phettyd", "pheshell", "pheterm", "phettyctl")
+PHETTY_KEYS = ("phettyd", "pheshell", "pheterm", "phettyctl", "phestdio")

@@ -92,11 +92,46 @@ public:
 	void KillTty(TInt aId);
 	void ForgetSession(const CPheSession* aS);
 	TUint8* Tmp() { return iTmp; }
+	// programs a tty's shell started (EPtAdopt): their stdio goes to that tty (the stdio server asks with EPtTtyOf)
+	void Adopt(TInt aTty, TUint aPid);
+	TInt TtyOf(TUint aPid);
 private:
 	CPheServer() : CServer2(EPriorityStandard) {}
 	CTty* iTty[KPheTtyMax];
 	TUint8 iTmp[4096 + 16];
+	struct TAdopted { TUint iPid; TInt iTty; };
+	TAdopted iAdopted[32];               // a slot is free when its process is gone (checked on reuse)
 	};
+
+static TBool ProcessAlive(TUint aPid)
+	{
+	RProcess p;
+	if (p.Open(TProcessId(aPid)) != KErrNone)
+		return EFalse;
+	TBool alive = p.ExitType() == EExitPending;
+	p.Close();
+	return alive;
+	}
+
+void CPheServer::Adopt(TInt aTty, TUint aPid)
+	{
+	TInt slot = -1;
+	for (TInt i = 0; i < 32 && slot < 0; ++i)
+		if (iAdopted[i].iPid == 0 || iAdopted[i].iPid == aPid || !ProcessAlive(iAdopted[i].iPid))
+			slot = i;
+	if (slot < 0)
+		slot = 0;                        // 32 live programs at once: the oldest entry goes
+	iAdopted[slot].iPid = aPid;
+	iAdopted[slot].iTty = aTty;
+	}
+
+TInt CPheServer::TtyOf(TUint aPid)
+	{
+	for (TInt i = 0; i < 32; ++i)
+		if (iAdopted[i].iPid == aPid && Tty(iAdopted[i].iTty))
+			return iAdopted[i].iTty;
+	return KErrNotFound;
+	}
 
 class CPheSession : public CSession2
 	{
@@ -491,7 +526,7 @@ void CPheSession::ServiceL(const RMessage2& m)
 	CPheServer& srv = Srv();
 	TInt op = m.Function();
 	CTty* t = NULL;
-	if (op != EPtNew && op != EPtList && op != EPtReadCancel && op != EPtConReadCancel)
+	if (op != EPtNew && op != EPtList && op != EPtReadCancel && op != EPtConReadCancel && op != EPtTtyOf)
 		{
 		t = srv.Tty(m.Int0());
 		if (!t)
@@ -617,6 +652,13 @@ void CPheSession::ServiceL(const RMessage2& m)
 		}
 	case EPtShellState:
 		m.Complete(t->iShellState);
+		break;
+	case EPtAdopt:
+		srv.Adopt(t->iId, (TUint)m.Int1());
+		m.Complete(KErrNone);
+		break;
+	case EPtTtyOf:
+		m.Complete(srv.TtyOf((TUint)m.Int0()));
 		break;
 	default:
 		m.Complete(KErrNotSupported);

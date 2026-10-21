@@ -1,0 +1,19 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
+// phestdio.mmp -- OURS: the Open C stdio server (phestdio.cpp), under the name libc starts: stdioserver.exe
+TARGET			stdioserver.exe
+TARGETTYPE		exe
+UID				0 0xE70157FB
+CAPABILITY		None
+VENDORID		0
+
+SOURCEPATH		.
+SOURCE			phestdio.cpp
+SOURCEPATH		../phetty
+SOURCE			pheclient.cpp
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+LIBRARY			euser.lib
+
+SMPSAFE

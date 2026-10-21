@@ -65,6 +65,8 @@ void CPheConsole::Resized(TInt aPacked)
 	if (iY >= iRows) iY = iRows - 1;
 	}
 
+static TInt gPheTtyId;                       // this shell's tty (pheshell is one console per process)
+
 TInt CPheConsole::Create(const TDesC& aTitle, TSize)
 	{
 	TInt id = 0;
@@ -72,6 +74,7 @@ TInt CPheConsole::Create(const TDesC& aTitle, TSize)
 	if (r != KErrNone)
 		return r;
 	iId = id;
+	gPheTtyId = id;                          // (a parameter slot reads once: PheTtyAdoptChild needs it later)
 	r = iTty.ConnectNoStart();
 	if (r != KErrNone)
 		return r;
@@ -250,4 +253,20 @@ CConsoleBase* PheConsole::NewL(const TDesC& aTitle, TSize aSize)
 		User::Leave(r);
 		}
 	return c;
+	}
+
+// Called by the launcher (ts_edshl_ph.cpp) between RProcess::Create and Resume: the program is this shell's, so its
+// Open C stdio (our stdioserver) goes to this tty.
+void PheTtyAdoptChild(RProcess& aChild)
+	{
+	TInt id = gPheTtyId;
+	if (id <= 0)
+		return;
+	RPheTty tty;
+	if (tty.ConnectNoStart() != KErrNone)
+		return;
+	TInt r = tty.Adopt(id, (TUint)aChild.Id());
+	if (r != KErrNone)
+		RDebug::Printf("PH: [pheshell] adopt %u on tty %d: %d", (TUint)aChild.Id(), id, r);
+	tty.Close();
 	}

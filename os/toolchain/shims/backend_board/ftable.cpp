@@ -168,7 +168,8 @@ void CFileTable::Default(CFileDescBase* aRedirMedia, CFileDescBase* aStdErrMedia
 	if (iFids[1]==0)
 		iFids[1]=aRedirMedia->Dup();
 	if (iFids[2]==0)
-		iFids[2]=aStdErrMedia->Dup();
+		iFids[2]=aRedirMedia->Dup();	// OURS: stderr through the stdio server too (CStdErrDesc drops it in release builds;
+											// our stdioserver puts it on the program's tty or the debug log)
 	}
 
 TInt CFileTable::Attach(TInt aFid, CFileDescBase* aFile)

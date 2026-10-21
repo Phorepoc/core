@@ -38,7 +38,9 @@ enum TPheTtyOp
 	EPtConReadCancel,
 	EPtConSize,      // a0 id -> cols<<16 | rows
 	EPtConTitle,     // a0 id, a1 des16 (read)
-	EPtShellState    // a0 id -> 0 = dead, 1 = running, 2 = running and restarted at least once
+	EPtShellState,   // a0 id -> 0 = dead, 1 = running, 2 = running and restarted at least once
+	EPtAdopt,        // a0 id, a1 process id: a program that tty's shell started (its stdio goes to the tty)
+	EPtTtyOf         // a0 process id -> the tty that adopted it, or KErrNotFound (the stdio server asks)
 	};
 
 struct TPheTtyInfo
@@ -82,6 +84,8 @@ public:
 	TInt ConSize(TInt aId);
 	TInt ConTitle(TInt aId, const TDesC& aTitle);
 	TInt ShellState(TInt aId);
+	TInt Adopt(TInt aId, TUint aPid);
+	TInt TtyOf(TUint aPid);
 	static TInt StartServer();
 	};
 
