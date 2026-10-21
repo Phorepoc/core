@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+============================================================================
+<FileName: "organizerconfiguration.dtd">
+<PartOf  : "organizerconfiguration">
+
+<FileDescription: "Localization strings for the configuration">
+<FileVersion    : >
+
+<Copyright:
+"Copyright © 2007 Nokia Corporation.
+This material, including documentation and any related
+computer programs, is protected by copyright controlled by
+Nokia Corporation. All rights are reserved. Copying,
+including reproducing, storing,  adapting or translating, any
+or all of this material requires the prior written consent of
+Nokia Corporation. This material also contains confidential
+information which may not be disclosed to others without the
+prior written consent of Nokia Corporation.">
+============================================================================
+-->
+
+<!--  LOCALISATION STRINGS  -->
+
+<!--
+qtn_organizer_configuration_name.attributes
+qtn_organizer_configuration_name.layout "listrow_wgtman_pane_t1"
+qtn_organizer_configuration_name.release "TB9.2"
+qtn_organizer_configuration_name.description "Calendar"
+qtn_organizer_configuration_name.parents ""
+-->
+<!ENTITY qtn_hs_large_cale  "Calendar">
+
+<!--
+qtn_organizer_widget_description.attributes
+qtn_organizer_widget_description.layout "listrow_wgtman_pane_t2"
+qtn_organizer_widget_description.release "TB9.2"
+qtn_organizer_widget_description.description "Organizer Widget"
+qtn_organizer_widget_description.parents ""
+-->
+<!ENTITY qtn_organizer_widget_description  "Organizer Widget">
+
+<!-- End of File-->

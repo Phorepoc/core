@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+============================================================================
+<FileName: "wsfwidgetconfiguration.dtd">
+<PartOf  : "wsfwidgetconfiguration">
+
+<FileDescription: "Localization strings for the configuration">
+<FileVersion    : >
+
+<Copyright:
+"Copyright (c) 2008 Nokia Corporation and/or its subsidiary(-ies). 
+All rights reserved.
+This component and the accompanying materials are made available
+under the terms of "Eclipse Public License v1.0"
+which accompanies this distribution, and is available
+at the URL "http://www.eclipse.org/legal/epl-v10.html".
+
+Initial Contributors:
+Nokia Corporation - initial contribution.
+
+Contributors:
+
+Description:  Localization strings for the configuration">
+============================================================================
+-->
+
+<!-- NOTE: make sure that there is at last one space character (hex 20) after the entity name -->
+
+<!--
+qtn_hs_wlan_widget.attributes
+qtn_hs_wlan_widget.layout "ai_gene_pane_1_t1"
+qtn_hs_wlan_widget.release "TB9.1"
+qtn_hs_wlan_widget.description "WLAN wizard"
+qtn_hs_wlan_widget.parents "ai_gene_pane_1"
+-->
+<!ENTITY qtn_hs_wlan_widget  "WLAN wizard">   
+<!ENTITY qtn_sniffer_wm_widget_description "Discover and connect to Wireless LAN networks.">
+
+

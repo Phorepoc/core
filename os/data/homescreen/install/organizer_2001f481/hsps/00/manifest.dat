@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package version="2.0">
+
+  <family>qhd_tch</family>
+  
+  <type>widget</type>
+
+  <!-- interface uid -->
+	<interfaceuid>0x2001f48a</interfaceuid>
+
+	<!-- vendor uid  -->
+	<provideruid>0x101fb657</provideruid>
+
+	<!-- uid -->
+	<configurationuid>0x2001f481</configurationuid>
+
+	<!-- description -->
+	<fullname>&amp;qtn_hs_large_cale;</fullname>
+	<shortname>org</shortname>
+	<version>1.0</version>
+	<description>&amp;qtn_organizer_widget_description;</description>
+	<filelogo>uid(0x10005901)</filelogo>
+
+	<!-- configuration -->
+	<filexml>widgetconfiguration.xml</filexml>
+	
+	<!-- Name of the localization files -->
+	<filedtd>organizerconfiguration.dtd</filedtd>
+	
+	<!-- Locale specific resources -->
+  <localization>
+	<fileresource tag="xuikon">orga.o0000</fileresource>     
+	</localization>
+
+
+</package>
