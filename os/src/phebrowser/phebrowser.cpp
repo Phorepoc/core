@@ -36,6 +36,8 @@
 #include "pb_theme.h"
 #include "pb_engines.h"
 
+struct TPbEarly { TPbEarly() { RDebug::Printf("PH: [phebrowser] static init"); } };
+static TPbEarly gPbEarly;
 const TUid KPheBrowserAppUid = { 0xE7016B20 };
 const TUid KPheStoreUid = { 0xE70157FA };
 
@@ -138,8 +140,8 @@ private:
 struct TPbTab
 	{
 	PheView iView;
-	TBuf<256> iUrl;            // empty = the new-tab page (the engine is not asked to load anything)
-	TBuf<64> iTitle;
+	TBuf<200> iUrl;            // (RArray entries must stay under 640 bytes: USER 129) empty = the new-tab page (the engine is not asked to load anything)
+	TBuf<48> iTitle;
 	TInt iProgress;
 	TInt iSecurity;
 	TBool iBack, iFwd, iLoading;
@@ -176,15 +178,23 @@ public:
 		{
 		iSet = aSettings;
 		CreateWindowL();
+		RDebug::Printf("PH: [phebrowser] c1 window");
 		EnableDragEvents();
+		RDebug::Printf("PH: [phebrowser] c2 drag");
 		iCallBack = new (ELeave) CAsyncCallBack(TCallBack(Pump, this), CActive::EPriorityStandard);
+		RDebug::Printf("PH: [phebrowser] c3 callback");
 		SetRect(aRect);
+		RDebug::Printf("PH: [phebrowser] c4 setrect");
 		ActivateL();
+		RDebug::Printf("PH: [phebrowser] c5 activate");
 #ifdef PHEBROWSER_DUMMY
 		iApi = PheDummyGetApi(PHE_WEBENGINE_VERSION);
 #endif
+		RDebug::Printf("PH: [phebrowser] c6 api=%x", (unsigned)iApi);
 		if (iApi && iApi->init(Notify, this) == 0)
+			{ RDebug::Printf("PH: [phebrowser] c7 init ok");
 			NewTabL(KNullDesC, EFalse);       // opens on the new-tab page
+			RDebug::Printf("PH: [phebrowser] c8 newtab ok"); }
 		else
 			iApi = NULL;                      // no engine: the new-tab page offers the store
 		if (iSet->iSearchTemplate.Length() == 0)
@@ -209,15 +219,18 @@ public:
 			}
 		TPbTab t;
 		t.iView = iApi->new_view_id();
-		t.iUrl = aUrl;
+		t.iUrl.Copy(aUrl.Left(Min(aUrl.Length(), 200)));
 		t.iTitle.Zero();
 		t.iProgress = 0; t.iSecurity = 0; t.iBack = t.iFwd = EFalse; t.iLoading = aUrl.Length() > 0;
 		t.iPrivate = aPrivate;
 		t.iThumb = NULL;
+		RDebug::Printf("PH: [phebrowser] n1");
 		iTabs.AppendL(t);
+		RDebug::Printf("PH: [phebrowser] n2 appended");
 		iCur = iTabs.Count() - 1;
 		const TPbLayout l = Layout();
 		iApi->view_create(t.iView, l.iPage.iW, l.iPage.iH, aPrivate, NULL, 0);   // a private view persists nothing (seam)
+		RDebug::Printf("PH: [phebrowser] n3 view_create %dx%d", l.iPage.iW, l.iPage.iH);
 		if (aUrl.Length())
 			iApi->load(t.iView, aUrl.Ptr(), aUrl.Length());
 		iMode = EModeBrowse;
@@ -351,7 +364,7 @@ private:
 		delete iPageBmp; iPageBmp = NULL;
 		PageChanged();
 		}
-	void PageChanged() { CopyPixels(); DrawDeferred(); }
+	void PageChanged() { RDebug::Printf("PH: [phebrowser] p1"); CopyPixels(); RDebug::Printf("PH: [phebrowser] p2"); DrawDeferred(); RDebug::Printf("PH: [phebrowser] p3"); }
 
 	// ---- address -> URL or search ----
 	void Navigate(const TDesC& aInput)
@@ -367,7 +380,7 @@ private:
 			else
 				SearchUrl(u);                                         // words: a search with the chosen engine
 			}
-		iTabs[iCur].iUrl = u;
+		iTabs[iCur].iUrl.Copy(u.Left(Min(u.Length(), 200)));
 		iTabs[iCur].iLoading = ETrue;
 		iApi->load(iTabs[iCur].iView, u.Ptr(), u.Length());
 		}
@@ -1001,9 +1014,12 @@ public:
 	void ConstructL()
 		{
 		BaseConstructL(EAknEnableSkin);
+		RDebug::Printf("PH: [phebrowser] AppUi base ok");
 		iSet.Load(iEikonEnv->FsSession());
+		RDebug::Printf("PH: [phebrowser] settings ok, theme=%d bar=%d", iSet.iTheme, (int)iSet.iBar);
 		iView = new (ELeave) CPbContainer;
 		iView->ConstructL(ClientRect(), &iSet);
+		RDebug::Printf("PH: [phebrowser] container ok");
 		AddToStackL(iView);
 		}
 	~CPheBrowserAppUi()
@@ -1064,22 +1080,26 @@ class CPheBrowserDocument : public CAknDocument
 	{
 public:
 	CPheBrowserDocument(CEikApplication& aApp) : CAknDocument(aApp) {}
-	CEikAppUi* CreateAppUiL() { return new (ELeave) CPheBrowserAppUi; }
+	CEikAppUi* CreateAppUiL() { RDebug::Printf("PH: [phebrowser] CreateAppUiL"); return new (ELeave) CPheBrowserAppUi; }
 	};
 
 class CPheBrowserApplication : public CAknApplication
 	{
 public:
 	TUid AppDllUid() const { return KPheBrowserAppUid; }
-	CApaDocument* CreateDocumentL() { return new (ELeave) CPheBrowserDocument(*this); }
+	CApaDocument* CreateDocumentL() { RDebug::Printf("PH: [phebrowser] CreateDocumentL"); return new (ELeave) CPheBrowserDocument(*this); }
 	};
 
 LOCAL_C CApaApplication* NewApplication()
 	{
+	RDebug::Printf("PH: [phebrowser] NewApplication");
 	return new CPheBrowserApplication;
 	}
 
 GLDEF_C TInt E32Main()
 	{
-	return EikStart::RunApplication(NewApplication);
+	RDebug::Printf("PH: [phebrowser] E32Main");
+	TInt r = EikStart::RunApplication(NewApplication);
+	RDebug::Printf("PH: [phebrowser] RunApplication returned %d", r);
+	return r;
 	}
