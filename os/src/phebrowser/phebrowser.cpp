@@ -158,22 +158,6 @@ enum TPbSheetItem
 	ESheetNewTab, ESheetNewPrivate, ESheetFind, ESheetBar, ESheetTheme, ESheetSearch, ESheetStore, ESheetExit, ESheetCount
 	};
 
-// the address editor: a CEikEdwin that can take a text colour (its char format layer is protected)
-class CPbEdwin : public CEikEdwin
-	{
-public:
-	void SetInkL(TRgb aInk)
-		{
-		if (!iCharFormatLayer)
-			return;
-		TCharFormat cf;
-		TCharFormatMask cm;
-		cf.iFontPresentation.iTextColor = aInk;
-		cm.SetAttrib(EAttColor);
-		iCharFormatLayer->SetL(cf, cm);
-		}
-	};
-
 // ---- the container: the whole UI is this one control ------------------------------------------------------------------------------
 class CPbContainer : public CCoeControl
 	{
@@ -200,7 +184,7 @@ public:
 		CreateWindowL();
 		EnableDragEvents();
 		iCallBack = new (ELeave) CAsyncCallBack(TCallBack(Pump, this), CActive::EPriorityStandard);
-		iEdit = new (ELeave) CPbEdwin;                       // the address editor: in place, inside the bar
+		iEdit = new (ELeave) CEikEdwin;                       // the address editor: in place, inside the bar
 		iEdit->SetContainerWindowL(*this);
 		iEdit->ConstructL(EEikEdwinNoWrap, 0, 255, 1);
 		iEdit->MakeVisible(EFalse);
@@ -1156,7 +1140,7 @@ private:
 	TPbMode iMode = EModeBrowse;
 	CAsyncCallBack* iCallBack = NULL;
 	CFbsBitmap* iPageBmp = NULL;
-	CPbEdwin* iEdit = NULL;
+	CEikEdwin* iEdit = NULL;
 	TBool iEditing = EFalse;
 	TInt iDragY = 0, iGridScroll = 0;
 	TPoint iDownPos;
