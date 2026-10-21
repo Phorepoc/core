@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // sistest.cpp -- OURS: calls sistestdll.dll, both installed from one SIS; prints "[sistest] answer 42".
 #include <e32std.h>

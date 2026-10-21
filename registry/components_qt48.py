@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 
 """components_qt48 -- Qt 4.8.7 for the S^3 firmware, merged into components.COMPONENTS.
 

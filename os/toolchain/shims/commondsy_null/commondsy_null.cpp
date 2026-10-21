@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // commondsy_null.cpp -- OURS (not Symbian source): a null DSY (Domestic OS licensee plug-in) with the
 // REAL commondsyU.DEF ordinal table.

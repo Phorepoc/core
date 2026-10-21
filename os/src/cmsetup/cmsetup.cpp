@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // cmsetup.cpp -- OURS: the S60 connection-settings bring-up for the Path C board (X4.68). Not Symbian source.
 //

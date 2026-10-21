@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // phevidctl.mmp -- OURS (VDU rung V4): the MMF video play controller for MP4 / 3GP (ECOM
 // plug-in, interface 0x101F4F47) -> CMMFDevVideoPlay -> the phevdec A64 Video Engine decoder. Contract: phevidctl.h.

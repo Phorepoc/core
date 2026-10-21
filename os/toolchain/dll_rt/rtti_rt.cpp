@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // rtti_rt.cpp -- OURS: the two libc symbols libsupc++'s RTTI support (type_info name
 // comparison in __dynamic_cast) needs. Linked only into RTTI-enabled images

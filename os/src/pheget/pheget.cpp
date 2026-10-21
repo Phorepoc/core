@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // pheget.cpp -- OURS: the download app's command line (the engine: pheget_engine.cpp). Every line goes to the debug
 // log as "PH: [pheget] ..." (PhoneLab and `ph` read those).

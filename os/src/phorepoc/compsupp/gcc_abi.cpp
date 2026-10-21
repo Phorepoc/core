@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // gcc_abi.cpp -- OURS: the RVCT-only pieces of the release's drtaeabi.dll, written for GCC
 // (kernel/eka/compsupp/rvct/{drtaeabi,aeabimem,type_info}.cpp use __asm blocks, $Sub$$ symbol aliasing and

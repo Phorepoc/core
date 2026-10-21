@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
+ * SPDX-License-Identifier: Apache-2.0 */
 
 // phmixer_core.h -- OURS (audio Q0, 2.4): the PURE mixing functions of the userland
 // mixer (phmixer.cpp): dB-code -> gain, streaming polyphase windowed-sinc resampler (mono/stereo S16 -> 48 kHz stereo S32 accumulator;

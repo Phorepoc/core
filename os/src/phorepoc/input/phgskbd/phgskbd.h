@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
+ * SPDX-License-Identifier: Apache-2.0 */
 
 // phgskbd.h -- OURS (Phorepoc): the Settings (GS) entry for the keyboard framework: choose the default keyboard among the
 // installed ones (phimreg), and phkbd's customisation (key height, colour scheme, key preview). An ECom plug-in of the

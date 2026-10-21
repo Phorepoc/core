@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // xmlprobe.cpp -- OURS: probe of the from-source XML stack matrixmenu's suite loader uses
 // (xmlenginedom -> xmlengineutils -> xmlengine = libxml2 -> the P.I.P.S. libc).

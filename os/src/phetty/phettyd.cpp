@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // phettyd.cpp -- OURS: the developer tty daemon (V1).
 // Owns the ttys. A tty = scrollback of ANSI bytes + key queue + a pheshell process (eshell with its console on the tty).

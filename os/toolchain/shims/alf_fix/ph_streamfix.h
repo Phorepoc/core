@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
+ * SPDX-License-Identifier: Apache-2.0 */
 
 // ph_streamfix.h -- OURS: prepended to the generated copy of ServerCore/Src/alfstreamerserver.cpp (tools/alf_instrument.py).
 // The release's logging macros are EMPTY in a build without _ALF_LOGGING and the file ends a switch with

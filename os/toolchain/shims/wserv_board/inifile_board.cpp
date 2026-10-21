@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // inifile_board.cpp -- OURS: WSERV's REAL INIFILE.CPP (unmodified, #included) plus the UI renderer switch.
 //

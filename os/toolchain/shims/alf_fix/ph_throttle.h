@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
+ * SPDX-License-Identifier: Apache-2.0 */
 
 // ph_throttle.h -- OURS: PHT(...) = RDebug::Printf throttled PER CALL SITE (first 4 hits, then every power of two); the generated alfbridge trace copy uses it.
 #ifndef PH_THROTTLE_H

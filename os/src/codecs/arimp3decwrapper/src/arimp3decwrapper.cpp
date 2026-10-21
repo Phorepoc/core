@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // arimp3decwrapper.cpp -- OURS (audio): the MP3 decoder library the release's
 // Aricent MP3 plug-in links (oss.FCL.sf.adapt.codecs.aricent/mp3_dec: only its MMF wrapper and this API's header were

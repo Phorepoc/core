@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // phestdio.mmp -- OURS: the Open C stdio server (phestdio.cpp), under the name libc starts: stdioserver.exe
 TARGET			stdioserver.exe

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // phejson.h -- OURS: a small JSON reader (RFC 8259) for pheget's indexes. Builds a tree of CPheJson nodes; strings are
 // kept as UTF-8 with escapes decoded. Numbers are kept as their text (and as TInt64 when integral).

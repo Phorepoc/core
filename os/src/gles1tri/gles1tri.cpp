@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // gles1tri.cpp -- OURS (GPU plan G2/G4, 2026-10-09): the OpenGL ES 1.1 fixed-function sample -- a lit, rotating
 // cube with per-vertex colours over libGLESv1_CM.dll + libEGL.dll (the 2010 ABIs; Mesa's GLES1 behind them), the

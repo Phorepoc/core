@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
+ * SPDX-License-Identifier: Apache-2.0 */
 
 // phkbd_pages.h -- OURS (Phorepoc): the key pages of phkbd as data (rows of keys with widths in tenths of a key unit).
 // A page is rows; a row's keys are laid out left to right from the row's indent, scaled so a 100-tenth row fills the

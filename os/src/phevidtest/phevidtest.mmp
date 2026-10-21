@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // phevidtest.mmp -- OURS (VDU rung V4): plays an MP4 through CVideoPlayerUtility -> phevidctl ->
 // phevdec and reports frames / fps ("PH: vid" lines). SSM_TEST=phevidtest stages it at boot. Contract: phevidtest.cpp.

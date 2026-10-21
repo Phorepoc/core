@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 
 """components_phetty -- OURS: the developer tty daemon. Merged into components.COMPONENTS
 unconditionally (a key only ships when an image has been built for it; PHETTY=exclude drops the four keys from the ROM,

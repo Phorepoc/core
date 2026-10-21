@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // aknapp.cpp -- OURS: the smallest real S60 application on the from-source Avkon:
 // CAknApplication -> CAknDocument -> CAknAppUi -> one window-owning view control.

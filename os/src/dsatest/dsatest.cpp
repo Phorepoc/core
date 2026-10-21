@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // dsatest.cpp -- OURS: CDirectScreenAccess + CDirectScreenBitmap, the way a game
 // (SkyForce) drives the screen under the NGA window server, with every step logged ("PH: dsa ...", forwarded to

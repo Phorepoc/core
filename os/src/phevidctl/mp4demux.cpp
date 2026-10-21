@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // mp4demux.cpp -- OURS (VDU rung V4): see mp4demux.h. ISO/IEC 14496-12 box walking over a moov payload held in memory.
 #include "mp4demux.h"

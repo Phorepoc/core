@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
+ * SPDX-License-Identifier: Apache-2.0 */
 
 // opensystemtrace.h -- OURS (not Symbian source): a DEBUG-ONLY stand-in that turns the OST trace macros into RDebug::Printf lines
 // (the serial log). The real header makes them empty without the trace compiler's output, which the 2010 release does not

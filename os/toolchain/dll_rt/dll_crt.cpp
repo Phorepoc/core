@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // dll_crt.cpp — the modern-g++ C++ runtime leaves for a from-source DLL/EXE built
 // by emitter/build_mmp.py (operator new/delete come from the REAL common/gcchelp.cpp).

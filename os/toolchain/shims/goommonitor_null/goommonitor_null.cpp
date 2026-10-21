@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // goommonitor_null.cpp — OURS (not Symbian source): a null graphics-OOM monitor with the REAL
 // goommonitoru.DEF ordinal table.

@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
+ * SPDX-License-Identifier: Apache-2.0 */
 
 @ dll_entry.s — the DLL entry point (_E32Dll), linked FIRST so it owns code
 @ offset 0 (= the image entry point). Returns KErrNone for every attach/detach

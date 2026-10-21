@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // vgprobe2.cpp -- OURS: OpenVG O2 test. One scene that uses ONLY what the GPU engine
 // (phvg) implements -- vgClear (full + partial) and solid-colour vgDrawPath(FILL): cubic blob, curves, a pentagram

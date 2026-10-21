@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // ntpsync.cpp -- OURS: an SNTP client daemon (RFC 4330) for the Path C board (X4.50). Not Symbian source.
 //

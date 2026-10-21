@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 
 r"""font_web_gen -- the web-script fallback faces the BrowserNG engine (WebKit/Skia) uses for text the S60 faces lack (2026-10-16).
 

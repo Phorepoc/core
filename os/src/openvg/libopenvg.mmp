@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // libopenvg.mmp -- OURS: libOpenVG.dll, the real Symbian^3 name of the OpenVG 1.1 DLL (frozen ABI: openvginterface/eabi/
 // libopenvg11u.def), so consumers linking libOpenVG.lib (HWVG, rendervg10, nvgdecoder) resolve unchanged. Milestone O1

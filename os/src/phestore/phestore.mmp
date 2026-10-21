@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // phestore.mmp -- OURS: the download app's UI ("Get apps"; phestore.cpp) over the pheget engine (../pheget)
 #include <platform_paths.hrh>

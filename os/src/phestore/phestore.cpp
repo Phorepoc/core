@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // phestore.cpp -- OURS: the download app ("Get apps"): the items of the indexes that fit this device in a two-line
 // list (name / summary, version, installed state); Install downloads, checks and installs the selected one, Details

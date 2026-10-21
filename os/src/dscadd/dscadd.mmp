@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // dscadd.mmp -- OURS: register a program in the S60 startup list (DSC store), as SWI's startuplistupdater does
 TARGET			dscadd.exe

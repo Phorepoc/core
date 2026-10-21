@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // phkbd.rss -- OURS (Phorepoc): ECom registration of phkbd.dll
 //  * a pen-input layout implementation (interface 0x102072FC: the pen input server's layout plug-ins)

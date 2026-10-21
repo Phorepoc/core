@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // swdgdiflatten.cpp -- OURS (2026-10-09, GPU plan G1c): extended bitmaps for the SOFTWARE DirectGDI adapter.
 //

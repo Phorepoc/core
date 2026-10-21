@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // phemenuwarm.cpp -- OURS: make the FIRST open of the Applications grid as fast as every later one.
 //

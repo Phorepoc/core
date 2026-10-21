@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // libcprobe.cpp -- OURS: probe of the from-source P.I.P.S. stack (libc -> backend, libm, libpthread).
 // A native E32Main exe (no mcrt0): each step prints its result to the debug port, so a fault

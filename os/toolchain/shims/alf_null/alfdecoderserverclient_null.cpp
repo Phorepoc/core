@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // alfdecoderserverclient_null.cpp — OURS (not Symbian source): a null ALF effect observer with the
 // REAL alfdecoderserverclientu.def ordinal table, built from the real mmp (nosrc).

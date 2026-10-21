@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
+ * SPDX-License-Identifier: Apache-2.0 */
 
 // ph_renderer.h -- OURS: the UI renderer switch ("UI renderer").
 // WSERV (inifile_board.cpp) reads the developer-menu CenRep key and publishes the answer here; the alf clients that must work

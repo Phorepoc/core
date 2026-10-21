@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // coneapp.cpp -- OURS: the smallest application on the real control environment
 // (cone.dll, from source): CCoeEnv owns the WSERV/FBS sessions, the active

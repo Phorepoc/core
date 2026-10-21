@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
+ * SPDX-License-Identifier: Apache-2.0 */
 
 // pheansi.h -- OURS: a minimal ANSI/VT screen model (header-only): feed it a tty's byte stream, read back the cell grid.
 // Handles what pheconsole.cpp emits and what a shell commonly needs: printable UTF-8, CR LF BS TAB, CSI A B C D H f J K m,

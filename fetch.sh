@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 
 # fetch.sh -- fetch every package of sources.lock at its pinned commit from the Phorepoc forks into symbian/<tree>/<package>.
 # Shallow (one commit each, fetched by sha); safe to re-run: a package already at its commit is skipped.

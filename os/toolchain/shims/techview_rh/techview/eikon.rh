@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // OURS: the camerafw test app (TestCameraAppS60) includes the Techview resource header; S60 has the same layout in <eikon.rh>
 #include <eikon.rh>

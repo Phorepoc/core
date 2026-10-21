@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // E70157D0.rss -- OURS (VDU V4): ECOM registration of phevidctl, the MMF video play controller for MP4 / 3GP, plus its two
 // format entries (the MMF controller selection matches a file by extension + header bytes, like AviPlayController's

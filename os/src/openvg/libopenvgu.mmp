@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // libopenvgu.mmp -- OURS: libOpenVGU.dll, the real Symbian^3 name of the VGU utility library (frozen ABI:
 // libopenvgu11u.def). O1: the 2010 libopenvgu_sw facade (sfopenvg/openvgu/vgu.cpp) over sflibopenvgrefimpl.

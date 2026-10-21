@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // OURS: the REAL AlfRenderStage/src/alfrssendbuffer.cpp with the "PH:" lines the stage lacks around starting the alf server
 // (its own error line, RDebug::Print without the PH: prefix, is dropped by the kernel log filter).

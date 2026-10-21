@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // alfclient_null.cpp — OURS (not Symbian source): a null ALF (UI accelerator / hitchcock) client
 // with the REAL alfclientu.DEF ordinal table, built from the real alfclient.mmp (nosrc).

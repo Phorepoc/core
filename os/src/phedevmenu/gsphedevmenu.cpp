@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // gsphedevmenu.cpp -- OURS: Control Panel entry for the developer menu.
 // A GS plug-in whose item is visible only while CenRep KPheDevMenuRepoUid key 2 is 1; selecting it starts the hidden

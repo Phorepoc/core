@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // wsblit.cpp -- OURS (2026-10-09, GPU plan G1c): a bitmap-drawing test grid for the window server. The first NGA
 // boot of the S60 UI on the PinePhone drew text and the wallpaper but no icons and no skin frames (the masked /

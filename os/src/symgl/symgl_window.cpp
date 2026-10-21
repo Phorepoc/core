@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // symgl_window.cpp -- OURS (2026-10-09, GPU plan G2/G5): the Symbian side of Mesa's EGL window surfaces
 // (symgl_native.h is the seam; mesa-symbian's egl_symbian.c + sym_frontend.c call it).

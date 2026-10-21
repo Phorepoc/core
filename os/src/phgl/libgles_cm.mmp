@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // libgles_cm.mmp -- OURS: libGLES_CM.dll, the older S60 OpenGL ES 1.x DLL (frozen table opengles11u.def), which S^3 ROMs
 // carry next to libGLESv1_CM.dll and SDK games link (King Oddball). Its gl* go to phgl.dll like libGLESv1_CM's; it also

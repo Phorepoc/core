@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // fstest.cpp -- OURS: probe of the file-server operations a persisting server relies on
 // (Central Repository's commit = write temp file, close, RFs::Replace over the target).

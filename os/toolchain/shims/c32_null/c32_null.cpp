@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // c32_null.cpp — OURS (not Symbian source): a null C32 (serial comms) client library with
 // the REAL c32U.def ordinal table.

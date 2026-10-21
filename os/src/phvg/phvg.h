@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
+ * SPDX-License-Identifier: Apache-2.0 */
 
 // phvg.h -- OURS: the interface between the OpenVG reference implementation (sflibopenvgrefimpl, riPhvg.cpp) and the
 // GPU engine DLL phvg.dll (O2). The engine is surface-agnostic: it never sees an RI

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // phevidctl.cpp -- OURS (VDU rung V4): the MMF video play controller for MP4 / 3GP.
 // Structure and call order follow the 2010 AviPlayController (baseline/symbian-2010/oss.FCL.sf.os.mmaudio/mmplugins/

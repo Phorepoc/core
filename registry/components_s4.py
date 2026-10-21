@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 
 """components_s4 -- the Symbian^4 registry, merged into components.COMPONENTS only
 when PHOREPOC_S4=1, so the S^3 build, closure and regression never see it.

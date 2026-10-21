@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // tonetest.cpp -- OURS (X4.89): the audio chain's regression test. A real CMMFDevSound (A3F: DevSound client ->
 // the audio server -> the reference adaptation -> mdasoundadapter -> RSoundSc -> the AC'97 PDD) plays a tone:

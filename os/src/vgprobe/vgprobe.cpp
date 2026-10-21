@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // vgprobe.cpp -- OURS: probe of the software OpenVG stack the S60 vector pipeline sits on
 // (libvgi -> libegl_sw -> sflibopenvgrefimpl, the Khronos reference implementation).

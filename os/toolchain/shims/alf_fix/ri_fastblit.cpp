@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // ri_fastblit.cpp -- OURS (ALF bring-up, sflibopenvgrefimpl_alf only): a straight-blit fast path for vgDrawImage.
 //

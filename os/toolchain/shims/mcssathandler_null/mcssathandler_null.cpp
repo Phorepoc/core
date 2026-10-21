@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // mcssathandler_null.cpp — OURS (not Symbian source): replaces menucontentsrv/extsrc/mcssathandler.cpp
 // (mcssatnotifier.cpp stays the real TU).

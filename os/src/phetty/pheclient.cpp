@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // pheclient.cpp -- OURS: RPheTty, the client side of phettyd (see phetty.h)
 #include "phetty.h"

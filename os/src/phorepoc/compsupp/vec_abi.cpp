@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 
 // vec_abi.cpp -- OURS: the array construction/destruction helpers of the C++ ABI (Itanium C++ ABI 3.3.2 with the ARM
 // C++ ABI's cookie: { element_size, element_count }, 8 bytes before the array) and the ARM RTABI 4.4.3 __aeabi_vec_*
