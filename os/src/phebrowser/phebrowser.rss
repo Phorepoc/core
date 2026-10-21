@@ -1,0 +1,71 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// phebrowser.rss -- OURS: the browser frontend's resources (phebrowser.cpp)
+NAME PHBR
+
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.rsg>
+#include <appinfo.rh>
+#include "phebrowser.hrh"
+
+RESOURCE RSS_SIGNATURE { }
+RESOURCE TBUF r_default_document_name { buf = ""; }
+
+RESOURCE EIK_APP_INFO
+	{
+	menubar = r_phebrowser_menubar;
+	cba = R_AVKON_SOFTKEYS_OPTIONS_BACK;
+	}
+
+RESOURCE MENU_BAR r_phebrowser_menubar
+	{
+	titles = { MENU_TITLE { menu_pane = r_phebrowser_menu_pane; } };
+	}
+
+RESOURCE MENU_PANE r_phebrowser_menu_pane
+	{
+	items =
+		{
+		MENU_ITEM { command = EPheBrCmdNewTab; txt = "New tab"; },
+		MENU_ITEM { command = EPheBrCmdCloseTab; txt = "Close tab"; },
+		MENU_ITEM { command = EPheBrCmdNextTab; txt = "Next tab"; },
+		MENU_ITEM { command = EPheBrCmdFind; txt = "Find in page"; },
+		MENU_ITEM { command = EPheBrCmdBarToggle; txt = "Move bar to bottom"; },
+		MENU_ITEM { command = EPheBrCmdGetEngine; txt = "Get a browser engine"; },
+		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
+		};
+	}
+
+RESOURCE DIALOG r_phebrowser_url_query
+	{
+	flags = EGeneralQueryFlags;
+	buttons = R_AVKON_SOFTKEYS_OK_CANCEL;
+	items =
+		{
+		DLG_LINE
+			{
+			type = EAknCtQuery;
+			id = EGeneralQuery;
+			control = AVKON_DATA_QUERY
+				{
+				layout = EDataLayout;
+				label = "Address";
+				control = EDWIN
+					{
+					flags = EEikEdwinNoHorizScrolling | EEikEdwinResizable;
+					width = 8;
+					maxlength = 255;
+					lines = 3;
+					};
+				};
+			}
+		};
+	}
+
+RESOURCE LOCALISABLE_APP_INFO r_phebrowser_localisable_app_info
+	{
+	short_caption = "Browser";
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Browser"; };
+	}

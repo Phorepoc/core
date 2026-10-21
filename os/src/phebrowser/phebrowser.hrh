@@ -1,0 +1,19 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// phebrowser.hrh -- OURS: the browser frontend's commands (phebrowser.cpp, phebrowser.rss)
+#ifndef PHEBROWSER_HRH
+#define PHEBROWSER_HRH
+
+enum TPheBrowserCommand
+	{
+	EPheBrCmdMenu = 0x7100,
+	EPheBrCmdNewTab,
+	EPheBrCmdCloseTab,
+	EPheBrCmdNextTab,
+	EPheBrCmdBarToggle,
+	EPheBrCmdFind,
+	EPheBrCmdGetEngine
+	};
+
+#endif
