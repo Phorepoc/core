@@ -47,6 +47,8 @@ private:
     void SendKeys( const TDesC& aText );
     void SendCase( TInt aPenCase );
     void SwitchKeyboard();
+    void NextLanguage();
+    void ApplyRect();
 
 private:
     CPhKbdBoard* iBoard;                    // owned by the layout's root control
@@ -54,6 +56,8 @@ private:
     TInt iKeyHeightPct;
     TInt iTheme;
     TBool iPopups;
+    TBool iOverlay;
+    TInt iLanguage;                         // index into KPhLanguages
     };
 
 #endif

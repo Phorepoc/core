@@ -3,7 +3,7 @@
 
 // phkbd_board.h -- OURS (Phorepoc): the key area of the phkbd keyboard.
 //
-// One pen-input control (a CFepUiBaseCtrl) that owns the whole keyboard: it lays the keys out from data (phkbd_pages.h),
+// One pen-input control (a CFepUiBaseCtrl) that owns the whole keyboard: it lays the keys out from data (phkbd_langs.h),
 // draws them (rounded keys, flat dark panel, a single accent colour -- the N9 look), shows the key-press preview popup,
 // the long-press accent bar, and turns pointer events into key events for the layout (phkbd_layout.cpp).
 //
@@ -16,7 +16,7 @@
 #include <gdi.h>
 #include <touchfeedback.h>
 #include <peninputlayoutbasecontrol.h>
-#include "phkbd_pages.h"
+#include "phkbd_langs.h"
 
 // events the board reports to the layout (EEventControlUserBase +)
 enum TPhKbdEvent
@@ -63,6 +63,9 @@ public:
     // drop one-shot shift after a character was typed
     void ConsumeShift();
     void SetKeyboardName( const TDesC& aName );
+    // the keyboard language (index into KPhLanguages): swaps the pages and the accents, back to the letters page
+    void SetLanguage( TInt aIndex );
+    TInt Language() const;
     void SetEnterDimmed( TBool aDim );
     void ResetPage();
 
@@ -133,6 +136,8 @@ private:
     CPeriodic* iTimer;
     TTime iLastShiftTap;
     TBuf<24> iName;
+    const TPhLanguage* iLang;           // the active language (data: phkbd_lang_*.h)
+    MTouchFeedback* iFeedback;          // tactile feedback (key click + vibration), NULL when the image has none
     CFont* iKeyFont;                    // letter keys
     CFont* iFnFont;                     // function-key words
     CFont* iPopupFont;                  // the preview glyph

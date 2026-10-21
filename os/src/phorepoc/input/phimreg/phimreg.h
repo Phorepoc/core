@@ -22,6 +22,8 @@ const TUint32 KPhImKeyActive          = 1;            // entry UID of the active
 const TUint32 KPhImKeyKeyHeight       = 2;            // phkbd key-height scale, percent (60..140, default 100)
 const TUint32 KPhImKeyTheme           = 3;            // phkbd colour scheme (0 dark, 1 light, 2 blue)
 const TUint32 KPhImKeyPopups          = 4;            // phkbd key-press preview popup (1 on, 0 off)
+const TUint32 KPhImKeyLanguage        = 5;            // phkbd active language (index into its language table)
+const TUint32 KPhImKeyOverlay         = 6;            // phkbd: 1 = keyboard panel over the app (default), 0 = full screen with its own text box
 
 const TInt32  PHIM_ENTRY_INTERFACE    = 0xE7015801;   // ECom interface UID of a registry entry
 const TInt    KPhImNameMax            = 40;

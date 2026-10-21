@@ -6,6 +6,7 @@
 #include <w32std.h>
 #include <bitstd.h>
 #include <fbs.h>
+#include <e32debug.h>
 #include "phkbd_board.h"
 #include <peninputlayout.h>
 #include <peninputlayoutctrlgroup.h>
@@ -66,7 +67,7 @@ CPhKbdBoard* CPhKbdBoard::NewL( const TRect& aRect, CFepUiLayout* aLayout, TInt 
 CPhKbdBoard::CPhKbdBoard( const TRect& aRect, CFepUiLayout* aLayout, TInt aControlId )
     : CFepUiBaseCtrl( aRect, aLayout, aControlId ),
       iKeyHeightPct( 100 ), iTheme( 0 ), iPopups( ETrue ), iPage( 0 ), iShift( EPhLower ), iPressed( -1 ),
-      iAccentSel( -1 ), iTimerPurpose( ENoTimer )
+      iAccentSel( -1 ), iTimerPurpose( ENoTimer ), iLang( KPhLanguages[0] ), iFeedback( NULL )
     {
     SetControlType( ECtrlBaseCtrl | EUserCtrlBase );
     }
@@ -75,6 +76,9 @@ void CPhKbdBoard::ConstructL()
     {
     BaseConstructL();
     iTimer = CPeriodic::NewL( CActive::EPriorityStandard );
+    // tactile feedback: key click + vibration, played by the tactile server per the profile / feedback settings
+    TRAPD( fbErr, iFeedback = MTouchFeedback::CreateInstanceL() );
+    RDebug::Printf( "PH: [phkbd] tactile feedback: err %d instance %x", fbErr, (unsigned)iFeedback );
     iCol = Scheme( iTheme );
     CreateFonts();
     BuildPage();
@@ -87,6 +91,10 @@ CPhKbdBoard::~CPhKbdBoard()
         iTimer->Cancel();
         }
     delete iTimer;
+    if ( iFeedback )
+        {
+        MTouchFeedback::DestroyInstance();
+        }
     iKeys.Close();
     iAccentRects.Close();
     ReleaseFonts();
@@ -194,7 +202,7 @@ void CPhKbdBoard::BuildPage()
     const TInt gap = GapPx( w );
     const TInt side = SidePx( w );
     iStripHeight = StripPx( keyH );
-    const TPhPageDef& page = KPhPages[iPage];
+    const TPhPageDef& page = iLang->iPages[iPage];
     const TInt availW = w - 2 * side;
     for ( TInt r = 0; r < page.iRowCount; ++r )
         {
@@ -272,6 +280,7 @@ TUint CPhKbdBoard::Display( const TPhKeyDef& aDef ) const
 
 void CPhKbdBoard::Draw()
     {
+    RDebug::Printf( "PH: [phkbd] board draw able %d rect %d,%d %dx%d", AbleToDraw(), iRect.iTl.iX, iRect.iTl.iY, iRect.Width(), iRect.Height() );
     if ( AbleToDraw() )
         {
         DrawBoard( iRect );
@@ -564,12 +573,16 @@ void CPhKbdBoard::PressKey( TInt aIndex )
         {
         return;
         }
+    if ( iFeedback )
+        {
+        iFeedback->InstantFeedback( ETouchFeedbackBasicButton );    // click + buzz as the profile allows
+        }
     const TPhKeyDef& def = *iKeys[aIndex].iDef;
     if ( def.iKind == EKChar )
         {
-        for ( TInt i = 0; i < KPhAccentCount; ++i )
+        for ( TInt i = 0; i < iLang->iAccentCount; ++i )
             {
-            if ( KPhAccents[i].iBase == def.iCode )
+            if ( iLang->iAccents[i].iBase == def.iCode )
                 {
                 iTimerPurpose = ELongPress;
                 StartTimer( KLongPressMs, KLongPressMs );
@@ -787,15 +800,15 @@ void CPhKbdBoard::OpenAccents()
         return;
         }
     const TPhKeyDef& def = *iKeys[iPressed].iDef;
-    for ( TInt i = 0; i < KPhAccentCount; ++i )
+    for ( TInt i = 0; i < iLang->iAccentCount; ++i )
         {
-        if ( KPhAccents[i].iBase != def.iCode )
+        if ( iLang->iAccents[i].iBase != def.iCode )
             {
             continue;
             }
         iAccentChars.Zero();
         iAccentRects.Reset();
-        for ( const TUint16* p = KPhAccents[i].iList; *p && iAccentChars.Length() < iAccentChars.MaxLength(); ++p )
+        for ( const TUint16* p = iLang->iAccents[i].iList; *p && iAccentChars.Length() < iAccentChars.MaxLength(); ++p )
             {
             TChar ch( *p );
             if ( iPage == 0 && iShift != EPhLower )
@@ -901,4 +914,29 @@ void CPhKbdBoard::OnTimer()
             OpenAccents();
             }
         }
+    }
+
+void CPhKbdBoard::SetLanguage( TInt aIndex )
+    {
+    if ( aIndex < 0 || aIndex >= KPhLanguageCount )
+        {
+        aIndex = 0;
+        }
+    iLang = KPhLanguages[aIndex];
+    iPage = 0;
+    iAccentOpen = EFalse;
+    iName.Copy( TPtrC8( reinterpret_cast<const TUint8*>( iLang->iName ) ) );   // the space bar shows the language
+    BuildPage();
+    }
+
+TInt CPhKbdBoard::Language() const
+    {
+    for ( TInt i = 0; i < KPhLanguageCount; ++i )
+        {
+        if ( KPhLanguages[i] == iLang )
+            {
+            return i;
+            }
+        }
+    return 0;
     }

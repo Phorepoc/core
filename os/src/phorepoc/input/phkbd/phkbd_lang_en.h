@@ -1,49 +1,16 @@
 /* Copyright The Phorepoc Authors
  * SPDX-License-Identifier: Apache-2.0 */
 
-// phkbd_pages.h -- OURS (Phorepoc): the key pages of phkbd as data (rows of keys with widths in tenths of a key unit).
-// A page is rows; a row's keys are laid out left to right from the row's indent, scaled so a 100-tenth row fills the
-// board width. Adding a language = another table of the same shape (the planned XML -> table generator emits these).
-#ifndef PHKBD_PAGES_H
-#define PHKBD_PAGES_H
+// phkbd_lang_en.h -- OURS (Phorepoc): the English (QWERTY) keyboard language of phkbd, as data (see phkbd_lang.h).
+#ifndef PHKBD_LANG_EN_H
+#define PHKBD_LANG_EN_H
 
-#include <e32std.h>
+#include "phkbd_lang.h"
 
-enum TPhKeyKind
-    {
-    EKChar,         // a character key; iCode is the lower-case (or only) character
-    EKShift,
-    EKBackspace,
-    EKSymbols,      // "?123": to the symbol page
-    EKLetters,      // "ABC": back to the letters page
-    EKMore,         // "1/2" <-> "2/2" between the two symbol pages
-    EKGlobe,        // switch keyboard
-    EKSpace,
-    EKEnter
-    };
-
-struct TPhKeyDef
-    {
-    TUint16 iCode;
-    TUint8 iKind;
-    TUint8 iWidth;          // tenths of a key unit (10 = one ordinary key)
-    };
-
-struct TPhRowDef
-    {
-    const TPhKeyDef* iKeys;
-    TInt iCount;
-    TInt iIndent;           // tenths of a key unit of empty space before the first key
-    };
-
-struct TPhPageDef
-    {
-    const TPhRowDef* iRows;
-    TInt iRowCount;
-    };
-
-#define K( c ) { c, EKChar, 10 }
-#define KF( kind, w ) { 0, kind, w }
+namespace PhLangEn
+{
+#define K PH_K
+#define KF PH_KF
 
 // page 0: letters (English QWERTY)
 static const TPhKeyDef KLetRow1[] = { K('q'),K('w'),K('e'),K('r'),K('t'),K('y'),K('u'),K('i'),K('o'),K('p') };
@@ -68,16 +35,7 @@ static const TPhKeyDef KSy2Row3[] = { KF(EKMore,14),K('_'),K(0xA1),K(0xBF),K(0xA
 static const TPhRowDef KSy2Rows[] =
     { { KSy2Row1, 10, 0 }, { KSy2Row2, 10, 0 }, { KSy2Row3, 9, 0 }, { KSymRow4, 6, 0 } };
 
-static const TPhPageDef KPhPages[] =
-    { { KLetRows, 4 }, { KSymRows, 4 }, { KSy2Rows, 4 } };
-static const TInt KPhPageCount = 3;
 
-// long-press alternatives (iList is zero-terminated). Lower-case bases; shift upper-cases the choices.
-struct TPhAccent
-    {
-    TUint16 iBase;
-    const TUint16* iList;
-    };
 
 static const TUint16 KAccA[] = { 0xE0,0xE1,0xE2,0xE3,0xE4,0xE5,0xE6,0 };
 static const TUint16 KAccE[] = { 0xE8,0xE9,0xEA,0xEB,0x113,0x119,0 };
@@ -110,7 +68,16 @@ static const TPhAccent KPhAccents[] =
     };
 static const TInt KPhAccentCount = sizeof( KPhAccents ) / sizeof( KPhAccents[0] );
 
+
+
 #undef K
 #undef KF
+}
+
+static const TPhPageDef KPhLangEnPages[] =
+    { { PhLangEn::KLetRows, 4 }, { PhLangEn::KSymRows, 4 }, { PhLangEn::KSy2Rows, 4 } };
+
+static const TPhLanguage KPhLangEn =
+    { "en", "English", KPhLangEnPages, 3, PhLangEn::KPhAccents, PhLangEn::KPhAccentCount };
 
 #endif

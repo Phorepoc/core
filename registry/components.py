@@ -935,7 +935,8 @@ COMPONENTS = {
     # ... and its UI ("Get apps" in the launcher): the same engine
     "phestore": dict(mmp=os.path.join(OS_ROOT, "src/phestore/phestore.mmp")),
     # OURS: the browser frontend (custom-drawn CONE UI; engines plug in through os/inc/phorepoc/phewebengine.h)
-    "phebrowser": dict(mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp")),
+    "phebrowser": dict(mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp"),
+                       rom_data=["resource\\apps\\phebrowser_icon.mbm=" + os.path.join(OS_ROOT, "src/phebrowser/data/phebrowser_icon.mbm")]),
     "tonetest": dict(mmp=os.path.join(OS_ROOT, "src/tonetest/tonetest.mmp"), test=True),
     # --- vector graphics: what the default skin's backgrounds + every real icon need (next: vgrenderer,
     "svgengine": dict(mmp="oss.FCL.sf.mw.svgt/svgtopt/SVG/SVGEngine/group/SVGEngine.mmp",

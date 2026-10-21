@@ -42,7 +42,7 @@ CPhKbdLayout* CPhKbdLayout::NewL( MLayoutOwner* aLayoutOwner, const TAny* /*aIni
     }
 
 CPhKbdLayout::CPhKbdLayout( MLayoutOwner* aLayoutOwner )
-    : CFepUiLayout( aLayoutOwner ), iKeyHeightPct( 100 ), iTheme( 0 ), iPopups( ETrue )
+    : CFepUiLayout( aLayoutOwner ), iKeyHeightPct( 100 ), iTheme( 0 ), iPopups( ETrue ), iOverlay( ETrue ), iLanguage( 0 )
     {
     }
 
@@ -58,6 +58,10 @@ void CPhKbdLayout::ReloadSettings()
     TInt popups = 1;
     PhImGetSetting( KPhImKeyPopups, 1, popups );
     iPopups = popups != 0;
+    TInt overlay = 1;
+    PhImGetSetting( KPhImKeyOverlay, 1, overlay );
+    iOverlay = overlay != 0;
+    PhImGetSetting( KPhImKeyLanguage, 0, iLanguage );
     }
 
 void CPhKbdLayout::ConstructL()
@@ -66,25 +70,30 @@ void CPhKbdLayout::ConstructL()
     ReloadSettings();
     const TSize screen = ScreenSize();
     const TInt boardH = CPhKbdBoard::HeightFor( screen, iKeyHeightPct );
-    const TRect boardRect( 0, screen.iHeight - boardH, screen.iWidth, screen.iHeight );
+    const TRect boardRect( 0, iOverlay ? 0 : screen.iHeight - boardH, screen.iWidth, iOverlay ? boardH : screen.iHeight );   // overlay: the window is just the panel, controls are window-relative
     const TRect icfRect( 0, 0, screen.iWidth, screen.iHeight - boardH );
 
-    // the input context field: the text being edited, shown above the keys (this is a full-screen layout)
-    const CFont* font = CCoeEnv::Static()->NormalFont();
-    iIcf = CFepLayoutMultiLineIcf::NewL( icfRect, this, EIdIcf, font->HeightInPixels(), font->FontMaxHeight(), font );
-    iIcf->SetTextMargin( KIcfMargin * 2, KIcfMargin * 2, KIcfMargin * 2, KIcfMargin );
-    iIcf->SizeChangedL( icfRect, font->HeightInPixels(), font->FontMaxHeight(), font );
-    iIcf->SetBkColor( KRgbWhite );
-    iIcf->SetTextColorL( KRgbBlack );
-    iIcf->SetFocus( ETrue );
-    AddControlL( iIcf, ETrue );
+    // Overlay (the default): the layout is only the keyboard panel docked at the bottom, the keys go straight to the app's
+    // editor (the FEP sends them to it) and the editor stays visible above. Full screen (setting KPhImKeyOverlay = 0): the
+    // input context field on top of the keys, as the stock full-screen QWERTY does.
+    if ( !iOverlay )
+        {
+        const CFont* font = CCoeEnv::Static()->NormalFont();
+        iIcf = CFepLayoutMultiLineIcf::NewL( icfRect, this, EIdIcf, font->HeightInPixels(), font->FontMaxHeight(), font );
+        iIcf->SetTextMargin( KIcfMargin * 2, KIcfMargin * 2, KIcfMargin * 2, KIcfMargin );
+        iIcf->SizeChangedL( icfRect, font->HeightInPixels(), font->FontMaxHeight(), font );
+        iIcf->SetBkColor( KRgbWhite );
+        iIcf->SetTextColorL( KRgbBlack );
+        iIcf->SetFocus( ETrue );
+        AddControlL( iIcf, ETrue );
+        }
 
     iBoard = CPhKbdBoard::NewL( boardRect, this, EIdBoard );
     iBoard->SetCustomisation( iKeyHeightPct, iTheme, iPopups );
-    iBoard->SetKeyboardName( _L( "phkbd" ) );
+    iBoard->SetLanguage( iLanguage );
     AddControlL( iBoard, ETrue );
 
-    SetRect( TRect( TPoint( 0, 0 ), screen ) );
+    ApplyRect();
     }
 
 // the ICF fills what the keys leave; recomputed when the keyboard height setting changed
@@ -92,10 +101,13 @@ void CPhKbdLayout::Arrange()
     {
     const TSize screen = ScreenSize();
     const TInt boardH = CPhKbdBoard::HeightFor( screen, iKeyHeightPct );
-    const TRect boardRect( 0, screen.iHeight - boardH, screen.iWidth, screen.iHeight );
+    const TRect boardRect( 0, iOverlay ? 0 : screen.iHeight - boardH, screen.iWidth, iOverlay ? boardH : screen.iHeight );
     const TRect icfRect( 0, 0, screen.iWidth, screen.iHeight - boardH );
-    const CFont* font = CCoeEnv::Static()->NormalFont();
-    TRAP_IGNORE( iIcf->SizeChangedL( icfRect, font->HeightInPixels(), font->FontMaxHeight(), font ) );
+    if ( iIcf )
+        {
+        const CFont* font = CCoeEnv::Static()->NormalFont();
+        TRAP_IGNORE( iIcf->SizeChangedL( icfRect, font->HeightInPixels(), font->FontMaxHeight(), font ) );
+        }
     iBoard->SetCustomisation( iKeyHeightPct, iTheme, iPopups );
     iBoard->SetRect( boardRect );
     }
@@ -112,18 +124,24 @@ void CPhKbdLayout::OnActivate()
     Arrange();
     iBoard->ResetPage();
     CFepUiLayout::OnActivate();
-    RDebug::Printf( "[phkbd] activate" );
+    { const TRect r = Rect(); const TPoint p = Position(); RDebug::Printf( "PH: [phkbd] activate overlay %d rect %d,%d %dx%d pos %d,%d screen %dx%d", iOverlay, r.iTl.iX, r.iTl.iY, r.Width(), r.Height(), p.iX, p.iY, ScreenSize().iWidth, ScreenSize().iHeight ); }
     }
 
 TInt CPhKbdLayout::SizeChanged( const TAny* /*aData*/ )
     {
-    SetRect( TRect( TPoint( 0, 0 ), ScreenSize() ) );
     Arrange();
+    const TSize screen = ScreenSize();
+    const TInt boardH = CPhKbdBoard::HeightFor( screen, iKeyHeightPct );
+    ApplyRect();
     return KErrNone;
     }
 
 TInt CPhKbdLayout::OnAppEditorTextComing( const TFepInputContextFieldData& aData )
     {
+    if ( !iIcf )
+        {
+        return KErrNone;                    // overlay: the editor itself shows the text
+        }
     TRAPD( err, iIcf->SetTextL( aData ) );
     return err;
     }
@@ -151,7 +169,10 @@ TInt CPhKbdLayout::HandleCommand( TInt aCmd, TUint8* aData )
             return KErrNone;
             }
         case ECmdPenInputIsSecretText:
-            iIcf->SetTextIsSecret( *aData );
+            if ( iIcf )
+                {
+                iIcf->SetTextIsSecret( *aData );
+                }
             return KErrNone;
         case ECmdPenInputDimEnterKey:
             iBoard->SetEnterDimmed( *reinterpret_cast<TUint16*>( aData ) );
@@ -184,7 +205,7 @@ void CPhKbdLayout::SwitchKeyboard()
     {
     TPhImEntry next;
     const TInt err = PhImNext( next );
-    RDebug::Printf( "[phkbd] switch -> %d: entry %08x mode %d layout %08x", err, next.iEntryUid, next.iMode,
+    RDebug::Printf( "PH: [phkbd] switch -> %d: entry %08x mode %d layout %08x", err, next.iEntryUid, next.iMode,
                     next.iLayoutUid );
     if ( err != KErrNone )
         {
@@ -201,7 +222,7 @@ void CPhKbdLayout::HandleControlEvent( TInt aEventType, CFepUiBaseCtrl* /*aCtrl*
     // one serial-log line per keyboard event: the test scripts (tools/phorepoc-x86/kbd_taps.py --sync) pace on these
     if ( aEventType >= EPhEvtText && aEventType <= EPhEvtClose )
         {
-        RDebug::Printf( "[phkbd] event %d len %d", aEventType - EEventControlUserBase, aEventData.Length() );
+        RDebug::Printf( "PH: [phkbd] event %d len %d", aEventType - EEventControlUserBase, aEventData.Length() );
         }
     switch ( aEventType )
         {
@@ -231,12 +252,45 @@ void CPhKbdLayout::HandleControlEvent( TInt aEventType, CFepUiBaseCtrl* /*aCtrl*
             break;
             }
         case EPhEvtSwitchKeyboard:
-            SwitchKeyboard();
+            if ( KPhLanguageCount > 1 )
+                {
+                NextLanguage();             // the globe cycles the installed languages
+                }
+            else
+                {
+                SwitchKeyboard();           // one language: the globe switches to the next keyboard of the registry
+                }
             break;
         case EPhEvtClose:
             SignalOwner( ESignalLayoutClosed );
             break;
         default:
             break;
+        }
+    }
+
+// the globe: the next keyboard language (data tables, phkbd_langs.h); remembered across openings
+void CPhKbdLayout::NextLanguage()
+    {
+    iLanguage = ( iBoard->Language() + 1 ) % KPhLanguageCount;
+    PhImSetSetting( KPhImKeyLanguage, iLanguage );
+    iBoard->SetLanguage( iLanguage );
+    iBoard->ReDrawRect( iBoard->Rect() );
+    RDebug::Printf( "PH: [phkbd] language -> %d", iLanguage );
+    }
+
+// Overlay: the layout is local (0,0)..(w,boardH) and its window sits at the bottom of the screen; full screen: the whole screen.
+void CPhKbdLayout::ApplyRect()
+    {
+    const TSize screen = ScreenSize();
+    const TInt boardH = CPhKbdBoard::HeightFor( screen, iKeyHeightPct );
+    if ( iOverlay )
+        {
+        SetRect( TRect( 0, 0, screen.iWidth, boardH ) );
+        LayoutOwner()->SetPosition( TPoint( 0, screen.iHeight - boardH ) );
+        }
+    else
+        {
+        SetRect( TRect( TPoint( 0, 0 ), screen ) );
         }
     }

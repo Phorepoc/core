@@ -21,5 +21,5 @@ START RESOURCE	phkbd.rss
 TARGET			phkbd.rsc
 END
 
-LIBRARY			euser.lib ws32.lib gdi.lib fbscli.lib bitgdi.lib cone.lib ecom.lib
+LIBRARY			euser.lib ws32.lib gdi.lib fbscli.lib bitgdi.lib cone.lib ecom.lib touchfeedback.lib
 LIBRARY			peninputlayoutinterface.lib peninputlayoutcontrol.lib phimreg.lib

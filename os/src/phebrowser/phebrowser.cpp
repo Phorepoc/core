@@ -39,6 +39,7 @@
 #include "pb_layout.h"
 #include "pb_theme.h"
 #include "pb_engines.h"
+#include "pb_enginehost.h"
 
 struct TPbEarly { TPbEarly() { RDebug::Printf("PH: [phebrowser] static init"); } };
 static TPbEarly gPbEarly;
@@ -156,7 +157,7 @@ struct TPbTab
 enum TPbMode { EModeBrowse, EModeGrid, EModeSheet, EModeSearchPick, EModeNav };
 enum TPbSheetItem
 	{
-	ESheetNewTab, ESheetNewPrivate, ESheetFind, ESheetBar, ESheetTheme, ESheetSearch, ESheetStore, ESheetExit, ESheetCount
+	ESheetNewTab, ESheetNewPrivate, ESheetFind, ESheetBar, ESheetTheme, ESheetSearch, ESheetEngine, ESheetStore, ESheetExit, ESheetCount
 	};
 
 // ---- the container: the whole UI is this one control ------------------------------------------------------------------------------
@@ -168,12 +169,16 @@ public:
 		if (iApi)
 			{
 			for (TInt i = 0; i < iTabs.Count(); ++i)
-				iApi->view_destroy(iTabs[i].iView);
+				if (iTabs[i].iView)
+					iApi->view_destroy(iTabs[i].iView);
 			iApi->shutdown();
 			}
+		delete iEngines;          // unloads the engine plug-in (after its shutdown)
 		for (TInt i = 0; i < iTabs.Count(); ++i)
 			delete iTabs[i].iThumb;
-		delete iCallBack;
+		delete iWake;
+		if (iSmall)
+			iEikonEnv->ScreenDevice()->ReleaseFont(iSmall);
 		delete iEdit;
 		delete iPageBmp;
 		iTabs.Close();
@@ -184,32 +189,66 @@ public:
 		iSet = aSettings;
 		CreateWindowL();
 		EnableDragEvents();
-		iCallBack = new (ELeave) CAsyncCallBack(TCallBack(Pump, this), CActive::EPriorityStandard);
+		iWake = CPbWake::NewL(TCallBack(Pump, this));          // the engine notifies from its own thread
 		iEdit = new (ELeave) CEikEdwin;                       // the address editor: in place, inside the bar
 		iEdit->SetContainerWindowL(*this);
 		iEdit->ConstructL(EEikEdwinNoWrap, 0, 255, 1);
 		iEdit->MakeVisible(EFalse);
+		{                                                    // the address font: about 2/3 of the normal one
+		TFontSpec spec = iEikonEnv->NormalFont()->FontSpecInTwips();
+		spec.iHeight = spec.iHeight * 2 / 3;
+		iEikonEnv->ScreenDevice()->GetNearestFontInTwips(iSmall, spec);
+		}
 		SetRect(aRect);
 		ActivateL();
-#ifdef PHEBROWSER_DUMMY
-		iApi = PheDummyGetApi(PHE_WEBENGINE_VERSION);
-#endif
-		if (iApi && iApi->init(Notify, this) == 0)
-			{
-			NewTabL(KNullDesC, EFalse);       // opens on the new-tab page
-			}
-		else
-			iApi = NULL;                      // no engine: the new-tab page offers the store
+		iEngines = CPbEngines::NewL(iEikonEnv->FsSession());   // lists the installed engines; none is loaded yet
+		if (iEngines->Count() > 0)
+			NewTabL(KNullDesC, EFalse);       // opens on the new-tab page (the engine loads on the first navigation)
 		if (iSet->iSearchTemplate.Length() == 0)
 			iMode = EModeSearchPick;          // first launch: the user chooses the search engine
+		LoadStartHook();
+		}
+	// test / automation hook: C:\private\E7016B20\open.txt = one URL per line; the first opens at start, each next one in a new tab
+	// once the previous page has finished (the file is deleted when read)
+	void LoadStartHook()
+		{
+		RFs& fs = iEikonEnv->FsSession();
+		TFileName f;
+		fs.PrivatePath(f);
+		f.Insert(0, _L("C:"));
+		f.Append(_L("open.txt"));
+		RFile file;
+		if (file.Open(fs, f, EFileRead) != KErrNone)
+			return;
+		TBuf8<400> b;
+		file.Read(b);
+		file.Close();
+		fs.Delete(f);
+		iQueue.Copy(b);
+		NextQueued();
+		}
+	void NextQueued()
+		{
+		iQueue.TrimLeft();
+		TInt e = iQueue.Locate('\n');
+		TBuf<200> line;                    // (not a ?: of TBuf and TPtrC: that slices the descriptor)
+		line.Copy(iQueue.Left(Min(e < 0 ? iQueue.Length() : e, 200)));
+		iQueue.Delete(0, e < 0 ? iQueue.Length() : e + 1);
+		line.Trim();
+		if (line.Length() == 0 || iCur < 0)
+			return;
+		if (iTabs[iCur].iUrl.Length() == 0)
+			Navigate(line);
+		else
+			TRAP_IGNORE(NewTabL(line, EFalse));
 		}
 
 	// ---- commands ----
 	void NewTabL(const TDesC& aUrl, TBool aPrivate)
 		{
-		if (!iApi || iTabs.Count() >= KMaxTabs)
+		if (!iEngines || iEngines->Count() == 0 || iTabs.Count() >= KMaxTabs)
 			return;
-		if (aPrivate && !(iApi->caps & PHE_CAP_PRIVATE))
+		if (aPrivate && !((iApi ? iApi->caps : iEngines->DefaultCaps()) & PHE_CAP_PRIVATE))
 			{
 			CAknInformationNote* n = new (ELeave) CAknInformationNote(ETrue);
 			n->ExecuteLD(_L("This engine has no private tabs"));
@@ -218,10 +257,11 @@ public:
 		if (iCur >= 0)
 			{
 			CaptureThumb(iCur);
-			iApi->view_visible(iTabs[iCur].iView, 0);
+			if (iApi && iTabs[iCur].iView)
+				iApi->view_visible(iTabs[iCur].iView, 0);
 			}
 		TPbTab t;
-		t.iView = iApi->new_view_id();
+		t.iView = 0;                       // no engine view until the first navigation (EnsureView)
 		t.iUrl.Copy(aUrl.Left(Min(aUrl.Length(), 200)));
 		t.iTitle.Zero();
 		t.iProgress = 0; t.iSecurity = 0; t.iBack = t.iFwd = EFalse; t.iLoading = aUrl.Length() > 0;
@@ -229,19 +269,42 @@ public:
 		t.iThumb = NULL;
 		iTabs.AppendL(t);
 		iCur = iTabs.Count() - 1;
-		const TPbLayout l = Layout();
-		iApi->view_create(t.iView, l.iPage.iW, l.iPage.iH, aPrivate, NULL, 0);   // a private view persists nothing (seam)
-		if (aUrl.Length())
-			iApi->load(t.iView, aUrl.Ptr(), aUrl.Length());
+		if (aUrl.Length() && EnsureView(iCur))
+			iApi->load(iTabs[iCur].iView, aUrl.Ptr(), aUrl.Length());
 		iMode = EModeBrowse;
 		PageChanged();
+		}
+	// the engine loads on the first navigation (ECom, lazily); a tab gets its engine view when it first has something to load
+	TBool EnsureView(TInt aIx)
+		{
+		if (aIx < 0 || aIx >= iTabs.Count())
+			return EFalse;
+		if (!iApi)
+			{
+			const PheWebEngineApi* api = iEngines ? iEngines->Load() : NULL;
+			if (!api || api->init(Notify, this) != 0)
+				{
+				if (api) iEngines->Unload();
+				iEngineFailed = ETrue;
+				return EFalse;
+				}
+			iApi = api;
+			}
+		if (iTabs[aIx].iView == 0)
+			{
+			const TPbLayout l = Layout();
+			iTabs[aIx].iView = iApi->new_view_id();
+			iApi->view_create(iTabs[aIx].iView, l.iPage.iW, l.iPage.iH, iTabs[aIx].iPrivate, NULL, 0);   // a private view persists nothing (seam)
+			}
+		return ETrue;
 		}
 	void CloseTab(TInt aIx = -1)
 		{
 		if (aIx < 0) aIx = iCur;
-		if (!iApi || aIx < 0 || aIx >= iTabs.Count())
+		if (aIx < 0 || aIx >= iTabs.Count())
 			return;
-		iApi->view_destroy(iTabs[aIx].iView);
+		if (iApi && iTabs[aIx].iView)
+			iApi->view_destroy(iTabs[aIx].iView);
 		delete iTabs[aIx].iThumb;
 		iTabs.Remove(aIx);
 		if (iCur > aIx || iCur >= iTabs.Count())
@@ -251,7 +314,7 @@ public:
 			iCur = -1;
 			TRAP_IGNORE(NewTabL(KNullDesC, EFalse));
 			}
-		else
+		else if (iApi && iTabs[iCur].iView)
 			iApi->view_visible(iTabs[iCur].iView, 1);
 		PageChanged();
 		}
@@ -259,9 +322,11 @@ public:
 		{
 		if (aIx == iCur || aIx < 0 || aIx >= iTabs.Count())
 			{ iMode = EModeBrowse; PageChanged(); return; }
-		iApi->view_visible(iTabs[iCur].iView, 0);
+		if (iApi && iTabs[iCur].iView)
+			iApi->view_visible(iTabs[iCur].iView, 0);
 		iCur = aIx;
-		iApi->view_visible(iTabs[iCur].iView, 1);
+		if (iApi && iTabs[iCur].iView)
+			iApi->view_visible(iTabs[iCur].iView, 1);
 		iMode = EModeBrowse;
 		PageChanged();
 		}
@@ -280,14 +345,14 @@ public:
 			{ EndEditL(EFalse); return ETrue; }
 		if (iMode != EModeBrowse)
 			{ iMode = EModeBrowse; DrawDeferred(); return ETrue; }
-		if (iCur >= 0 && iTabs[iCur].iBack)
+		if (iApi && iCur >= 0 && iTabs[iCur].iBack)
 			{
 			iApi->cmd(iTabs[iCur].iView, PHE_CMD_BACK);
 			return ETrue;
 			}
 		return EFalse;
 		}
-	void FindDemo() { if (iCur >= 0) iApi->find(iTabs[iCur].iView, KFindDemoText, 1, 0); }
+	void FindDemo() { if (iApi && iCur >= 0 && iTabs[iCur].iView && iApi->find) iApi->find(iTabs[iCur].iView, KFindDemoText, 1, 0); }
 	void AskUrlL()
 		{
 		if (iCur < 0)
@@ -312,6 +377,8 @@ public:
 		}
 	void StartEditL()
 		{
+		iEditing = ETrue;                      // (Layout() puts the bar on top while editing)
+		Relayout();
 		const TPbLayout l = Layout();
 		const TPbTokens tk = Tk();
 		iEdit->OverrideColorL(EColorControlBackground, Rgb(tk.iField));
@@ -326,7 +393,7 @@ public:
 		TCharFormatMask mask;
 		fmt.iFontPresentation.iTextColor = Rgb(tk.iInk);
 		mask.SetAttrib(EAttColor);
-		fmt.iFontSpec = iEikonEnv->NormalFont()->FontSpecInTwips();
+		fmt.iFontSpec = iSmall ? iSmall->FontSpecInTwips() : iEikonEnv->NormalFont()->FontSpecInTwips();
 		mask.SetAttrib(EAttFontTypeface);
 		mask.SetAttrib(EAttFontHeight);
 		layer->SetL(fmt, mask);
@@ -343,7 +410,8 @@ public:
 		iEdit->SetParaFormatLayer(pl);                       // takes ownership
 		CleanupStack::Pop(pl);
 		}
-		iEdit->SetAknEditorFlags(EAknEditorFlagLaunchPenInputAutomatic);   // focus opens the on-screen keyboard
+		iEdit->SetAknEditorFlags(EAknEditorFlagLaunchPenInputAutomatic | EAknEditorFlagEnablePartialScreen);   // the editor stays visible above an overlay keyboard
+		//   // focus opens the on-screen keyboard
 		iEdit->SetRect(EditRect(l));
 		iEdit->SetTextL(&iTabs[iCur].iUrl);
 		iEdit->MakeVisible(ETrue);
@@ -367,6 +435,7 @@ public:
 		iEdit->SetFocus(EFalse);
 		iEdit->MakeVisible(EFalse);
 		iEditing = EFalse;
+		Relayout();                            // the bar returns to its place
 		if (text)
 			{
 			CleanupStack::PushL(text);
@@ -406,7 +475,8 @@ private:
 	TPbLayout Layout() const
 		{
 		const TSize s = Size();
-		return PbLayout(s.iWidth, s.iHeight, iSet->iBar, s.iWidth > s.iHeight ? 48 : 56, 1);
+		// while editing the bar goes to the TOP so the editor stays visible above the on-screen keyboard
+		return PbLayout(s.iWidth, s.iHeight, iEditing ? EPbBarTop : iSet->iBar, s.iWidth > s.iHeight ? 48 : 56, 1);
 		}
 	static TRect R(const TPbRect& r) { return TRect(r.iX, r.iY, r.iX + r.iW, r.iY + r.iH); }
 	TRect ButtonRect(TInt aIx, const TPbLayout& l) const
@@ -422,7 +492,7 @@ private:
 		TRect a = R(l.iAddress);
 		a.iTl.iX += a.Height();
 		a.iBr.iX -= a.Height();
-		a.Shrink(2, 8);
+		a.Shrink(2, 12);                    // a slimmer field: the small font needs less height
 		return a;
 		}
 	// the nav popover: back, forward, reload/stop, tabs -- hidden until the nav button is tapped, anchored to it,
@@ -447,7 +517,8 @@ private:
 			return;
 		const TPbLayout l = Layout();
 		for (TInt i = 0; i < iTabs.Count(); ++i)
-			iApi->view_resize(iTabs[i].iView, l.iPage.iW, l.iPage.iH);
+			if (iTabs[i].iView)
+				iApi->view_resize(iTabs[i].iView, l.iPage.iW, l.iPage.iH);
 		delete iPageBmp; iPageBmp = NULL;
 		PageChanged();
 		}
@@ -467,6 +538,8 @@ private:
 			else
 				SearchUrl(u);                                         // words: a search with the chosen engine
 			}
+		if (!EnsureView(iCur))
+			{ DrawDeferred(); return; }       // the engine could not be loaded: the new-tab page says so
 		iTabs[iCur].iUrl.Copy(u.Left(Min(u.Length(), 200)));
 		iTabs[iCur].iLoading = ETrue;
 		iApi->load(iTabs[iCur].iView, u.Ptr(), u.Length());
@@ -495,7 +568,7 @@ private:
 		}
 
 	// ---- engine -> UI plumbing ----
-	static void Notify(void* aCtx, PheView) { static_cast<CPbContainer*>(aCtx)->iCallBack->CallBack(); }
+	static void Notify(void* aCtx, PheView) { static_cast<CPbContainer*>(aCtx)->iWake->Signal(); }   // any thread
 	static TInt Pump(TAny* aSelf) { static_cast<CPbContainer*>(aSelf)->DrainEvents(); return 0; }
 	TInt IndexOf(PheView aV) const
 		{
@@ -532,6 +605,10 @@ private:
 			case PHE_EV_TITLE:
 				FetchStr(e.view, PHE_STR_TITLE, tab.iTitle);
 				break;
+			case PHE_EV_FINISHED:
+				if (iQueue.Length())
+					NextQueued();
+				break;
 			case PHE_EV_REPAINT:
 				if (t == iCur) page = ETrue;
 				break;
@@ -564,7 +641,7 @@ private:
 	// the engine buffer -> a CFbsBitmap (one copy; a zero-copy chunk-backed bitmap is the next step)
 	void CopyPixels()
 		{
-		if (!iApi || iCur < 0)
+		if (!iApi || iCur < 0 || !iTabs[iCur].iView)
 			return;
 		const TPbLayout l = Layout();
 		const TSize ps(l.iPage.iW, l.iPage.iH);
@@ -590,7 +667,7 @@ private:
 	void CaptureThumb(TInt aIx)
 		{
 		TPbTab& t = iTabs[aIx];
-		if (!iApi || !iApi->snapshot || t.iUrl.Length() == 0)
+		if (!iApi || !t.iView || !iApi->snapshot || t.iUrl.Length() == 0)
 			return;
 		if (!t.iThumb)
 			{
@@ -611,9 +688,9 @@ private:
 		gc.SetBrushColor(c);
 		gc.DrawRect(r);
 		}
-	void Txt(CWindowGc& gc, const TDesC& s, const TRect& r, CGraphicsContext::TTextAlign a, TRgb c, TInt aMargin = 0) const
+	void Txt(CWindowGc& gc, const TDesC& s, const TRect& r, CGraphicsContext::TTextAlign a, TRgb c, TInt aMargin = 0, const CFont* aFont = NULL) const
 		{
-		const CFont* f = iEikonEnv->NormalFont();
+		const CFont* f = aFont ? aFont : iEikonEnv->NormalFont();
 		gc.UseFont(f);
 		gc.SetPenStyle(CGraphicsContext::ESolidPen);
 		gc.SetPenColor(c);
@@ -691,9 +768,9 @@ private:
 		TRect b = aR;
 		b.iTl.iY = a.iBr.iY;
 		b.iBr.iY = b.iTl.iY + 28;
-		if (!iApi)
+		if (!iEngines || iEngines->Count() == 0 || iEngineFailed)
 			{
-			Txt(gc, _L("No browser engine is installed"), b, CGraphicsContext::ECenter, Rgb(tk.iDim));
+			Txt(gc, iEngineFailed ? _L("The browser engine could not start") : _L("No browser engine is installed"), b, CGraphicsContext::ECenter, Rgb(tk.iDim));
 			Button(gc, StoreButtonRect(aR), _L("Get a browser engine"), Rgb(tk.iAccent), Rgb(Dark() ? 0x101114 : 0xFFFFFF));
 			}
 		else
@@ -738,7 +815,7 @@ private:
 			}
 		else
 			shown = _L("Search or enter address");
-		Txt(gc, shown, text, CGraphicsContext::ELeft, Rgb(hint ? tk.iDim : tk.iInk));
+		Txt(gc, shown, text, CGraphicsContext::ELeft, Rgb(hint ? tk.iDim : tk.iInk), 0, iSmall);
 		const TInt sec = (iCur >= 0 && iTabs[iCur].iUrl.Length()) ? iTabs[iCur].iSecurity : -1;
 		const TPoint c(f.iTl.iX + f.Height() / 2, f.Center().iY);
 		if (sec < 0)
@@ -920,6 +997,17 @@ private:
 		case ESheetBar: aOut = BarAtBottom() ? _L("Bar position: bottom (tap for top)") : _L("Bar position: top (tap for bottom)"); break;
 		case ESheetTheme: aOut = iSet->iTheme == EPbThemeLight ? _L("Theme: light") : (iSet->iTheme == EPbThemeDark ? _L("Theme: dark") : _L("Theme: follow system")); break;
 		case ESheetSearch: { aOut = _L("Search engine: "); TBuf<40> n; n.Copy(iSet->iSearchName); aOut.Append(n); } break;
+		case ESheetEngine:
+			aOut = _L("Engine: ");
+			if (iEngines && iEngines->Count() > 0)
+				{
+				aOut.Append(iEngines->Info(iEngines->Default()).iName);
+				if (iApi && iEngines->LoadedIndex() != iEngines->Default())
+					aOut.Append(_L(" (next start)"));
+				}
+			else
+				aOut.Append(_L("none"));
+			break;
 		case ESheetStore: aOut = _L("Get a browser engine"); break;
 		default: aOut = _L("Exit"); break;
 			}
@@ -1012,13 +1100,29 @@ private:
 		if (!iEditing && aE.iType == TPointerEvent::EButton1Down && iMode == EModeBrowse && iCur >= 0 && FieldRect(Layout()).Contains(aE.iPosition))
 			{                                   // the touch that starts editing is also the first touch ON the editor (opens the keyboard)
 			AskUrlL();
-			if (iEditing && EditRect(Layout()).Contains(aE.iPosition))
-				CCoeControl::HandlePointerEventL(aE);
+			if (iEditing)
+				{                               // the bar moved to the top: deliver the touch to the editor where it now is
+				TPointerEvent pe = aE;
+				pe.iPosition = EditRect(Layout()).Center();
+				iStartTouch = ETrue;
+				CCoeControl::HandlePointerEventL(pe);
+				}
 			return;
 			}
 		if (iEditing)
 			{
 			const TPbLayout el = Layout();
+			if (iStartTouch)                    // the Up of the touch that started the editing
+				{
+				if (aE.iType == TPointerEvent::EButton1Up)
+					{
+					iStartTouch = EFalse;
+					TPointerEvent pe = aE;
+					pe.iPosition = EditRect(el).Center();
+					CCoeControl::HandlePointerEventL(pe);
+					}
+				return;
+				}
 			if (EditRect(el).Contains(aE.iPosition))
 				{ CCoeControl::HandlePointerEventL(aE); return; }      // caret placement, selection: the editor's
 			if (aE.iType == TPointerEvent::EButton1Up)
@@ -1066,8 +1170,14 @@ private:
 			iDragging = EFalse;
 			if (wasPage)
 				{
-				if (!iApi && StoreButtonRect(R(l.iPage)).Contains(aE.iPosition))
+				if ((!iEngines || iEngines->Count() == 0) && StoreButtonRect(R(l.iPage)).Contains(aE.iPosition))
 					iEikonEnv->EikAppUi()->HandleCommandL(EPheBrCmdGetEngine);
+				else if (iApi && iCur >= 0 && iTabs[iCur].iView && iTabs[iCur].iUrl.Length() && !iMoved)
+					{                              // a tap on the page: the engine gets a press + release (page coordinates)
+					const TInt x = aE.iPosition.iX - l.iPage.iX, y = aE.iPosition.iY - l.iPage.iY;
+					iApi->pointer(iTabs[iCur].iView, PHE_PTR_DOWN, x, y);
+					iApi->pointer(iTabs[iCur].iView, PHE_PTR_UP, x, y);
+				}
 				break;
 				}
 			if (FieldRect(l).Contains(aE.iPosition))
@@ -1108,8 +1218,8 @@ private:
 		{
 		if (aBtn == EBtnNav)
 			{ iMode = EModeNav; DrawDeferred(); return; }
-		if (!iApi || iCur < 0)
-			{ if (aBtn == EBtnMenu) OpenSheet(); return; }
+		if (!iApi || iCur < 0 || !iTabs[iCur].iView)
+			{ if (aBtn == EBtnMenu) OpenSheet(); else if (aBtn == EBtnTabs && iCur >= 0) { CaptureThumb(iCur); iGridScroll = 0; iMode = EModeGrid; DrawDeferred(); } return; }
 		const PheView v = iTabs[iCur].iView;
 		switch (aBtn)
 			{
@@ -1175,6 +1285,7 @@ private:
 			iSet->Save(iEikonEnv->FsSession());
 			break;
 		case ESheetSearch: iMode = EModeSearchPick; break;
+		case ESheetEngine: if (iEngines) iEngines->Cycle(); DrawDeferred(); break;      // the default engine, persisted by uid; loaded engines stay until restart
 		case ESheetStore: iEikonEnv->EikAppUi()->HandleCommandL(EPheBrCmdGetEngine); break;
 		case ESheetExit: iEikonEnv->EikAppUi()->HandleCommandL(EEikCmdExit); break;
 			}
@@ -1220,10 +1331,15 @@ private:
 	RArray<TPbTab> iTabs;
 	TInt iCur = -1;
 	TPbMode iMode = EModeBrowse;
-	CAsyncCallBack* iCallBack = NULL;
+	CPbWake* iWake = NULL;
+	CPbEngines* iEngines = NULL;
+	TBool iEngineFailed = EFalse;
+	TBuf<400> iQueue;
 	CFbsBitmap* iPageBmp = NULL;
 	CEikEdwin* iEdit = NULL;
 	TBool iEditing = EFalse;
+	TBool iStartTouch = EFalse;
+	CFont* iSmall = NULL;                    // the address-field font
 	TInt iDragY = 0, iGridScroll = 0;
 	TPoint iDownPos;
 	TBool iDragging = EFalse, iMoved = EFalse;
