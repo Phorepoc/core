@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // phepowerkeyplugincontainer.cpp -- OURS: the list container of the Power key page (after GSAutoKeyguardPluginContainer)
-#include <bldvariant.hrh>
 #include <aknlists.h>
 #include <eikclb.h>
 #include <gslistbox.h>
