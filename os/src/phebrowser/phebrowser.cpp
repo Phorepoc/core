@@ -569,7 +569,7 @@ private:
 
 	// ---- engine -> UI plumbing ----
 	static void Notify(void* aCtx, PheView) { static_cast<CPbContainer*>(aCtx)->iWake->Signal(); }   // any thread
-	static TInt Pump(TAny* aSelf) { static_cast<CPbContainer*>(aSelf)->DrainEvents(); return 0; }
+	static TInt Pump(TAny* aSelf) { RDebug::Printf("PH: [phebrowser] wake"); static_cast<CPbContainer*>(aSelf)->DrainEvents(); return 0; }
 	TInt IndexOf(PheView aV) const
 		{
 		for (TInt i = 0; i < iTabs.Count(); ++i)
@@ -589,6 +589,8 @@ private:
 		TBool bar = EFalse, page = EFalse;
 		while (iApi->poll(0, &e))
 			{
+			if (e.kind != PHE_EV_REPAINT && e.kind != PHE_EV_PROGRESS)
+				RDebug::Printf("PH: [phebrowser] event %d view %d a %d b %d", e.kind, e.view, e.a, e.b);
 			const TInt t = IndexOf(e.view);
 			if (t < 0)
 				continue;
