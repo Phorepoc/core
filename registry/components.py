@@ -285,10 +285,10 @@ COMPONENTS = {
     "wserv_nga": dict(mmp=f"{G}/windowing/windowserver/group/openwfc/WServ_nga.MMP", nga=True,
                       rom="wserv_nga.exe", rom_as="wserv.exe", heap_max=0x1000000,
                       arm_heap_max=0x1000000,
-                      **({"drop": ["WSTOP.CPP", "INIFILE.CPP", "CLIENT.CPP", "WINBASE.CPP", "POINTER.CPP", "EVENT.CPP"], "extra": [".wsdbg-build/WSTOP.CPP", "toolchain/shims/wserv_board/inifile_board.cpp",
+                      **({"drop": ["WSTOP.CPP", "INIFILE.CPP", "CLIENT.CPP", "WINBASE.CPP", "POINTER.CPP", "EVENT.CPP", "SCREEN.CPP"], "extra": [".wsdbg-build/WSTOP.CPP", "toolchain/shims/wserv_board/screen_nga.cpp", "toolchain/shims/wserv_board/inifile_board.cpp",
                                                                           "toolchain/shims/wserv_board/client_nga.cpp", "toolchain/shims/wserv_board/winbase_nga.cpp", "toolchain/shims/wserv_board/pointer_nga.cpp", "toolchain/shims/wserv_board/event_nga.cpp"]}
                          if os.environ.get("WSERV_DBG") == "1" else
-                         {"drop": ["INIFILE.CPP", "CLIENT.CPP", "WINBASE.CPP", "POINTER.CPP", "EVENT.CPP"], "extra": ["toolchain/shims/wserv_board/inifile_board.cpp", "toolchain/shims/wserv_board/client_nga.cpp", "toolchain/shims/wserv_board/winbase_nga.cpp", "toolchain/shims/wserv_board/pointer_nga.cpp", "toolchain/shims/wserv_board/event_nga.cpp"]}),
+                         {"drop": ["INIFILE.CPP", "CLIENT.CPP", "WINBASE.CPP", "POINTER.CPP", "EVENT.CPP", "SCREEN.CPP"], "extra": ["toolchain/shims/wserv_board/screen_nga.cpp", "toolchain/shims/wserv_board/inifile_board.cpp", "toolchain/shims/wserv_board/client_nga.cpp", "toolchain/shims/wserv_board/winbase_nga.cpp", "toolchain/shims/wserv_board/pointer_nga.cpp", "toolchain/shims/wserv_board/event_nga.cpp"]}),
                       defs=["PH_WS_NGA"] + (["LOG_WSERV_EVENTS"] if os.environ.get("WSERV_EVLOG") == "1" else []), libs=["centralrepository.lib"],
                       flags=["-finput-charset=ISO-8859-1"] if os.environ.get("WSERV_EVLOG") == "1" else []),   # (EVQUEUE.CPP's trace texts are Latin-1)
     # the NGA standard render stage: displayrenderstage -> libWFC (+ the fb/debugbar stages); replaces 2001b70b
