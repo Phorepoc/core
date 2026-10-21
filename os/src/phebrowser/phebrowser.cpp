@@ -26,6 +26,7 @@
 #include <eikedwin.h>
 #include <eikbtgpc.h>
 #include <txtfrmat.h>
+#include <txtfmlyr.h>
 #include <avkon.hrh>
 #include <apgcli.h>
 #include <apacmdln.h>
@@ -152,7 +153,7 @@ struct TPbTab
 	CFbsBitmap* iThumb;        // KThumbW x KThumbH snapshot for the tab grid
 	};
 
-enum TPbMode { EModeBrowse, EModeGrid, EModeSheet, EModeSearchPick };
+enum TPbMode { EModeBrowse, EModeGrid, EModeSheet, EModeSearchPick, EModeNav };
 enum TPbSheetItem
 	{
 	ESheetNewTab, ESheetNewPrivate, ESheetFind, ESheetBar, ESheetTheme, ESheetSearch, ESheetStore, ESheetExit, ESheetCount
@@ -315,7 +316,34 @@ public:
 		const TPbTokens tk = Tk();
 		iEdit->OverrideColorL(EColorControlBackground, Rgb(tk.iField));
 		iEdit->OverrideColorL(EColorControlText, Rgb(tk.iInk));
-		iEdit->SetBackgroundColorL(Rgb(tk.iField));   // (the editor keeps its skin colours: dark text on white)
+		iEdit->SetBackgroundColorL(Rgb(tk.iField));
+		iEdit->SetSkinBackgroundControlContextL(NULL);       // no skin background: the field behind it shows through
+		iEdit->SetSuppressBackgroundDrawing(ETrue);          // the gaps around the text are not painted: our field shows through
+		{                                                    // text colour + font through a proper char format layer
+		CCharFormatLayer* layer = CCharFormatLayer::NewL();
+		CleanupStack::PushL(layer);
+		TCharFormat fmt;
+		TCharFormatMask mask;
+		fmt.iFontPresentation.iTextColor = Rgb(tk.iInk);
+		mask.SetAttrib(EAttColor);
+		fmt.iFontSpec = iEikonEnv->NormalFont()->FontSpecInTwips();
+		mask.SetAttrib(EAttFontTypeface);
+		mask.SetAttrib(EAttFontHeight);
+		layer->SetL(fmt, mask);
+		iEdit->SetCharFormatLayer(layer);                    // takes ownership (copies the attributes into the live layer)
+		CleanupStack::Pop(layer);
+		CParaFormatLayer* pl = CParaFormatLayer::NewL();          // the paragraph fill is the editor background
+		CleanupStack::PushL(pl);
+		CParaFormat* pf = CParaFormat::NewLC();
+		TParaFormatMask pm;
+		pf->iFillColor = Rgb(tk.iField);
+		pm.SetAttrib(EAttFillColor);
+		pl->SetL(pf, pm);
+		CleanupStack::PopAndDestroy(pf);
+		iEdit->SetParaFormatLayer(pl);                       // takes ownership
+		CleanupStack::Pop(pl);
+		}
+		iEdit->SetAknEditorFlags(EAknEditorFlagLaunchPenInputAutomatic);   // focus opens the on-screen keyboard
 		iEdit->SetRect(EditRect(l));
 		iEdit->SetTextL(&iTabs[iCur].iUrl);
 		iEdit->MakeVisible(ETrue);
@@ -352,7 +380,7 @@ public:
 	TBool BarAtBottom() const { return iSet->iBar == EPbBarBottom; }
 
 private:
-	enum { EBtnBack, EBtnFwd, EBtnReload, EBtnTabs, EBtnMenu, EBtnCount };
+	enum { EBtnBack, EBtnFwd, EBtnReload, EBtnTabs, EBtnMenu, EBtnNav };
 
 	// ---- theme ----
 	TBool SystemDark() const
@@ -365,7 +393,7 @@ private:
 	TBool Dark() const { return iSet->iTheme == EPbThemeDark || (iSet->iTheme == EPbThemeFollow && SystemDark()); }
 	TPbTokens Tk() const
 		{
-		return PbTokens(Dark(), iMode == EModeBrowse && iCur >= 0 && iTabs[iCur].iPrivate);
+		return PbTokens(Dark(), (iMode == EModeBrowse || iMode == EModeNav) && iCur >= 0 && iTabs[iCur].iPrivate);
 		}
 	void HandleResourceChange(TInt aType)
 		{
@@ -383,27 +411,34 @@ private:
 	static TRect R(const TPbRect& r) { return TRect(r.iX, r.iY, r.iX + r.iW, r.iY + r.iH); }
 	TRect ButtonRect(TInt aIx, const TPbLayout& l) const
 		{
-		if (l.iActions.iW > 0)
-			{
-			const TInt w = l.iActions.iW / EBtnCount;
-			return TRect(l.iActions.iX + aIx * w, l.iActions.iY, l.iActions.iX + (aIx + 1) * w, l.iActions.iY + l.iActions.iH);
-			}
+		// the bar row: [nav] [field] [overflow]
 		const TInt h = l.iAddress.iH;
-		if (aIx <= EBtnReload)
-			return TRect(aIx * h, l.iAddress.iY, (aIx + 1) * h, l.iAddress.iY + h);
-		const TInt fromRight = EBtnCount - aIx;
-		return TRect(l.iAddress.iW - fromRight * h, l.iAddress.iY, l.iAddress.iW - (fromRight - 1) * h, l.iAddress.iY + h);
+		if (aIx == EBtnNav)
+			return TRect(0, l.iAddress.iY, h, l.iAddress.iY + h);
+		return TRect(l.iAddress.iW - h, l.iAddress.iY, l.iAddress.iW, l.iAddress.iY + h);      // EBtnMenu
 		}
 	TRect FieldRect(const TPbLayout& l) const
 		{
 		TRect a = R(l.iAddress);
-		if (l.iActions.iW == 0)
-			{
-			a.iTl.iX += 3 * a.Height();
-			a.iBr.iX -= 2 * a.Height();
-			}
-		a.Shrink(8, 8);
+		a.iTl.iX += a.Height();
+		a.iBr.iX -= a.Height();
+		a.Shrink(2, 8);
 		return a;
+		}
+	// the nav popover: back, forward, reload/stop, tabs -- hidden until the nav button is tapped, anchored to it,
+	// opening toward the page (below the bar when the bar is on top, above it when at the bottom)
+	TRect NavRect() const
+		{
+		const TPbLayout l = Layout();
+		const TInt h = l.iAddress.iH;
+		const TInt y = BarAtBottom() ? l.iAddress.iY - h - 8 : l.iAddress.iY + h + 8;
+		return TRect(6, y, 6 + 4 * h, y + h);
+		}
+	TRect NavItemRect(TInt aIx) const
+		{
+		const TRect r = NavRect();
+		const TInt w = r.Width() / 4;
+		return TRect(r.iTl.iX + aIx * w, r.iTl.iY, r.iTl.iX + (aIx + 1) * w, r.iBr.iY);
 		}
 	void SizeChanged() { if (iEditing) iEdit->SetRect(EditRect(Layout())); Relayout(); }
 	void Relayout()
@@ -633,15 +668,14 @@ private:
 			DrawNewTab(gc, R(l.iPage), tk);
 		// bars
 		Fill(gc, R(l.iAddress), Rgb(tk.iBar));
-		if (l.iActions.iW > 0)
-			Fill(gc, R(l.iActions), Rgb(tk.iBar));
 		DrawField(gc, l, tk);
-		for (TInt b = 0; b < EBtnCount; ++b)
-			DrawGlyph(gc, b, ButtonRect(b, l), tk);
+		DrawGlyph(gc, EBtnNav, ButtonRect(EBtnNav, l), tk);
+		DrawGlyph(gc, EBtnMenu, ButtonRect(EBtnMenu, l), tk);
 		if (t && t->iLoading && t->iUrl.Length())
 			Fill(gc, TRect(l.iProgress.iX, l.iProgress.iY, l.iProgress.iX + l.iProgress.iW * Max(t->iProgress, 4) / 100,
 				l.iProgress.iY + l.iProgress.iH), Rgb(tk.iAccent));
 		if (iMode == EModeGrid) DrawGrid(gc);
+		if (iMode == EModeNav) DrawNav(gc, tk);
 		if (iMode == EModeSheet) DrawSheet(gc);
 		if (iMode == EModeSearchPick) DrawSearchPick(gc);
 		}
@@ -776,6 +810,21 @@ private:
 			gc.SetBrushColor(Rgb(tk.iInk));
 			for (TInt k = -1; k <= 1; ++k)
 				gc.DrawEllipse(TRect(c.iX - 2, c.iY + k * 7 - 2, c.iX + 2, c.iY + k * 7 + 2));
+			break;
+		case EBtnNav:                                   // three bars, and the tab count as a small badge when there are several
+			for (TInt k = -1; k <= 1; ++k)
+				gc.DrawLine(TPoint(c.iX - 9, c.iY + k * 7), TPoint(c.iX + 9, c.iY + k * 7));
+			if (iTabs.Count() > 1)
+				{
+				const TRect b(c.iX + 3, c.iY - 18, c.iX + 21, c.iY);
+				gc.SetPenStyle(CGraphicsContext::ENullPen);
+				gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
+				gc.SetBrushColor(Rgb(tk.iAccent));
+				gc.DrawEllipse(b);
+				TBuf<4> n;
+				n.Num(iTabs.Count());
+				Txt(gc, n, b, CGraphicsContext::ECenter, KRgbWhite);
+				}
 			break;
 			}
 		gc.SetPenSize(TSize(1, 1));
@@ -960,6 +1009,13 @@ private:
 			{ iDownPos = aE.iPosition; iDragY = aE.iPosition.iY; iMoved = EFalse; }
 		else if (aE.iType == TPointerEvent::EDrag && Abs(aE.iPosition.iY - iDownPos.iY) > 6)
 			iMoved = ETrue;
+		if (!iEditing && aE.iType == TPointerEvent::EButton1Down && iMode == EModeBrowse && iCur >= 0 && FieldRect(Layout()).Contains(aE.iPosition))
+			{                                   // the touch that starts editing is also the first touch ON the editor (opens the keyboard)
+			AskUrlL();
+			if (iEditing && EditRect(Layout()).Contains(aE.iPosition))
+				CCoeControl::HandlePointerEventL(aE);
+			return;
+			}
 		if (iEditing)
 			{
 			const TPbLayout el = Layout();
@@ -977,6 +1033,7 @@ private:
 		switch (iMode)
 			{
 		case EModeGrid: GridPointer(aE); return;
+		case EModeNav: NavPointer(aE); return;
 		case EModeSheet: SheetPointer(aE); return;
 		case EModeSearchPick:
 			if (aE.iType == TPointerEvent::EButton1Up)
@@ -1015,17 +1072,42 @@ private:
 				}
 			if (FieldRect(l).Contains(aE.iPosition))
 				{ AskUrlL(); break; }
-			for (TInt b = 0; b < EBtnCount; ++b)
-				if (ButtonRect(b, l).Contains(aE.iPosition))
-					Press(b);
+			if (ButtonRect(EBtnNav, l).Contains(aE.iPosition))
+				Press(EBtnNav);
+			else if (ButtonRect(EBtnMenu, l).Contains(aE.iPosition))
+				Press(EBtnMenu);
 			}
 			break;
 		default:
 			break;
 			}
 		}
+	// the nav popover: a tap on an item acts and closes it; the nav button or anywhere else just closes it
+	void NavPointer(const TPointerEvent& aE)
+		{
+		if (aE.iType != TPointerEvent::EButton1Up)
+			return;
+		iMode = EModeBrowse;
+		for (TInt i = EBtnBack; i <= EBtnTabs; ++i)
+			if (NavItemRect(i).Contains(aE.iPosition))
+				Press(i);
+		DrawDeferred();
+		}
+	void DrawNav(CWindowGc& gc, const TPbTokens& tk) const
+		{
+		const TRect r = NavRect();
+		gc.SetPenStyle(CGraphicsContext::ESolidPen);
+		gc.SetPenColor(Rgb(tk.iField));
+		gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
+		gc.SetBrushColor(Rgb(tk.iBar));
+		gc.DrawRoundRect(r, TSize(10, 10));
+		for (TInt i = EBtnBack; i <= EBtnTabs; ++i)
+			DrawGlyph(gc, i, NavItemRect(i), tk);
+		}
 	void Press(TInt aBtn)
 		{
+		if (aBtn == EBtnNav)
+			{ iMode = EModeNav; DrawDeferred(); return; }
 		if (!iApi || iCur < 0)
 			{ if (aBtn == EBtnMenu) OpenSheet(); return; }
 		const PheView v = iTabs[iCur].iView;
@@ -1110,7 +1192,7 @@ private:
 				if (aType == EEventKey)
 					{
 					if (opt)
-						{ if (iEditing) EndEditL(EFalse); else if (iMode == EModeSheet) { iMode = EModeBrowse; DrawDeferred(); } else OpenSheet(); }
+						{ if (iEditing) EndEditL(EFalse); else if (iMode == EModeSheet || iMode == EModeNav) { iMode = EModeBrowse; DrawDeferred(); } else OpenSheet(); }
 					else
 						iEikonEnv->EikAppUi()->HandleCommandL(EAknSoftkeyBack);
 					}

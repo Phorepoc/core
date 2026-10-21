@@ -36,6 +36,6 @@ OS_LAYER_SYSTEMINCLUDE
 MW_LAYER_SYSTEMINCLUDE
 
 LIBRARY			euser.lib apparc.lib apgrfx.lib cone.lib eikcore.lib eikcoctl.lib eikctl.lib eikdlg.lib avkon.lib
-LIBRARY			efsrv.lib fbscli.lib gdi.lib ws32.lib bitgdi.lib aknskins.lib charconv.lib
+LIBRARY			efsrv.lib fbscli.lib gdi.lib ws32.lib bitgdi.lib aknskins.lib charconv.lib etext.lib
 
 EPOCSTACKSIZE	0x8000
