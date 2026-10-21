@@ -1,0 +1,16 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
+// phestore_reg.rss -- OURS: the download app's registration (shown in the launcher as "Get apps")
+#include <appinfo.rh>
+#include <phestore.rsg>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0xE70157FA
+
+RESOURCE APP_REGISTRATION_INFO
+	{
+	app_file = "phestore";
+	localisable_resource_file = "\\resource\\apps\\phestore";
+	localisable_resource_id = R_PHESTORE_LOCALISABLE_APP_INFO;
+	}

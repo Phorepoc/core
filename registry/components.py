@@ -931,6 +931,8 @@ COMPONENTS = {
     # OURS: the download app (engine + command line): indexes -> download -> SHA-256 -> silent install. The board
     # adaptation adds z:\resource\phorepoc\device.txt (board + arch) through EXTEND.
     "pheget": dict(mmp=os.path.join(OS_ROOT, "src/pheget/pheget.mmp")),
+    # ... and its UI ("Get apps" in the launcher): the same engine
+    "phestore": dict(mmp=os.path.join(OS_ROOT, "src/phestore/phestore.mmp")),
     "tonetest": dict(mmp=os.path.join(OS_ROOT, "src/tonetest/tonetest.mmp"), test=True),
     # --- vector graphics: what the default skin's backgrounds + every real icon need (next: vgrenderer,
     "svgengine": dict(mmp="oss.FCL.sf.mw.svgt/svgtopt/SVG/SVGEngine/group/SVGEngine.mmp",

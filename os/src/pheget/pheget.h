@@ -55,6 +55,7 @@ public:
 	// Loads the default index (unless aNoDefault), the ones in c:\data\pheget\indexes.txt and aExtra (may be empty).
 	// An index that fails is logged and skipped; leaves only if none loaded.
 	void LoadIndexesL(const TDesC& aExtra, TBool aNoDefault);
+	void ResetIndexes() { iIndexes.ResetAndDestroy(); }    // (a refresh; invalidates every TPheGetItem)
 	// The items that fit this device (all items with aAll), first index first; an id seen earlier wins.
 	void ItemsL(RArray<TPheGetItem>& aItems, TBool aAll);
 	TBool FindL(const TDesC8& aId, TPheGetItem& aItem);

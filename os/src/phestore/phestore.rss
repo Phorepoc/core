@@ -1,0 +1,83 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
+// phestore.rss -- OURS: the download app's UI (phestore.cpp)
+NAME PHST
+
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.rsg>
+#include <appinfo.rh>
+#include "phestore.hrh"
+
+RESOURCE RSS_SIGNATURE { }
+RESOURCE TBUF r_default_document_name { buf = ""; }
+
+RESOURCE EIK_APP_INFO
+	{
+	menubar = r_phestore_menubar;
+	cba = R_AVKON_SOFTKEYS_OPTIONS_EXIT;
+	status_pane = r_phestore_status_pane;
+	}
+
+RESOURCE STATUS_PANE_APP_MODEL r_phestore_status_pane
+	{
+	panes =
+		{
+		SPANE_PANE
+			{
+			id = EEikStatusPaneUidTitle;
+			type = EAknCtTitlePane;
+			resource = r_phestore_title_pane;
+			}
+		};
+	}
+
+RESOURCE TITLE_PANE r_phestore_title_pane
+	{
+	txt = "Get apps";
+	}
+
+RESOURCE MENU_BAR r_phestore_menubar
+	{
+	titles = { MENU_TITLE { menu_pane = r_phestore_menu; } };
+	}
+
+RESOURCE MENU_PANE r_phestore_menu
+	{
+	items =
+		{
+		MENU_ITEM { command = EPheStoreCmdInstall; txt = "Install"; },
+		MENU_ITEM { command = EPheStoreCmdDetails; txt = "Details"; },
+		MENU_ITEM { command = EPheStoreCmdRefresh; txt = "Refresh"; },
+		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
+		};
+	}
+
+
+// shown while the indexes load or a package downloads + installs (the engine runs a nested scheduler: it redraws)
+RESOURCE DIALOG r_phestore_wait_note
+	{
+	flags = EAknWaitNoteFlags;
+	buttons = R_AVKON_SOFTKEYS_EMPTY;
+	items =
+		{
+		DLG_LINE
+			{
+			type = EAknCtNote;
+			id = EGeneralNote;
+			control = AVKON_NOTE
+				{
+				layout = EWaitLayout;
+				singular_label = "Working";
+				animation = R_QGN_GRAF_WAIT_BAR_ANIM;
+				};
+			}
+		};
+	}
+
+RESOURCE LOCALISABLE_APP_INFO r_phestore_localisable_app_info
+	{
+	short_caption = "Get apps";
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Get apps"; };
+	}

@@ -1,0 +1,15 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-1.0
+
+// phestore.hrh -- OURS: the download app's commands (phestore.cpp, phestore.rss)
+#ifndef PHESTORE_HRH
+#define PHESTORE_HRH
+
+enum TPheStoreCommand
+	{
+	EPheStoreCmdInstall = 0x7000,
+	EPheStoreCmdDetails,
+	EPheStoreCmdRefresh
+	};
+
+#endif
