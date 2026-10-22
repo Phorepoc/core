@@ -1,0 +1,34 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// Compiled copy: ups_1000484b_2000bb6c.rsc (next to this file) -- regenerate: py -c "import sys; sys.path[:0]=['tools','emitter']; import rsc; rsc.compile_rss('tools/phorepoc-x86/board/ups/ups_1000484B_2000BB6C.rss', 'tools/phorepoc-x86/board/ups/ups_1000484b_2000bb6c.rsc', None)"
+// OURS (Phorepoc board data, 2026-10-16) -- the User Prompt Service policy for the SMS service (service 0x2000BB6C, requested by the
+// message server, SID 0x1000484B: smss's CSmsOutboxSend asks the UPS to authorise every send).
+//
+// The product's policy file is licensee data (a phone's ROM carries one; no 2010/RCL_3 source does -- only the messaging TEST policies
+// under messagingfw/msgtestproduct/.../upssupport). This one follows their "silently accept" form (the SendAs entry: options = KYes
+// only -> CPolicy::PromptRequired() is false, the server answers EUpsDecYes with no evaluator, no dialog and no database) for every
+// client: the phone has no separate "may this application send SMS" prompt. A user-facing prompt policy replaces this file.
+#include <ups/policies.rh>
+
+UID2 KUidUpsPolicyResourceFile
+UID3 0x1000484b
+
+RESOURCE POLICIES sms_policies
+	{
+	header = POLICY_HEADER
+		{
+		// the dialog creator is only instantiated when a policy asks for a prompt; the header must still name one (0 = bad file)
+		policyevaluator = 0x00000000;
+		dialogcreator = 0x10285A7C;
+		};
+	policies =
+		{
+		POLICY
+			{
+			sid_classes = KAllSids;
+			destination = "*";
+			options = KYes;
+			}
+		};
+	}
