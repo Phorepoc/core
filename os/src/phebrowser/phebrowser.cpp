@@ -11,6 +11,7 @@
 // Not here yet (docs/phorepoc/browser-frontend.md section 7): bookmarks/history/downloads screens, the find bar, ECom
 // discovery of downloadable engines, bar auto-hide, pinch zoom, dialogs from the engine, CenRep.
 #include <e32debug.h>
+#include <e32math.h>
 #include <eikstart.h>
 #include <aknapp.h>
 #include <akndoc.h>
@@ -227,6 +228,7 @@ public:
 		iSet = aSettings;
 		CreateWindowL();
 		EnableDragEvents();
+		Window().EnableAdvancedPointers();                    // multi-touch: the second finger arrives as pointer 1 (pinch zoom)
 		iWake = CPbWake::NewL(TCallBack(Pump, this));          // the engine notifies from its own thread
 		iEdit = new (ELeave) CEikEdwin;                       // the address editor: in place, inside the bar
 		iEdit->SetContainerWindowL(*this);
@@ -597,7 +599,7 @@ public:
 		                         | EAknEditorFlagLaunchPenInputAutomatic | EAknEditorFlagEnablePartialScreen);   // the editor stays visible above an overlay keyboard
 		//   // focus opens the on-screen keyboard
 		iEdit->SetRect(EditRect(l));
-		iEdit->SetTextL(&iTabs[iCur].iUrl);
+		iEdit->SetTextL(iPageInput ? &KNullDesC : &iTabs[iCur].iUrl);   // a page field: start empty, the text goes to the page
 		iEdit->MakeVisible(ETrue);
 		iEdit->SetFocus(ETrue);
 		iEdit->SelectAllL();                  // select all on focus: typing replaces the address
@@ -619,11 +621,20 @@ public:
 		iEdit->SetFocus(EFalse);
 		iEdit->MakeVisible(EFalse);
 		iEditing = EFalse;
+		const TBool page = iPageInput;
+		iPageInput = EFalse;
 		Relayout();                            // the bar returns to its place
 		if (text)
 			{
 			CleanupStack::PushL(text);
-			Navigate(*text);
+			if (page && iApi && iCur >= 0 && iTabs[iCur].iView)
+				{                              // into the page's field, then Enter (submits a search box / form)
+				iApi->text(iTabs[iCur].iView, (const unsigned short*)text->Ptr(), text->Length());
+				iApi->key(iTabs[iCur].iView, 0, 13, 1);
+				iApi->key(iTabs[iCur].iView, 0, 13, 0);
+				}
+			else
+				Navigate(*text);
 			CleanupStack::PopAndDestroy(text);
 			}
 		DrawDeferred();
@@ -797,6 +808,10 @@ private:
 				break;
 			case PHE_EV_REPAINT:
 				if (t == iCur) page = ETrue;
+				break;
+			case PHE_EV_FOCUS:                       // a = 2: a text field on the page has the caret -> our editor + keyboard
+				if (t == iCur && e.a == 2 && !iEditing && iMode == EModeBrowse)
+					{ iPageInput = ETrue; TRAP_IGNORE(StartEditL()); }
 				break;
 			case PHE_EV_NEW_VIEW:
 				{
@@ -1277,11 +1292,56 @@ private:
 		}
 
 	// ---- input ----
+	// pinch: two fingers on the page; the zoom is applied once, on release (each zoom is a full reflow in the engine)
+	TBool PinchPointerL(const TPointerEvent& aE)
+		{
+		const TInt n = aE.IsAdvancedPointerEvent() ? aE.AdvancedPointerEvent()->PointerNumber() : 0;
+		if (n > 1)
+			return ETrue;
+		if (n == 1 && aE.iType == TPointerEvent::EButton1Down && iDragging && iApi && iCur >= 0 && iTabs[iCur].iView)
+			{
+			iPinch = ETrue;
+			iMoved = ETrue;                    // no tap on release
+			iP1 = aE.iPosition;
+			iPinchD0 = Max(Dist(iP0, iP1), 1);
+			PheViewState st;
+			iApi->get_state(iTabs[iCur].iView, &st);
+			iPinchZ0 = st.zoom_permille > 0 ? st.zoom_permille : 1000;
+			return ETrue;
+			}
+		if (n == 0)
+			iP0 = aE.iPosition;
+		else
+			iP1 = aE.iPosition;
+		if (!iPinch)
+			return n != 0;
+		if (aE.iType == TPointerEvent::EButton1Up)
+			{
+			iPinch = EFalse;
+			TInt z = (TInt)((TInt64)iPinchZ0 * Dist(iP0, iP1) / iPinchD0);
+			z = Max(250, Min(z, 4000));
+			const TPbLayout l = Layout();
+			if (iApi && iCur >= 0 && iTabs[iCur].iView && Abs(z - iPinchZ0) > 30)
+				iApi->zoom(iTabs[iCur].iView, z, (iP0.iX + iP1.iX) / 2 - l.iPage.iX, (iP0.iY + iP1.iY) / 2 - l.iPage.iY);
+			iDragging = EFalse;
+			}
+		return ETrue;                          // no scrolling while two fingers are down
+		}
+	static TInt Dist(const TPoint& a, const TPoint& b)
+		{
+		TReal r;
+		const TReal dx = a.iX - b.iX, dy = a.iY - b.iY;
+		Math::Sqrt(r, dx * dx + dy * dy);
+		return (TInt)r;
+		}
+
 	void HandlePointerEventL(const TPointerEvent& aE)
 		{
+		if (!iEditing && iMode == EModeBrowse && PinchPointerL(aE))
+			return;
 		if (aE.iType == TPointerEvent::EButton1Down)
-			{ iDownPos = aE.iPosition; iDragY = aE.iPosition.iY; iMoved = EFalse; }
-		else if (aE.iType == TPointerEvent::EDrag && Abs(aE.iPosition.iY - iDownPos.iY) > 6)
+			{ iDownPos = aE.iPosition; iDragY = aE.iPosition.iY; iDragX = aE.iPosition.iX; iMoved = EFalse; }
+		else if (aE.iType == TPointerEvent::EDrag && (Abs(aE.iPosition.iY - iDownPos.iY) > 6 || Abs(aE.iPosition.iX - iDownPos.iX) > 6))
 			iMoved = ETrue;
 		if (!iEditing && aE.iType == TPointerEvent::EButton1Down && iMode == EModeBrowse && iCur >= 0 && FieldRect(Layout()).Contains(aE.iPosition))
 			{                                   // the touch that starts editing is also the first touch ON the editor (opens the keyboard)
@@ -1342,11 +1402,12 @@ private:
 		case TPointerEvent::EDrag:
 			if (iDragging && iCur >= 0 && iApi && iTabs[iCur].iUrl.Length())
 				{
-				const TInt dy = iDragY - aE.iPosition.iY;
-				if (dy)
+				const TInt dy = iDragY - aE.iPosition.iY, dx = iDragX - aE.iPosition.iX;
+				if (dy || dx)                      // both axes: a page wider than the screen pans sideways
 					{
-					iApi->scroll(iTabs[iCur].iView, 0, dy);
+					iApi->scroll(iTabs[iCur].iView, dx, dy);
 					iDragY = aE.iPosition.iY;
+					iDragX = aE.iPosition.iX;
 					}
 				}
 			break;
@@ -1524,9 +1585,13 @@ private:
 	CFbsBitmap* iPageBmp = NULL;
 	CEikEdwin* iEdit = NULL;
 	TBool iEditing = EFalse;
+	TBool iPageInput = EFalse;               // the editor is typing into a page field (PHE_EV_FOCUS), not the address
 	TBool iStartTouch = EFalse;
 	CFont* iSmall = NULL;                    // the address-field font
-	TInt iDragY = 0, iGridScroll = 0;
+	TInt iDragY = 0, iDragX = 0, iGridScroll = 0;
+	TBool iPinch = EFalse;
+	TPoint iP0, iP1;
+	TInt iPinchD0 = 1, iPinchZ0 = 1000;
 	TPoint iDownPos;
 	TBool iDragging = EFalse, iMoved = EFalse;
 	};
