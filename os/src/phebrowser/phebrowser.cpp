@@ -57,9 +57,9 @@ static void PbTrace(const char* aFmt, ...)
 	if (fs.Connect() == KErrNone)
 		{
 		RFile f;
-		TInt r = f.Open(fs, _L("C:\data\phebrowser_trace.txt"), EFileWrite | EFileShareAny);
+		TInt r = f.Open(fs, _L("C:\\data\\phebrowser_trace.txt"), EFileWrite | EFileShareAny);
 		if (r == KErrNotFound)
-			r = f.Create(fs, _L("C:\data\phebrowser_trace.txt"), EFileWrite | EFileShareAny);
+			r = f.Create(fs, _L("C:\\data\\phebrowser_trace.txt"), EFileWrite | EFileShareAny);
 		if (r == KErrNone)
 			{
 			TInt pos = 0;
@@ -1586,7 +1586,7 @@ private:
 			ls.StartApp(*cl);
 			CleanupStack::PopAndDestroy(cl);
 			}
-		ls.Close();
+		static_cast<RHandleBase&>(ls).Close();   // not RApaLsSession::Close: its 2010 import ordinal (323) is not served by stock Belle (loader -5)
 #endif
 		}
 	CPbSettings iSet;
