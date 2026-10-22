@@ -16,6 +16,10 @@ class RGOomMonitorSession : public RSessionBase
     {
 public:
     IMPORT_C TInt Connect();
+#ifndef PH_ALF_GOOM
+    IMPORT_C TBool IsConnected();					// ordinal 23
+    IMPORT_C TInt RequestFreeMemory(TInt aBytesRequired);	// ordinal 4
+#endif
 #ifdef PH_ALF_GOOM
     IMPORT_C TInt Connect(TRequestStatus& aStatus);	// ordinal 26: CAlfAsynchGoomSession (alfrenderstage, in WSERV)
     IMPORT_C TBool IsConnected();
@@ -27,6 +31,21 @@ EXPORT_C TInt RGOomMonitorSession::Connect()
 	{
 	return KErrNotSupported;
 	}
+
+#ifndef PH_ALF_GOOM
+// A game's start-up memory check does: Connect(); if (!IsConnected()) fail; then up to 20 x { RequestFreeMemory(20 MB) until 0 }.
+// With the old unimplemented stubs it never got a 0 and the game idled without a frame. Nothing to free on this board, so the
+// request "succeeds" at once; IsConnected is the only way that game tells a real monitor from none (Connect's result is ignored).
+EXPORT_C TBool RGOomMonitorSession::IsConnected()
+	{
+	return ETrue;
+	}
+
+EXPORT_C TInt RGOomMonitorSession::RequestFreeMemory(TInt)
+	{
+	return KErrNone;
+	}
+#endif
 
 #ifdef PH_ALF_GOOM	// the "goommonitor_alfnull" twin (ALF=s2): the default ROM's null stays byte-identical
 // ALF=: alfrenderstage's async session asks "Connect(status)"; it was an unimpl stub (never called in the default ROM).
