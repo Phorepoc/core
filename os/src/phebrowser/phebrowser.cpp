@@ -40,6 +40,9 @@
 #include "pb_theme.h"
 #include "pb_engines.h"
 #include "pb_enginehost.h"
+#ifdef PHEBROWSER_STKDUMP
+#include "pb_stkdump.h"
+#endif
 
 // the app's debug line: the serial log always; a file as well in remote-controlled (stock-phone test) builds, which have no debug port
 static void PbTrace(const char* aFmt, ...)
@@ -251,7 +254,7 @@ public:
 #endif
 		}
 #ifdef PHEBROWSER_REMOTE
-	// REMOTE CONTROL (stock-phone testing; PHEBROWSER_REMOTE builds only -- PyS60's graphics.screenshot() is stale on the 701): the same
+	// REMOTE CONTROL (stock-phone testing; PHEBROWSER_REMOTE builds only -- PyS60's graphics.screenshot() is stale on stock phones): the same
 	// file hooks as the NetSurf port, polled every 500 ms, all under C:\data:
 	//   netsurf_shot        exists -> the screen into netsurf_shot.bmp and the page bitmap into netsurf_shot_page.bmp (24-bit BMP); file deleted
 	//   netsurf_tap         "x y" (screen pixels) -> a tap there (press + release); file deleted
@@ -1545,6 +1548,9 @@ public:
 		iView = new (ELeave) CPbContainer;
 		iView->ConstructL(ApplicationRect(), &iSet);
 		PbTrace("PH: [phebrowser] container ok");
+#ifdef PHEBROWSER_STKDUMP
+		PbStartStackDump();
+#endif
 		AddToStackL(iView);
 		}
 	~CPheBrowserAppUi()
@@ -1612,7 +1618,7 @@ public:
 private:
 	void StartStore()      // the hand-off: launch the store. All the browser knows is its uid; the store UI may change freely.
 		{
-#ifndef PHEBROWSER_NO_STORE      // stock Belle: its apgrfx.dll does not serve the ordinals of the 2010 import library (loader -5)
+#ifndef PHEBROWSER_NO_STORE      // stock phone firmware: its apgrfx.dll does not serve the ordinals of the 2010 import library (loader -5)
 		RApaLsSession ls;
 		if (ls.Connect() != KErrNone)
 			return;
@@ -1625,7 +1631,7 @@ private:
 			ls.StartApp(*cl);
 			CleanupStack::PopAndDestroy(cl);
 			}
-		static_cast<RHandleBase&>(ls).Close();   // not RApaLsSession::Close: its 2010 import ordinal (323) is not served by stock Belle (loader -5)
+		static_cast<RHandleBase&>(ls).Close();   // not RApaLsSession::Close: its 2010 import ordinal (323) is not served by stock phone firmware (loader -5)
 #endif
 		}
 	CPbSettings iSet;
