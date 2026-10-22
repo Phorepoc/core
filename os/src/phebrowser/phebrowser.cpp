@@ -1573,6 +1573,7 @@ public:
 private:
 	void StartStore()      // the hand-off: launch the store. All the browser knows is its uid; the store UI may change freely.
 		{
+#ifndef PHEBROWSER_NO_STORE      // stock Belle: its apgrfx.dll does not serve the ordinals of the 2010 import library (loader -5)
 		RApaLsSession ls;
 		if (ls.Connect() != KErrNone)
 			return;
@@ -1586,6 +1587,7 @@ private:
 			CleanupStack::PopAndDestroy(cl);
 			}
 		ls.Close();
+#endif
 		}
 	CPbSettings iSet;
 	CPbContainer* iView = NULL;
