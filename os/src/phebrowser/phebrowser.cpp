@@ -567,7 +567,8 @@ public:
 		iEdit->OverrideColorL(EColorControlText, Rgb(tk.iInk));
 		iEdit->SetBackgroundColorL(Rgb(tk.iField));
 		iEdit->SetSkinBackgroundControlContextL(NULL);       // no skin background: the field behind it shows through
-		iEdit->SetSuppressBackgroundDrawing(ETrue);          // the gaps around the text are not painted: our field shows through
+		// (no SetSuppressBackgroundDrawing: the editor redraws itself without the container, so it must clear its own
+		// background -- with it suppressed, deleted characters stayed on screen and new text was drawn over them)
 		{                                                    // text colour + font through a proper char format layer
 		CCharFormatLayer* layer = CCharFormatLayer::NewL();
 		CleanupStack::PushL(layer);
@@ -592,7 +593,8 @@ public:
 		iEdit->SetParaFormatLayer(pl);                       // takes ownership
 		CleanupStack::Pop(pl);
 		}
-		iEdit->SetAknEditorFlags(EAknEditorFlagLaunchPenInputAutomatic | EAknEditorFlagEnablePartialScreen);   // the editor stays visible above an overlay keyboard
+		iEdit->SetAknEditorFlags(EAknEditorFlagNoT9 | EAknEditorFlagNoEditIndicators | EAknEditorFlagLatinInputModesOnly
+		                         | EAknEditorFlagLaunchPenInputAutomatic | EAknEditorFlagEnablePartialScreen);   // the editor stays visible above an overlay keyboard
 		//   // focus opens the on-screen keyboard
 		iEdit->SetRect(EditRect(l));
 		iEdit->SetTextL(&iTabs[iCur].iUrl);
