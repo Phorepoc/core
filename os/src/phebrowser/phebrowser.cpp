@@ -244,7 +244,7 @@ public:
 			NewTabL(KNullDesC, EFalse);       // opens on the new-tab page (the engine loads on the first navigation)
 		if (iSet->iSearchTemplate.Length() == 0)
 			iMode = EModeSearchPick;          // first launch: the user chooses the search engine
-		LoadStartHook();
+		// (the start URL / open.txt / start.txt are read once the command line is known: CPheBrowserAppUi::ProcessCommandParametersL)
 #ifdef PHEBROWSER_REMOTE
 		iRemote = CPeriodic::NewL(CActive::EPriorityLow);
 		iRemote->Start(500000, 500000, TCallBack(RemoteTick, this));
@@ -375,12 +375,34 @@ public:
 		f.Append(_L("open.txt"));
 		RFile file;
 		if (file.Open(fs, f, EFileRead) != KErrNone)
-			return;
+			{
+			// the start URL file of the device test tools: C:\data\phebrowser\start.txt (one URL; used when the application was
+			// started without a URL on its command line -- see OpenUrl -- and deleted when read)
+			f = _L("C:\\data\\phebrowser\\start.txt");
+			if (file.Open(fs, f, EFileRead) != KErrNone)
+				return;
+			}
 		TBuf8<400> b;
 		file.Read(b);
 		file.Close();
 		fs.Delete(f);
 		iQueue.Copy(b);
+		NextQueued();
+		}
+	// a URL given at launch (the apparc command line: the document name, or the tail): opens in the first empty tab, else a new one
+	void OpenUrl(const TDesC& aUrl)
+		{
+		PbTrace("PH: [phebrowser] start URL on the command line (%d chars)", aUrl.Length());
+		iQueue.Copy(aUrl.Left(iQueue.MaxLength()));
+		if (iCur < 0)
+			{
+			TBuf<200> u;
+			u.Copy(aUrl.Left(200));
+			u.Trim();
+			TRAP_IGNORE(NewTabL(u, EFalse));
+			iQueue.Zero();
+			return;
+			}
 		NextQueued();
 		}
 	void NextQueued()
@@ -1530,6 +1552,23 @@ public:
 		if (iView)
 			RemoveFromStack(iView);
 		delete iView;
+		}
+	// the apparc command line: a URL as the document name (phestart phebrowser <url>) or as the tail; none = the start files
+	TBool ProcessCommandParametersL(TApaCommand /*aCommand*/, TFileName& aDocumentName, const TDesC8& aTail)
+		{
+		TBuf<200> url;
+		url.Copy(aDocumentName.Left(200));
+		url.Trim();
+		if (url.Length() == 0)
+			{
+			url.Copy(aTail.Left(200));
+			url.Trim();
+			}
+		if (url.Length() && iView)
+			iView->OpenUrl(url);
+		else if (iView)
+			iView->LoadStartHook();
+		return EFalse;      // not a document: the application has opened it
 		}
 	void HandleResourceChangeL(TInt aType)       // rotation: stay full screen
 		{
