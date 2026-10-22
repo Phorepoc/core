@@ -12,4 +12,4 @@ VENDORID		0
 APP_LAYER_SYSTEMINCLUDE
 SOURCEPATH		.
 SOURCE			phestart.cpp
-LIBRARY			euser.lib apgrfx.lib apparc.lib ws32.lib
+LIBRARY			euser.lib apgrfx.lib apparc.lib ws32.lib efsrv.lib
