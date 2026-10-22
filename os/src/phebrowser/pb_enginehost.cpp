@@ -113,10 +113,21 @@ void CPbEngines::LoadDefault()
 				iWantUid = u;
 			}
 		}
-	iDefault = 0;
+	// no (or a stale) choice: WebKit, else NetSurf, else any other installed package; the built-in placeholder (uid 0) only as the fallback
+	iDefault = -1;
 	for (TInt i = 0; i < iList.Count(); ++i)
 		if (iList[i].iUid.iUid == iWantUid && iWantUid)
 			iDefault = i;
+	static const TUint32 KPref[] = { 0xE7016B10u, 0xE7016B11u };
+	for (TUint k = 0; iDefault < 0 && k < sizeof(KPref) / sizeof(KPref[0]); ++k)
+		for (TInt i = 0; i < iList.Count(); ++i)
+			if (iList[i].iUid.iUid == KPref[k])
+				{ iDefault = i; break; }
+	for (TInt i = 0; iDefault < 0 && i < iList.Count(); ++i)
+		if (iList[i].iUid.iUid != 0)
+			iDefault = i;
+	if (iDefault < 0)
+		iDefault = 0;
 	}
 
 void CPbEngines::SetDefault(TInt aIx)
