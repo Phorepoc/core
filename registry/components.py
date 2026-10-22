@@ -936,6 +936,8 @@ COMPONENTS = {
     "phestore": dict(mmp=os.path.join(OS_ROOT, "src/phestore/phestore.mmp")),
     # start an app through apparc like the launcher does (tests): phestart <uid-hex | exe name>
     "phestart": dict(mmp=os.path.join(OS_ROOT, "src/phestart/phestart.mmp")),
+    # the process's own capabilities on the log (proves the header capabilities of an installed package): SIS test, not in the ROM
+    "phecaps": dict(mmp=os.path.join(OS_ROOT, "src/phecaps/phecaps.mmp"), test=True),
     # OURS: the browser frontend (custom-drawn CONE UI; engines plug in through os/inc/phorepoc/phewebengine.h)
     "phebrowser": dict(mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp"),
                        rom_data=["resource\\apps\\phebrowser_icon.mbm=" + os.path.join(OS_ROOT, "src/phebrowser/data/phebrowser_icon.mbm")]),

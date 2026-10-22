@@ -1,0 +1,14 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// phecaps.mmp -- OURS: the capability report (a test tool; see phecaps.cpp)
+TARGET			phecaps.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7016B31
+CAPABILITY		all -tcb
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phecaps.cpp
+LIBRARY			euser.lib
