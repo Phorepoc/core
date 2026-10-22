@@ -42,7 +42,9 @@ _LIT(KMmCache, "C:\\private\\101f4cd2\\iconcache\\");	// matrixmenu itself
 // tunables (ms)
 const TInt KReadyTimeoutMs = 120000;	// matrixmenu never appeared / never finished: give up
 const TInt KSettleMs = 4000;			// after it is ready: let the rest of boot (homescreen, Phone, SysAp) finish
-const TInt KMinHoldMs = 2000;			// shortest time the grid stays in front
+const TInt KMinHoldMs = 2000;
+const TInt KGraceMs = 4000;				// bringing the grid forward makes the system itself reset the inactivity timer (foreground
+										// change handlers, layout/orientation events: 2026-10-22 first_boot boot 2) -- not the user			// shortest time the grid stays in front
 const TInt KMaxHoldMs = 25000;			// longest (cold first-ever boot: ~25 NVG icons, ~3.4 s on the phone)
 const TInt KProbeStepMs = 250;			// WSERV round-trip probe interval
 const TInt KProbeBusyMs = 40;			// a round trip slower than this = WSERV is still drawing
@@ -133,16 +135,23 @@ static void DoWarmL()
 	TInt quiet = 0;
 	TInt probes = 0;
 	TInt worst = 0;
+	TInt graceInact = -1;		// inactivity (s) once the grace period is over
+	TInt graceAt = 0;			// ms since t1 at that moment
 	while (TickMs() - t1 < KMaxHoldMs)
 		{
 		User::After(KProbeStepMs * 1000);
+		if (graceInact < 0 && TickMs() - t1 >= KGraceMs)
+			{
+			graceInact = User::InactivityTime().Int();
+			graceAt = TickMs() - t1;
+			}
 		const TInt p0 = TickMs();
 		ws.Flush();
 		ws.SyncMsgBuf();
 		const TInt dt = TickMs() - p0;
 		++probes;
 		if (dt > worst) worst = dt;
-		if (TickMs() - t1 < KMinHoldMs)
+		if (TickMs() - t1 < KMinHoldMs || graceInact < 0)
 			continue;
 		quiet = (dt <= KProbeBusyMs) ? quiet + 1 : 0;
 		if (quiet >= KQuietProbes)
@@ -151,7 +160,10 @@ static void DoWarmL()
 	const TInt held = TickMs() - t1;
 	// 2026-10-18 (boots 1001/1002): a Menu press DURING the warm-up was undone by the restore below (the grid flashed and
 	// went away). Any user activity since the grid came forward = the user owns the screen now: leave it as it is.
-	if (User::InactivityTime().Int() * 1000 < held)
+	// Only a reset AFTER the grace period counts (the inactivity counter must have kept running since graceInact).
+	const TInt inactNow = User::InactivityTime().Int();
+	RDebug::Printf("PH: [menuwarm] inactivity: %d s at grace end (%d ms), %d s now (%d ms)", graceInact, graceAt, inactNow, held);
+	if (graceInact >= 0 && (inactNow + 1) * 1000 < graceInact * 1000 + (held - graceAt))
 		{
 		RDebug::Printf("PH: [menuwarm] user activity during the warm-up (%d ms held): left the screen to the user", held);
 		CleanupStack::PopAndDestroy(2);
