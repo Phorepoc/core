@@ -5,7 +5,7 @@
 TARGET			sisinst.exe
 TARGETTYPE		exe
 UID				0x1000007a 0xE7015716
-CAPABILITY		TrustedUI
+CAPABILITY		TrustedUI AllFiles   // AllFiles: SWInstSession requires it of a silent installer that allows untrusted packages
 VENDORID		0
 
 OS_LAYER_SYSTEMINCLUDE
