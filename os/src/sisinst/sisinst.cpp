@@ -22,8 +22,33 @@ static TInt Run()
 	TPtrC drv = lex.NextToken();
 	if (file.Length() == 0)
 		{
-		RDebug::Printf("PH: [sisinst] usage: sisinst <path.sis> [drive]");
+		RDebug::Printf("PH: [sisinst] usage: sisinst <path.sis> [drive] | sisinst -u <package uid, hex>");
 		return KErrArgument;
+		}
+	if (file == _L("-u"))
+		{
+		// uninstall: sisinst -u <uid>, silently (kills the running application, ignores dependencies)
+		TUint32 uid = 0;
+		TLex uidLex(drv);
+		TInt perr = uidLex.Val(uid, EHex);
+		if (perr != KErrNone)
+			{
+			RDebug::Printf("PH: [sisinst] -u: bad uid");
+			return perr;
+			}
+		SwiUI::TUninstallOptions uopts;
+		uopts.iKillApp = SwiUI::EPolicyAllowed;
+		uopts.iBreakDependency = SwiUI::EPolicyAllowed;
+		SwiUI::TUninstallOptionsPckg upckg(uopts);
+		SwiUI::RSWInstSilentLauncher ulauncher;
+		TInt uerr = ulauncher.Connect();
+		if (uerr == KErrNone)
+			{
+			uerr = ulauncher.SilentUninstall(TUid::Uid(uid), upckg, _L8("x-epoc/x-sisx-app"));
+			ulauncher.Close();
+			}
+		RDebug::Printf("PH: [sisinst] uninstall %08x: %s (%d)", uid, uerr == KErrNone ? "REMOVED" : "FAILED", uerr);
+		return uerr;
 		}
 	SwiUI::TInstallOptions opts;
 	opts.iUpgrade = SwiUI::EPolicyAllowed;
