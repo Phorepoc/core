@@ -50,7 +50,27 @@ static TInt Run()
 		}
 	r = uid == KNullUid ? KErrNotFound : ls.GetAppInfo(info, uid);
 	RDebug::Printf("PH: [phestart] app %x: %d", uid.iUid, r);
-	if (r == KErrNone)
+	// already running with a document (URL) to open: apparc does not start a second instance and the running one never
+	// sees our command line -- hand the document over as the apparc "open file" message (CEikAppUi::OpenFileL)
+	TBool delivered = EFalse;
+	if (r == KErrNone && doc.Length())
+		{
+		RWsSession ws0;
+		if (ws0.Connect() == KErrNone)
+			{
+			TApaTaskList tl(ws0);
+			TApaTask task = tl.FindApp(uid);
+			if (task.Exists())
+				{
+				TPtrC8 bytes(reinterpret_cast<const TUint8*>(doc.Ptr()), doc.Length() * sizeof(TText));
+				TInt sr = task.SendMessage(TUid::Uid(KUidApaMessageSwitchOpenFileValue), bytes);
+				RDebug::Printf("PH: [phestart] running: sent the document as an open-file message: %d", sr);
+				delivered = (sr == KErrNone);
+				}
+			ws0.Close();
+			}
+		}
+	if (r == KErrNone && !delivered)
 		{
 		CApaCommandLine* cmd = NULL;
 		TRAP(r, cmd = CApaCommandLine::NewL());

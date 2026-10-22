@@ -8,7 +8,7 @@ TARGET			phestore.exe
 TARGETTYPE		exe
 UID				0x100039CE 0xE70157FA
 
-CAPABILITY		TrustedUI NetworkServices
+CAPABILITY		TrustedUI NetworkServices AllFiles   // AllFiles: the silent installer asks it of a client that installs untrusted packages with binaries (SilentInstall: -46 otherwise)
 VENDORID		0
 EPOCHEAPSIZE	0x10000 0x1000000
 

@@ -410,6 +410,14 @@ public:
 			}
 		NextQueued();
 		}
+	// a URL handed to the RUNNING browser (phestart's open-file message): the current tab navigates to it
+	void OpenRunning(const TDesC& aUrl)
+		{
+		if (iCur < 0)
+			OpenUrl(aUrl);
+		else
+			Navigate(aUrl);
+		}
 	void NextQueued()
 		{
 		iQueue.TrimLeft();
@@ -1642,6 +1650,16 @@ public:
 		else if (iView)
 			iView->LoadStartHook();
 		return EFalse;      // not a document: the application has opened it
+		}
+	// already running: phestart sends the document (a URL) as the apparc open-file message
+	void OpenFileL(const TDesC& aFileName)
+		{
+		TBuf<200> url;
+		url.Copy(aFileName.Left(200));
+		url.Trim();
+		PbTrace("PH: [phebrowser] OpenFileL url len=%d", url.Length());
+		if (url.Length() && iView)
+			iView->OpenRunning(url);
 		}
 	void HandleResourceChangeL(TInt aType)       // rotation: stay full screen
 		{
