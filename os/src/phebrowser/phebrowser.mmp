@@ -11,7 +11,9 @@ TARGET			phebrowser.exe
 TARGETTYPE		exe
 UID				0x100039CE 0xE7016B20
 
-CAPABILITY		TrustedUI NetworkServices
+// The user capabilities only: an engine plug-in DLL must carry at least the caps of the process that loads it, and an
+// engine installed from a store/self-signed SIS can only have these. More here would make such engines unloadable.
+CAPABILITY		NetworkServices LocalServices ReadUserData WriteUserData UserEnvironment
 VENDORID		0
 EPOCHEAPSIZE	0x10000 0x1000000
 
