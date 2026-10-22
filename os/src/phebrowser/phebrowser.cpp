@@ -41,7 +41,39 @@
 #include "pb_engines.h"
 #include "pb_enginehost.h"
 
-struct TPbEarly { TPbEarly() { RDebug::Printf("PH: [phebrowser] static init"); } };
+// the app's debug line: the serial log always; a file as well in remote-controlled (stock-phone test) builds, which have no debug port
+static void PbTrace(const char* aFmt, ...)
+	{
+	VA_LIST list;
+	VA_START(list, aFmt);
+	TBuf8<256> b;
+	b.AppendFormatList(TPtrC8((const TUint8*)aFmt), list);
+	VA_END(list);
+	TBuf<256> w;
+	w.Copy(b);
+	RDebug::Print(_L("%S"), &w);
+#ifdef PHEBROWSER_REMOTE
+	RFs fs;
+	if (fs.Connect() == KErrNone)
+		{
+		RFile f;
+		TInt r = f.Open(fs, _L("C:\data\phebrowser_trace.txt"), EFileWrite | EFileShareAny);
+		if (r == KErrNotFound)
+			r = f.Create(fs, _L("C:\data\phebrowser_trace.txt"), EFileWrite | EFileShareAny);
+		if (r == KErrNone)
+			{
+			TInt pos = 0;
+			f.Seek(ESeekEnd, pos);
+			b.Append(_L8("\r\n"));
+			f.Write(b);
+			f.Close();
+			}
+		fs.Close();
+		}
+#endif
+	}
+
+struct TPbEarly { TPbEarly() { PbTrace("PH: [phebrowser] static init"); } };
 static TPbEarly gPbEarly;
 const TUid KPheBrowserAppUid = { 0xE7016B20 };
 const TUid KPheStoreUid = { 0xE70157FA };
@@ -177,6 +209,9 @@ public:
 		for (TInt i = 0; i < iTabs.Count(); ++i)
 			delete iTabs[i].iThumb;
 		delete iWake;
+#ifdef PHEBROWSER_REMOTE
+		delete iRemote;
+#endif
 		if (iSmall)
 			iEikonEnv->ScreenDevice()->ReleaseFont(iSmall);
 		delete iEdit;
@@ -193,6 +228,8 @@ public:
 		iEdit = new (ELeave) CEikEdwin;                       // the address editor: in place, inside the bar
 		iEdit->SetContainerWindowL(*this);
 		iEdit->ConstructL(EEikEdwinNoWrap, 0, 255, 1);
+		iEdit->SetAknEditorCase(EAknEditorLowerCase);          // an address is not a sentence: no auto-capital, no predictive text
+		iEdit->SetAknEditorFlags(EAknEditorFlagNoT9 | EAknEditorFlagNoEditIndicators | EAknEditorFlagLatinInputModesOnly);
 		iEdit->MakeVisible(EFalse);
 		{                                                    // the address font: about 2/3 of the normal one
 		TFontSpec spec = iEikonEnv->NormalFont()->FontSpecInTwips();
@@ -202,12 +239,131 @@ public:
 		SetRect(aRect);
 		ActivateL();
 		iEngines = CPbEngines::NewL(iEikonEnv->FsSession());   // lists the installed engines; none is loaded yet
+		PbTrace("PH: [phebrowser] engines listed: %d", iEngines->Count());
 		if (iEngines->Count() > 0)
 			NewTabL(KNullDesC, EFalse);       // opens on the new-tab page (the engine loads on the first navigation)
 		if (iSet->iSearchTemplate.Length() == 0)
 			iMode = EModeSearchPick;          // first launch: the user chooses the search engine
 		LoadStartHook();
+#ifdef PHEBROWSER_REMOTE
+		iRemote = CPeriodic::NewL(CActive::EPriorityLow);
+		iRemote->Start(500000, 500000, TCallBack(RemoteTick, this));
+#endif
 		}
+#ifdef PHEBROWSER_REMOTE
+	// REMOTE CONTROL (stock-phone testing; PHEBROWSER_REMOTE builds only -- PyS60's graphics.screenshot() is stale on the 701): the same
+	// file hooks as the NetSurf port, polled every 500 ms, all under C:\data:
+	//   netsurf_shot        exists -> the screen into netsurf_shot.bmp and the page bitmap into netsurf_shot_page.bmp (24-bit BMP); file deleted
+	//   netsurf_tap         "x y" (screen pixels) -> a tap there (press + release); file deleted
+	//   netsurf_query_auto  its first line answers the address editor (while it is open); file deleted
+	//   netsurf_quit        exists -> the app exits; file deleted
+	static TInt RemoteTick(TAny* aSelf) { static_cast<CPbContainer*>(aSelf)->RemoteStep(); return 0; }
+	TBool RemoteTake(const TDesC& aName, TDes8& aBuf)
+		{
+		RFs& fs = iEikonEnv->FsSession();
+		TFileName f(_L("C:\\data\\"));
+		f.Append(aName);
+		RFile file;
+		if (file.Open(fs, f, EFileRead | EFileShareAny) != KErrNone)
+			return EFalse;
+		aBuf.Zero();
+		file.Read(aBuf);
+		file.Close();
+		fs.Delete(f);
+		return ETrue;
+		}
+	void RemoteStep()
+		{
+		RFs& fs = iEikonEnv->FsSession();
+		TBuf8<256> b;
+		if (RemoteTake(_L("netsurf_quit"), b))
+			{ iEikonEnv->EikAppUi()->HandleCommandL(EEikCmdExit); return; }
+		if (RemoteTake(_L("netsurf_tap"), b))
+			{
+			TLex8 lex(b);
+			TInt x = 0, y = 0;
+			lex.SkipSpace(); lex.Val(x); lex.SkipSpace(); lex.Val(y);
+			PbTrace("PH: [phebrowser] remote tap %d %d", x, y);
+			TPointerEvent pe;
+			pe.iModifiers = 0;
+			pe.iPosition = TPoint(x, y) - PositionRelativeToScreen();
+			pe.iParentPosition = pe.iPosition;
+			pe.iType = TPointerEvent::EButton1Down;
+			TRAP_IGNORE(HandlePointerEventL(pe));
+			pe.iType = TPointerEvent::EButton1Up;
+			TRAP_IGNORE(HandlePointerEventL(pe));
+			}
+		if (iEditing)
+			{
+			TBuf8<256> a;
+			if (RemoteTake(_L("netsurf_query_auto"), a))
+				{
+				a.Trim();
+				TInt e = a.Locate('\n');
+				if (e >= 0) a.SetLength(e);
+				a.Trim();
+				TBuf<256> u;
+				u.Copy(a);
+				PbTrace("PH: [phebrowser] remote address answer");
+				TRAP_IGNORE(iEdit->SetTextL(&u));
+				TRAP_IGNORE(EndEditL(ETrue));
+				}
+			}
+		if (RemoteTake(_L("netsurf_shot"), b))
+			{
+			CFbsBitmap* scr = new CFbsBitmap;
+			if (scr && scr->Create(Size(), EColor16MU) == KErrNone)
+				{
+				const TInt r = iEikonEnv->ScreenDevice()->CopyScreenToBitmap(scr, Rect());
+				PbTrace("PH: [phebrowser] remote shot screen %d", r);
+				if (r == KErrNone)
+					WriteBmp(fs, _L("C:\\data\\netsurf_shot.bmp"), scr);
+				}
+			delete scr;
+			if (iPageBmp)
+				WriteBmp(fs, _L("C:\\data\\netsurf_shot_page.bmp"), iPageBmp);
+			}
+		}
+	// a 24-bit BMP of an EColor16MU bitmap (the host converts it to PNG)
+	static void WriteBmp(RFs& aFs, const TDesC& aName, CFbsBitmap* aBmp)
+		{
+		const TSize sz = aBmp->SizeInPixels();
+		const TInt rowBytes = (sz.iWidth * 3 + 3) & ~3;
+		const TInt imgBytes = rowBytes * sz.iHeight;
+		RFile f;
+		if (f.Replace(aFs, aName, EFileWrite) != KErrNone)
+			return;
+		TUint8 hdr[54];
+		Mem::FillZ(hdr, 54);
+		hdr[0] = 'B'; hdr[1] = 'M';
+		const TInt total = 54 + imgBytes;
+		for (TInt i = 0; i < 4; ++i) hdr[2 + i] = (TUint8)(total >> (8 * i));
+		hdr[10] = 54; hdr[14] = 40;
+		for (TInt i = 0; i < 4; ++i) { hdr[18 + i] = (TUint8)(sz.iWidth >> (8 * i)); hdr[22 + i] = (TUint8)(sz.iHeight >> (8 * i)); }
+		hdr[26] = 1; hdr[28] = 24;
+		for (TInt i = 0; i < 4; ++i) hdr[34 + i] = (TUint8)(imgBytes >> (8 * i));
+		f.Write(TPtrC8(hdr, 54));
+		HBufC8* row = HBufC8::New(rowBytes);
+		if (row)
+			{
+			TPtr8 rp = row->Des();
+			aBmp->LockHeap();
+			for (TInt y = sz.iHeight - 1; y >= 0; --y)
+				{
+				const TUint8* src = (const TUint8*)aBmp->DataAddress() + y * aBmp->DataStride();
+				rp.SetLength(rowBytes);
+				rp.FillZ();
+				for (TInt x = 0; x < sz.iWidth; ++x)
+					{ rp[x * 3] = src[x * 4]; rp[x * 3 + 1] = src[x * 4 + 1]; rp[x * 3 + 2] = src[x * 4 + 2]; }
+				f.Write(rp);
+				}
+			aBmp->UnlockHeap();
+			delete row;
+			}
+		f.Close();
+		}
+	CPeriodic* iRemote = NULL;
+#endif
 	// test / automation hook: C:\private\E7016B20\open.txt = one URL per line; the first opens at start, each next one in a new tab
 	// once the previous page has finished (the file is deleted when read)
 	void LoadStartHook()
@@ -282,6 +438,7 @@ public:
 		if (!iApi)
 			{
 			const PheWebEngineApi* api = iEngines ? iEngines->Load() : NULL;
+			PbTrace("PH: [phebrowser] engine load: %d engines, api %d, err %d", iEngines ? iEngines->Count() : -1, api ? 1 : 0, iEngines ? iEngines->LastError() : 0);
 			if (!api || api->init(Notify, this) != 0)
 				{
 				if (api) iEngines->Unload();
@@ -569,7 +726,7 @@ private:
 
 	// ---- engine -> UI plumbing ----
 	static void Notify(void* aCtx, PheView) { static_cast<CPbContainer*>(aCtx)->iWake->Signal(); }   // any thread
-	static TInt Pump(TAny* aSelf) { RDebug::Printf("PH: [phebrowser] wake"); static_cast<CPbContainer*>(aSelf)->DrainEvents(); return 0; }
+	static TInt Pump(TAny* aSelf) { PbTrace("PH: [phebrowser] wake"); static_cast<CPbContainer*>(aSelf)->DrainEvents(); return 0; }
 	TInt IndexOf(PheView aV) const
 		{
 		for (TInt i = 0; i < iTabs.Count(); ++i)
@@ -590,7 +747,7 @@ private:
 		while (iApi->poll(0, &e))
 			{
 			if (e.kind != PHE_EV_REPAINT && e.kind != PHE_EV_PROGRESS)
-				RDebug::Printf("PH: [phebrowser] event %d view %d a %d b %d", e.kind, e.view, e.a, e.b);
+				PbTrace("PH: [phebrowser] event %d view %d a %d b %d", e.kind, e.view, e.a, e.b);
 			const TInt t = IndexOf(e.view);
 			if (t < 0)
 				continue;
@@ -1360,12 +1517,12 @@ public:
 			StatusPane()->MakeVisible(EFalse);
 		if (Cba())
 			Cba()->MakeVisible(EFalse);
-		RDebug::Printf("PH: [phebrowser] AppUi base ok");
+		PbTrace("PH: [phebrowser] AppUi base ok");
 		iSet.Load(iEikonEnv->FsSession());
-		RDebug::Printf("PH: [phebrowser] settings ok, theme=%d bar=%d", iSet.iTheme, (int)iSet.iBar);
+		PbTrace("PH: [phebrowser] settings ok, theme=%d bar=%d", iSet.iTheme, (int)iSet.iBar);
 		iView = new (ELeave) CPbContainer;
 		iView->ConstructL(ApplicationRect(), &iSet);
-		RDebug::Printf("PH: [phebrowser] container ok");
+		PbTrace("PH: [phebrowser] container ok");
 		AddToStackL(iView);
 		}
 	~CPheBrowserAppUi()
@@ -1438,26 +1595,26 @@ class CPheBrowserDocument : public CAknDocument
 	{
 public:
 	CPheBrowserDocument(CEikApplication& aApp) : CAknDocument(aApp) {}
-	CEikAppUi* CreateAppUiL() { RDebug::Printf("PH: [phebrowser] CreateAppUiL"); return new (ELeave) CPheBrowserAppUi; }
+	CEikAppUi* CreateAppUiL() { PbTrace("PH: [phebrowser] CreateAppUiL"); return new (ELeave) CPheBrowserAppUi; }
 	};
 
 class CPheBrowserApplication : public CAknApplication
 	{
 public:
 	TUid AppDllUid() const { return KPheBrowserAppUid; }
-	CApaDocument* CreateDocumentL() { RDebug::Printf("PH: [phebrowser] CreateDocumentL"); return new (ELeave) CPheBrowserDocument(*this); }
+	CApaDocument* CreateDocumentL() { PbTrace("PH: [phebrowser] CreateDocumentL"); return new (ELeave) CPheBrowserDocument(*this); }
 	};
 
 LOCAL_C CApaApplication* NewApplication()
 	{
-	RDebug::Printf("PH: [phebrowser] NewApplication");
+	PbTrace("PH: [phebrowser] NewApplication");
 	return new CPheBrowserApplication;
 	}
 
 GLDEF_C TInt E32Main()
 	{
-	RDebug::Printf("PH: [phebrowser] E32Main");
+	PbTrace("PH: [phebrowser] E32Main");
 	TInt r = EikStart::RunApplication(NewApplication);
-	RDebug::Printf("PH: [phebrowser] RunApplication returned %d", r);
+	PbTrace("PH: [phebrowser] RunApplication returned %d", r);
 	return r;
 	}
