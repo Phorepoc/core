@@ -323,7 +323,10 @@ COMPONENTS = {
     # --- central repository server + its leaves ------------------------------------
     "abclient": dict(mmp=f"{OSSRV}/genericservices/activebackupclient/group/abclient.mmp"),
     "bsulinifile": dict(mmp=f"{OSSRV}/lowlevellibsandfws/apputils/bsul/group/bsulinifile.mmp"),
-    "charconv": dict(mmp=f"{TXT}/charconvfw/charconv_fw/group/charconv.mmp"),
+    # basic.snm = the standard names / MIB enums file (charconv.iby): without it Versit's charset lookups crash on UTF-8 vCards
+    # (os/tools/charconv/gen_basic_snm.sh regenerates os/data/charconv/basic.snm)
+    "charconv": dict(mmp=f"{TXT}/charconvfw/charconv_fw/group/charconv.mmp",
+                     rom_data=["resource" + chr(92) + "charconv" + chr(92) + "basic.snm=" + os.path.join(OS_ROOT, "data/charconv/basic.snm")]),
     "sysutil": dict(mmp="oss.FCL.sf.os.devicesrv/commonservices/sysutil/group/sysutil.mmp"),
     "centralrepositorysrv": dict(
         mmp=f"{PDATA}/persistentstorage/centralrepository/group/cenrepsrv.mmp"),   # bring-up tip: defs=["CENTREP_TRACE"] names a corrupt/missing repository on serial
