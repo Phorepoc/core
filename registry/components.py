@@ -222,10 +222,10 @@ COMPONENTS = {
     "libwfc": dict(mmp=f"{G}/graphicscomposition/openwfcompositionengine/group/openwfc.mmp", nga=True,
                    rom="libWFC.dll", cdriver=True, allow_wsd=True, static_ctors=True,
                    # wfcSetContextAttribi traced (src/nga/libwfc/phtrace_wfc.cpp defines the exported name)
-                   defs=["__SOFTFP=", "wfcSetContextAttribi=ph_real_wfcSetContextAttribi", "wfcSetElementAttribiv=ph_real_wfcSetElementAttribiv", "wfcSetElementAttribfv=ph_real_wfcSetElementAttribfv"],
+                   defs=["__SOFTFP=", "wfcSetContextAttribi=ph_real_wfcSetContextAttribi", "wfcSetElementAttribiv=ph_real_wfcSetElementAttribiv", "wfcSetElementAttribfv=ph_real_wfcSetElementAttribfv", "wfcInsertElement=ph_real_wfcInsertElement", "wfcRemoveElement=ph_real_wfcRemoveElement", "wfcSetElementAttribi=ph_real_wfcSetElementAttribi", "wfcSetElementAttribf=ph_real_wfcSetElementAttribf"],
                    vfp=True,
                    # OURS owfnotifications.cpp: a source update wakes the composer thread (the 2010 one polled every
-                   drop=["owfnotifications.cpp"], extra=["src/nga/libwfc/owfnotifications.cpp", "src/nga/libwfc/phtrace_wfc.cpp"],
+                   drop=["owfnotifications.cpp", "wfcscene.c"], extra=["src/nga/libwfc/owfnotifications.cpp", "src/nga/libwfc/phtrace_wfc.cpp", "src/nga/libwfc/wfcscene.c"],
                    **{"def": f"{G}/graphicscomposition/openwfcinterface/eabi/libWFCu.def"}),
     # (the mmp's ARM TARGET is openwfc_ri_displaychannel.dll; libWFC links it as openwfc_ri_display.lib)
     # for the PREVIOUS one, not itself, so the next compose overlaps the vblank wait (3 composition buffers in the
