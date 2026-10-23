@@ -63,6 +63,7 @@ public:
 	void After(TInt aUs) { iState = ETimer; iTimer.After(iStatus, aUs); SetActive(); }
 	TRequestStatus& Vsync() { iState = EVsync; iStatus = KRequestPending; return iStatus; }	// EndUpdate(status), then Armed()
 	void Armed() { SetActive(); }
+	TBool Vsyncing() const { return IsActive() && iState == EVsync; }
 	void RunL();
 	void DoCancel();
 private:
@@ -275,7 +276,7 @@ private:
 	TInt iFramePeriodUs;
 	TInt iMaxSample;
 	// state
-	TBool iPreparing, iPrepared, iPrepareEvent, iPlaying, iInputEnd, iStreamEnd, iFinishing, iPumping, iBench;
+	TBool iPreparing, iPrepared, iPrepareEvent, iPlaying, iInputEnd, iStreamEnd, iFinishing, iPumping, iBench, iConverted, iConvOk;
 	TInt iNext;
 	TInt iError;
 	TInt iScreenNumber;
@@ -1049,6 +1050,7 @@ void CPheVidCtl::StopInternal()
 		iDvp = NULL;
 		}
 	iQCount = iQHead = 0;
+	iConverted = EFalse;
 	iPlaying = iPrepared = iPreparing = iFinishing = EFalse;
 	iPumping = EFalse;
 	iNext = 0;
@@ -1310,7 +1312,12 @@ void CPheVidCtl::MdvpoStreamEnd()
 // Presents the queued pictures in turn: wait for the due time, draw, wait for the vsync; stops when the queue is empty.
 void CPheVidCtl::Pump()
 	{
-	if (iPumping || iPresenter->IsActive() || !iPlaying || iFinishing)
+	if (iPumping || !iPlaying || iFinishing)
+		return;
+	// While the previous picture's EndUpdate is still in flight (about two vblanks), convert the NEXT picture into the
+	// back bitmap: the copy to the video RAM is the only step that must wait for the completion (r33)
+	const TBool preConv = iPresenter->Vsyncing() && !iOvOn && !iBench && iHaveTs0;
+	if (iPresenter->IsActive() && !preConv)
 		return;
 	iPumping = ETrue;
 	for (;;)
@@ -1318,6 +1325,15 @@ void CPheVidCtl::Pump()
 		PullPictures();
 		if (!iQCount)
 			break;
+		if (iPresenter->IsActive())
+			{
+			if (!iConverted)
+				{
+				iConvOk = Draw(*iQ[iQHead]);
+				iConverted = ETrue;
+				}
+			break;
+			}
 		const TVideoPicture* pic = iQ[iQHead];
 		const TInt64 now = NowUs();
 		if (!iHaveTs0)
@@ -1393,11 +1409,14 @@ TBool CPheVidCtl::PresentOne()
 			iStats.iDriftMaxMs = dm;
 		}
 	TBool vsync = EFalse;
+	const TBool wasConv = iConverted;
+	iConverted = EFalse;
+	(void)wasConv;
 	if (!iBench)
 		{
 		if (lag > 3 * iFramePeriodUs)
 			++iStats.iDropped;
-		else if (Draw(*pic))
+		else if (wasConv ? iConvOk : Draw(*pic))
 			{
 			++iStats.iDrawn;
 			vsync = ETrue;
@@ -1445,6 +1464,8 @@ void CPheVidCtl::FinishPlayback()
 	{
 	TInt f = 0;
 	HAL::Get(HAL::EFastCounterFrequency, f);
+	if (iNDraw && iNVsync)
+		RDebug::Printf("PH: vc per frame (us): convert %d vsync-wait %d", (TInt)((TInt64)iTConv * 1000000 / f / iNDraw), (TInt)((TInt64)iTVsync * 1000000 / f / iNVsync));
 	RDebug::Printf("PH: vc stages (FastCounter ticks at %d Hz; %d drawn, %d vsync waits): draw total %u = BeginUpdate %u + NV12->RGB convert %u (+ region/setup %u); vsync wait (EndUpdate -> flip) %u",
 		f, iNDraw, iNVsync, iTDraw, iTBegin, iTConv, iTDraw - iTBegin - iTConv, iTVsync);
 	iTBegin = iTConv = iTDraw = iNDraw = iTVsync = iNVsync = 0;
