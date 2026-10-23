@@ -51,13 +51,19 @@ private:
 		{
 		// the published master volume (the mixer reads it); another instance may have defined it already
 		TInt r = RProperty::Define(KPhAudioPropertyCategory, KPhAudioMasterVolume, RProperty::EInt, KReadAnyone, KWriteDeviceData);
-		if (r != KErrNone && r != KErrAlreadyExists)
+		// Define needs SID == category (this exe's own SID) or, for a low category, WriteDeviceData. A -46 here once killed the
+		// service on one x86 ROM (not reproducible since): log what the kernel saw and carry on -- the mixer reads the key if it
+		// exists, and an owner-less key only means volume stays at the sound driver's default.
+		RDebug::Printf("[phvolume] sid %08x, Define -> %d", (TUint)RProcess().SecureId().iId, r);
+		if (r != KErrNone && r != KErrAlreadyExists && r != KErrPermissionDenied)
 			User::Leave(r);
 		User::LeaveIfError(iMaster.Attach(KPhAudioPropertyCategory, KPhAudioMasterVolume));
 		// a property defined just now reads 0 (= mute, boot 452): start it at the default; an existing one keeps its level
 		if (r == KErrNone || iMaster.Get(iStep) != KErrNone)
 			iStep = KPhVolDefaultStep;
-		iMaster.Set(iStep);
+		TInt sr = iMaster.Set(iStep);
+		if (sr != KErrNone)
+			RDebug::Printf("[phvolume] master volume Set -> %d", sr);
 		// the key events (defined by KeyPublisherPlugin when SysAp loads it; Subscribe waits if that is not yet)
 		User::LeaveIfError(iKeys.Attach(KPSUidMediaKeysEventNotifier, KMediaKeysVolumeKeyEvent));
 		Listen();
