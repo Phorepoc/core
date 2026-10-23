@@ -22,6 +22,7 @@
 #include <mmf/server/mmffile.h>
 #include <mmf/server/mmfbuffer.h>
 #include <mmf/common/mmfstandardcustomcommands.h>
+#include <mmf/common/mmfstandardcustomcommandsenums.h>
 #include <mmf/devvideo/devvideoplay.h>
 #include <mmf/server/mmfaudiooutput.h>
 #include <mmf/server/sounddevice.h>
@@ -230,6 +231,8 @@ private:
 	CMessageHolder* iPrimeMsg;
 	TBool iSinkAdded;
 	MMMFAudioOutput* iAudioOut;
+	TInt iVolSet;		// 0 = the client never set a volume; else 1 + the logical volume 0..100 (KUidInterfaceMMFAudioPlayDevice)
+	TInt iVolume;
 	// audio: pheffmpeg.dll (RLibrary) -> AAC decoder -> PCM16 -> CMMFDevSound (owned by the audio output sink)
 	CMMFDevSound* iDevSound;
 	RLibrary iFf;
@@ -776,7 +779,7 @@ void CPheVidCtl::InitializeComplete(TInt aError)
 		TRAP(err, iDevSound->SetConfigL(caps));
 		if (err == KErrNone)
 			{
-			iDevSound->SetVolume(iDevSound->MaxVolume());
+			iDevSound->SetVolume(iVolSet ? iDevSound->MaxVolume() * iVolume / 100 : iDevSound->MaxVolume());
 			iAudioReady = ETrue;
 			}
 		}
@@ -1091,8 +1094,60 @@ CMMFMetaDataEntry* CPheVidCtl::GetMetaDataEntryL(TInt)
 // the test hook: any message to an interface the parsers do not own
 void CPheVidCtl::CustomCommand(TMMFMessage& aMessage)
 	{
+	// the standard audio play device commands every MMF client may send (volume / balance): a refused SetVolume made
+	// CVideoPlayerUtility users report KErrNotSupported (the game's "Feature is not supported" note)
+	if (aMessage.Destination().InterfaceId() == KUidInterfaceMMFAudioPlayDevice)
+		{
+		TInt r = KErrNone;
+		switch (aMessage.Function())
+			{
+		case EMMFAudioPlayDeviceSetVolume:
+			{
+			TInt v = 0;
+			TPckg<TInt> p(v);
+			TRAP(r, aMessage.ReadData1FromClientL(p));
+			if (r == KErrNone)
+				{
+				iVolume = v < 0 ? 0 : v > 100 ? 100 : v;
+				iVolSet = 1;
+				if (iDevSound)
+					iDevSound->SetVolume(iDevSound->MaxVolume() * iVolume / 100);
+				}
+			break;
+			}
+		case EMMFAudioPlayDeviceGetMaxVolume:
+			{
+			TInt v = 100;
+			TPckg<TInt> p(v);
+			TRAP(r, aMessage.WriteDataToClientL(p));
+			break;
+			}
+		case EMMFAudioPlayDeviceGetVolume:
+			{
+			TInt v = iVolSet ? iVolume : 100;
+			TPckg<TInt> p(v);
+			TRAP(r, aMessage.WriteDataToClientL(p));
+			break;
+			}
+		case EMMFAudioPlayDeviceGetBalance:
+			{
+			TInt v = 0;
+			TPckg<TInt> p(v);
+			TRAP(r, aMessage.WriteDataToClientL(p));
+			break;
+			}
+		case EMMFAudioPlayDeviceSetVolumeRamp:
+		case EMMFAudioPlayDeviceSetBalance:
+			break;		// accepted, not applied
+		default:
+			r = KErrNotSupported;
+			}
+		aMessage.Complete(r);
+		return;
+		}
 	if (aMessage.Destination().InterfaceId() != KPheVidCtlCmdIf)
 		{
+		RDebug::Printf("PH: vc unsupported custom command if=%08x fn=%d", (TUint)aMessage.Destination().InterfaceId().iUid, (TInt)aMessage.Function());
 		aMessage.Complete(KErrNotSupported);
 		return;
 		}
@@ -1505,27 +1560,27 @@ void CPheVidCtl::MvpcDirectScreenAccessEventL(const TMMFDSAEvent aDSAEvent)
 	}
 
 void CPheVidCtl::MvpcRefreshFrameL() {}
-void CPheVidCtl::MvpcPlayL(const TTimeIntervalMicroSeconds&, const TTimeIntervalMicroSeconds&) { User::Leave(KErrNotSupported); }
-void CPheVidCtl::MvpcGetLoadingProgressL(TInt&) { User::Leave(KErrNotSupported); }
-void CPheVidCtl::MvpcSetRotationL(TVideoRotation) { User::Leave(KErrNotSupported); }
+void CPheVidCtl::MvpcPlayL(const TTimeIntervalMicroSeconds&, const TTimeIntervalMicroSeconds&) { RDebug::Printf("PH: vc unsupported: PlayL(from,to)"); User::Leave(KErrNotSupported); }
+void CPheVidCtl::MvpcGetLoadingProgressL(TInt&) { RDebug::Printf("PH: vc unsupported: GetLoadingProgress"); User::Leave(KErrNotSupported); }
+void CPheVidCtl::MvpcSetRotationL(TVideoRotation aRot) { RDebug::Printf("PH: vc SetRotation %d (accepted, ignored: the picture is fitted into the display window)", (TInt)aRot); }
 void CPheVidCtl::MvpcGetRotationL(TVideoRotation& aRotation) { aRotation = EVideoRotationNone; }
-void CPheVidCtl::MvpcSetScaleFactorL(TReal32, TReal32, TBool) { User::Leave(KErrNotSupported); }
+void CPheVidCtl::MvpcSetScaleFactorL(TReal32 aW, TReal32 aH, TBool) { RDebug::Printf("PH: vc SetScaleFactor %d,%d (accepted, ignored)", (TInt)aW, (TInt)aH); }
 void CPheVidCtl::MvpcGetScaleFactorL(TReal32& aW, TReal32& aH, TBool& aAa) { aW = aH = 100; aAa = EFalse; }
-void CPheVidCtl::MvpcSetCropRegionL(const TRect&) { User::Leave(KErrNotSupported); }
+void CPheVidCtl::MvpcSetCropRegionL(const TRect& aR) { RDebug::Printf("PH: vc SetCropRegion %d,%d-%d,%d (accepted, ignored)", aR.iTl.iX, aR.iTl.iY, aR.iBr.iX, aR.iBr.iY); }
 void CPheVidCtl::MvpcGetCropRegionL(TRect& aCrop) { aCrop = TRect(0, 0, iMovie.iWidth, iMovie.iHeight); }
 void CPheVidCtl::MvpcGetFrameL(MMMFVideoFrameMessage& aMessage) { aMessage.FrameReady(KErrNotSupported); }
 void CPheVidCtl::MvpcGetAudioEnabledL(TBool& aEnabled) { aEnabled = iMovie.iAudioOk && iAudioOut && (!iPrepared || iAudioReady || iAudioActive); }
 void CPheVidCtl::MvsdSetInitScreenNumber(TInt aScreenNumber) { iScreenNumber = aScreenNumber; }
 
-void CPheVidCtl::MvcGetAudioCodecL(TFourCC&) { User::Leave(KErrNotSupported); }
-void CPheVidCtl::MvcGetVideoBitRateL(TInt&) { User::Leave(KErrNotSupported); }
+void CPheVidCtl::MvcGetAudioCodecL(TFourCC&) { RDebug::Printf("PH: vc unsupported: GetAudioCodec"); User::Leave(KErrNotSupported); }
+void CPheVidCtl::MvcGetVideoBitRateL(TInt&) { RDebug::Printf("PH: vc unsupported: GetVideoBitRate"); User::Leave(KErrNotSupported); }
 void CPheVidCtl::MvcGetAudioBitRateL(TInt& aBitRate)
 	{
 	if (!iMovie.iAudioOk)
 		User::Leave(KErrNotSupported);
 	aBitRate = (TInt)iMovie.iAudioAvgBitrate;
 	}
-void CPheVidCtl::MvcSetFrameRateL(TReal32) { User::Leave(KErrNotSupported); }
+void CPheVidCtl::MvcSetFrameRateL(TReal32) { RDebug::Printf("PH: vc unsupported: SetFrameRate"); User::Leave(KErrNotSupported); }
 void CPheVidCtl::MvcGetFrameRateL(TReal32& aFps)
 	{
 	if (!iClip || iFramePeriodUs <= 0)
