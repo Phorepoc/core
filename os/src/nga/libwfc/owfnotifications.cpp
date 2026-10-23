@@ -52,6 +52,8 @@
 // PH: tracing for the DSA hang hunt: temporary, rate-limited, "PH:" lines go to PhoneLab
 static TInt PhCbCount;
 static TInt PhUpdCount;
+static TUint32 PhUpdT0, PhUpdSum, PhUpdMax;
+static TInt PhUpdN;
 #define PH_EARLY(counter) (++(counter) <= 60 || (counter) % 200 == 0)
 
 // OURS: wake the composer thread (WFC_Context_ComposerThread, wfccontext.c) out of its AUTO_COMPOSE_DELAY wait so
@@ -170,8 +172,10 @@ owfSymContextSourceStreamUpdated(SymbianStreamType stream,
                                 return;
                                 
                             case SYM_CONTENT_UPDATE_END:
+                                { static TInt PhUi = 0; if ((parameter->par & 0xff00) != 0x100 && PhUi < 400) { ++PhUi; RDebug::Printf("PH: wfc UI-class update END stream=%08x flags=%x #%d", (TUint)owfStream, (TUint)parameter->par, PhUi); } }
                                 if (PH_EARLY(PhUpdCount))
                                     RDebug::Printf("PH: wfc content update END stream=%08x flags=%x n=%d", (TUint)owfStream, (TUint)parameter->par, PhUpdCount);
+                                PhUpdT0 = User::FastCounter();
                                 ++context->sourceUpdateCount;
                                 pDispCtx->iEventServerUpdate |= parameter->par;
                                 owfSymDeviceSetUpdateFlags(context, owfStream, parameter->par);
@@ -522,6 +526,19 @@ owfSymProcessAllNotifications(WFC_CONTEXT* context)
     OWFDisplayContext *pDispCtx = _OWF_DISPLAYCONTEXT(context->displayContext);
     
     NFPRINT(("+++ START owfSymProcessAllNotifications events=0x%x", pDispCtx->iEventServerUpdate));
+    if (PhUpdT0)
+    {
+        // r34: update-end to compose-complete latency (FastCounter ticks, 24 MHz), every 60 updates
+        const TUint32 d = User::FastCounter() - PhUpdT0;
+        PhUpdT0 = 0;
+        PhUpdSum += d;
+        if (d > PhUpdMax) PhUpdMax = d;
+        if (++PhUpdN == 60)
+        {
+            RDebug::Printf("PH: wfc update->composed avg %u us max %u us (60 updates)", PhUpdSum / 60 / 24, PhUpdMax / 24);
+            PhUpdN = 0; PhUpdSum = 0; PhUpdMax = 0;
+        }
+    }
     OWF_Mutex_Lock(&context->updateFlagMutex);
     pDispCtx->iCompositionOngoing = WFC_FALSE;
     

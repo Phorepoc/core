@@ -1174,6 +1174,8 @@ void TWindowServerEvent::ProcessRawEvent(const TRawEvent& aRawEvent)
 // Event has completed.
 //
 	{
+	{ static TInt phN = 0; const TInt ty = (TInt)aRawEvent.Type(); if ((ty == TRawEvent::EButton1Down || ty == TRawEvent::EButton1Up || ty == TRawEvent::EKeyDown || ty == TRawEvent::EKeyUp) && phN < 80)
+		{ ++phN; RDebug::Printf("PH: input raw type=%d pos=%d,%d scan=%d", ty, aRawEvent.Pos().iX, aRawEvent.Pos().iY, (ty == TRawEvent::EKeyDown || ty == TRawEvent::EKeyUp) ? aRawEvent.ScanCode() : 0); } }
 	TRawEvent::TType eventType = aRawEvent.Type();
 	TBool isPointerEvent = TWsPointer::IsPointerEventType(eventType);
 	if (eventType == TRawEvent::EButton1Down)

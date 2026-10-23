@@ -408,6 +408,7 @@ void CScreen::ApplyRemainingWsiniSettingsL()
 
 void CScreen::AcquireDsaScreenDeviceL()
 	{
+	RDebug::Printf("PH: dsa acquire enter dev=%x n=%d", (TUint)iDsaDevice, iNumberDrawingDsa);
 	//creates WSERV's DSA buffer handle
 	//registers the DSA surface into the scene accordingly to the value of aRegisterSurface
 	if(!iDsaDevice)
@@ -416,6 +417,7 @@ void CScreen::AcquireDsaScreenDeviceL()
 		screenMode = iScreenDevice->DisplayMode();
 		if(screenMode != ENone)
 			{
+			RDebug::Printf("PH: dsa acquire mode=%d", (TInt)screenMode);
 			CreateDsaScreenDeviceIfSupportedL(screenMode);
 			// initialize DSA
 			iDsaDevice->SetAutoUpdate(EFalse);
@@ -441,6 +443,7 @@ void CScreen::AcquireDsaScreenDeviceL()
 			}
 		else
 			{
+			RDebug::Printf("PH: dsa acquire: DisplayMode ENone");
 			User::Leave(KErrNotSupported);
 			}
 		}
@@ -478,12 +481,14 @@ void CScreen::CreateDsaScreenDeviceIfSupportedL(TDisplayMode aScreenMode)
 		return;
 	if(DoCreateDsaScreenDevice(EGray2))
 		return;
+	RDebug::Printf("PH: dsa: no display mode could create a DSA screen device");
 	User::Leave(KErrNotSupported);
 	}
 
 TBool CScreen::DoCreateDsaScreenDevice(TDisplayMode aScreenMode)
 	{
 	TRAPD(err, iDsaDevice = CFbsScreenDevice::NewL(iScreenNumber, aScreenMode));
+	RDebug::Printf("PH: dsa CFbsScreenDevice::NewL(screen %d, mode %d) = %d", iScreenNumber, (TInt)aScreenMode, err);
 	if(err == KErrNone)
 		{
 		TUint supportedDsaRotationModes = iDsaDevice->DeviceOrientationsAvailable();

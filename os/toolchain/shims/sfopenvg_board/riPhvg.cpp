@@ -480,6 +480,18 @@ bool PhvgTryBlitOut(const Surface* aS, Image* aDst, int aSx, int aSy, int aDx, i
 		User::Free(buf);
 		return false;
 		}
+	{	// PH (SkyForce white hunt): the present path -- a GPU-ahead surface is blitted out into the destination (the ALF window bitmap = the UI image)
+		static TInt phn = 0;
+		if (phn < 300 && aW * aH >= 100000)
+			{
+			++phn;
+			const TInt px = 180 - aSx, py = 320 - aSy;
+			TUint gv = 0xdeadbeef;
+			if (px >= 0 && py >= 0 && px < aW && py < aH)
+				{ const TUint8* q = buf + (py * aW + px) * 4; gv = q[0] | (q[1] << 8) | (q[2] << 16) | ((TUint)q[3] << 24); }
+			RDebug::Printf("PH: phvg BLITOUT surf=%08x dst=%08x(stride %d) src %d,%d dst %d,%d %dx%d dirty=%d,%d-%d,%d gpuPx(180,320)=%08x (RGBA bytes)", (TUint)aS, (TUint)aDst->m_data, (int)aDst->m_stride, aSx, aSy, aDx, aDy, aW, aH, dirty[0], dirty[1], dirty[2], dirty[3], gv);
+			}
+	}
 	const TBool pre = d.isPremultiplied();
 	const TInt rb = d.redBits, gb = d.greenBits, bb = d.blueBits, ab = d.alphaBits;
 	const TInt rm = (1 << rb) - 1, gm = (1 << gb) - 1, bm = (1 << bb) - 1, am = (1 << ab) - 1;

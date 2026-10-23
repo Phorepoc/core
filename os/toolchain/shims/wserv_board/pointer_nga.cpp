@@ -1116,6 +1116,7 @@ void TWsPointer::ProcessEvent(TWsEvent& aEvent, TBool aNatural)
 	
 	TUint filter=iCurrentWindow->PointerFilter();
 	TPointerEvent::TType type=aEvent.Pointer()->iType;
+	{ static TInt phN = 0; if (phN < 80 && type != TPointerEvent::EMove) { ++phN; CWsClientWindow* pw = (CWsClientWindow*)iCurrentWindow; RDebug::Printf("PH: input pointer type=%d pos=%d,%d window=%d,%d-%d,%d group=%d", (TInt)type, aEvent.Pointer()->iPosition.iX, aEvent.Pointer()->iPosition.iY, pw->AbsRect().iTl.iX, pw->AbsRect().iTl.iY, pw->AbsRect().iBr.iX, pw->AbsRect().iBr.iY, pw->WinGroup() ? pw->WinGroup()->Identifier() : -1); } }
 	if ((type!=TPointerEvent::EMove || !(filter&EPointerFilterMove)) &&
 		 (type!=TPointerEvent::EDrag || !(filter&EPointerFilterDrag)))
 		{

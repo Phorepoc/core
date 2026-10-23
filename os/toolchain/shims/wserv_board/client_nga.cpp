@@ -581,6 +581,9 @@ void CWsClient::DoServiceCommandBuf() // (step #3.1)
 		SessionPanic(EWservPanicFunctionLeave);
 #endif
 
+	static TInt phNeg = 0;
+	if ((err==KErrNotSupported || iReply==KErrNotSupported) && phNeg < 200 && ++phNeg)
+		RDebug::Printf("PH: wserv cmd NEG op=%d err=%d reply=%d destType=%d", (TInt)iCurrentCommand.iOpcode, err, (TInt)iReply, iDestObj ? (TInt)iDestObj->Type() : -1);
 	if (err<KErrNone)
 		SetReply(err);
 

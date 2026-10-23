@@ -486,11 +486,11 @@ TInt COpenWFC_RI_DisplayChannel::UpdateDisplay()
     }
     SymbianStreamReleaseReadBuffer(iCurrentSceneStream, frontBuffer);
     iStatCopySum += User::FastCounter() - t1;
-    if (++iStatCount % 200 == 0)
+    if (++iStatCount % 60 == 0)
         {
         const TUint32 us = iStatFreq / 1000000 ? iStatFreq / 1000000 : 1;	// ticks per microsecond (24 MHz: 24)
-        RDebug::Printf("[wfcdisp] %u updates: period %u us, buffer wait %u us, copy %u us, buffer %u", iStatCount,
-            iStatPeriodSum / 200 / us, iStatWaitSum / 200 / us, iStatCopySum / 200 / us, bufferIndex);
+        RDebug::Printf("PH: [wfcdisp] %u updates: period %u us, buffer wait %u us, copy %u us, buffer %u", iStatCount,
+            iStatPeriodSum / 60 / us, iStatWaitSum / 60 / us, iStatCopySum / 60 / us, bufferIndex);
         iStatPeriodSum = iStatWaitSum = iStatCopySum = 0;
         }
 

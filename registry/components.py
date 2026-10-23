@@ -151,7 +151,10 @@ COMPONENTS = {
     # variant picks (the *_switch.mmp shims are emulator-only): generic screen
     # driver, non-GCE bitgdi, software sgresource, the stub extended-bitmap rasterizer
     "scdv": dict(mmp=f"{G}/graphicsdeviceinterface/screendriver/group/generic.mmp",
-                 rom="scdv.dll"),
+                 rom="scdv.dll",
+                 # OURS: Cdsb.cpp with the flipped-surface HAL queries (a rotated DSA surface: pitch 2560, not the portrait 1472)
+                 drop=["Cdsb.cpp"], extra=["toolchain/shims/scdv_cdsb/Cdsb.cpp"],
+                 flags=["-iquote", _resolve_src(f"baseline/symbian-2010/{G}/graphicsdeviceinterface/screendriver/sgeneric"), "-iquote", _resolve_src(f"baseline/symbian-2010/{G}/graphicsdeviceinterface/screendriver/inc"), "-iquote", _resolve_src(f"baseline/symbian-2010/{G}/graphicsdeviceinterface/screendriver/sbit")]),
     "bitgdi": dict(mmp=f"{G}/graphicsdeviceinterface/bitgdi/group/BITGDI.MMP",
                    rom="bitgdi.dll"),
     # window server CFbsScreenDevice::GetSurface / (Set)DeviceOrientation panic BITGDI 5 in the non-GCE one. Same
@@ -288,7 +291,7 @@ COMPONENTS = {
                       **({"drop": ["WSTOP.CPP", "INIFILE.CPP", "CLIENT.CPP", "WINBASE.CPP", "POINTER.CPP", "EVENT.CPP", "SCREEN.CPP"], "extra": [".wsdbg-build/WSTOP.CPP", "toolchain/shims/wserv_board/screen_nga.cpp", "toolchain/shims/wserv_board/inifile_board.cpp",
                                                                           "toolchain/shims/wserv_board/client_nga.cpp", "toolchain/shims/wserv_board/winbase_nga.cpp", "toolchain/shims/wserv_board/pointer_nga.cpp", "toolchain/shims/wserv_board/event_nga.cpp"]}
                          if os.environ.get("WSERV_DBG") == "1" else
-                         {"drop": ["INIFILE.CPP", "CLIENT.CPP", "WINBASE.CPP", "POINTER.CPP", "EVENT.CPP", "SCREEN.CPP"], "extra": ["toolchain/shims/wserv_board/screen_nga.cpp", "toolchain/shims/wserv_board/inifile_board.cpp", "toolchain/shims/wserv_board/client_nga.cpp", "toolchain/shims/wserv_board/winbase_nga.cpp", "toolchain/shims/wserv_board/pointer_nga.cpp", "toolchain/shims/wserv_board/event_nga.cpp"]}),
+                         {"drop": ["INIFILE.CPP", "CLIENT.CPP", "WINBASE.CPP", "POINTER.CPP", "EVENT.CPP", "DIRECT.CPP", "SCREEN.CPP", "GROUPWIN.CPP", "wnredraw.cpp", "redrawmsgwindow.cpp", "cliwin.cpp"], "extra": ["toolchain/shims/wserv_board/GroupWin_nga.cpp", "toolchain/shims/wserv_board/Direct_nga.cpp", "toolchain/shims/wserv_board/screen_nga.cpp", "toolchain/shims/wserv_board/inifile_board.cpp", "toolchain/shims/wserv_board/client_nga.cpp", "toolchain/shims/wserv_board/winbase_nga.cpp", "toolchain/shims/wserv_board/pointer_nga.cpp", "toolchain/shims/wserv_board/event_nga.cpp", "toolchain/shims/wserv_board/wnredraw_nga.cpp", "toolchain/shims/wserv_board/redrawmsgwindow_nga.cpp", "toolchain/shims/wserv_board/cliwin_nga.cpp"]}),
                       defs=["PH_WS_NGA"] + (["LOG_WSERV_EVENTS"] if os.environ.get("WSERV_EVLOG") == "1" else []), libs=["centralrepository.lib"],
                       flags=["-finput-charset=ISO-8859-1"] if os.environ.get("WSERV_EVLOG") == "1" else []),   # (EVQUEUE.CPP's trace texts are Latin-1)
     # the NGA standard render stage: displayrenderstage -> libWFC (+ the fb/debugbar stages); replaces 2001b70b
@@ -691,7 +694,8 @@ COMPONENTS = {
     "hwrmlightclient": dict(mmp="oss.FCL.sf.os.devicesrv/resourcemgmt/hwresourcesmgr/light/group/HWRMLightClient.mmp"),
     # the vibra client (Symbian^4's QtSystemInfo: CHWRMVibra -- a link stub until now); the server's vibra side is
     # hwrmstubplugins' VibraPlugin (no motor on this board: requests succeed, nothing moves)
-    "hwrmvibraclient": dict(mmp="oss.FCL.sf.os.devicesrv/resourcemgmt/hwresourcesmgr/vibra/group/HWRMVibraClient.mmp"),
+    "hwrmvibraclient": dict(mmp="oss.FCL.sf.os.devicesrv/resourcemgmt/hwresourcesmgr/vibra/group/HWRMVibraClient.mmp",
+                            drop=["HWRMVibraImpl.cpp"], extra=["toolchain/shims/hwrmvibra_board/HWRMVibraImpl.cpp"]),
     # the sensor framework (client, utilities, server; no sensor plug-ins = no channels found): Orbit's orientation
     # orientation SSY advertises the rotation channel only); + orientationssy and its compensator library
     "sensrvclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensorserver/group/sensrvclient.mmp"),
