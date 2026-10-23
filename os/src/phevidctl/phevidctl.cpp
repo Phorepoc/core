@@ -1646,6 +1646,7 @@ TBool CPheVidCtl::Draw(const TVideoPicture& aPic)
 	const TUint32 tB0 = User::FastCounter();
 	const TInt beginR = iBmp->BeginUpdate(info);
 	iTBegin += User::FastCounter() - tB0;
+	{ if (iNDraw < 2) RDebug::Printf("PH: vc DSA bitmap info r=%d addr=%08x size=%dx%d pitch=%d shift=%d bound=(%d,%d)-(%d,%d) dest=(%d,%d)-(%d,%d)", beginR, (TUint)info.iAddress, info.iSize.iWidth, info.iSize.iHeight, info.iLinePitch, info.iPixelShift, bound.iTl.iX, bound.iTl.iY, bound.iBr.iX, bound.iBr.iY, dest.iTl.iX, dest.iTl.iY, dest.iBr.iX, dest.iBr.iY); }
 	if (beginR != KErrNone || !info.iAddress || (info.iPixelShift != 5 && info.iPixelShift != 4))
 		{
 		vis.Close();

@@ -46,6 +46,14 @@ RESOURCE REGISTRY_INFO theInfo
                     display_name = "Phorepoc 3GP play format";
                     default_data = "0xE70157D2";
                     opaque_data = "<s>Symbian<i>0x101F5D08<i>0x101F5D07<e>.3gp<h>????ftyp<m>video/3gpp";
+                    },
+                IMPLEMENTATION_INFO
+                    {
+                    implementation_uid = 0xE70157D4;
+                    version_no = 1;
+                    display_name = "Phorepoc M4V play format";
+                    default_data = "0xE70157D2";
+                    opaque_data = "<s>Symbian<i>0x101F5D08<i>0x101F5D07<e>.m4v<h>????ftyp<m>video/x-m4v";
                     }
                 };
             }
