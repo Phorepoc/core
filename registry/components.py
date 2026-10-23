@@ -443,9 +443,10 @@ COMPONENTS = {
                  # (ARM) getenv.c's `inline __findenv` is never emitted by GCC -> the libc export slot is an unimpl stub and
                  # setenv() dies EUSRNIMP: toolchain/shims/libc_findenv/getenv.c compiles it with `inline` defined away
                  drop=["getenv.c"], extra=["toolchain/shims/libc_findenv/getenv.c"],
-                 x32_drop=["jmp_marm.cia", "vfscanf.c"],
+                 x32_drop=["jmp_marm.cia", "vfscanf.c", "getenv.c"],
                  x32_extra=["tools/phorepoc-x86/port/x64user/xu_setjmp.cpp",
-                            "tools/phorepoc-x86/port/x64user/libc_vfscanf_x32.c"]),
+                            "tools/phorepoc-x86/port/x64user/libc_vfscanf_x32.c",
+                            "toolchain/shims/libc_findenv/getenv.c"]),
     # the comms/time client DLLs backend + libc import (thin RSessionBase clients: their servers
     # are absent, so Connect() fails cleanly instead of hitting a loud unimpl stub)
     "rpipe": dict(mmp="oss.FCL.sf.os.kernelhwsrv/kernel/eka/euser/rpipe.mmp"),
