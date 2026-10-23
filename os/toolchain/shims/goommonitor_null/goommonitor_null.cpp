@@ -11,6 +11,7 @@
 // Connect: "no GOOM server" (KErrNotSupported) is an answer every client handles (the task switcher
 // asks for free graphics memory before showing, 2026-09-30).
 #include <e32std.h>
+#include <e32debug.h>
 
 class RGOomMonitorSession : public RSessionBase
     {
@@ -23,6 +24,7 @@ public:
 #ifdef PH_ALF_GOOM
     IMPORT_C TInt Connect(TRequestStatus& aStatus);	// ordinal 26: CAlfAsynchGoomSession (alfrenderstage, in WSERV)
     IMPORT_C TBool IsConnected();
+    IMPORT_C TInt RequestFreeMemory(TInt aBytesRequired);	// ordinal 4 (a game's start-up memory request)
     IMPORT_C void MemoryAllocationsComplete();
 #endif
     };
@@ -33,7 +35,7 @@ EXPORT_C TInt RGOomMonitorSession::Connect()
 	}
 
 #ifndef PH_ALF_GOOM
-// A game's start-up memory check does: Connect(); if (!IsConnected()) fail; then up to 20 x { RequestFreeMemory(20 MB) until 0 }.
+// a game (binary 0x7ab4cc): Connect(); if (!IsConnected()) fail; then up to 20 x { RequestFreeMemory(20 MB) until 0 }.
 // With the old unimplemented stubs it never got a 0 and the game idled without a frame. Nothing to free on this board, so the
 // request "succeeds" at once; IsConnected is the only way that game tells a real monitor from none (Connect's result is ignored).
 EXPORT_C TBool RGOomMonitorSession::IsConnected()
@@ -57,7 +59,16 @@ EXPORT_C TInt RGOomMonitorSession::Connect(TRequestStatus&)
 
 EXPORT_C TBool RGOomMonitorSession::IsConnected()
 	{
-	return EFalse;
+	// WSERV's alfrenderstage keeps "no GOOM server"; every OTHER client (a game's start-up check: Connect, IsConnected, RequestFreeMemory x20)
+	// is told "connected" -- with EFalse a game exits at once (the ROM carries THIS twin when ALF>=2)
+	RDebug::Printf("PH: goom IsConnected sid=%x", (TUint)RProcess().SecureId().iId);
+	return RProcess().SecureId().iId != 0x10003B20;
+	}
+
+EXPORT_C TInt RGOomMonitorSession::RequestFreeMemory(TInt)
+	{
+	RDebug::Printf("PH: goom RequestFreeMemory -> 0");
+	return KErrNone;
 	}
 
 EXPORT_C void RGOomMonitorSession::MemoryAllocationsComplete()
