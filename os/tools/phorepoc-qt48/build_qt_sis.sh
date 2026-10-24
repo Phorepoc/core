@@ -132,7 +132,7 @@ stage_sis() {
   # store-ready: package "Qt" 4.8.7 (the name/version a Qt app's SIS depends on), the LGPL text, its exception and the source offer inside
   local extra="--file $HERE/QT-SOURCE-OFFER.txt=!:/resource/Qt/SOURCE-OFFER.txt --file $SRC/LICENSE.LGPL=!:/resource/Qt/LICENSE.LGPL"
   [ -f "$SRC/LGPL_EXCEPTION.txt" ] && extra="$extra --file $SRC/LGPL_EXCEPTION.txt=!:/resource/Qt/LGPL_EXCEPTION.txt"
-  python3 tools/make_sis.py $keys --arm --unsigned --uid 0x2001E61C --name Qt --version 4.8.7       --vendor "The Qt Project (packaged by Phorepoc)" $extra --out "$Q/qt-4.8.7.sis"
+  python3 tools/make_sis.py $keys --arm --unsigned --uid 0x2001E61C --name Qt --version 4.8.7       --vendor "The Qt Project (packaged by Phorepoc)" --type "${QT_SIS_TYPE:-sa}" $extra --out "$Q/qt-4.8.7${QT_SIS_TYPE:+-$QT_SIS_TYPE}.sis"
 }
 
 STAGES="${*:-fetch host configure mocables stage build sis}"
