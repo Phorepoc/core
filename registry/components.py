@@ -507,7 +507,11 @@ COMPONENTS = {
     "clocka": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/lafagnosticuifoundation/clockanim/group/CLOCKA.MMP"),
     "bmpansrv": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/lafagnosticuifoundation/bmpanimation/group/BmpAnSrv.mmp"),
     "aknanimdll": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/animdllsrc/AknAnimDll.mmp"),
-    "eiksrvui": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/EikStd/srvuisrc/EIKSRVUI.MMP"),
+    # silent-profile fix: error/information/confirmation tones obey KProEngActiveWarningTones (the 2010 key sound server gates only the warning tone)
+    "eiksrvui": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/EikStd/srvuisrc/EIKSRVUI.MMP",
+                     drop=["eikkeysoundserver.cpp"], extra=["toolchain/shims/eiksrvui_tone/eikkeysoundserver.cpp"],
+                     flags=["-iquote", _resolve_src("baseline/symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/EikStd/srvuisrc"),
+                            "-iquote", _resolve_src("baseline/symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/EikStd/srvuiinc")]),
     "aknnotifyplugin2": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AknGlobalUI/group/AknNotifyPlugin2.mmp"),
     "aknnotifyplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/AknNotifyPlugin_dll/group/AknNotifyPlugin.mmp"),
     "platformver": dict(mmp="oss.FCL.sf.os.devicesrv/commonservices/PlatformEnv/platformver/group/platformver.mmp"),
