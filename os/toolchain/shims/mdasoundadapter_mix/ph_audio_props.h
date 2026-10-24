@@ -16,7 +16,7 @@ const TUid KPhAudioPropertyCategory = { (TInt32)0xE70157A1 };
 const TUint KPhAudioMasterVolume = 1;
 
 const TInt KPhVolMaxStep = 15;
-const TInt KPhVolDefaultStep = 15;		// = today's behaviour (hardware volume at its maximum)
+const TInt KPhVolDefaultStep = 3;		// quiet by default (0..15): a phone must not blast at boot; the volume keys raise it. (Was 15 = hardware maximum.)
 
 // step -> soundsc volume code (255 = full, 0.5 dB per code; 3 dB per step, step 1 = -42 dB, 0 = mute)
 inline TInt PhVolStepToCode(TInt aStep)
