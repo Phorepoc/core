@@ -90,8 +90,6 @@ CSurfaceStream* COpenWfcStreamMap::AcquireL(const TSurfaceId& aSurfaceId)
 		RDebug::Printf("PH: wfci new stream %08x %08x %08x %08x",
 		        (TUint)aSurfaceId.iInternal[0], (TUint)aSurfaceId.iInternal[1], (TUint)aSurfaceId.iInternal[2], (TUint)aSurfaceId.iInternal[3]);
 		ret = CSurfaceStream::NewLC(aSurfaceId);
-		{ RSurfaceManager::TInfoBuf ib; TInt rr = iSurfaceManager ? iSurfaceManager->SurfaceInfo(aSurfaceId, ib) : -99;
-		  RDebug::Printf("PH: wfci stream info r=%d size=%dx%d stride=%d buffers=%d fmt=%x", rr, ib().iSize.iWidth, ib().iSize.iHeight, ib().iStride, ib().iBuffers, (TUint)ib().iPixelFormat); }
 		User::LeaveIfError(iMap.Insert(aSurfaceId, ret));
 		CleanupStack::Pop();
 		}

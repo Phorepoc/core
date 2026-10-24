@@ -34,7 +34,6 @@
 #include "EVENT.H"
 #include "wstypes.h"
 #include <graphics/surface.h>
-#include <graphics/surfacemanager.h>
 #include <graphics/wselement.h>
 #include <graphics/wsscreendevice.h>
 #include "windowelementset.h"
@@ -655,18 +654,11 @@ void CWsWindowRedraw::SetBackgroundSurfaceL(const TSurfaceConfiguration& aConfig
 	SetHasElement(ETrue);		//set element flag
 	SetMayContainElementFlags();
 	
-	{ TRect psr; TInt pe = element.GetSourceRectangle(psr); TRect pvp; aConfiguration.GetViewport(pvp); RDebug::Printf("PH: SBS pre: element src r=%d %d,%d-%d,%d viewport %d,%d-%d,%d", pe, psr.iTl.iX, psr.iTl.iY, psr.iBr.iX, psr.iBr.iY, pvp.iTl.iX, pvp.iTl.iY, pvp.iBr.iX, pvp.iBr.iY); }
 	err = CWindowElement::SetElement(element,aConfiguration,ETrue);	//set viewport and orientation
 	if (err == KErrArgument)
 		{
 		{ TRect vp, ex; aConfiguration.GetViewport(vp); aConfiguration.GetExtent(ex); TSurfaceId sid; aConfiguration.GetSurfaceId(sid);
 		  RDebug::Printf("PH: SetBackgroundSurface KErrArgument viewport=%d,%d-%d,%d extent=%d,%d-%d,%d orient=%d sid=%08x%08x", vp.iTl.iX, vp.iTl.iY, vp.iBr.iX, vp.iBr.iY, ex.iTl.iX, ex.iTl.iY, ex.iBr.iX, ex.iBr.iY, (TInt)aConfiguration.Orientation(), sid.iInternal[1], sid.iInternal[0]); }
-		{ RSurfaceManager sm; TSurfaceId sid2; aConfiguration.GetSurfaceId(sid2);
-		  if (sm.Open() == KErrNone)
-			{ RSurfaceManager::TInfoBuf ib; TInt rr = sm.SurfaceInfo(sid2, ib);
-			  RDebug::Printf("PH: SBS surface info r=%d size=%dx%d stride=%d buffers=%d fmt=%x", rr, ib().iSize.iWidth, ib().iSize.iHeight, ib().iStride, ib().iBuffers, (TUint)ib().iPixelFormat);
-			  sm.Close(); }
-		}
 		OwnerPanic(EWservPanicInvalidSurfaceConfiguration);
 		}
     TRect srcRect;
