@@ -1,0 +1,31 @@
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: Apache-2.0
+
+# build.yml -- build every component for each board on a core push and publish the build tree as the image
+# ghcr.io/<owner>/build-<board>:<commit> (+ :main). The device repositories' release workflows start from it, so a
+# release only rebuilds what its adaptation changed (pdk board-image.yml).
+name: build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  layer:
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [pc, pinephone]
+    uses: Phorepoc/pdk/.github/workflows/board-image.yml@main
+    with:
+      board: ${{ matrix.board }}
+      images: false
+      publish_layer: true
+    permissions:
+      contents: read
+      packages: write
