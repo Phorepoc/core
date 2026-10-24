@@ -12,4 +12,4 @@ OS_LAYER_SYSTEMINCLUDE
 USERINCLUDE		../../toolchain/shims/mdasoundadapter_mix
 SOURCEPATH		.
 SOURCE			phvolume.cpp
-LIBRARY			euser.lib
+LIBRARY			euser.lib efsrv.lib

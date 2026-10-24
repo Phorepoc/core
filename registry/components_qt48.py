@@ -37,7 +37,7 @@ def _qt(module: str, mmp: str, flags=(), **kw) -> dict:
 
 
 def _dll(module, mmp, rom, deffile, **kw):
-    return _qt(module, mmp, rom=rom, allow_wsd=True, cdriver=True, rtti=True,
+    return _qt(module, mmp, rom=rom, allow_wsd=True, cdriver=True, rtti=True, sis=True,
                **{"def": os.path.join(QT, "src/s60installs/eabi", deffile)}, **kw)
 
 

@@ -16,6 +16,7 @@
 #include <e32base.h>
 #include <e32property.h>
 #include <e32debug.h>
+#include <f32file.h>
 #include "ph_audio_props.h"
 
 // MediaKeysInternalPSKeys.h / MMKeyBearerScanCodes.h (mw/appsupport), restated so this exe needs no MW headers
@@ -60,7 +61,7 @@ private:
 		User::LeaveIfError(iMaster.Attach(KPhAudioPropertyCategory, KPhAudioMasterVolume));
 		// a property defined just now reads 0 (= mute, boot 452): start it at the default; an existing one keeps its level
 		if (r == KErrNone || iMaster.Get(iStep) != KErrNone)
-			iStep = KPhVolDefaultStep;
+			iStep = LoadStep();
 		TInt sr = iMaster.Set(iStep);
 		if (sr != KErrNone)
 			RDebug::Printf("[phvolume] master volume Set -> %d", sr);
@@ -68,6 +69,54 @@ private:
 		User::LeaveIfError(iKeys.Attach(KPSUidMediaKeysEventNotifier, KMediaKeysVolumeKeyEvent));
 		Listen();
 		RDebug::Printf("[phvolume] up, step %d", iStep);
+		}
+	// the last step lives in this exe's private directory on C:, so the volume survives a reboot as on a phone; the default
+	// (quiet) applies only when nothing valid is saved yet
+	static TBool StepFile(RFs& aFs, TFileName& aName)
+		{
+		if (aFs.Connect() != KErrNone)
+			return EFalse;
+		aFs.CreatePrivatePath(EDriveC);
+		aFs.PrivatePath(aName);
+		aName.Insert(0, _L("C:"));
+		aName.Append(_L("volume.dat"));
+		return ETrue;
+		}
+	static TInt LoadStep()
+		{
+		TInt step = KPhVolDefaultStep;
+		RFs fs;
+		TFileName name;
+		if (StepFile(fs, name))
+			{
+			RFile f;
+			if (f.Open(fs, name, EFileRead) == KErrNone)
+				{
+				TBuf8<8> b;
+				if (f.Read(b) == KErrNone && b.Length() >= 1 && b[0] <= KPhVolMaxStep)
+					step = b[0];
+				f.Close();
+				}
+			fs.Close();
+			}
+		RDebug::Printf("[phvolume] restored step %d", step);
+		return step;
+		}
+	void SaveStep()
+		{
+		RFs fs;
+		TFileName name;
+		if (!StepFile(fs, name))
+			return;
+		RFile f;
+		if (f.Replace(fs, name, EFileWrite) == KErrNone)
+			{
+			TBuf8<1> b;
+			b.Append((TUint8)iStep);
+			f.Write(b);
+			f.Close();
+			}
+		fs.Close();
 		}
 	void Listen()
 		{
@@ -97,6 +146,7 @@ private:
 			{
 			iStep = step;
 			iMaster.Set(iStep);
+			SaveStep();
 			RDebug::Printf("[phvolume] event %d -> step %d (code %d)", ev, iStep, PhVolStepToCode(iStep));
 			}
 		}
