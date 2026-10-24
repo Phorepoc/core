@@ -54,6 +54,10 @@ COMPONENTS = {
     # (4.8 folded the per-platform qts60plugin_* helpers into QtCore/QtGui: qt_resolveS60PluginFunc is an ABSENT slot)
     # Qt's E32Main -> main() glue (a static library every Qt program links)
     "qt48_main": _qt("s60main", "qtmain_lib.mmp"),
+    # OURS: logs each Qt start-up step (find where a Qt app stops)
+    "qt48_test": dict(mmp=os.path.join(OS_ROOT, "src", "qt48", "qttest", "qttest.mmp"), rom="qttest.exe", defs=_QTDEFS, rtti=True,
+                      cdriver=True, vfp=True,
+                      flags=_MKSPECS + ["-I" + QTINC] + ["-I" + os.path.join(QTINC, m) for m in ("QtCore", "QtGui")]),
     # OURS: a minimal Qt hello (QApplication + QLabel + QPushButton)
     "qt48_hello": dict(mmp=os.path.join(OS_ROOT, "src", "qt48", "qthello", "qthello.mmp"), rom="qthello.exe", defs=_QTDEFS, rtti=True,
                        cdriver=True, vfp=True,

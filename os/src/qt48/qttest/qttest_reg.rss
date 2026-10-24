@@ -1,0 +1,12 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+#include <appinfo.rh>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0xE7015792
+
+RESOURCE APP_REGISTRATION_INFO
+	{
+	app_file = "qttest";
+	}

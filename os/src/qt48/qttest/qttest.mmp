@@ -1,0 +1,24 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// qttest.mmp -- OURS: a Qt start-up probe. Logs each start-up step through qDebug (RDebug) to find which one ends a Qt app.
+TARGET			qttest.exe
+TARGETTYPE		exe
+UID				0x100039CE 0xE7015792
+CAPABILITY		None
+VENDORID		0
+EPOCSTACKSIZE	0x14000
+EPOCHEAPSIZE	0x20000 0x1000000
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+OS_LAYER_LIBC_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			qttest.cpp
+
+START RESOURCE	qttest_reg.rss
+TARGETPATH		/private/10003a3f/apps
+END
+
+STATICLIBRARY	qt48_main.lib
+LIBRARY			QtGui.lib QtCore.lib libc.lib libpthread.lib euser.lib
