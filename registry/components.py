@@ -2391,7 +2391,7 @@ COMPONENTS = {
     "remconinterfacebase": dict(mmp="oss.FCL.sf.os.devicesrv/accessoryservices/remotecontrolfw/client/intermediate/group/remconinterfacebase.mmp"),   # <- smilplayer
     "remconclient": dict(mmp="oss.FCL.sf.os.devicesrv/accessoryservices/remotecontrolfw/client/inner/group/remconclient.mmp"),   # <- remconinterfacebase
     "remcontypes": dict(mmp="oss.FCL.sf.os.devicesrv/accessoryservices/remotecontrolfw/types/group/remcontypes.mmp"),   # <- remconclient
-    "remconcoreapi": dict(mmp="oss.FCL.sf.os.devicesrv/accessoryservices/remotecontrolfw/client/coreapi/group/remconcoreapi.mmp"),   # <- smilplayer
+    "remconcoreapi": dict(mmp="oss.FCL.sf.os.devicesrv/accessoryservices/remotecontrolfw/client/coreapi/group/remconcoreapi.mmp", rtti=True),   # <- smilplayer
     "unipluginapi": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/unieditor/pluginapi/bld/UniPluginApi.mmp"),   # <- UniEditor.mmp
     "unidatamodel": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/unieditor/model/bld/UniDataModel.mmp", flags=["-I" + os.path.join(OS_ROOT, "toolchain/shims/newfileservice_inc")]),   # <- UniEditor.mmp
     "uniutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/unieditor/utils/bld/UniUtils.mmp", flags=["-I" + os.path.join(OS_ROOT, "toolchain/shims/newfileservice_inc")]),   # <- UniEditor.mmp
