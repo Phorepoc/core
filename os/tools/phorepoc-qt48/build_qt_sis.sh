@@ -45,7 +45,7 @@ stage_fetch() {
 }
 
 stage_host() {
-  [ -x "$HOST/bin/uic" ] && return 0
+  [ -f "$HOST/.qfix" ] && return 0
   mkdir -p "$HOST"; cd "$HOST"
   export CXXFLAGS="-std=gnu++98 -fpermissive -w" CFLAGS="-w"
   if [ ! -f "$HOST/bin/qmake" ]; then
@@ -58,8 +58,13 @@ stage_host() {
   fi
   # Qt 4 relies on `this`-may-be-null checks and object lifetimes that GCC >= 6 optimises away: the guard flags
   local QFIX='CXXFLAGS=-pipe -O2 -w -std=gnu++98 -fno-delete-null-pointer-checks -fno-lifetime-dse -fno-strict-aliasing $(DEFINES)'
+  # configure already built the tools without the guard flags: a uic that drops custom widgets (QFileDialogTreeView) -> clean, rebuild
+  make -C src/tools/bootstrap clean >/dev/null 2>&1 || true
+  for t in moc rcc uic; do make -C "src/tools/$t" clean >/dev/null 2>&1 || true; rm -f "$HOST/bin/$t"; done
+  rm -rf "$SRC"/src/*/.moc "$SRC"/src/*/.rcc "$SRC"/src/*/.uic "$SYM"/src/*/.moc "$SYM"/src/*/.rcc "$SYM"/src/*/.uic 2>/dev/null || true
   make -C src/tools/bootstrap -j"$JOBS" "$QFIX" > bootstrap.log 2>&1 || { tail -30 bootstrap.log; exit 1; }
   for t in moc rcc uic; do make -C "src/tools/$t" -j"$JOBS" "$QFIX" > "$t.log" 2>&1 || { tail -30 "$t.log"; exit 1; }; done
+  touch "$HOST/.qfix"
   ls -la "$HOST/bin"
 }
 
@@ -86,6 +91,7 @@ stage_mocables() {
     local d="$SYM/src/$m"
     [ -f "$d/Makefile" ] || { echo "$m: no Makefile"; continue; }
     mkdir -p "$SRC/src/$m/.moc/release-shared" "$SRC/src/$m/.rcc/release-shared" "$SRC/src/$m/.uic/release-shared"
+    mkdir -p "$d/.moc/release-shared" "$d/.rcc/release-shared" "$d/.uic/release-shared"
     ( cd "$d" && make -s mocables > mocables.log 2>&1 ) || { echo "$m: mocables FAILED"; tail -5 "$d/mocables.log"; continue; }
     ( cd "$d" && make -s compiler_rcc_make_all >> mocables.log 2>&1 ) || true
     ( cd "$d" && make -s compiler_uic_make_all >> mocables.log 2>&1 ) || true
@@ -123,7 +129,10 @@ stage_sis() {
   export PHOREPOC_QT48=1
   cd "$PDK"
   local keys=""; for m in $MODULES; do keys="$keys qt48_$m"; done
-  python3 tools/make_sis.py $keys --arm --unsigned --uid 0x2001E61C --name Qt --out "$Q/qt-4.8.7.sis"
+  # store-ready: package "Qt" 4.8.7 (the name/version a Qt app's SIS depends on), the LGPL text, its exception and the source offer inside
+  local extra="--file $HERE/QT-SOURCE-OFFER.txt=!:/resource/Qt/SOURCE-OFFER.txt --file $SRC/LICENSE.LGPL=!:/resource/Qt/LICENSE.LGPL"
+  [ -f "$SRC/LGPL_EXCEPTION.txt" ] && extra="$extra --file $SRC/LGPL_EXCEPTION.txt=!:/resource/Qt/LGPL_EXCEPTION.txt"
+  python3 tools/make_sis.py $keys --arm --unsigned --uid 0x2001E61C --name Qt --version 4.8.7       --vendor "The Qt Project (packaged by Phorepoc)" $extra --out "$Q/qt-4.8.7.sis"
 }
 
 STAGES="${*:-fetch host configure mocables stage build sis}"

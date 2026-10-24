@@ -1,0 +1,26 @@
+Qt 4.8.7 for Phorepoc -- licence notice and source offer
+
+This package contains the Qt libraries (QtCore, QtGui, QtNetwork, QtSvg, QtXml, QtSql) version 4.8.7, built for
+Symbian^3 / ARM. Qt is copyright (C) The Qt Company / Digia / Nokia and the Qt contributors and is licensed under the
+GNU Lesser General Public License version 2.1 (LGPL-2.1) with the Qt LGPL Exception 1.1. The licence text is installed
+with this package (\resource\Qt\LICENSE.LGPL, \resource\Qt\LGPL_EXCEPTION.txt).
+
+The libraries are dynamic libraries: you can replace them with your own build of Qt 4.8.x (same ABI) and your applications
+keep working; the package is not required by anything else in the system.
+
+Corresponding source, available to anyone who has this package, for at least three years after the release you installed
+it from:
+
+  1. The unmodified Qt 4.8.7 sources:
+       https://download.qt.io/archive/qt/4.8/4.8.7/qt-everywhere-opensource-src-4.8.7.tar.gz
+       SHA-256 e2882295097e47fe089f8ac741a95fef47e0a73a3f3cdf21b56990638f626ea0
+  2. Our changes to them (six patches), and the scripts that configure, build and package Qt:
+       https://github.com/Phorepoc/core   (os/tools/phorepoc-qt48/: qt-patches/, build_qt_sis.sh)
+     with the compiler/toolchain images and component registry in https://github.com/Phorepoc/toolchain,
+     https://github.com/Phorepoc/pdk and https://github.com/Phorepoc/core (registry/components_qt48.py).
+
+Written offer: if the links above are no longer available, send a request to the address given on the Phorepoc
+organisation page https://github.com/Phorepoc and we will send you the corresponding source on a medium of your choice
+for the cost of the medium.
+
+Qt is a registered trademark of The Qt Company Ltd and is used here only to name the software.
