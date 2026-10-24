@@ -1,0 +1,104 @@
+--- a/src/corelib/global/qglobal.h
++++ b/src/corelib/global/qglobal.h
+@@ -2472,6 +2472,14 @@
+         qt_symbian_throwIfError(____error);                 \
+      }
+ 
++#ifdef QT_NO_EXCEPTIONS
++// PHOREPOC (x32, no C++ exceptions): nothing can throw; a Symbian error inside _f leaves
++#define QT_TRYCATCH_ERROR(_err, _f)                         \
++    {                                                       \
++        _err = KErrNone;                                    \
++        _f;                                                 \
++    }
++#else
+ #define QT_TRYCATCH_ERROR(_err, _f)                         \
+     {                                                       \
+         _err = KErrNone;                                    \
+@@ -2481,6 +2489,7 @@
+             _err = qt_symbian_exception2Error(____ex);       \
+         }                                                   \
+     }
++#endif
+ 
+ #define QT_TRYCATCH_LEAVING(_f)                         \
+     {                                                   \
+--- a/src/corelib/global/qglobal.cpp
++++ b/src/corelib/global/qglobal.cpp
+@@ -3390,7 +3390,9 @@
+ 
+ #if defined(Q_OS_SYMBIAN)
+ 
++#ifndef QT_NO_EXCEPTIONS
+ #include <typeinfo>
++#endif
+ 
+ /*! \macro QT_TRAP_THROWING(function)
+     \relates <QtGlobal>
+@@ -3477,6 +3479,7 @@
+     \sa QT_TRAP_THROWING(), QT_TRYCATCH_ERROR()
+ */
+ 
++#ifndef QT_NO_EXCEPTIONS	// PHOREPOC: the exception bridge only exists with exceptions
+ #include <stdexcept>
+ 
+ class QSymbianLeaveException : public std::exception
+@@ -3488,6 +3491,7 @@
+ public:
+     int error;
+ };
++#endif
+ 
+ /*! \relates <QtGlobal>
+     \ingroup qts60
+@@ -3499,6 +3503,24 @@
+ 
+     \sa qt_symbian_exception2LeaveL(), qt_symbian_exception2Error()
+ */
++#ifdef QT_NO_EXCEPTIONS
++// PHOREPOC (x32, no C++ exceptions): a Symbian error stays a Symbian leave
++void qt_symbian_throwIfError(int error)
++{
++    if (error < KErrNone)
++        User::Leave(error);
++}
++
++void qt_symbian_exception2LeaveL(const std::exception&)
++{
++    User::Leave(KErrGeneral);
++}
++
++int qt_symbian_exception2Error(const std::exception&)
++{
++    return KErrGeneral;
++}
++#else
+ void qt_symbian_throwIfError(int error)
+ {
+     if (error >= KErrNone)
+@@ -3567,6 +3589,7 @@
+ 
+     return err;
+ }
++#endif // QT_NO_EXCEPTIONS
+ #endif
+ 
+ QT_END_NAMESPACE
+--- a/src/corelib/kernel/qcore_symbian_p.cpp
++++ b/src/corelib/kernel/qcore_symbian_p.cpp
+@@ -39,11 +39,15 @@
+ **
+ ****************************************************************************/
+ 
++#ifndef QT_NO_EXCEPTIONS	// PHOREPOC: no hosted C++ headers on this board
+ #include <exception>
++#endif
+ #include <e32base.h>
+ #include <e32uid.h>
+ #include "qcore_symbian_p.h"
++#ifndef QT_NO_EXCEPTIONS
+ #include <string>
++#endif
+ #include <in_sock.h>
+ #include "qdebug.h"
+ 

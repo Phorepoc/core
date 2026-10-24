@@ -1,0 +1,10 @@
+// OURS: <new> for the Qt modules that use libstdc++ headers (QtScript: JavaScriptCore's <algorithm>/<memory>).
+// Symbian's operator new/delete + placement new are e32's (e32base.h/e32cmn.h); libstdc++'s own <new> would redefine
+// them. libstdc++ headers need std::nothrow_t / std::nothrow from it: the compilers' pre-include symcpp.h
+// (kernelhwsrv/kernel/eka/compsupp/symcpp; the nothrow operators are stdnew.dll's).
+#ifndef __PH_QT48_NEW_SHIM
+#define __PH_QT48_NEW_SHIM
+#include <e32base.h>
+#include "symcpp.h"
+namespace std { typedef void (*new_handler)(); }
+#endif

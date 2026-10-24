@@ -1,0 +1,20 @@
+--- a/src/corelib/kernel/qcoreapplication.cpp	2026-10-18 04:51:59.102019800 +0100
++++ b/src/corelib/kernel/qcoreapplication.cpp	2026-10-18 04:51:59.344226600 +0100
+@@ -212,7 +212,17 @@
+ #endif
+         if (applicationName.isEmpty() && argv[0]) {
+             char *p = strrchr(argv[0], '/');
++#ifdef Q_OS_SYMBIAN
++            // Symbian's argv[0] is the process file name ("Z:\sys\bin\app.exe"): strip the path (backslash) and the ".exe"
++            char *bs = strrchr(argv[0], '\\');
++            if (bs && (!p || bs > p))
++                p = bs;
+             applicationName = QString::fromLocal8Bit(p ? p + 1 : argv[0]);
++            if (applicationName.endsWith(QLatin1String(".exe"), Qt::CaseInsensitive))
++                applicationName.chop(4);
++#else
++            applicationName = QString::fromLocal8Bit(p ? p + 1 : argv[0]);
++#endif
+         }
+     }
+     return applicationName;

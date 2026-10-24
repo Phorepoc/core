@@ -1,0 +1,63 @@
+--- a/src/corelib/io/qfsfileengine_unix.cpp
++++ b/src/corelib/io/qfsfileengine_unix.cpp
+@@ -54,6 +54,7 @@
+ #include "qvarlengtharray.h"
+ 
+ #include <sys/mman.h>
++#include <wchar.h>	// PHOREPOC: ::wopen
+ #include <stdlib.h>
+ #include <limits.h>
+ #if defined(Q_OS_SYMBIAN)
+--- a/src/corelib/thread/qthread_symbian.cpp
++++ b/src/corelib/thread/qthread_symbian.cpp
+@@ -378,13 +378,17 @@
+     createEventDispatcher(data);
+ 
+     TRAPD(err, {
++#ifndef QT_NO_EXCEPTIONS	// PHOREPOC: no C++ exceptions on this board
+         try {
++#endif
+             emit thr->started();
+             thr->run();
++#ifndef QT_NO_EXCEPTIONS
+         } catch (const std::exception& ex) {
+             qWarning("QThreadPrivate::start: Thread exited on exception %s", ex.what());
+             User::Leave(KErrGeneral);   // leave to force cleanup stack cleanup
+         }
++#endif
+     });
+     if (err)
+         qWarning("QThreadPrivate::start: Thread exited on leave %d", err);
+--- a/src/corelib/thread/qthread_symbian.cpp
++++ b/src/corelib/thread/qthread_symbian.cpp
+@@ -391,11 +391,15 @@
+ 
+     // finish emits signals which should be wrapped in a trap for Symbian code, but otherwise ignore leaves and exceptions.
+     TRAP(err, {
++#ifndef QT_NO_EXCEPTIONS
+         try {
++#endif
+             QThreadPrivate::finish(arg);
++#ifndef QT_NO_EXCEPTIONS
+         } catch (const std::exception& ex) {
+             User::Leave(KErrGeneral);   // leave to force cleanup stack cleanup
+         }
++#endif
+     });
+ 
+     delete cleanup;
+--- a/src/corelib/thread/qthread_symbian.cpp
++++ b/src/corelib/thread/qthread_symbian.cpp
+@@ -87,6 +87,12 @@
+     Dll::FreeTls();
+ }
+ 
++// PHOREPOC: Qt 4.8.7 calls this from ~QThreadData on every platform but defines it only for unix/win
++void QThreadData::clearCurrentThreadData()
++{
++    clear_thread_data();
++}
++
+ 
+ static void init_symbian_thread_handle(RThread &thread)
+ {

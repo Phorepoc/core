@@ -1,0 +1,22 @@
+--- a/src/corelib/global/qglobal.cpp	2026-10-14 20:34:09.026471600 +0100
++++ b/src/corelib/global/qglobal.cpp	2026-10-14 20:34:09.096159100 +0100
+@@ -2365,6 +2365,19 @@
+ */
+ void qt_message_output(QtMsgType msgType, const char *buf)
+ {
++#if defined(Q_OS_SYMBIAN)
++    // PHOREPOC: an app's own message handler (QuasarMX installs one) hides every Qt warning from the kernel log: mirror
++    // them to RDebug first ("[Qt Message] ..." in the PhoneLab log), whatever handler is set
++    if (handler) {
++        char format[] = "[Qt Message] %S";
++        const int maxBlockSize = 256 - sizeof(format);
++        const TPtrC8 ptr(reinterpret_cast<const TUint8*>(buf));
++        for (int i = 0; i < ptr.Length(); i += maxBlockSize) {
++            TPtrC8 part(ptr.Mid(i, qMin(maxBlockSize, ptr.Length()-i)));
++            RDebug::Printf(format, &part);
++        }
++    }
++#endif
+     if (handler) {
+         (*handler)(msgType, buf);
+     } else {

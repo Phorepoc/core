@@ -1,0 +1,49 @@
+--- a/src/gui/inputmethod/qcoefepinputcontext_s60.cpp
++++ b/src/gui/inputmethod/qcoefepinputcontext_s60.cpp
+@@ -1339,6 +1339,7 @@
+     }
+     m_fepState->SetNumericKeymap(static_cast<TAknEditorNumericKeymap>(flags));
+ 
++#if 0	// PHOREPOC: CAknEdwinState::SetExtensionFlags / EAknEditorExtFlagKeyboard* are not in the S^3 (2010) Avkon headers
+     if (hints & ImhUrlCharactersOnly) {
+         // URL characters is everything except space, so a superset of the other restrictions
+         m_fepState->SetExtensionFlags(EAknEditorExtFlagKeyboardUrl);
+@@ -1347,6 +1348,7 @@
+     } else {
+         m_fepState->SetExtensionFlags(0);
+     }
++#endif
+ 
+     bool enableSmileys = needsCharMap && !(hints & (ImhHiddenText | ImhUrlCharactersOnly | ImhEmailCharactersOnly));
+     if (enableSmileys)
+--- a/src/gui/s60framework/qs60keycapture.cpp
++++ b/src/gui/s60framework/qs60keycapture.cpp
+@@ -151,6 +151,20 @@
+  */
+ void QS60KeyCapture::initRemCon()
+ {
++#ifdef QT_NO_EXCEPTIONS	// PHOREPOC: no C++ exceptions on this board; the trap is the whole story
++    TRAPD(err,
++            selector = CRemConInterfaceSelector::NewL();
++            target = CRemConCoreApiTarget::NewL(*selector, *this);
++            handler = CResponseHandler::NewL(*target);
++            selector->OpenTargetL());
++    if (err) {
++        delete handler;
++        delete selector;
++        selector = 0;
++        target = 0;
++        handler = 0;
++    }
++#else
+     try {
+         QT_TRAP_THROWING(
+                 selector = CRemConInterfaceSelector::NewL();
+@@ -164,6 +178,7 @@
+         target = 0;
+         handler = 0;
+     }
++#endif
+ }
+ 
+ QS60KeyCapture::~QS60KeyCapture()
