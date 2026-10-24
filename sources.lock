@@ -11,6 +11,7 @@ symbian-2010	oss.FCL.sf.adapt.NokiaMMAudioReference	835faa284b5c0f4020d0d4f24700
 symbian-2010	oss.FCL.sf.adapt.Qemu	8c87d88e8a9ec306db56bb3ab886e1bf8404c7da
 symbian-2010	oss.FCL.sf.adapt.codecs.aricent	26ce2bf92183c42d9fcad50755d258ec1cbedd39
 symbian-2010	oss.FCL.sf.adapt.stubs	6682e8c27bf4754ddff4b7330da6a7cfd8af03ac
+symbian-2010	oss.FCL.sf.app.JRT	0822c2dcfb807a245ec84ab06006b59df7aedab6
 symbian-2010	oss.FCL.sf.app.commonemail	6a784f9441eb3508444b19fcbeeea6a806df27e6
 symbian-2010	oss.FCL.sf.app.messaging	7ecf4269c53f5b2c6a47f3596e77e2bb75c1700c
 symbian-2010	oss.FCL.sf.app.mmsharinguis	9054f87d8ed408d79a305f09d720e6812e12244c
@@ -22,6 +23,7 @@ symbian-2010	oss.FCL.sf.app.voicerec	dd709276488b851dd5b6cf210c3b34a61d5a0627
 symbian-2010	oss.FCL.sf.incubator.stemkit	90fe5d80cdfd1a425ea453d4e8a3b1f8f99ac9c4
 symbian-2010	oss.FCL.sf.mw.appinstall	760927eba63e3324cceee974b9ed582da90cb9a3
 symbian-2010	oss.FCL.sf.mw.appsupport	3efd2b6c5ad920873846770a70f9769721e494c8
+symbian-2010	oss.FCL.sf.mw.classicui	dcea899751dfa099dcca7a5508cf32eab64afa7a
 symbian-2010	oss.FCL.sf.mw.dlnasrv	276d76e32f25f215dfbcc56a7956a2e11897b11b
 symbian-2010	oss.FCL.sf.mw.drm	43dc91f0edd14204d64ec3b0541a1e76072eece3
 symbian-2010	oss.FCL.sf.mw.gsprofilesrv	bcc69d3ba5b9a33565f3ca68f96dfae7c5dc7d22
@@ -31,6 +33,7 @@ symbian-2010	oss.FCL.sf.mw.homescreensrv	e60a802a17f73f2be295342a9456add8d772bd7
 symbian-2010	oss.FCL.sf.mw.imghandling	f81ed9b07070b7a20bfb83a96d1a2dc2ab9af58e
 symbian-2010	oss.FCL.sf.mw.imsrv	9f988dd051ad35acd940066bcc9f9a35ad1a1c03
 symbian-2010	oss.FCL.sf.mw.inputmethods	51e877bef2e0a93793490fba6e97b04aaa1ee368
+symbian-2010	oss.FCL.sf.mw.ipappprotocols	62e4b48a47014a0ddfcb6d4ff24bf07590bf510e
 symbian-2010	oss.FCL.sf.mw.ipconnmgmt	7c6f294faf11b41753e2402de392b6359acc8a2e
 symbian-2010	oss.FCL.sf.mw.locationsrv	282094c09b81e1848755ad40e31052da0bcac81b
 symbian-2010	oss.FCL.sf.mw.mds	6a336727266557c351987111e793a270f86a6291
@@ -48,6 +51,7 @@ symbian-2010	oss.FCL.sf.mw.svgt	a6e9f61716263f102bd673b7b9161c4519b95dae
 symbian-2010	oss.FCL.sf.mw.uiaccelerator	773fc5e215e04584c3e00a1b1fa05c5a8c50440a
 symbian-2010	oss.FCL.sf.mw.uiresources	b78660bec78835802edd6575b96897d4aba58376
 symbian-2010	oss.FCL.sf.mw.uitools	32b8b16c02195b3da66ffaa80aced45037cfd8b1
+symbian-2010	oss.FCL.sf.mw.usbservices	ea7d525c670f4cca267f70a29b3dfa47da0e9130
 symbian-2010	oss.FCL.sf.mw.videoutils	c70acb1c6791e134eb42daaa43a9bffb4e3b019e
 symbian-2010	oss.FCL.sf.mw.vpnclient	bc2c6ceb961b6fbe166cae36e118fd4a3b408d5d
 symbian-2010	oss.FCL.sf.mw.websrv	b7e97dc13359c868bd49cd7e4697a90dea8dcd38
