@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // phebrowser.cpp -- OURS: the browser frontend (prototype). A custom-drawn CONE UI -- one window, flat bars drawn with
-// CWindowGc, no Qt -- over any engine that implements the PheWebEngineApi table (the phewebengine repository). It has:
+// CWindowGc, no Qt -- over any engine that implements the PheWebEngineApi table (the webengine repository). It has:
 //   * the bar (address row + action row) at the BOTTOM (default) or TOP, switched live and kept in settings.ini;
 //   * tabs (normal and PRIVATE), a tab grid with snapshots, an overflow sheet, a new-tab page;
 //   * light / dark / follow-system themes (pb_theme.h holds every colour);

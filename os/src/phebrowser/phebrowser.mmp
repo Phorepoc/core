@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // phebrowser.mmp -- OURS: the browser frontend (custom-drawn CONE UI) over any engine implementing
-// The seam header comes from the phewebengine repository (a layer: its os/inc is laid over this tree).
+// The seam header comes from the webengine repository (a layer: its os/inc is laid over this tree).
 // phorepoc/phewebengine.h. PHEBROWSER_DUMMY compiles in the placeholder engine (pb_dummy.cpp) for development;
 // real engines (WebKit, NetSurf) are separate packages found at runtime.
 #include <platform_paths.hrh>
