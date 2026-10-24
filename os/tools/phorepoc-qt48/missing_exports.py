@@ -1,3 +1,6 @@
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: Apache-2.0
+
 """missing_exports.py <key> -- which frozen-.def exports of a qt48_* component its objects do not define (ARM build,
 emitter/build_mmp.py output in .mmp-build/<key>). Run from the repo root: py tools/phorepoc-qt48/missing_exports.py qt48_core"""
 import glob, os, subprocess, sys
