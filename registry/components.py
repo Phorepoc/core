@@ -297,6 +297,10 @@ COMPONENTS = {
     # the NGA standard render stage: displayrenderstage -> libWFC (+ the fb/debugbar stages); replaces 2001b70b
     "wsstdplugin_nga": dict(mmp=f"{G}/windowing/windowserverplugins/openwfc/group/stdplugin.mmp", nga=True,
                             rom="10286378.dll",
+                            # elementwrapper.cpp SurfaceInfo() swaps the screen surface's width/height for a flipped (90/270) surface ONLY under this
+                            # macro, which no 2010 mmp defines: without it a landscape game's SetBackgroundSurface(screen surface, viewport 640x360) is
+                            # rejected (SetSourceRectangle KErrArgument -> client panic WSERV 76)
+                            defs=["SYMBIAN_ROTATION_MODE_CHANGES"],
                             drop=["openwfcwrapper.cpp"], extra=["toolchain/shims/wsstdplugin_board/openwfcwrapper.cpp"]),
     # "keyrouter.dll" (wsini KEYROUTERPLUGIN overrides) and LEAVES without it -- the NGA boot's EWsPanicFailedToInitialise
     "keyrouter": dict(mmp=f"{G}/windowing/windowserverplugins/keyeventrouting/group/keyeventrouting.mmp", nga=True,

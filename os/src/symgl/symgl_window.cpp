@@ -215,6 +215,7 @@ namespace
 		for (TInt b = 0; b < KNbuf; ++b)
 			if ((r = aSt.iSm.GetBufferOffset(aSt.iSurfaceId, b, aSt.iOffset[b])) != KErrNone)
 				return r;
+		RDebug::Printf("PH: symgl OpenSurface aSize=%dx%d stride=%d win=%dx%d", aSize.iWidth, aSize.iHeight, a.iStride, aSt.iWindow->Size().iWidth, aSt.iWindow->Size().iHeight);
 		RWindow& win = *aSt.iWindow;
 		if ((r = win.Session()->RegisterSurface(win.ScreenNumber(), aSt.iSurfaceId)) != KErrNone)
 			return r;
