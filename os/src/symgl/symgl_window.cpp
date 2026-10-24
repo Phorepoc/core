@@ -22,6 +22,7 @@
 #include <w32std.h>
 #include <fbs.h>
 #include <graphics/surface.h>
+#include <graphics/surfacemanager.h>
 #include <graphics/surfaceupdateclient.h>
 #include <graphics/surfaceconfiguration.h>
 #include <pixelformats.h>
