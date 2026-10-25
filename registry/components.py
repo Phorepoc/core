@@ -812,7 +812,7 @@ COMPONENTS = {
     # ncnlist (the Network Communication Notifier: SMS first-boot -- it fetches the service centres from the SIM via smum's
     "ncnlist": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/ncnlist/group/Ncnlist.mmp"),
     "predefinedcontacts": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.contacts/contactextensions/predefinedcontacts/group/predefinedcontacts.mmp"),
-    "profilesettingsmonitor": dict(mmp="oss.FCL.sf.mw.mmmw/mmfenh/profilesettingsmonitor/group/ProfileSettingsMonitor.mmp"),
+    # (no profilesettingsmonitor: it needs MProfileEngineExtended2.h, which no release shipped; no released client talks to it)
     "rsfwbootmounter": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/mountmanager/group/rsfwbootmounter.mmp"),
     # NOT built: satserver (a shell over satengine.dll = the SIM toolkit, needs the modem stack), dmutilserver (the SyncML
     # DM stack), epos_omasupllistener (the SUPL stack), iaupdatebg (the IAD client), lbtserver (location triggering),
