@@ -207,7 +207,7 @@ COMPONENTS = {
     "shwslideshowviewplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/slideshow/view/group/shwslideshowviewplugin.mmp"),
     "osncore": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/osncore/osncore/group/osncore.mmp"),   # <- glxmedialists
     # (incs_first: glib's own glib/*.h ahead of the exported ossrv_pub copies, which are older -- no G_GNUC_ALLOC_SIZE)
-    "libglib": dict(mmp="oss.FCL.sf.os.ossrv/glib/build/symbian/glib/group/libglib.mmp",   # <- osncore
+    "libglib": dict(mmp="oss.FCL.sf.os.ossrv/glib/build/symbian/glib/group/libglib.mmp", cdriver=True,   # <- osncore
                     incs_first=[os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.os.ossrv/glib")], arm_incs_first=True,
                     x32_flags=["-masm=att"]),   # (gatomic.c: AT&T inline assembler. x86 still fails to link: guniprop.c folds a table index into a negative absolute address)
     "glibbackend": dict(mmp="oss.FCL.sf.os.ossrv/glib/build/symbian/glibbackend/group/glibbackend.mmp"),   # <- libglib
