@@ -436,7 +436,7 @@ COMPONENTS = {
                       # emitted an out-of-line copy, ELF GCC only where not inlined -> unresolved in other TUs)
                       x32_flags=STLPORT_X32_FLAGS + ["-fkeep-inline-functions"], arm_flags=["-fexceptions", "-include", os.path.join(OS_ROOT, "toolchain/shims/stdcpp_board/gcce_nothrow.h")] + STLPORT_X32_FLAGS,
                       supcxx_drop=["eh_exception.o"],   # (dll_main.cpp defines std::exception / bad_exception itself)
-                      own_new=True,
+                      own_new=True, own_newdel=True,   # (libstd_cpp_init.cpp: its own operator new/delete, x86 / ARM)
                       extra=["toolchain/shims/stdcpp_board/stdcpp_x32.cpp"]),
     # Standard C++ (genericopenlibs/cppstdlib): stdnew.dll = the STDCPP target type's operator new/delete + std::exception,
     "stdnew": dict(mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cppstdlib/group/stdnew.mmp", cdriver=True, rtti=True,
