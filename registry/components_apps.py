@@ -208,7 +208,8 @@ COMPONENTS = {
     "osncore": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/osncore/osncore/group/osncore.mmp"),   # <- glxmedialists
     # (incs_first: glib's own glib/*.h ahead of the exported ossrv_pub copies, which are older -- no G_GNUC_ALLOC_SIZE)
     "libglib": dict(mmp="oss.FCL.sf.os.ossrv/glib/build/symbian/glib/group/libglib.mmp",   # <- osncore
-                    incs_first=[os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.os.ossrv/glib")], arm_incs_first=True),
+                    incs_first=[os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.os.ossrv/glib")], arm_incs_first=True,
+                    x32_flags=["-masm=att"]),   # (gatomic.c: AT&T-syntax inline assembler)
     "glibbackend": dict(mmp="oss.FCL.sf.os.ossrv/glib/build/symbian/glibbackend/group/glibbackend.mmp"),   # <- libglib
     "exiflib": dict(mmp="oss.FCL.sf.os.imagingext/imagingmodules/exiflib/group/ExifLib.mmp"),   # <- glxtexturemanager
     "alfwidgetmodel": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/widgetmodel/alfwidgetmodel/group/alfwidgetmodel.mmp"),   # <- glxuiutilities
