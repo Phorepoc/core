@@ -172,7 +172,8 @@ COMPONENTS = {
     "glxcommoncommandhandlers": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/viewframework/commandhandlers/commoncommandhandlers/group/glxcommoncommandhandlers.mmp",
                                      flags=["-idirafter", os.path.join(OS_ROOT, "toolchain/shims/unreleased_inc")]),   # SvgCodecImageConstants.hrh (OURS, empty)
     "glxcommonui": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/commonui/group/glxcommonui.mmp"),
-    "glxdataprovider": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/viewframework/dataprovider/group/dataprovider.mmp"),
+    "glxdataprovider": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/viewframework/dataprovider/group/dataprovider.mmp",
+                            drop=["glxbinding.cpp"], extra=["toolchain/shims/glx_gcc/glxbinding.cpp"]),   # delta: auto_ptr<derived> -> auto_ptr<MulVariantType>
     "glxdatasourcemanager": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/datasource/manager/group/glxdatasourcemanager.mmp"),
     "glxdatasourcemde": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/datasource/plugins/glxdatasourcemde2.5/group/glxdatasourcemde.mmp"),   # the MdS 2.5 variant: plugins/group/bld.inf builds glxdatasourcemde/ only under RD_MDS_2_0
     "glxdrmutility": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/viewframework/drmutility/group/glxdrmutility.mmp"),
