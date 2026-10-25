@@ -114,8 +114,6 @@ API_REF_LAST = ["-idirafter", os.path.join(SYMBIAN, "symbian-2010/oss.API_REF.Pu
 UNRELEASED_INC = ["-idirafter", os.path.join(OS_ROOT, "toolchain/shims/unreleased_inc")]
 # feature ids the RCL_3 input-method code uses that no 2010 header defines (a later S^3 feature list):
 # OUR ids, outside every range features.dat knows, so FeatureManager::FeatureSupported() is false --
-# the x86 compiler is the host's Linux GCC: its __linux__ sends the 2010 STLport (cppstdlib) to its glibc config
-_NOT_LINUX = ["-U__linux__", "-U__linux", "-Ulinux", "-U__gnu_linux__"]
 WEBKIT_NOT_UNIX = ["-U__unix__", "-U__unix", "-Uunix", "-U__linux__", "-U__linux", "-Ulinux", "-U__gnu_linux__"]
 UNRELEASED_FEATURES = ["KFeatureIdFfVirtualFullscrPortraitQwertyInput=0x7FFF0001",
                        "KFeatureIdFfCameraLongKeyPress=0x7FFF0002"]
@@ -439,11 +437,11 @@ COMPONENTS = {
                       own_new=True, own_newdel=True,   # (libstd_cpp_init.cpp: its own operator new/delete, x86 / ARM)
                       extra=["toolchain/shims/stdcpp_board/stdcpp_x32.cpp"]),
     # Standard C++ (genericopenlibs/cppstdlib): stdnew.dll = the STDCPP target type's operator new/delete + std::exception,
-    "stdnew": dict(mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cppstdlib/group/stdnew.mmp", cdriver=True, rtti=True,
-                   defs=["__SOFTFP="], own_new=True, x32_flags=_NOT_LINUX),   # (typeinfo std::bad_alloc, ordinal 19: not defined by its sources -- stub)
+    "stdnew": dict(arm_only=True, mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cppstdlib/group/stdnew.mmp", cdriver=True, rtti=True,
+                   defs=["__SOFTFP="], own_new=True),   # (typeinfo std::bad_alloc, ordinal 19: not defined by its sources -- stub)
     # libstdcppv5.dll (UID3 0x20017610): the Standard C++ library (STLport 5) SDK apps built with the STDCPP plug-in import
-    "libstdcppv5": dict(mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cppstdlib/group/libstdcpp.mmp", cdriver=True, allow_wsd=True,
-                        static_ctors=True, rtti=True, defs=["__SOFTFP="], own_new=True, x32_flags=_NOT_LINUX),
+    "libstdcppv5": dict(arm_only=True, mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cppstdlib/group/libstdcpp.mmp", cdriver=True, allow_wsd=True,
+                        static_ctors=True, rtti=True, defs=["__SOFTFP="], own_new=True),
     "sqlite3": dict(mmp="oss.FCL.sf.os.persistentdata/persistentstorage/sqlite3api/GROUP/sqlite3.mmp", cdriver=True, allow_wsd=True,
                     defs=["__SOFTFP="]),
     "libc": dict(mmp=_OENV + "libc/group/libc.mmp", cdriver=True, allow_wsd=True, static_ctors=True, defs=["__SOFTFP="],
@@ -2092,13 +2090,13 @@ COMPONENTS = {
                         **{"def": "oss.FCL.sf.os.cellularsrv/telephonyserverplugins/licenseetsystub/licensee_tsy_stub/eabi/licenseetsyu.def"}),
     # kernelhwsrv/kernel/eka/compsupp mmps, built with GCC. The BUILTIN entries of the same names stay the link-time
     # providers (their .def = the frozen ordinals these DLLs export)
-    "scppnwdl": dict(mmp=KHS + "symcpp/scppnwdl.mmp",
+    "scppnwdl": dict(arm_only=True, mmp=KHS + "symcpp/scppnwdl.mmp",
                  own_newdel=True,
                  # the compilers' own pre-include (GCCE/RVCT preinclude symcpp.h: std::nothrow_t + the nothrow overloads)
                  flags=["-include", os.path.join(SYMBIAN, "symbian-2010", KHS, "symcpp/symcpp.h")], **{"def": KHS + "eabi/scppnwdlu.def"}),
     # drtaeabi: ARM's EHABI reference sources + the Symbian glue of the release, built with GCC (src/phorepoc/compsupp/
     # are libsupc++'s / libgcc's. eh_dll: the DLL itself uses C++ exceptions (try/catch in __cxa_end_catch)
-    "drtaeabi": dict(mmp=os.path.join(OS_ROOT, "src/phorepoc/compsupp/drtaeabi.mmp"), eh_dll=True, rtti=True, own_newdel=True,
+    "drtaeabi": dict(arm_only=True, mmp=os.path.join(OS_ROOT, "src/phorepoc/compsupp/drtaeabi.mmp"), eh_dll=True, rtti=True, own_newdel=True,
                      own_rtti_rt=True, own_crt=True, gcc_exports=True, allow_wsd=True,
                      supcxx_drop=["new_*.o", "del_*.o"],
                      flags=["-include", os.path.join(OS_ROOT, "src/phorepoc/compsupp/symaehabi/compsupp_pre.h")],
