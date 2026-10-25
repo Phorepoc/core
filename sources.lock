@@ -18,9 +18,12 @@ symbian-2010	oss.FCL.sf.app.mmsharinguis	9054f87d8ed408d79a305f09d720e6812e12244
 symbian-2010	oss.FCL.sf.app.organizer	e15734d1943a012120b188fe3ffd5dd7594d145f
 symbian-2010	oss.FCL.sf.app.phone	e52263e6b707872345d56263f68809e2f16a92f1
 symbian-2010	oss.FCL.sf.app.photos	e61097591eddfef0d1a526163e0ec1aa319cd462
+symbian-2010	oss.FCL.sf.app.radio	ebab77d7c81b621c9404bfaa5ba50e95c11c5076
+symbian-2010	oss.FCL.sf.app.recents	28243f08d74c8238ec7ff13d5db85136f7627e26
 symbian-2010	oss.FCL.sf.app.videoplayer	9a98fb6eaa86d772baf3bf93db2ea3daf59b5e0c
 symbian-2010	oss.FCL.sf.app.voicerec	dd709276488b851dd5b6cf210c3b34a61d5a0627
 symbian-2010	oss.FCL.sf.incubator.stemkit	90fe5d80cdfd1a425ea453d4e8a3b1f8f99ac9c4
+symbian-2010	oss.FCL.sf.mw.accesssec	a962f00c1a1b241d455b805932dfac42c72ac216
 symbian-2010	oss.FCL.sf.mw.appinstall	760927eba63e3324cceee974b9ed582da90cb9a3
 symbian-2010	oss.FCL.sf.mw.appsupport	3efd2b6c5ad920873846770a70f9769721e494c8
 symbian-2010	oss.FCL.sf.mw.btservices	f6a4b12b2d9caba29c7e27e38cfaa1e478fd115b
@@ -119,6 +122,7 @@ symbian-rcl3	oss.FCL.sf.mw.phonesrv	44089abe398e782d843559f79784c9b6b2c3f271
 symbian-rcl3	oss.FCL.sf.mw.remotemgmt	68234299a830636584eff6bf9d65159c1c1a5ee5
 symbian-rcl3	oss.FCL.sf.mw.remotestorage	1940cc962fce145b90529180564086e6870caa32
 symbian-rcl3	oss.FCL.sf.mw.securitysrv	88db46027ed672dcb3eed7f8a2e7ede684875eff
+symbian-rcl3	oss.FCL.sf.mw.serviceapi	c9f9eee5f5d448c7da3c6c9ad919425c26e728e8
 symbian-rcl3	oss.FCL.sf.mw.serviceapifw	ed6dbc4997bda9b9eecdd22ea27d4965c0b2c4e9
 symbian-rcl3	oss.FCL.sf.mw.uiresources	6a958a5df3c6a1f6fb55495dcb9d0d0858a536a8
 symbian-rcl3	oss.FCL.sf.mw.web	1be4845a2cd46be7cd7b7308dfbb50b6a9a2ef9c
