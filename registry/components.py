@@ -957,7 +957,7 @@ COMPONENTS = {
     # the process's own capabilities on the log (proves the header capabilities of an installed package): SIS test, not in the ROM
     "phecaps": dict(mmp=os.path.join(OS_ROOT, "src/phecaps/phecaps.mmp"), test=True),
     # OURS: the browser frontend (custom-drawn CONE UI; engines plug in through os/inc/phorepoc/phewebengine.h)
-    "phebrowser": dict(mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp"),
+    "phebrowser": dict(needs="webengine", mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp"),
                        rom_data=["resource\\apps\\phebrowser_icon.mbm=" + os.path.join(OS_ROOT, "src/phebrowser/data/phebrowser_icon.mbm")]),
     "tonetest": dict(mmp=os.path.join(OS_ROOT, "src/tonetest/tonetest.mmp"), test=True),
     # --- vector graphics: what the default skin's backgrounds + every real icon need (next: vgrenderer,
