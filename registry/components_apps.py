@@ -258,6 +258,9 @@ for _k, _c in COMPONENTS.items():
 for _k, _c in COMPONENTS.items():
     if ("oss.FCL.sf.app.photos/" in _c.get("mmp", "") or "oss.FCL.sf.mw.mmuifw/" in _c.get("mmp", "")):
         _c["arm_only"] = True
+        # (stdapis' time.h/wchar.h define __SOFTFP themselves only for WINSCW; with the STLport pre-include they come
+        # before e32def.h, which defines it for ARM -- as libstdcpp)
+        _c["arm_flags"] = list(_c.get("arm_flags", [])) + ["-D__SOFTFP="]
 # ... and these throw and catch C++ exceptions themselves (RVCT built them with exceptions on): build_mmp.py `cxx_eh`
 for _k in ("osncore", "alfresourcepool", "alfwidgetmodel", "alfwidgetutils", "mulmodelutility", "glxdataprovider",
            "glxfullscreenview"):
