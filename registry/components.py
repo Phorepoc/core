@@ -1791,7 +1791,8 @@ COMPONENTS = {
     "webcorerendering": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/rendering/rendering.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
     "webcorexml": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/xml/xml.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
     "webcorebridge": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/bridge/bridge.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcoreplatform": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/platform/platform.mmp", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h"), "-iquote", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebCore/platform/symbian"), "-iquote", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebCore/platform/network/symbian")],
+    "webcoreplatform": dict(defs=["__declspec(x)="], arm_flags=UNRELEASED_INC,   # WebKitIcons_gcce.mbg (OURS)
+                            mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/platform/platform.mmp", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h"), "-iquote", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebCore/platform/symbian"), "-iquote", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebCore/platform/network/symbian")],
                             # deltas (toolchain/shims/webcore_gcc): a member-fn pointer without &Class::, a backslash include,
                             # HttpConnUtils: the sliced ?: (toolchain/shims/aifw_board)
                             drop=["FormFillController.cpp", "StaticObjectsContainer.cpp", "HttpConnUtils.cpp"],
