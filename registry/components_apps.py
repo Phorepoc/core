@@ -206,12 +206,9 @@ COMPONENTS = {
     "shwsettingsplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/slideshow/settingsdialog/group/shwsettingsdialog.mmp"),
     "shwslideshowengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/slideshow/engine/group/shwslideshowengine.mmp"),
     "shwslideshowviewplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/slideshow/view/group/shwslideshowviewplugin.mmp"),
-    "osncore": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/osncore/osncore/group/osncore.mmp"),   # <- glxmedialists
-    # (incs_first: glib's own glib/*.h ahead of the exported ossrv_pub copies, which are older -- no G_GNUC_ALLOC_SIZE)
-    "libglib": dict(mmp="oss.FCL.sf.os.ossrv/glib/build/symbian/glib/group/libglib.mmp", cdriver=True,   # <- osncore
-                    incs_first=[os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.os.ossrv/glib")], arm_incs_first=True,
-                    x32_flags=["-masm=att"]),   # (gatomic.c: AT&T inline assembler. x86 still fails to link: guniprop.c folds a table index into a negative absolute address)
-    "glibbackend": dict(mmp="oss.FCL.sf.os.ossrv/glib/build/symbian/glibbackend/group/glibbackend.mmp"),   # <- libglib
+    "osncore": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/osncore/osncore/group/osncore.mmp",   # <- glxmedialists
+                    extra=["toolchain/shims/osn_glib/osn_glib.cpp"]),   # its 11 GLib calls (OURS): no libglib (LGPL) in the image
+    # (no libglib / glibbackend: LGPL, and osncore was their only user -- toolchain/shims/osn_glib)
     "exiflib": dict(mmp="oss.FCL.sf.os.imagingext/imagingmodules/exiflib/group/ExifLib.mmp"),   # <- glxtexturemanager
     "alfwidgetmodel": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/widgetmodel/alfwidgetmodel/group/alfwidgetmodel.mmp"),   # <- glxuiutilities
     "alfwidgetutils": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/alfwidgetutils/group/alfwidgetutils.mmp"),   # <- alfwidgetmodel
@@ -256,13 +253,15 @@ for _k, _c in COMPONENTS.items():
         _c["flags"] = list(_c.get("flags", [])) + _PH_INC
         _c["rsc_incs"] = list(_c.get("rsc_incs", [])) + ["baseline/symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/gallery/loc"]
 
-# Photos is an Alf app: ARM only (x86 has the null Alf client), with its Alf widget stack (mmuifw) and glib (osncore's).
+# Photos is an Alf app: ARM only (x86 has the null Alf client), with its Alf widget stack (mmuifw).
 # Nothing outside Photos imports these (checked against the 701's sys\bin).
 for _k, _c in COMPONENTS.items():
-    if ("oss.FCL.sf.app.photos/" in _c.get("mmp", "") or "oss.FCL.sf.mw.mmuifw/" in _c.get("mmp", "")
-            or _k in ("libglib", "glibbackend")):
+    if ("oss.FCL.sf.app.photos/" in _c.get("mmp", "") or "oss.FCL.sf.mw.mmuifw/" in _c.get("mmp", "")):
         _c["arm_only"] = True
 # ... and these throw and catch C++ exceptions themselves (RVCT built them with exceptions on): build_mmp.py `cxx_eh`
 for _k in ("osncore", "alfresourcepool", "alfwidgetmodel", "alfwidgetutils", "mulmodelutility", "glxdataprovider",
            "glxfullscreenview"):
     COMPONENTS[_k]["cxx_eh"] = True
+    # (with exceptions on, e32cmn.h's placement new must say throw () as <new> does: GCCE's __NO_THROW, as libstdcpp)
+    COMPONENTS[_k]["arm_flags"] = list(COMPONENTS[_k].get("arm_flags", [])) + [
+        "-include", os.path.join(OS_ROOT, "toolchain/shims/stdcpp_board/gcce_nothrow.h")]
