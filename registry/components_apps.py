@@ -205,17 +205,17 @@ COMPONENTS = {
     "shwsettingsplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/slideshow/settingsdialog/group/shwsettingsdialog.mmp"),
     "shwslideshowengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/slideshow/engine/group/shwslideshowengine.mmp"),
     "shwslideshowviewplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/slideshow/view/group/shwslideshowviewplugin.mmp"),
-    "osncore": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/osncore/osncore/group/osncore.mmp"),   # <- glxmedialists
+    "osncore": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/osncore/osncore/group/osncore.mmp"),   # <- glxmedialists
     # (incs_first: glib's own glib/*.h ahead of the exported ossrv_pub copies, which are older -- no G_GNUC_ALLOC_SIZE)
     "libglib": dict(mmp="oss.FCL.sf.os.ossrv/glib/build/symbian/glib/group/libglib.mmp", cdriver=True,   # <- osncore
                     incs_first=[os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.os.ossrv/glib")], arm_incs_first=True,
                     x32_flags=["-masm=att"]),   # (gatomic.c: AT&T inline assembler. x86 still fails to link: guniprop.c folds a table index into a negative absolute address)
     "glibbackend": dict(mmp="oss.FCL.sf.os.ossrv/glib/build/symbian/glibbackend/group/glibbackend.mmp"),   # <- libglib
     "exiflib": dict(mmp="oss.FCL.sf.os.imagingext/imagingmodules/exiflib/group/ExifLib.mmp"),   # <- glxtexturemanager
-    "alfwidgetmodel": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/widgetmodel/alfwidgetmodel/group/alfwidgetmodel.mmp"),   # <- glxuiutilities
-    "alfwidgetutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/alfwidgetutils/group/alfwidgetutils.mmp"),   # <- alfwidgetmodel
-    "alfresourcepool": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/resourcepool/group/alfresourcepool.mmp"),   # <- alfwidgetmodel
-    "mulmodelutility": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/muldatamodel/group/mulmodelutility.mmp"),   # <- glxuiutilities
+    "alfwidgetmodel": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/widgetmodel/alfwidgetmodel/group/alfwidgetmodel.mmp"),   # <- glxuiutilities
+    "alfwidgetutils": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/alfwidgetutils/group/alfwidgetutils.mmp"),   # <- alfwidgetmodel
+    "alfresourcepool": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/resourcepool/group/alfresourcepool.mmp"),   # <- alfwidgetmodel
+    "mulmodelutility": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/muldatamodel/group/mulmodelutility.mmp"),   # <- glxuiutilities
     "mullogging": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/mullogging/group/mullogging.mmp"),   # <- mulmodelutility
     "mediaclientvideodisplay": dict(mmp="oss.FCL.sf.os.mmaudio/mmlibs/mmfw/MMPFiles/client/mediaclientvideodisplay.mmp"),   # <- mpxvideoplaybackviews
 }

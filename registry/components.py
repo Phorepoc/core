@@ -1782,16 +1782,16 @@ COMPONENTS = {
     "webcorederivedsources": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/DerivedSources/DerivedSources.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
     "webcorebindings": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/bindings/bindings.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
     "webcorecss": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/webcorecss/webcorecss.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcoredom": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/dom/dom.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcoredom": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/dom/dom.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
     "webcoreediting": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/editing/editing.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
     "webcorehistory": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/history/history.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcorehtml": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/html/html.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcoreloader": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/loader/loader.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcorehtml": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/html/html.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcoreloader": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/loader/loader.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
     "webcorepage": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/page/page.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
     "webcorerendering": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/rendering/rendering.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
     "webcorexml": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/xml/xml.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
     "webcorebridge": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/bridge/bridge.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcoreplatform": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/platform/platform.mmp", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h"), "-iquote", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebCore/platform/symbian"), "-iquote", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebCore/platform/network/symbian")],
+    "webcoreplatform": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/platform/platform.mmp", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h"), "-iquote", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebCore/platform/symbian"), "-iquote", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebCore/platform/network/symbian")],
                             # deltas (toolchain/shims/webcore_gcc): a member-fn pointer without &Class::, a backslash include,
                             # HttpConnUtils: the sliced ?: (toolchain/shims/aifw_board)
                             drop=["FormFillController.cpp", "StaticObjectsContainer.cpp", "HttpConnUtils.cpp"],
