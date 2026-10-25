@@ -61,5 +61,5 @@ static void PhIniFilter(TDes& aLine)
 #ifdef PH_WS_NGA
 #include <symbian-2010/oss.FCL.sf.os.graphics/windowing/windowserver/nga/SERVER/INIFILE.CPP>
 #else
-#include <symbian-2010/oss.FCL.sf.os.graphics/windowing/windowserver/nonnga/SERVER/inifile.cpp>
+#include <symbian-2010/oss.FCL.sf.os.graphics/windowing/windowserver/nonnga/SERVER/INIFILE.CPP>
 #endif
