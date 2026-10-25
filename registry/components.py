@@ -434,7 +434,7 @@ COMPONENTS = {
                       static_ctors=True, rtti=True, defs=["__SOFTFP="], incs_first=STLPORT_X32,
                       # (-fkeep-inline-functions: its WSD accessors are `inline` AND exported -- RVCT/GCCE's dllexport
                       # emitted an out-of-line copy, ELF GCC only where not inlined -> unresolved in other TUs)
-                      x32_flags=STLPORT_X32_FLAGS + ["-fkeep-inline-functions"], arm_flags=STLPORT_X32_FLAGS, own_new=True,
+                      x32_flags=STLPORT_X32_FLAGS + ["-fkeep-inline-functions"], arm_flags=STLPORT_X32_FLAGS + ["-fexceptions"], own_new=True,
                       extra=["toolchain/shims/stdcpp_board/stdcpp_x32.cpp"]),
     # Standard C++ (genericopenlibs/cppstdlib): stdnew.dll = the STDCPP target type's operator new/delete + std::exception,
     "stdnew": dict(mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cppstdlib/group/stdnew.mmp", cdriver=True, rtti=True,
