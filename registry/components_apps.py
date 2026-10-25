@@ -160,7 +160,7 @@ COMPONENTS = {
     "glxcollectionmanager": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/controllers/collectionmanager/group/glxcollectionmanager.mmp"),
     "glxcollectionpluginalbums": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/plugins/glxcollectionpluginalbums/group/glxcollectionpluginalbums.mmp"),
     "glxcollectionpluginall": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/plugins/glxcollectionpluginall/group/glxcollectionpluginall.mmp"),
-    "glxcollectionplugindownloads": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/plugins/glxcollectionplugindownloads/group/glxcollectionplugindownloads.mmp"),
+    # (no glxcollectionplugindownloads: RCL_3 dropped it -- no bld.inf or iby builds it, its .hrh is gone)
     "glxcollectionpluginimageviewer": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/plugins/glxcollectionpluginimageviewer/group/glxcollectionpluginimageviewer.mmp"),
     "glxcollectionpluginmonths": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/plugins/glxcollectionpluginmonths/group/glxcollectionpluginmonths.mmp"),
     "glxcollectionplugintags": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/plugins/tagcollectionplugin/group/glxcollectionplugintags.mmp"),
