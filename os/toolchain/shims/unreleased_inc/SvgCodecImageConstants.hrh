@@ -1,0 +1,9 @@
+/* Copyright The Phorepoc Authors
+ * SPDX-License-Identifier: Apache-2.0 */
+
+// SvgCodecImageConstants.hrh -- OURS (not Symbian source): the SVG image codec's constants header, which no release
+// shipped. Its only user here, the gallery's upload command handler, includes it but uses none of its names (it
+// renders the upload icon through the SVG engine directly), so it is empty.
+#ifndef SVGCODECIMAGECONSTANTS_HRH
+#define SVGCODECIMAGECONSTANTS_HRH
+#endif
