@@ -431,7 +431,7 @@ COMPONENTS = {
     # Open C++ (STLport; ossrv/stdcpp): the STL for release code that uses it -- first user the Symbian^4 system tone
     # server (std::map). Over P.I.P.S. as its mmp says
     "libstdcpp": dict(mmp="oss.FCL.sf.os.ossrv/stdcpp/group/libstdcpp.mmp", cdriver=True, allow_wsd=True,
-                      static_ctors=True, rtti=True, defs=["__SOFTFP="], incs_first=STLPORT_X32,
+                      static_ctors=True, rtti=True, defs=["__SOFTFP="], incs_first=STLPORT_X32, arm_incs_first=True,
                       # (-fkeep-inline-functions: its WSD accessors are `inline` AND exported -- RVCT/GCCE's dllexport
                       # emitted an out-of-line copy, ELF GCC only where not inlined -> unresolved in other TUs)
                       x32_flags=STLPORT_X32_FLAGS + ["-fkeep-inline-functions"], arm_flags=STLPORT_X32_FLAGS + ["-fexceptions"], own_new=True,
