@@ -1,72 +1,66 @@
 # core
 
-The Phorepoc OS and the data that describes it: our changes to Symbian and our own components (`os/`), the component
-registry that says how each Symbian component is built from its real `.mmp`, and the pinned Symbian source. The tools
-that turn these into images for x86-64 (x32) and ARM live in the [pdk](https://github.com/Phorepoc/pdk); build with its
-`ph`.
+This is the Phorepoc operating system. It holds everything that's the same on every device: our changes to the
+Symbian source, the components we've written ourselves, and the list of every Symbian component together with how to
+build it. The Symbian source itself isn't stored here. `fetch.sh` downloads it at the exact commits listed in
+`sources.lock`.
 
-What every board shares is here. Hardware lives in the adaptation repos, which are built together with core:
+The tools that turn all this into a bootable image are in the [pdk](https://github.com/Phorepoc/pdk), and you drive them
+with its `ph` command.
 
-| adaptation | what |
-|---|---|
-| [adaptation-x86-64](https://github.com/Phorepoc/adaptation-x86-64) | the x86-64 kernel port (x32 ABI) |
-| [adaptation-pc](https://github.com/Phorepoc/adaptation-pc) | PCs: QEMU, VirtualBox, real hardware |
-| [adaptation-a64](https://github.com/Phorepoc/adaptation-a64) | the Allwinner A64 SoC drivers |
-| [adaptation-pinephone](https://github.com/Phorepoc/adaptation-pinephone) | the PINE64 PinePhone |
+## Devices
 
-Separate repositories, built in the same way when wanted: [mesa-symbian](https://github.com/Phorepoc/mesa-symbian)
-(OpenGL ES through Mesa, MIT) and [codecpack](https://github.com/Phorepoc/codecpack) (FFmpeg and OpenH264, LGPL/BSD;
-installed separately, never part of an image), and [tls](https://github.com/Phorepoc/tls)
-(SSL.DLL and libssl.dll over mbedTLS, Apache-2.0; without it the 2010 TLS builds).
+Anything specific to a piece of hardware lives in an adaptation repository, which gets built together with core:
 
-## Layout
+- [adaptation-x86-64](https://github.com/Phorepoc/adaptation-x86-64) is the kernel port to 64-bit PCs.
+- [adaptation-pc](https://github.com/Phorepoc/adaptation-pc) covers QEMU, VirtualBox and real PCs.
+- [adaptation-a64](https://github.com/Phorepoc/adaptation-a64) has the drivers for the Allwinner A64 chip.
+- [adaptation-pinephone](https://github.com/Phorepoc/adaptation-pinephone) is the PinePhone itself.
 
-```
-os/
-  toolchain/shims/       our replacement copies of Symbian source files, one directory per change
-  toolchain/{overlay,kinc,generated,dll_rt,euser_dll}   headers and runtime pieces every image builds with
-  src/                   our own components (pheshell, phetty, phgl, phvg ...) and their tests
-  shim/                  stand-in headers for interfaces the 2010 release did not ship
-  tools/                 OS data the ROM recipe reads (central repository files), third-party build recipes
-registry/
-  components.py          the registry: one entry per component, built from its real .mmp
-  components_*.py        more entries: apps, development menu, phetty, Qt 4.8, Symbian^4
-  rom_heap.tsv           heap and stack sizes of the ROM executables
-  mif_dirs.txt           the directories whose icons go into .mif files
-sources.lock, fetch.sh   the Symbian source: pinned commits of the Phorepoc forks, fetched into symbian/
-```
-
-## Paths
-
-The pdk finds this repository through `PHOREPOC_CORE` (default: the `core` folder next to the pdk checkout).
-
-| variable | meaning | default |
-|---|---|---|
-| `PHOREPOC_CORE` | this repository | `../core` from the pdk |
-| `PHOREPOC_ADAPTATIONS` | the adaptation checkouts to build with core (a path list): their `os/` is laid over this one's, their `registry/` adds their components | none |
-| `PHOREPOC_SYMBIAN` | Symbian source: `symbian-2010/<package>`, `symbian-rcl3/<package>` | `symbian/` (filled by `fetch.sh`) |
-| `PHOREPOC_BUILD` | every generated file: `epoc32/`, `casefix/`, `x32img/`, `arm/`, `rsc/` ... | `build/` |
-| `PHOREPOC_OS_ROOT` | this repository's OS tree | `os/` |
+A few larger pieces have repositories of their own. [tls](https://github.com/Phorepoc/tls) replaces Symbian's TLS with
+mbedTLS, and [mesa-symbian](https://github.com/Phorepoc/mesa-symbian) provides OpenGL ES. Video codecs come from
+[codecpack](https://github.com/Phorepoc/codecpack), which is never built into an image. You install it from Get Apps.
 
 ## Building
 
-With the pdk's `ph` (its [command reference](https://github.com/Phorepoc/pdk/tree/main/docs/ph)), for the PC image:
+You'll need Docker and a checkout of the pdk next to this one. To build the PC image:
 
 ```sh
-ph source fetch                        # Symbian source -> core/symbian/
-ph source export -a                    # the include tree (and the case links)
-ph source mbg -a                       # icon id headers
-ph component resources -A -b pc        # resources (.rsc + .rsg headers)
-ph component build -A -b pc            # every component -> core/build/x32img/
-ph image rom -b pc                     # the ROM
+ph source fetch                        # download the Symbian source into core/symbian/
+ph source export -a                    # put together the include tree
+ph source mbg -a                       # generate the icon headers
+ph component resources -A -b pc        # compile the resource files
+ph component build -A -b pc            # build every component
+ph image rom -b pc                     # and put them into a ROM
 ```
 
-`-b pc` builds core with the PC's adaptation repositories (`ph board list`). Every command runs in the toolchain
-container (or directly when already inside one). Build output is deterministic: the same inputs give the same bytes,
-which `ph image compare` checks against another build.
+`-b pc` tells `ph` which device to build for, and `ph board list` shows the others. Everything runs inside the
+toolchain container, so you don't need any Symbian tools installed. Builds are reproducible: the same source gives the
+same bytes, and `ph image compare` checks one build against another.
 
-## Licence
+The [ph manual](https://github.com/Phorepoc/pdk/tree/main/docs/ph) explains each command in detail.
 
-Apache-2.0 for our own code (see `LICENSES/Apache-2.0.txt`); the Nokia-derived files are our updated versions under EPL-2.0 with GPL-2.0-or-later as a Secondary License (`LICENSES/EPL-2.0.txt`; relicensed from EPL-1.0 under its section 7); unmodified Symbian sources are fetched from upstream and remain EPL-1.0, copyright The Phorepoc Authors (`AUTHORS`, `NOTICE`), except third-party files that say otherwise in their headers.
+## Finding your way around
 
-Contributions are welcome under the same terms: add yourself to `AUTHORS`.
+```
+os/src/                  components we wrote (pheshell, phetty, phgl, phvg and more), with their tests
+os/toolchain/shims/      our replacement copies of Symbian source files, one folder per change
+os/toolchain/            other headers and runtime pieces every image is built with
+os/shim/                 stand-in headers for interfaces the 2010 release left out
+os/tools/                settings files the ROM is made from, and build recipes for third-party code
+registry/components.py   one entry for each component, saying how it's built from its .mmp
+registry/rom_heap.tsv    heap and stack sizes for the programs in the ROM
+sources.lock, fetch.sh   which Symbian source we build, and the script that downloads it
+```
+
+By default `ph` expects this repository in a folder called `core` next to the pdk. If yours is somewhere else, point
+`PHOREPOC_CORE` at it. `PHOREPOC_SYMBIAN` and `PHOREPOC_BUILD` do the same for the Symbian source and the build
+output, which otherwise go into `symbian/` and `build/` here.
+
+## License
+
+Code we wrote is Apache-2.0. Symbian files we've changed are EPL-2.0, with GPL-2.0-or-later as a Secondary License
+(EPL-1.0 lets us move them to the newer version). Symbian sources we use unchanged are downloaded from upstream and stay
+EPL-1.0. A few third-party files carry their own license in their headers. The license texts are in `LICENSES/`.
+
+Contributions are welcome under the same terms. Add your name to `AUTHORS` in your first pull request.
