@@ -255,3 +255,14 @@ for _k, _c in COMPONENTS.items():
     if "oss.FCL.sf.app.photos/" in _c.get("mmp", ""):
         _c["flags"] = list(_c.get("flags", [])) + _PH_INC
         _c["rsc_incs"] = list(_c.get("rsc_incs", [])) + ["baseline/symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/gallery/loc"]
+
+# Photos is an Alf app: ARM only (x86 has the null Alf client), with its Alf widget stack (mmuifw) and glib (osncore's).
+# Nothing outside Photos imports these (checked against the 701's sys\bin).
+for _k, _c in COMPONENTS.items():
+    if ("oss.FCL.sf.app.photos/" in _c.get("mmp", "") or "oss.FCL.sf.mw.mmuifw/" in _c.get("mmp", "")
+            or _k in ("libglib", "glibbackend")):
+        _c["arm_only"] = True
+# ... and these throw and catch C++ exceptions themselves (RVCT built them with exceptions on): build_mmp.py `cxx_eh`
+for _k in ("osncore", "alfresourcepool", "alfwidgetmodel", "alfwidgetutils", "mulmodelutility", "glxdataprovider",
+           "glxfullscreenview"):
+    COMPONENTS[_k]["cxx_eh"] = True
