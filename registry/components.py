@@ -114,6 +114,8 @@ API_REF_LAST = ["-idirafter", os.path.join(SYMBIAN, "symbian-2010/oss.API_REF.Pu
 UNRELEASED_INC = ["-idirafter", os.path.join(OS_ROOT, "toolchain/shims/unreleased_inc")]
 # feature ids the RCL_3 input-method code uses that no 2010 header defines (a later S^3 feature list):
 # OUR ids, outside every range features.dat knows, so FeatureManager::FeatureSupported() is false --
+# the x86 compiler is the host's Linux GCC: its __linux__ sends the 2010 STLport (cppstdlib) to its glibc config
+_NOT_LINUX = ["-U__linux__", "-U__linux", "-Ulinux", "-U__gnu_linux__"]
 WEBKIT_NOT_UNIX = ["-U__unix__", "-U__unix", "-Uunix", "-U__linux__", "-U__linux", "-Ulinux", "-U__gnu_linux__"]
 UNRELEASED_FEATURES = ["KFeatureIdFfVirtualFullscrPortraitQwertyInput=0x7FFF0001",
                        "KFeatureIdFfCameraLongKeyPress=0x7FFF0002"]
@@ -436,10 +438,10 @@ COMPONENTS = {
                       extra=["toolchain/shims/stdcpp_board/stdcpp_x32.cpp"]),
     # Standard C++ (genericopenlibs/cppstdlib): stdnew.dll = the STDCPP target type's operator new/delete + std::exception,
     "stdnew": dict(mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cppstdlib/group/stdnew.mmp", cdriver=True, rtti=True,
-                   defs=["__SOFTFP="], own_new=True),   # (typeinfo std::bad_alloc, ordinal 19: not defined by its sources -- stub)
+                   defs=["__SOFTFP="], own_new=True, x32_flags=_NOT_LINUX),   # (typeinfo std::bad_alloc, ordinal 19: not defined by its sources -- stub)
     # libstdcppv5.dll (UID3 0x20017610): the Standard C++ library (STLport 5) SDK apps built with the STDCPP plug-in import
     "libstdcppv5": dict(mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cppstdlib/group/libstdcpp.mmp", cdriver=True, allow_wsd=True,
-                        static_ctors=True, rtti=True, defs=["__SOFTFP="], own_new=True),
+                        static_ctors=True, rtti=True, defs=["__SOFTFP="], own_new=True, x32_flags=_NOT_LINUX),
     "sqlite3": dict(mmp="oss.FCL.sf.os.persistentdata/persistentstorage/sqlite3api/GROUP/sqlite3.mmp", cdriver=True, allow_wsd=True,
                     defs=["__SOFTFP="]),
     "libc": dict(mmp=_OENV + "libc/group/libc.mmp", cdriver=True, allow_wsd=True, static_ctors=True, defs=["__SOFTFP="],
