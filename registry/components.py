@@ -922,7 +922,7 @@ COMPONENTS = {
     # NV12 -> DSA); phevidtest plays .vde-test/*.mp4 through CVideoPlayerUtility (tools/vdu/make_vde_test.sh makes them).
     # SSM_TEST=phevidtest ROM_TAIL="mmcommonutils,devvideo,puresolverutils,codecapiresolver,phevdec,pheffmpeg,phevidctl,phevidtest" (+ the MMF
     # client libs the ROM lacks: mediaclientvideo, mmfcontrollerframework, mmfstdsourceandsinkplugin, mmfaudiooutput ...)
-    "phevidctl": dict(mmp=os.path.join(OS_ROOT, "src/phevidctl/phevidctl.mmp")),
+    "phevidctl": dict(arm_only=True, mmp=os.path.join(OS_ROOT, "src/phevidctl/phevidctl.mmp")),
     # the FFmpeg DLL (pheffmpeg) and its test moved to the codecpack repository (LGPL; installed separately)
     "phevidtest": dict(mmp=os.path.join(OS_ROOT, "src/phevidtest/phevidtest.mmp"), test=True,
                        rom_data=["resource\\phevde\\vmain.mp4=.vde-test/vmain.mp4",
@@ -957,7 +957,7 @@ COMPONENTS = {
     # the process's own capabilities on the log (proves the header capabilities of an installed package): SIS test, not in the ROM
     "phecaps": dict(mmp=os.path.join(OS_ROOT, "src/phecaps/phecaps.mmp"), test=True),
     # OURS: the browser frontend (custom-drawn CONE UI; engines plug in through os/inc/phorepoc/phewebengine.h)
-    "phebrowser": dict(mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp"),
+    "phebrowser": dict(needs="webengine", mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp"),
                        rom_data=["resource\\apps\\phebrowser_icon.mbm=" + os.path.join(OS_ROOT, "src/phebrowser/data/phebrowser_icon.mbm")]),
     "tonetest": dict(mmp=os.path.join(OS_ROOT, "src/tonetest/tonetest.mmp"), test=True),
     # --- vector graphics: what the default skin's backgrounds + every real icon need (next: vgrenderer,
