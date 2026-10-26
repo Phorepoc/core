@@ -142,7 +142,8 @@ COMPONENTS = {
     "harvesterserver": dict(mmp="oss.FCL.sf.mw.mds/harvester/server/group/harvesterserver.mmp"),
     "filemonitorplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/monitorplugins/fileplugin/group/filemonitorplugin.mmp"),
     "mmcmonitorplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/monitorplugins/mmcplugin/group/mmcmonitorplugin.mmp"),
-    "mdsfileserverplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/monitorplugins/mdsfileserverplugin/group/mdsfileserverplugin.mmp"),
+    "mdsfileserverplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/monitorplugins/mdsfileserverplugin/group/mdsfileserverplugin.mmp",
+                                rom="mdsfileserverplugin.pxt"),   # RFs::AddPlugin("mdsfileserverplugin") = the .pxt
     "mdsoomplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/monitorplugins/mdsoomplugin/group/mdsoomplugin.mmp"),
     "composerimageplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/composerplugins/imagecomposer/group/composerimageplugin.mmp"),
     "harvesterimageplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/harvesterplugins/ImagePlugin/group/harvesterimageplugin.mmp"),
