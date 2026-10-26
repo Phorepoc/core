@@ -1537,6 +1537,8 @@ COMPONENTS = {
     # the thumbnail server (CThumbnailManagerImpl connects at construction: Clock exited -1)
     "thumbnailserver": dict(mmp="oss.FCL.sf.mw.imghandling/imagehandlingutilities/thumbnailmanager/thumbnailserver/group/thumbnailserver.mmp", flags=OST_OFF,
                          drop=["thumbnailserver.cpp"], extra=["toolchain/shims/thumbnailserver_board/thumbnailserver.cpp"]),
+    # the server resolves an ECOM provider per MIME type; without one every request leaves KErrNotSupported (Photos: placeholder icons)
+    "thumbnailimageprovider": dict(mmp="oss.FCL.sf.mw.imghandling/imagehandlingutilities/thumbnailmanager/plugins/image/group/thumbnailimageprovider.mmp", flags=OST_OFF),
     "filemanagerview": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.files/filemanager/group/FileManagerView.mmp"),   # <- filemanager
     "filemanagerengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.files/filemanager/group/FileManagerEngine.mmp"),   # <- filemanagerview
     "gflm": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.files/filemanager/group/GFLM.mmp"),   # <- filemanagerengine
