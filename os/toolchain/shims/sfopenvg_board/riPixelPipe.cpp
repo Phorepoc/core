@@ -36,6 +36,7 @@
 #include "riPixelPipe.h"
 #undef private
 #undef protected
+#include <e32atomics.h>
 
 //==============================================================================================
 
@@ -702,6 +703,64 @@ void PixelPipe::colorTransform(Color& c) const
 * \note
 *//*-------------------------------------------------------------------*/
 
+//OURS (perf 2026-10-26): pixelPipe's integer path: paint only, one sample, no mask, SRC / SRC_OVER into a 32-bit 8:8:8(:8)
+//colour buffer. sr..sa = the paint colour converted to the buffer's colour space, premultiplied, 0..255. Edge pixels
+//(coverage < 1) are mixed in the buffer's own colour space, not linear light; fully covered pixels are the same.
+static bool PhFastPixel(const PixelPipe& pp, int x, int y, RIfloat coverage, int sr, int sg, int sb, int sa)
+{
+    Surface* cb = pp.m_drawable->getColorBuffer();
+    const Color::Descriptor& dd = cb->getDescriptor();
+    if(pp.m_drawable->getNumSamples() == 1 && !(pp.m_masking && pp.m_drawable->getMaskBuffer()) &&
+       (pp.m_blendMode == VG_BLEND_SRC_OVER || pp.m_blendMode == VG_BLEND_SRC) &&
+       dd.bitsPerPixel == 32 && dd.redBits == 8 && dd.greenBits == 8 && dd.blueBits == 8 &&
+       (dd.alphaBits == 8 || dd.alphaBits == 0) && !(dd.internalFormat & Color::LUMINANCE) && cb->m_image)
+    {
+        Image* im = cb->m_image;
+        RIuint32* px = (RIuint32*)(im->m_data + (y + im->m_storageOffsetY) * im->m_stride) + x + im->m_storageOffsetX;
+        const RIuint32 v = *px;
+        int dr = (v >> dd.redShift) & 255, dg = (v >> dd.greenShift) & 255, db = (v >> dd.blueShift) & 255;
+        int da = dd.alphaBits ? (int)((v >> dd.alphaShift) & 255) : 255;
+        const bool pre = (dd.internalFormat & Color::PREMULTIPLIED) != 0;
+        if(!pre && da != 255)
+        {
+            dr = (dr * da + 127) / 255; dg = (dg * da + 127) / 255; db = (db * da + 127) / 255;
+        }
+        int rr, rg, rb, ra;
+        if(pp.m_blendMode == VG_BLEND_SRC)
+        {
+            rr = sr; rg = sg; rb = sb; ra = sa;
+        }
+        else
+        {
+            const int ia = 255 - sa;
+            rr = sr + (dr * ia + 127) / 255; rg = sg + (dg * ia + 127) / 255; rb = sb + (db * ia + 127) / 255; ra = sa + (da * ia + 127) / 255;
+        }
+        const int c = (int)(coverage * 256.0f + 0.5f);
+        if(c < 256)
+        {
+            rr = dr + (((rr - dr) * c) >> 8); rg = dg + (((rg - dg) * c) >> 8);
+            rb = db + (((rb - db) * c) >> 8); ra = da + (((ra - da) * c) >> 8);
+        }
+        if(!pre && ra != 255)
+        {
+            if(ra == 0)
+                rr = rg = rb = 0;
+            else
+            {
+                rr = (rr * 255 + ra / 2) / ra; rg = (rg * 255 + ra / 2) / ra; rb = (rb * 255 + ra / 2) / ra;
+                if(rr > 255) rr = 255;
+                if(rg > 255) rg = 255;
+                if(rb > 255) rb = 255;
+            }
+        }
+        *px = ((RIuint32)rr << dd.redShift) | ((RIuint32)rg << dd.greenShift) | ((RIuint32)rb << dd.blueShift) |
+              (dd.alphaBits ? (RIuint32)ra << dd.alphaShift : 0);
+        im->m_mipmapsValid = false;
+        return true;
+    }
+    return false;
+}
+
 void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMask) const
 {
     RI_ASSERT(m_drawable);
@@ -710,6 +769,47 @@ void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMas
     if(gPhvgLive && *gPhvgLive)	//OURS (O2): the CPU is about to write this colour buffer
         PhvgCpuAccess(m_drawable->getColorBuffer(), true);
     Color::InternalFormat dstFormat = (Color::InternalFormat)(m_drawable->getDescriptor().internalFormat | Color::PREMULTIPLIED);
+
+    //OURS (perf 2026-10-26): a solid colour paint converts to the same destination colour for every pixel; the converted,
+    //premultiplied 8-bit channels are memoised (seqlock: threads of one process share this) and the integer path below
+    //runs without any per-pixel float conversion
+    if(m_paint && m_paint->m_paintType == VG_PAINT_TYPE_COLOR && !m_image && !m_colorTransform)
+    {
+        struct TMemo { const Paint* iPaint; RIfloat iR, iG, iB, iA; int iSrcFmt, iDstFmt; int iC[4]; };
+        static volatile TUint32 seq;
+        static TMemo memo;
+        const Color& pc = m_paint->m_paintColor;
+        int ch[4];
+        bool have = false;
+        const TUint32 s0 = seq;
+        if(!(s0 & 1))
+        {
+            const TMemo m = memo;
+            if(seq == s0 && m.iPaint == m_paint && m.iR == pc.r && m.iG == pc.g && m.iB == pc.b && m.iA == pc.a &&
+               m.iSrcFmt == (int)pc.getInternalFormat() && m.iDstFmt == (int)dstFormat)
+            {
+                ch[0] = m.iC[0]; ch[1] = m.iC[1]; ch[2] = m.iC[2]; ch[3] = m.iC[3];
+                have = true;
+            }
+        }
+        if(!have)
+        {
+            Color c = pc;
+            c.convert(dstFormat);
+            ch[0] = (int)(RI_CLAMP(c.r, 0.0f, 1.0f) * 255.0f + 0.5f); ch[1] = (int)(RI_CLAMP(c.g, 0.0f, 1.0f) * 255.0f + 0.5f);
+            ch[2] = (int)(RI_CLAMP(c.b, 0.0f, 1.0f) * 255.0f + 0.5f); ch[3] = (int)(RI_CLAMP(c.a, 0.0f, 1.0f) * 255.0f + 0.5f);
+            TUint32 expect = s0 & ~1u;
+            if(__e32_atomic_cas_acq32((TUint32*)&seq, &expect, expect + 1))
+            {
+                memo.iPaint = m_paint; memo.iR = pc.r; memo.iG = pc.g; memo.iB = pc.b; memo.iA = pc.a;
+                memo.iSrcFmt = (int)pc.getInternalFormat(); memo.iDstFmt = (int)dstFormat;
+                memo.iC[0] = ch[0]; memo.iC[1] = ch[1]; memo.iC[2] = ch[2]; memo.iC[3] = ch[3];
+                __e32_atomic_store_rel32((TUint32*)&seq, expect + 2);
+            }
+        }
+        if(PhFastPixel(*this, x, y, coverage, ch[0], ch[1], ch[2], ch[3]))
+            return;
+    }
 
     //evaluate paint
     RI_ASSERT(m_paint);
@@ -837,62 +937,11 @@ void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMas
         ab = s.a;
         s.convert(dstFormat);   //convert paint color to destination color space
 
-        //OURS (perf 2026-10-26): paint only, one sample, no mask, SRC / SRC_OVER into a 32-bit 8:8:8(:8) colour buffer, in
-        //integers. The float path below blends, converts both colours to linear light for the coverage mix and back, and
-        //repacks every pixel (Menu's gradient-filled paths took ~1 s each at boot). Difference: edge pixels (coverage < 1)
-        //are mixed in the buffer's own colour space; fully covered pixels are the same.
-        Surface* cb = m_drawable->getColorBuffer();
-        const Color::Descriptor& dd = cb->getDescriptor();
-        if(m_drawable->getNumSamples() == 1 && !(m_masking && m_drawable->getMaskBuffer()) &&
-           (m_blendMode == VG_BLEND_SRC_OVER || m_blendMode == VG_BLEND_SRC) &&
-           dd.bitsPerPixel == 32 && dd.redBits == 8 && dd.greenBits == 8 && dd.blueBits == 8 &&
-           (dd.alphaBits == 8 || dd.alphaBits == 0) && !(dd.internalFormat & Color::LUMINANCE) && cb->m_image)
-        {
-            Image* im = cb->m_image;
-            RIuint32* px = (RIuint32*)(im->m_data + (y + im->m_storageOffsetY) * im->m_stride) + x + im->m_storageOffsetX;
-            const RIuint32 v = *px;
-            int dr = (v >> dd.redShift) & 255, dg = (v >> dd.greenShift) & 255, db = (v >> dd.blueShift) & 255;
-            int da = dd.alphaBits ? (int)((v >> dd.alphaShift) & 255) : 255;
-            const bool pre = (dd.internalFormat & Color::PREMULTIPLIED) != 0;
-            if(!pre && da != 255)
-            {
-                dr = (dr * da + 127) / 255; dg = (dg * da + 127) / 255; db = (db * da + 127) / 255;
-            }
-            const int sr = (int)(RI_CLAMP(s.r, 0.0f, 1.0f) * 255.0f + 0.5f), sg = (int)(RI_CLAMP(s.g, 0.0f, 1.0f) * 255.0f + 0.5f);
-            const int sb = (int)(RI_CLAMP(s.b, 0.0f, 1.0f) * 255.0f + 0.5f), sa = (int)(RI_CLAMP(s.a, 0.0f, 1.0f) * 255.0f + 0.5f);
-            int rr, rg, rb, ra;
-            if(m_blendMode == VG_BLEND_SRC)
-            {
-                rr = sr; rg = sg; rb = sb; ra = sa;
-            }
-            else
-            {
-                const int ia = 255 - sa;
-                rr = sr + (dr * ia + 127) / 255; rg = sg + (dg * ia + 127) / 255; rb = sb + (db * ia + 127) / 255; ra = sa + (da * ia + 127) / 255;
-            }
-            const int c = (int)(coverage * 256.0f + 0.5f);
-            if(c < 256)
-            {
-                rr = dr + (((rr - dr) * c) >> 8); rg = dg + (((rg - dg) * c) >> 8);
-                rb = db + (((rb - db) * c) >> 8); ra = da + (((ra - da) * c) >> 8);
-            }
-            if(!pre && ra != 255)
-            {
-                if(ra == 0)
-                    rr = rg = rb = 0;
-                else
-                {
-                    rr = (rr * 255 + ra / 2) / ra; rg = (rg * 255 + ra / 2) / ra; rb = (rb * 255 + ra / 2) / ra;
-                    if(rr > 255) rr = 255;
-                    if(rg > 255) rg = 255;
-                    if(rb > 255) rb = 255;
-                }
-            }
-            *px = ((RIuint32)rr << dd.redShift) | ((RIuint32)rg << dd.greenShift) | ((RIuint32)rb << dd.blueShift) |
-                  (dd.alphaBits ? (RIuint32)ra << dd.alphaShift : 0);
-            im->m_mipmapsValid = false;
+        //OURS (perf 2026-10-26): gradients and patterns take the integer path too (PhFastPixel); the float path below blends,
+        //converts both colours to linear light for the coverage mix and back, and repacks (Menu's gradient paths: ~1 s each)
+        if(PhFastPixel(*this, x, y, coverage, (int)(RI_CLAMP(s.r, 0.0f, 1.0f) * 255.0f + 0.5f), (int)(RI_CLAMP(s.g, 0.0f, 1.0f) * 255.0f + 0.5f),
+                       (int)(RI_CLAMP(s.b, 0.0f, 1.0f) * 255.0f + 0.5f), (int)(RI_CLAMP(s.a, 0.0f, 1.0f) * 255.0f + 0.5f)))
             return;
-        }
     }
     RI_ASSERT(s.getInternalFormat() == Color::lRGBA_PRE || s.getInternalFormat() == Color::sRGBA_PRE || s.getInternalFormat() == Color::lLA_PRE || s.getInternalFormat() == Color::sLA_PRE);
     s.assertConsistency();
