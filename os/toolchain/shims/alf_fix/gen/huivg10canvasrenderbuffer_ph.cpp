@@ -4,19 +4,14 @@
 * Copyright (c) 2006-2008 Nokia Corporation and/or its subsidiary(-ies). 
 * All rights reserved.
 * This component and the accompanying materials are made available
-* under the terms of the Eclipse Public License v2.0, available at
-* https://www.eclipse.org/legal/epl-2.0/ (relicensed from v1.0 under
-* section 7 of the Eclipse Public License v1.0).
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* or later.
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
 *
 * Initial Contributors:
 * Nokia Corporation - initial contribution.
 *
 * Contributors:
-* The Phorepoc Authors
 *
 * Description:   Class canvas renderering target
 *
@@ -92,6 +87,7 @@ void CHuiVg10CanvasRenderBuffer::InitializeL(const TSize& aSize)
 
     CHuiVg10RenderPlugin& renderer = CHuiStatic::Vg10Renderer();
     
+    { static TUint phi; ++phi; if (phi <= 16 || (phi & (phi - 1)) == 0 || (phi & 31) == 0) RDebug::Printf("PH: alf: canvasRB create #%u %dx%d (was %dx%d) caller %08x", phi, aSize.iWidth, aSize.iHeight, iSize.iWidth, iSize.iHeight, (TUint)__builtin_return_address(0)); }
     // Just in case...
     UnInitialize();
 
@@ -471,6 +467,7 @@ void CHuiVg10CanvasRenderBuffer::InitializeL(const TSize& aSize, TBool aForceCle
         {
         if (aForceClear)
             {
+            { static TUint phc; ++phc; if (phc <= 16 || (phc & (phc - 1)) == 0 || (phc & 63) == 0) RDebug::Printf("PH: alf: canvasRB force clear #%u %dx%d caller %08x", phc, iSize.iWidth, iSize.iHeight, (TUint)__builtin_return_address(0)); }
             CHuiVg10RenderPlugin& renderer = CHuiStatic::Vg10Renderer();
 
             // Reinitialize the context
