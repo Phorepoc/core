@@ -255,6 +255,10 @@ static double radicalInverseBase2(unsigned int i)
 
 int Rasterizer::setupSamplingPattern(VGRenderingQuality renderingQuality, int numFSAASamples)
 {
+	//OURS (perf 2026-10-26): BETTER (32 samples a pixel) costs 4x FASTER (8, the 8-queens pattern) in every path fill;
+	//at this display's density the 8-sample coverage is visually the same (NVG skin frames took ~13 ms each while scrolling)
+	if(renderingQuality == VG_RENDERING_QUALITY_BETTER)
+		renderingQuality = VG_RENDERING_QUALITY_FASTER;
 	RI_ASSERT(renderingQuality == VG_RENDERING_QUALITY_NONANTIALIASED ||
 			  renderingQuality == VG_RENDERING_QUALITY_FASTER ||
 			  renderingQuality == VG_RENDERING_QUALITY_BETTER);
