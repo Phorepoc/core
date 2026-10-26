@@ -1617,7 +1617,27 @@ void CAlfBridge::HandleVisualVisibility( TInt aScreenNumber )
 	TBool alfWindowGroupFoundVisible = EFalse;
 	TBool alfClientWindowGroupVisible = EFalse;
 	TBool firstAlfControlGroupFound = EFalse;
-	
+
+	// PH: the roster order, top to bottom, each time its group count changes (Photos' full-screen alf scene, 2026-10-26)
+	{
+	static TInt phLastCount = -1;
+	CHuiRoster& phRoster = screen->iDisplay->Roster();
+	if (phRoster.Count() != phLastCount)
+	    {
+	    phLastCount = phRoster.Count();
+	    for (TInt k = phRoster.Count() - 1; k >= 0; k--)
+	        {
+	        CHuiControlGroup& g = phRoster.ControlGroup(k);
+	        CHuiControl& c = g.Control(0);
+	        CHuiLayout* host = c.Role() == EHuiSessionContainer ? c.ContainerLayout(NULL) : NULL;
+	        CHuiVisual* v0 = c.VisualCount() ? &c.Visual(0) : NULL;
+	        RDebug::Printf("PH: alf: roster[%d] id %d role %d controls %d visuals %d v0flags %x host %x hostflags %x size %dx%d",
+	            k, g.ResourceId(), c.Role(), g.Count(), c.VisualCount(), v0 ? v0->Flags() : 0, host, host ? host->Flags() : 0,
+	            v0 ? (TInt)v0->Size().Target().iX : 0, v0 ? (TInt)v0->Size().Target().iY : 0);
+	        }
+	    }
+	}
+
     AMT_SET_VALUE( iVisibleVisualCount, 0 );
 	
     // skip the topmost (effect) layer, start from floating sprite group
