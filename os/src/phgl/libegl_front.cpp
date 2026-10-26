@@ -16,6 +16,21 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include "phgl_front.h"
+#include "phgmem.h"
+// EGL_NOK_resource_profiling (Nokia's eglext.h; not in the Khronos/Mesa header we build with)
+#ifndef EGL_PROF_QUERY_GLOBAL_BIT_NOK
+#define EGL_PROF_QUERY_GLOBAL_BIT_NOK 0x0001
+#define EGL_PROF_QUERY_MEMORY_USAGE_BIT_NOK 0x0002
+#define EGL_PROF_TOTAL_MEMORY_NOK 0x3070
+#define EGL_PROF_USED_MEMORY_NOK 0x3071
+#define EGL_PROF_PROCESS_ID_NOK 0x3072
+#define EGL_PROF_PROCESS_USED_PRIVATE_MEMORY_NOK 0x3073
+#define EGL_PROF_PROCESS_USED_SHARED_MEMORY_NOK 0x3074
+#define EGL_PROF_TOTAL_MEMORY_USAGE_GT_NOK 0x3075
+#define EGL_PROF_TOTAL_MEMORY_USAGE_LT_NOK 0x3076
+#define EGL_PROF_MEMORY_USAGE_THRESHOLD_NOK 0x3077
+#define EGL_SYNC_RESOURCE_PROFILING_NOK 0x3078
+#endif
 #ifdef PH_ALF_TRACE		// ALF bring-up (components.py libegl_alf, staged as libEGL.dll at ALF>=s2): "PH:" lines on the OpenVG route
 #define PH_VGT(...) RDebug::Printf("PH: alf: libEGL " __VA_ARGS__)
 #else
@@ -99,6 +114,8 @@ namespace
 		RMutex iMutex;
 		RCondVar iCond;
 		TInt iRefs;
+		EGLint iCondition;		// EGL_SYNC_RESOURCE_PROFILING_NOK: EGL_PROF_TOTAL_MEMORY_USAGE_GT_NOK / _LT_NOK
+		TInt iThreshold;		//   ... and EGL_PROF_MEMORY_USAGE_THRESHOLD_NOK
 		};
 	const TUint32 KSyncMagic = 0x53594e43;
 	const TInt KMaxSyncs = 64;
@@ -128,6 +145,180 @@ namespace
 		return s && !((TUint32)s & 1) && s->iMagic == KSyncMagic ? s : NULL;
 		}
 
+	// ---- EGL_NOK_resource_profiling over phgmem.h (the real GOOM monitor's only source of numbers) ----
+	// Nokia's driver reported its fixed GPU pool; ours reports what is physically left: "total" = used + free, free =
+	// min(system free RAM, headroom of the heap holding the most graphics memory) -- see PhGMem::Snapshot.
+
+	// one summary line: totals and the three biggest holders
+	void LogGMem(const char* aWhy, const PhGMem::TSnapshot& aSnap)
+		{
+		TInt top[3] = { -1, -1, -1 };
+		for (TInt i = 0; i < aSnap.iCount; ++i)
+			for (TInt k = 0; k < 3; ++k)
+				if (top[k] < 0 || aSnap.iSlots[i].iBytes > aSnap.iSlots[top[k]].iBytes)
+					{
+					for (TInt m = 2; m > k; --m)
+						top[m] = top[m - 1];
+					top[k] = i;
+					break;
+					}
+		TBuf8<200> procs;
+		for (TInt k = 0; k < 3 && top[k] >= 0; ++k)
+			{
+			const PhGMem::TSlot& s = aSnap.iSlots[top[k]];
+			procs.AppendFormat(_L8(" pid %u %dKB(peak %d, allocs %u, heap left %dKB)"), s.iPid, s.iBytes >> 10,
+			                   s.iPeak >> 10, s.iAllocs, s.iHeadroom >> 10);
+			}
+		procs.Append(TChar(0));
+		RDebug::Printf("PH: gmem %s used=%dKB free=%dKB sysfree=%dKB procs=%d%s", aWhy, aSnap.iUsed >> 10,
+		               aSnap.iFree >> 10, aSnap.iSysFree >> 10, aSnap.iCount, (const char*)procs.Ptr());
+		}
+
+	EGLBoolean QueryProfilingDataNOK(EGLDisplay aDpy, EGLint aBits, EGLint* aData, EGLint aSize, EGLint* aCount)
+		{
+		if (aDpy != KFrontDisplay || !aCount)
+			{
+			gError = aDpy != KFrontDisplay ? EGL_BAD_DISPLAY : EGL_BAD_PARAMETER;
+			return EGL_FALSE;
+			}
+		PhGMem::TSnapshot snap;
+		PhGMem::Snapshot(snap);
+		EGLint buf[4 + PhGMem::KSlots * 7];
+		TInt n = 0;
+		if (aBits & EGL_PROF_QUERY_MEMORY_USAGE_BIT_NOK)
+			{
+			buf[n++] = EGL_PROF_TOTAL_MEMORY_NOK;
+			buf[n++] = snap.iUsed + snap.iFree;
+			buf[n++] = EGL_PROF_USED_MEMORY_NOK;
+			buf[n++] = snap.iUsed;
+			}
+		const TUint32 me = (TUint32)RProcess().Id().Id();
+		for (TInt i = 0; i < snap.iCount; ++i)
+			{
+			const PhGMem::TSlot& s = snap.iSlots[i];
+			if (!(aBits & EGL_PROF_QUERY_GLOBAL_BIT_NOK) && s.iPid != me)
+				continue;
+			buf[n++] = EGL_PROF_PROCESS_ID_NOK;	// EGLNativeProcessIdTypeNOK is a TUint64: low word first
+			buf[n++] = (EGLint)s.iPid;
+			buf[n++] = 0;
+			buf[n++] = EGL_PROF_PROCESS_USED_PRIVATE_MEMORY_NOK;
+			buf[n++] = s.iBytes;
+			buf[n++] = EGL_PROF_PROCESS_USED_SHARED_MEMORY_NOK;
+			buf[n++] = 0;
+			}
+		if (!aData)
+			{
+			*aCount = n;
+			return EGL_TRUE;
+			}
+		const TInt copy = n < aSize ? n : aSize;
+		for (TInt i = 0; i < copy; ++i)
+			aData[i] = buf[i];
+		*aCount = copy;
+		// GOOM queries in bursts (each check, each app list refresh): one line per 2 s at most
+		static TUint32 lastLog;
+		const TUint32 now = User::NTickCount();
+		if (lastLog == 0 || now - lastLog >= 2000)
+			{
+			lastLog = now ? now : 1;
+			LogGMem("query", snap);
+			}
+		return EGL_TRUE;
+		}
+
+	// GOOM (goomthresholdcrossedao.inl) encodes a FREE-memory threshold F as a usage threshold 32 MB - F (Nokia's pool).
+	// Decode it back, so the condition agrees with the free figure the profiling query reports.
+	TBool ProfilingConditionMet(const TSync& aSync, const PhGMem::TSnapshot& aSnap)
+		{
+		const TInt freeThreshold = 32 * 1024 * 1024 - aSync.iThreshold;
+		return aSync.iCondition == EGL_PROF_TOTAL_MEMORY_USAGE_GT_NOK ? aSnap.iFree < freeThreshold
+		                                                              : aSnap.iFree > freeThreshold;
+		}
+
+	EGLSyncKHR CreateProfilingSync(const EGLint* aAttribs)
+		{
+		EGLint condition = 0;
+		TInt threshold = -1;
+		for (const EGLint* a = aAttribs; a && a[0] != EGL_NONE; a += 2)
+			{
+			if (a[0] == EGL_SYNC_CONDITION_KHR)
+				condition = a[1];
+			else if (a[0] == EGL_PROF_MEMORY_USAGE_THRESHOLD_NOK)
+				threshold = a[1];
+			}
+		if ((condition != EGL_PROF_TOTAL_MEMORY_USAGE_GT_NOK && condition != EGL_PROF_TOTAL_MEMORY_USAGE_LT_NOK) || threshold < 0)
+			{
+			gError = EGL_BAD_ATTRIBUTE;
+			return EGL_NO_SYNC_KHR;
+			}
+		TSync* s = new TSync;
+		if (!s || s->iMutex.CreateLocal() != KErrNone || s->iCond.CreateLocal() != KErrNone)
+			{
+			if (s)
+				{
+				s->iCond.Close();
+				s->iMutex.Close();
+				delete s;
+				}
+			gError = EGL_BAD_ALLOC;
+			return EGL_NO_SYNC_KHR;
+			}
+		s->iMagic = KSyncMagic;
+		s->iType = EGL_SYNC_RESOURCE_PROFILING_NOK;
+		s->iStatus = EGL_UNSIGNALED_KHR;
+		s->iRefs = 1;
+		s->iCondition = condition;
+		s->iThreshold = threshold;
+		RDebug::Printf("PH: gmem sync %s free %dKB", condition == EGL_PROF_TOTAL_MEMORY_USAGE_GT_NOK ? "low below" : "good above",
+		               (32 * 1024 * 1024 - threshold) >> 10);
+		return (EGLSyncKHR)s;
+		}
+
+	// wait on a profiling sync: poll the table (GOOM's own thread blocks here); destroying the sync releases the wait.
+	// The poll also writes the periodic summary -- the graphics memory trend over time, for leak hunting.
+	EGLint WaitProfilingSync(TSync* aSync, EGLTimeKHR aTimeout)
+		{
+		const TInt KPollUs = 250000;
+		TInt64 left = aTimeout == EGL_FOREVER_KHR ? -1 : (TInt64)(aTimeout / 1000);
+		static TUint32 lastLog;
+		static TInt lastUsed = -1;
+		aSync->iMutex.Wait();
+		EGLint ret = EGL_TIMEOUT_EXPIRED_KHR;
+		for (;;)
+			{
+			PhGMem::TSnapshot snap;
+			PhGMem::Snapshot(snap);
+			const TUint32 now = User::NTickCount();
+			const TInt delta = lastUsed < 0 ? KMaxTInt : Abs(snap.iUsed - lastUsed);
+			if (now - lastLog >= 300000 || (now - lastLog >= 30000 && delta >= 256 * 1024))
+				{
+				lastLog = now;
+				lastUsed = snap.iUsed;
+				LogGMem("trend", snap);
+				}
+			if (aSync->iStatus == EGL_SIGNALED_KHR)
+				{
+				ret = EGL_CONDITION_SATISFIED_KHR;
+				break;
+				}
+			if (ProfilingConditionMet(*aSync, snap))
+				{
+				LogGMem(aSync->iCondition == EGL_PROF_TOTAL_MEMORY_USAGE_GT_NOK ? "LOW (goom acts)" : "GOOD again", snap);
+				aSync->iStatus = EGL_SIGNALED_KHR;
+				ret = EGL_CONDITION_SATISFIED_KHR;
+				break;
+				}
+			if (left == 0)
+				break;
+			const TInt slice = left < 0 || left > KPollUs ? KPollUs : (TInt)left;
+			aSync->iCond.TimedWait(aSync->iMutex, slice);
+			if (left > 0)
+				left -= slice;
+			}
+		aSync->iMutex.Signal();
+		return ret;
+		}
+
 	EGLSyncKHR CreateSyncKHR(EGLDisplay aDpy, EGLenum aType, const EGLint* aAttribs)
 		{
 		if (aDpy != KFrontDisplay || !gInitialized)
@@ -135,6 +326,8 @@ namespace
 			gError = EGL_BAD_DISPLAY;
 			return EGL_NO_SYNC_KHR;
 			}
+		if (aType == EGL_SYNC_RESOURCE_PROFILING_NOK)
+			return CreateProfilingSync(aAttribs);
 		if (aType != EGL_SYNC_REUSABLE_KHR)
 			{
 			// a fence sync is Mesa's: forward, tag the handle
@@ -252,6 +445,15 @@ namespace
 			return EGL_FALSE;
 			}
 		(void)aFlags;	// EGL_SYNC_FLUSH_COMMANDS_BIT_KHR: no GL context of ours to flush
+		if (s->iType == EGL_SYNC_RESOURCE_PROFILING_NOK)
+			{
+			s->iMutex.Wait();
+			++s->iRefs;
+			s->iMutex.Signal();
+			const EGLint r = WaitProfilingSync(s, aTimeout);
+			SyncRelease(s);
+			return r;
+			}
 		s->iMutex.Wait();
 		++s->iRefs;
 		EGLint ret = EGL_CONDITION_SATISFIED_KHR;
@@ -623,7 +825,8 @@ const char* eglQueryString(EGLDisplay dpy, EGLint name)
 		case EGL_EXTENSIONS:
 			return "EGL_KHR_reusable_sync EGL_KHR_fence_sync EGL_KHR_wait_sync EGL_KHR_surfaceless_context "
 			       "EGL_KHR_create_context EGL_KHR_image_base EGL_EXT_image_dma_buf_import EGL_KHR_image_pixmap "
-			       "EGL_SYMBIAN_image_preserved EGL_SYMBIAN_PIXMAP_TYPE_RSGIMAGE EGL_NOK_pixmap_type_rsgimage";
+			       "EGL_SYMBIAN_image_preserved EGL_SYMBIAN_PIXMAP_TYPE_RSGIMAGE EGL_NOK_pixmap_type_rsgimage "
+			       "EGL_NOK_resource_profiling";
 		default: gError = EGL_BAD_PARAMETER; return NULL;
 		}
 	}
@@ -644,6 +847,7 @@ void (*eglGetProcAddress(const char* procname))(...)
 	if (StrEq(procname, "eglCreateImageKHR")) return (TProc)CreateImageKHR;
 	if (StrEq(procname, "eglDestroyImageKHR")) return (TProc)DestroyImageKHR;
 	if (StrEq(procname, "egl_Private_SignalSyncNOK")) return (TProc)PrivateSignalSyncNOK;
+	if (StrEq(procname, "eglQueryProfilingDataNOK")) return (TProc)QueryProfilingDataNOK;
 	// other Nokia-private / 2010-debug names (egl_Private_*, egliDebug*): not ours, and not worth loading Mesa for
 	if (procname[0] == 'e' && procname[1] == 'g' && procname[2] == 'l' && (procname[3] == '_' || procname[3] == 'i'))
 		return NULL;

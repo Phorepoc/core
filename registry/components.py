@@ -1103,8 +1103,8 @@ COMPONENTS = {
     # KAlfCompositionControllerIfUid, which alfrenderstage resolves through the next stage). Board copy of
     # openwfcwrapper.cpp = the NGA stage's rotated-UI-surface delta (toolchain/shims/wsstdplugin_board) re-applied.
     # the null GOOM monitor + the session calls alfrenderstage makes (Connect(TRequestStatus&) was an unimpl stub): twin staged as
-    # goommonitor.dll at ALF>=s2 (replaced by goommonitor_real at s3). The default ROM's null is untouched.
-    "goommonitor_alfnull": dict(mmp=os.path.join(OS_ROOT, "toolchain/shims/goommonitor_null/goommonitor_null.mmp"), alf=2, defs=["PH_ALF_GOOM"],
+    # goommonitor.dll at ALF>=s2 until 2026-10-26; now build-only: s2 ships goommonitor_real. The default ROM's null is untouched.
+    "goommonitor_alfnull": dict(mmp=os.path.join(OS_ROOT, "toolchain/shims/goommonitor_null/goommonitor_null.mmp"), alf="build", defs=["PH_ALF_GOOM"],
                                 rom="goommonitor_alfnull.dll", rom_as="goommonitor.dll",
                                 **{"def": "oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/goommonitor/eabi/goommonitoru.DEF"}),
     # libEGL.dll with the "PH: alf: libEGL ..." trace lines on the OpenVG route (src/phgl/libegl_front.cpp -DPH_ALF_TRACE); staged as
@@ -1119,10 +1119,17 @@ COMPONENTS = {
     # goommonitor, the window-transition effects)
     "alfhintplugin": dict(mmp=_ALF + "AlfHintPlugin/group/AlfHintPlugin.mmp", alf=3),
     "alfhintplugindrawer": dict(mmp=_ALF + "AlfHintPlugin/group/AlfHintPluginDrawer.mmp", alf=3),
-    "alfoogmplugin": dict(mmp=_ALF + "plugins/alfoogmplugin/group/alfoogmplugin.mmp", alf=3),
+    # GOOM's plug-in that makes Alf release graphics memory (with goommonitor_real at s2)
+    "alfoogmplugin": dict(mmp=_ALF + "plugins/alfoogmplugin/group/alfoogmplugin.mmp", alf=2),
     "alfcrpplugin": dict(mmp=_ALF + "plugins/alfcrpplugin/group/alfcrpplugin.mmp", alf=3),
     "alfappfwproxy": dict(mmp=_ALF + "ServerStub/Proxy_src/alfappfwproxy.mmp", alf=3),
-    "goommonitor_real": dict(mmp=_ALF + "goommonitor/group/goommonitor.mmp", alf=3, rom="goommonitor_real.dll", rom_as="goommonitor.dll"),
+    # the real GOOM monitor (AknCapServer starts its thread) at s2 since 2026-10-26: its numbers come from our libEGL's
+    # EGL_NOK_resource_profiling (src/phgl/phgmem.h). _GOOM_DEBUG compiles its traces in; tracedefs_ph.h prefixes ("PH: goom:")
+    # and throttles them
+    "goommonitor_real": dict(mmp=_ALF + "goommonitor/group/goommonitor.mmp", alf=2, rom="goommonitor_real.dll", rom_as="goommonitor.dll",
+                             allow_wsd=True, defs=["_GOOM_DEBUG"],
+                             flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/goom_trace/tracedefs_ph.h")],
+                             rom_data=[r"private\10207218\goomconfig.xml=baseline/symbian-2010/oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/goommonitor/data/goomconfig.xml"]),
     "alftranseffectplugin": dict(mmp=_ALF + "plugins/alftranseffect/alftranseffectplugin/group/alftranseffectplugin.mmp", alf=3),
     "tfxsrvplugin": dict(mmp=_ALF + "plugins/alftranseffect/alftfxserverplugin/group/AlfTfxSrvPlugin.mmp", alf=3),
     "huirenderpluginvg": dict(mmp=_ALF + "coretoolkit/rendervg10/group/huirendervg10.mmp", alf=2, vfp=True, defs=["__SOFTFP="],

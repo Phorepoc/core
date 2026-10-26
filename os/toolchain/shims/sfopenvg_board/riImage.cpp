@@ -30,6 +30,7 @@
  * \note	
  *//*-------------------------------------------------------------------*/
 
+#include "../../../src/phgl/phgmem.h"
 #include "riDefs.h"
 // OURS (ALF bring-up): Surface::clear's row fast path below reads the root image's storage offsets
 #define private public
@@ -531,6 +532,7 @@ Image::Image(const Color::Descriptor& desc, int width, int height, VGbitfield al
 
 	m_data = RI_NEW_ARRAY(RIuint8, m_stride*m_height);	//throws bad_alloc
 	memset(m_data, 0, m_stride*m_height);	//clear image
+	PhGMem::Add(m_stride*m_height);	// PH: graphics memory accounting (os/src/phgl/phgmem.h: EGL_NOK_resource_profiling, GOOM)
 }
 
 /*-------------------------------------------------------------------*//*!
@@ -639,6 +641,7 @@ Image::~Image()
 	{
 		RI_ASSERT(!m_parent);		//can't have parent if owns the data
 		RI_DELETE_ARRAY(m_data);	//delete image data if we own it
+		PhGMem::Add(-(m_stride*m_height));
 	}
 }
 
