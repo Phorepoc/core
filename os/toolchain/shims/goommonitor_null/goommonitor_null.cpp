@@ -7,9 +7,8 @@
 // Under SYMBIAN_BUILD_GCE akncapserver (AknCapServerEntry.cpp StartOOM) also creates the GOOM
 // watcher thread. The real one belongs to the UI accelerator (ALF / hitchcock) and watches GPU
 // memory through EGL extensions -- none of which exists on this board (no ALF, no GPU), so
-// there is nothing to watch. All other entry points stay loud unimpl stubs, except the session's
-// Connect: "no GOOM server" (KErrNotSupported) is an answer every client handles (the task switcher
-// asks for free graphics memory before showing, 2026-09-30).
+// there is nothing to watch. The session answers like a monitor with nothing to free; the other entry
+// points stay loud unimpl stubs.
 #include <e32std.h>
 #include <e32debug.h>
 
@@ -17,6 +16,8 @@ class RGOomMonitorSession : public RSessionBase
     {
 public:
     IMPORT_C TInt Connect();
+    IMPORT_C void RequestFreeMemory(TInt aBytesRequired, TRequestStatus& aStatus);	// ordinal 5
+    IMPORT_C void CancelRequestFreeMemory();									// ordinal 9
 #ifndef PH_ALF_GOOM
     IMPORT_C TBool IsConnected();					// ordinal 23
     IMPORT_C TInt RequestFreeMemory(TInt aBytesRequired);	// ordinal 4
@@ -29,9 +30,23 @@ public:
 #endif
     };
 
+// Connect: KErrNone, as the real one ("always return KErrNone for now" -- it never reports a missing server). Photos'
+// full-screen view (CGlxRelaseGPUMemory) leaves on an error and the view never opened (2026-10-26). The task switcher
+// then asks RequestFreeMemory, which answers at once below.
 EXPORT_C TInt RGOomMonitorSession::Connect()
 	{
-	return KErrNotSupported;
+	return KErrNone;
+	}
+
+// the async request (Photos before decoding a full-size image): nothing to free on this board, done at once
+EXPORT_C void RGOomMonitorSession::RequestFreeMemory(TInt, TRequestStatus& aStatus)
+	{
+	TRequestStatus* s = &aStatus;
+	User::RequestComplete(s, KErrNone);
+	}
+
+EXPORT_C void RGOomMonitorSession::CancelRequestFreeMemory()
+	{
 	}
 
 #ifndef PH_ALF_GOOM
