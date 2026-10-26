@@ -121,10 +121,20 @@ namespace PhGMem
 		return pool;
 		}
 
+	// the pool chunk's whole reservation: the hybrid heap puts big cells (every pixel buffer) in its page-allocated half,
+	// beyond Base() + MaxLength() -- testing only that range sent them to User::Free (alfredserver heap corruption)
 	inline TBool InPool(RHeap* aPool, const TAny* aPtr)
 		{
-		const TUint8* b = aPool->Base();
-		return (const TUint8*)aPtr >= b && (const TUint8*)aPtr < b + aPool->MaxLength();
+		static const TUint8* volatile base;
+		static TInt size;
+		if (!base)
+			{
+			RChunk c;
+			c.SetHandle(aPool->ChunkHandle());
+			size = c.MaxSize();
+			base = c.Base();
+			}
+		return (const TUint8*)aPtr >= base && (const TUint8*)aPtr < base + size;
 		}
 
 	// aBytes > 0: allocated; < 0: freed
