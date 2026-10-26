@@ -125,6 +125,28 @@ COMPONENTS = {
     "mdsserver": dict(mmp="oss.FCL.sf.mw.mds/metadataengine/server/group/mdsserver.mmp", rom="!mdsserver.exe",   # KMdSServerName = "!MdSServer"
                       rom_data=[r"private\200009F3\schema.mde=baseline/symbian-2010/oss.FCL.sf.mw.mds/metadataengine/data/schema.mde",
                                 r"private\200009F3\defaultimportfile.mde=baseline/symbian-2010/oss.FCL.sf.mw.mds/metadataengine/data/defaultimportfile.mde"]),
+    # the MdS harvester (mds.iby): finds new media files and writes their metadata into MdS. Photos' data source connects to
+    # it at start (RHarvesterClient: -1 without the server) and shows only what it harvested. Not taken: the location
+    # trail/server (the harvester links only the location manager client), the message/audio/playlist/DRM/RTP/WMV
+    # harvester plug-ins (Photos needs images and videos)
+    "harvesterdata": dict(mmp="oss.FCL.sf.mw.mds/harvester/common/group/harvesterdata.mmp"),
+    "harvestercommon": dict(mmp="oss.FCL.sf.mw.mds/harvester/common/group/harvestercommon.mmp"),
+    "harvesterplugininterface": dict(mmp="oss.FCL.sf.mw.mds/harvester/common/group/harvesterplugininterface.mmp"),
+    "blacklistclient": dict(mmp="oss.FCL.sf.mw.mds/harvester/blacklistclient/group/blacklistclient.mmp"),
+    "blacklistserver": dict(mmp="oss.FCL.sf.mw.mds/harvester/blacklistserver/group/blacklistserver.mmp", rom="!blacklistserver.exe"),
+    "monitorplugininterface": dict(mmp="oss.FCL.sf.mw.mds/harvester/monitorplugins/monitorplugininterface/group/monitorplugininterface.mmp"),
+    "composerplugininterface": dict(mmp="oss.FCL.sf.mw.mds/harvester/composerplugins/composerplugininterface/group/composerplugininterface.mmp"),
+    "contextplugininterface": dict(mmp="oss.FCL.sf.mw.mds/contextengine/plugins/contextplugininterface/group/contextplugininterface.mmp"),
+    "contextengine": dict(mmp="oss.FCL.sf.mw.mds/contextengine/group/contextengine.mmp"),
+    "locationmanager": dict(mmp="oss.FCL.sf.mw.mds/locationmanager/client/group/locationmanagerclient.mmp"),
+    "harvesterserver": dict(mmp="oss.FCL.sf.mw.mds/harvester/server/group/harvesterserver.mmp"),
+    "filemonitorplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/monitorplugins/fileplugin/group/filemonitorplugin.mmp"),
+    "mmcmonitorplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/monitorplugins/mmcplugin/group/mmcmonitorplugin.mmp"),
+    "mdsfileserverplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/monitorplugins/mdsfileserverplugin/group/mdsfileserverplugin.mmp"),
+    "mdsoomplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/monitorplugins/mdsoomplugin/group/mdsoomplugin.mmp"),
+    "composerimageplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/composerplugins/imagecomposer/group/composerimageplugin.mmp"),
+    "harvesterimageplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/harvesterplugins/ImagePlugin/group/harvesterimageplugin.mmp"),
+    "harvestervideoplugin": dict(mmp="oss.FCL.sf.mw.mds/harvester/harvesterplugins/VideoPlugin/group/harvestervideoplugin.mmp"),
     # My Videos: the collection plug-in (MDS-backed) + the Hg list main view + its view plug-in (mpxvideoplayer opens it at start)
     "vcxmyvideoscollectionplugin": dict(mmp="oss.FCL.sf.app.videoplayer/videocollection/mpxmyvideoscollection/group/vcxmyvideoscollectionplugin.mmp", flags=_VP_INC),
     "vcxhgmyvideos": dict(mmp="oss.FCL.sf.app.videoplayer/videocollection/hgmyvideos/group/vcxhgmyvideos.mmp",
