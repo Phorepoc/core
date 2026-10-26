@@ -478,6 +478,49 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 		for (TUint v = 0; v <= lmax; v++) eL[v] = (TUint8)((v * 255 + lmax / 2) / lmax);
 		}
 	int sp[KMaxClips][2];
+	// (perf 2026-10-26) the common case -- a 32-bit premultiplied (or opaque) source in the destination's channel order,
+	// not mirrored, no tint: a row copy where the result is the source, else two channels at a time in one multiply
+	const bool same32 = bpp == 32 && !multiply && !flipX && rs == drs && gs == dgs && bs == dbs &&
+		(srcAlpha ? (srcPre && as == das) : true);
+	if (same32)
+		{
+		const RIuint32 amask = 255u << das;
+		for (TInt y = bnd.y; y < bnd.y + bnd.height; y++)
+			{
+			const int ns = PhRowSpans(clips, nclip, y, bnd.x, bnd.x + bnd.width, sp);
+			const TInt j = flipY ? ity - y - 1 : y - ity;
+			const RIuint32* srow = (const RIuint32*)(img->m_data + (j + srcOffY) * img->m_stride) + srcOffX - itx;
+			RIuint32* drow = (RIuint32*)(dst->m_data + (y + dstOffY) * dst->m_stride) + dstOffX;
+			for (int si = 0; si < ns; si++)
+				{
+				const TInt xa = sp[si][0], xb = sp[si][1];
+				if (!srcAlpha)
+					{
+					for (TInt x = xa; x < xb; x++)
+						drow[x] = srow[x] | amask;
+					}
+				else if (!over)
+					Mem::Copy(drow + xa, srow + xa, (xb - xa) * 4);
+				else
+					for (TInt x = xa; x < xb; x++)
+						{
+						const RIuint32 s = srow[x];
+						const RIuint32 sa = (s >> das) & 255;
+						if (sa == 255)
+							drow[x] = s;
+						else if (sa != 0)
+							{
+							const RIuint32 ia = 255 - sa, d = drow[x];
+							RIuint32 rb = (d & 0x00ff00ffu) * ia, ag = ((d >> 8) & 0x00ff00ffu) * ia;
+							rb = ((rb + 0x00800080u + ((rb >> 8) & 0x00ff00ffu)) >> 8) & 0x00ff00ffu;	// /255, rounded
+							ag = ((ag + 0x00800080u + ((ag >> 8) & 0x00ff00ffu)) >> 8) & 0x00ff00ffu;
+							drow[x] = s + (rb | (ag << 8));
+							}
+						}
+				}
+			}
+		}
+	else
 	for (TInt y = bnd.y; y < bnd.y + bnd.height; y++)
 		{
 		const int ns = PhRowSpans(clips, nclip, y, bnd.x, bnd.x + bnd.width, sp);
