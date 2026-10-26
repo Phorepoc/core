@@ -96,6 +96,34 @@ namespace PhGMem
 		return NULL;
 		}
 
+	// The pixel pool: this process's graphics memory, apart from its ordinary heap -- what the GPU driver's own memory was
+	// on Nokia's hardware. Without it the RI's pixels landed in the caller's heap, and for Alf that is the alfredserver
+	// thread's, which Nokia capped at 16 MB (alfdecoderserverclient.cpp) for bookkeeping only. A chunk heap reserved at the
+	// size of physical RAM (halved until the address space gives it), committed as used.
+	inline RHeap* Pool()
+		{
+		static RHeap* volatile pool;
+		if (pool)
+			return pool;
+		TMemoryInfoV1Buf info;
+		UserHal::MemoryInfo(info);
+		RHeap* h = NULL;
+		for (TInt max = info().iTotalRamInBytes; !h && max >= 0x1000000; max /= 2)
+			h = UserHeap::ChunkHeap(NULL, 0x10000, max, 0x100000);
+		if (!h)
+			return NULL;
+		TAny* none = NULL;
+		if (!__e32_atomic_cas_ord_ptr(&pool, &none, h))
+			h->Close();		// another thread made it first
+		return pool;
+		}
+
+	inline TBool InPool(RHeap* aPool, const TAny* aPtr)
+		{
+		const TUint8* b = aPool->Base();
+		return (const TUint8*)aPtr >= b && (const TUint8*)aPtr < b + aPool->MaxLength();
+		}
+
 	// aBytes > 0: allocated; < 0: freed
 	inline void Add(TInt aBytes)
 		{
@@ -109,9 +137,34 @@ namespace PhGMem
 			if (now > s->iPeak)
 				s->iPeak = now;
 			}
+		RHeap* h = Pool();
+		if (!h)
+			h = &User::Heap();
 		TInt alloc = 0;
-		User::Heap().AllocSize(alloc);
-		s->iHeadroom = User::Heap().MaxLength() - alloc;
+		h->AllocSize(alloc);
+		s->iHeadroom = h->MaxLength() - alloc;
+		}
+
+	// pixel storage for the RI (riImage.cpp): from the pool (the process heap if there is none), counted
+	inline TAny* AllocPixels(TInt aBytes)
+		{
+		RHeap* h = Pool();
+		TAny* p = h ? h->Alloc(aBytes) : User::Alloc(aBytes);
+		if (p)
+			Add(aBytes);
+		return p;
+		}
+
+	inline void FreePixels(TAny* aPtr, TInt aBytes)
+		{
+		if (!aPtr)
+			return;
+		RHeap* h = Pool();
+		if (h && InPool(h, aPtr))
+			h->Free(aPtr);
+		else
+			User::Free(aPtr);
+		Add(-aBytes);
 		}
 
 	struct TSnapshot

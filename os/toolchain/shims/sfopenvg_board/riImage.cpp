@@ -530,9 +530,11 @@ Image::Image(const Color::Descriptor& desc, int width, int height, VGbitfield al
 	
 	m_stride = (m_width*m_desc.bitsPerPixel+7)/8;
 
-	m_data = RI_NEW_ARRAY(RIuint8, m_stride*m_height);	//throws bad_alloc
+	// PH: pixels live in the graphics pool, not the caller heap (os/src/phgl/phgmem.h: the GPU memory of this renderer; counted for GOOM)
+	m_data = (RIuint8*)PhGMem::AllocPixels(m_stride*m_height);
+	if(!m_data)
+		throw std::bad_alloc();
 	memset(m_data, 0, m_stride*m_height);	//clear image
-	PhGMem::Add(m_stride*m_height);	// PH: graphics memory accounting (os/src/phgl/phgmem.h: EGL_NOK_resource_profiling, GOOM)
 }
 
 /*-------------------------------------------------------------------*//*!
@@ -640,8 +642,7 @@ Image::~Image()
 	if(m_ownsData)
 	{
 		RI_ASSERT(!m_parent);		//can't have parent if owns the data
-		RI_DELETE_ARRAY(m_data);	//delete image data if we own it
-		PhGMem::Add(-(m_stride*m_height));
+		PhGMem::FreePixels(m_data, m_stride*m_height);	//delete image data if we own it (the graphics pool)
 	}
 }
 
