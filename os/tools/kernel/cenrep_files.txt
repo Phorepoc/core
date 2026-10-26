@@ -5,7 +5,8 @@
 ../../tools/kernel/cenrep/10272618.txt
 ../symbian-rcl3/oss.FCL.sf.mw.inputmethods/fep/frontendprocessor/group/10272619.txt
 ../symbian-rcl3/oss.FCL.sf.mw.inputmethods/fep/frontendprocessor/group/10009793.txt
-../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/CenRep/101F876E.txt
+# OURS copy of the shipped file: the middle softkey on (key 0xA)
+../../tools/kernel/cenrep/101F876E.txt
 ../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/aknphysics/cenrep/20021192.txt
 ../symbian-rcl3/oss.FCL.sf.mw.classicui/akntouchgesturefw/cenrep/2002676F.txt
 # OURS copy of the shipped file: Haze as the default theme (key 0x14)
