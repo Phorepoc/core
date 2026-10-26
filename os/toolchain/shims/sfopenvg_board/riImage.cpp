@@ -902,6 +902,32 @@ void Image::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, int 
 		   (sp == dp || (sp && !dp)))
 		{
 			const bool unpre = sp && !dp;
+			//OURS (perf 2026-10-27): same premultiplication and every channel at the same offset modulo 32 = a word rotate
+			//(sRGBA_PRE surface -> sARGB_PRE window, the swap's vgReadPixels: ~8 ms per full-screen frame through the loop below)
+			const int rot = (sd.redShift - dd.redShift) & 31;
+			if(!unpre && dd.alphaBits == 8 && ((sd.greenShift - dd.greenShift) & 31) == rot &&
+			   ((sd.blueShift - dd.blueShift) & 31) == rot && ((sd.alphaShift - dd.alphaShift) & 31) == rot)
+			{
+				const int lrot = (32 - rot) & 31;
+				const RIuint8* sRow = si->m_data + (sy + si->m_storageOffsetY) * si->m_stride + (sx + si->m_storageOffsetX) * 4;
+				RIuint8* dRow = m_data + (dy + m_storageOffsetY) * m_stride + (dx + m_storageOffsetX) * 4;
+				const int sStride = si->m_stride, dStride = m_stride;
+				for(int y=0;y<h;y++, sRow += sStride, dRow += dStride)
+				{
+					const RIuint32* s = (const RIuint32*)sRow;
+					RIuint32* d = (RIuint32*)dRow;
+					if(rot == 0)
+						memcpy(d, s, w * 4);
+					else
+						for(int x=0;x<w;x++)
+						{
+							const RIuint32 p = s[x];
+							d[x] = (p >> rot) | (p << lrot);
+						}
+				}
+				m_mipmapsValid = false;
+				return;
+			}
 			for(int y=0;y<h;y++)
 			{
 				const RIuint32* s = (const RIuint32*)(si->m_data + (sy + y + si->m_storageOffsetY) * si->m_stride) + sx + si->m_storageOffsetX;
