@@ -241,12 +241,39 @@ RIEGLSurface::RIEGLSurface(void* OSWindowContext, const EGLConfig config, Drawab
     m_drawable->addReference();
 }
 
+//OURS (perf 2026-10-26): the images live pbuffers were made from (eglCreatePbufferFromClientBuffer). Only those can be
+//a current surface's colour buffer, so eglvgIsInUse answers "no" for any other image without getEGL's Dll::Tls exec
+//(it ran on every vgDrawImage: ~15% of the compositor). More than KPhBoundMax live at once = the full check, always.
+static const int KPhBoundMax = 32;
+static Image* gPhBound[KPhBoundMax];
+static int gPhBoundOverflow;
+static void PhBoundAdd(Image* aImage)
+{
+	for(int i=0;i<KPhBoundMax;i++)
+		if(!gPhBound[i]) { gPhBound[i] = aImage; return; }
+	gPhBoundOverflow++;
+}
+static void PhBoundDrop(Drawable* aDrawable)
+{
+	for(int i=0;i<KPhBoundMax;i++)
+		if(gPhBound[i] && aDrawable->isInUse(gPhBound[i])) gPhBound[i] = NULL;
+}
+static bool PhBoundMayHold(void* aImage)
+{
+	if(gPhBoundOverflow)
+		return true;
+	for(int i=0;i<KPhBoundMax;i++)
+		if(gPhBound[i] == aImage) return true;
+	return false;
+}
+
 RIEGLSurface::~RIEGLSurface()
 {
 	RI_ASSERT(m_referenceCount == 0);
     OSDestroyWindowContext(m_OSWindowContext);
 	if(m_drawable)
 	{
+		PhBoundDrop(m_drawable);
 		if(!m_drawable->removeReference())
 			RI_DELETE(m_drawable);
 	}
@@ -811,6 +838,8 @@ void* eglvgGetCurrentVGContext(void)
 
 bool eglvgIsInUse(void* image)
 {
+	if(!PhBoundMayHold(image))
+		return false;
 	EGL* egl = getEGL();
     if(egl)
     {
@@ -1643,6 +1672,7 @@ EGLSurface eglCreatePbufferFromClientBuffer(EGLDisplay dpy, EGLenum buftype, EGL
 		RI_ASSERT(s);
 		s->addReference();
 		display->addSurface(s);	//throws bad_alloc
+		PhBoundAdd(image);
 	}
 	catch(std::bad_alloc)
 	{
