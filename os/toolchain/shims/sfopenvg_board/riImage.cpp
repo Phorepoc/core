@@ -39,6 +39,8 @@
 #undef private
 #undef protected
 #include "riRasterizer.h"
+#include <string.h>
+#include <e32debug.h>
 //==============================================================================================
 
 namespace OpenVGRI
@@ -868,6 +870,34 @@ void Image::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, int 
 		return;
 	PhvgCpuAccess(src, false);	//OURS (O2)
 
+	//OURS (perf 2026-10-26): a single-sample surface into an image of the same 32-bit layout is a row copy; the generic
+	//loop below unpacks, converts and repacks every pixel through floats (eglSwapBuffers / vgReadPixels of a whole
+	//360x640 surface each frame: most of the compositor's CPU time)
+	if(src->m_numSamples == 1)
+	{
+		const Image* si = src->m_image;
+		const Color::Descriptor& sd = si->m_desc;
+		const Color::Descriptor& dd = m_desc;
+		if(sd.bitsPerPixel == 32 && dd.bitsPerPixel == 32 && sd.internalFormat == dd.internalFormat &&
+		   sd.redBits == dd.redBits && sd.redShift == dd.redShift && sd.greenBits == dd.greenBits && sd.greenShift == dd.greenShift &&
+		   sd.blueBits == dd.blueBits && sd.blueShift == dd.blueShift && sd.alphaBits == dd.alphaBits && sd.alphaShift == dd.alphaShift)
+		{
+			for(int y=0;y<h;y++)
+			{
+				const RIuint8* s = si->m_data + (sy + y + si->m_storageOffsetY) * si->m_stride + (sx + si->m_storageOffsetX) * 4;
+				RIuint8* d = m_data + (dy + y + m_storageOffsetY) * m_stride + (dx + m_storageOffsetX) * 4;
+				memcpy(d, s, w * 4);
+			}
+			m_mipmapsValid = false;
+			return;
+		}
+		static unsigned slow = 0;
+		if(slow < 8 || (slow & (slow - 1)) == 0)
+			RDebug::Printf("PH: vg blit surface->image slow path #%u %dx%d: src fmt %d bpp %d a%d@%d r@%d, dst fmt %d bpp %d a%d@%d r@%d",
+				slow, w, h, sd.internalFormat, sd.bitsPerPixel, sd.alphaBits, sd.alphaShift, sd.redShift,
+				dd.internalFormat, dd.bitsPerPixel, dd.alphaBits, dd.alphaShift, dd.redShift);
+		slow++;
+	}
 
 	for(int y=0;y<h;y++)
 	{

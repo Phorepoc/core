@@ -133,6 +133,10 @@ namespace
 	// is the GPU engine switched on (and available)?
 	TBool WantGpu(TBool aForce)
 		{
+		// (called for every CPU pixel access: the tick count, a kernel call, only every 64th time -- perf 2026-10-26)
+		static TUint calls = 0;
+		if (!aForce && gModeInit && (++calls & 63))
+			return gMode && gLoad == 1;
 		const TUint now = User::NTickCount();
 		if (aForce || !gModeInit || now - gModeTick > 500)
 			{
