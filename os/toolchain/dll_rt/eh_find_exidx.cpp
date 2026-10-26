@@ -23,7 +23,7 @@ namespace
 
 extern "C" __attribute__((visibility("hidden"))) TLinAddr __gnu_Unwind_Find_exidx(TLinAddr aPc, int* aCount)
     {
-    const TExcDesc* d = reinterpret_cast<const TExcDesc*>(UserSvr::ExceptionDescriptor(aPc));
+    const TExcDesc* d = reinterpret_cast<const TExcDesc*>(UserSvr::ExceptionDescriptor(aPc) & ~1u);   // bit 0 = the EHABI v2 mark (symbian_support.cpp masks it too)
     if (!d)
         {
         *aCount = 0;
