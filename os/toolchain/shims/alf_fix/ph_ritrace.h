@@ -7,10 +7,19 @@
 #define PH_RITRACE_H
 #include <e32std.h>
 #include <e32debug.h>
+// (perf 2026-10-26: the answer is cached for the last thread asked -- the name copy + fold compare ran on every call)
 inline TBool PhRiAlfThread()
 	{
-	TName n = RThread().Name();
-	return n.Length() >= 11 && n.Left(11).CompareF(_L("alfredserve")) == 0;
+	static TUint lastId;
+	static TBool lastAlf;
+	const TUint id = (TUint)RThread().Id();
+	if (id != lastId)
+		{
+		TName n = RThread().Name();
+		lastAlf = n.Length() >= 11 && n.Left(11).CompareF(_L("alfredserve")) == 0;
+		lastId = id;
+		}
+	return lastAlf;
 	}
 #define PHRI(...) do { if (PhRiAlfThread()) RDebug::Printf(__VA_ARGS__); } while (0)
 #endif

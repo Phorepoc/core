@@ -466,6 +466,17 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 	const TUint rmax = sd.redBits ? (1u << sd.redBits) - 1 : 0, gmax = sd.greenBits ? (1u << sd.greenBits) - 1 : 0, bmax = sd.blueBits ? (1u << sd.blueBits) - 1 : 0;
 	const TUint amax = sd.alphaBits ? (1u << sd.alphaBits) - 1 : 0, lmax = sd.luminanceBits ? (1u << sd.luminanceBits) - 1 : 0;
 	const TUint ls = sd.luminanceShift;
+	// (perf 2026-10-26) a 16/8-bit source channel scaled to 8 bits by a table built once per call: the per-pixel
+	// "/ max" were library divisions (no hardware divide in the v5TE build)
+	TUint8 eR[256], eG[256], eB[256], eA[256], eL[256];
+	if (bpp != 32)
+		{
+		for (TUint v = 0; v <= rmax; v++) eR[v] = (TUint8)((v * 255 + rmax / 2) / rmax);
+		for (TUint v = 0; v <= gmax; v++) eG[v] = (TUint8)((v * 255 + gmax / 2) / gmax);
+		for (TUint v = 0; v <= bmax; v++) eB[v] = (TUint8)((v * 255 + bmax / 2) / bmax);
+		for (TUint v = 0; v <= amax; v++) eA[v] = (TUint8)((v * 255 + amax / 2) / amax);
+		for (TUint v = 0; v <= lmax; v++) eL[v] = (TUint8)((v * 255 + lmax / 2) / lmax);
+		}
 	int sp[KMaxClips][2];
 	for (TInt y = bnd.y; y < bnd.y + bnd.height; y++)
 		{
@@ -488,14 +499,14 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 					{
 					const TUint p = bpp == 16 ? ((const RIuint16*)srow8)[i] : srow8[i];
 					if (lmax)
-						{ sr = sg = sb = (((p >> ls) & lmax) * 255 + lmax / 2) / lmax; }
+						{ sr = sg = sb = eL[(p >> ls) & lmax]; }
 					else
 						{
-						sr = rmax ? (((p >> rs) & rmax) * 255 + rmax / 2) / rmax : 255;
-						sg = gmax ? (((p >> gs) & gmax) * 255 + gmax / 2) / gmax : 255;
-						sb = bmax ? (((p >> bs) & bmax) * 255 + bmax / 2) / bmax : 255;
+						sr = rmax ? eR[(p >> rs) & rmax] : 255;
+						sg = gmax ? eG[(p >> gs) & gmax] : 255;
+						sb = bmax ? eB[(p >> bs) & bmax] : 255;
 						}
-					sa = amax ? (((p >> as) & amax) * 255 + amax / 2) / amax : 255;
+					sa = amax ? eA[(p >> as) & amax] : 255;
 					}
 				if (!srcPre && sa != 255)
 					{
