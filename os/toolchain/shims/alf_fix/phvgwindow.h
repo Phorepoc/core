@@ -121,7 +121,12 @@ static inline TInt PhVgOpenSurface(TPhVgWin& w)
 		return r;
 	if ((r = w.iSm.MapSurface(w.iSid, w.iChunk)) != KErrNone)
 		return r;
-	RDebug::Printf("PH: alf: vgwin surface created + mapped (stride %d)", a.iStride);
+	{	// what the kernel actually mapped (the surface manager derives iCacheAttrib from the chunk's returned map attributes)
+	RSurfaceManager::TInfoBuf ib;
+	const TInt ir = w.iSm.SurfaceInfo(w.iSid, ib);
+	RDebug::Printf("PH: alf: vgwin surface created + mapped (stride %d): SurfaceInfo %d cache attrib %d (0 = cached, 1 = not cached) contiguous %d",
+		a.iStride, ir, ir == KErrNone ? (TInt)ib().iCacheAttrib : -1, ir == KErrNone ? (TInt)ib().iContiguous : -1);
+	}
 	w.iStride = a.iStride;
 	w.iScreen = w.iWin->ScreenNumber();
 	RDebug::Printf("PH: alf: vgwin -> RegisterSurface (WSERV round trip)");
