@@ -26,6 +26,8 @@
 #include <e32std.h>
 #include <e32debug.h>
 #include <hal.h>
+// floor(n / 255) for n < 65535 (exact; every blend term here is at most 255*255+127): no division call on ARMv5
+static inline unsigned PhDiv255(unsigned n) { return (n + 1 + (n >> 8)) >> 8; }
 
 namespace OpenVGRI
 {
@@ -302,9 +304,9 @@ static void PhImageToRgba(Image* img, TUint8* out)
 				}
 			if (!srcPre && sa != 255)
 				{
-				sr = (sr * sa + 127) / 255;
-				sg = (sg * sa + 127) / 255;
-				sb = (sb * sa + 127) / 255;
+				sr = PhDiv255(sr * sa + 127);
+				sg = PhDiv255(sg * sa + 127);
+				sb = PhDiv255(sb * sa + 127);
 				}
 			TUint8* o = out + (y * w + x) * 4;
 			o[0] = (TUint8)sr; o[1] = (TUint8)sg; o[2] = (TUint8)sb; o[3] = (TUint8)sa;
@@ -635,13 +637,13 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 					}
 				if (!srcPre && sa != 255)
 					{
-					sr = (sr * sa + 127) / 255;
-					sg = (sg * sa + 127) / 255;
-					sb = (sb * sa + 127) / 255;
+					sr = PhDiv255(sr * sa + 127);
+					sg = PhDiv255(sg * sa + 127);
+					sb = PhDiv255(sb * sa + 127);
 					}
 				if (multiply)
 					{
-					sr = (sr * mr + 127) / 255; sg = (sg * mg + 127) / 255; sb = (sb * mb + 127) / 255; sa = (sa * ma + 127) / 255;
+					sr = PhDiv255(sr * mr + 127); sg = PhDiv255(sg * mg + 127); sb = PhDiv255(sb * mb + 127); sa = PhDiv255(sa * ma + 127);
 					}
 				RIuint32& q = drow[x + dstOffX];
 				if (!over || sa == 255)
@@ -652,7 +654,7 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 					{
 					const TUint ia = 255 - sa;
 					const TUint dr_ = (q >> drs) & 255, dg_ = (q >> dgs) & 255, db_ = (q >> dbs) & 255, da_ = (q >> das) & 255;
-					TUint orr = sr + (dr_ * ia + 127) / 255, og = sg + (dg_ * ia + 127) / 255, ob = sb + (db_ * ia + 127) / 255, oa = sa + (da_ * ia + 127) / 255;
+					TUint orr = sr + PhDiv255(dr_ * ia + 127), og = sg + PhDiv255(dg_ * ia + 127), ob = sb + PhDiv255(db_ * ia + 127), oa = sa + PhDiv255(da_ * ia + 127);
 					if (orr > 255) orr = 255;
 					if (og > 255) og = 255;
 					if (ob > 255) ob = 255;
@@ -981,8 +983,8 @@ bool PhRiFastFillRect(VGContext* c, VGPath vgpath, const Matrix3x3& m, VGbitfiel
 					else if (sa != 0)
 						{
 						const TUint ia = 255 - sa;
-						TUint orr = sr + (((q >> drs) & 255) * ia + 127) / 255, og = sg + (((q >> dgs) & 255) * ia + 127) / 255;
-						TUint ob = sb + (((q >> dbs) & 255) * ia + 127) / 255, oa = sa + (((q >> das) & 255) * ia + 127) / 255;
+						TUint orr = sr + PhDiv255(((q >> drs) & 255) * ia + 127), og = sg + PhDiv255(((q >> dgs) & 255) * ia + 127);
+						TUint ob = sb + PhDiv255(((q >> dbs) & 255) * ia + 127), oa = sa + PhDiv255(((q >> das) & 255) * ia + 127);
 						if (orr > 255) orr = 255;
 						if (og > 255) og = 255;
 						if (ob > 255) ob = 255;
@@ -1013,8 +1015,8 @@ bool PhRiFastFillRect(VGContext* c, VGPath vgpath, const Matrix3x3& m, VGbitfiel
 				for (TInt x = sp[si][0]; x < sp[si][1]; x++)
 					{
 					const RIuint32 q = drow[x];
-					TUint orr = pr + (((q >> drs) & 255) * ia + 127) / 255, og = pg + (((q >> dgs) & 255) * ia + 127) / 255;
-					TUint ob = pb + (((q >> dbs) & 255) * ia + 127) / 255, oa = pa + (((q >> das) & 255) * ia + 127) / 255;
+					TUint orr = pr + PhDiv255(((q >> drs) & 255) * ia + 127), og = pg + PhDiv255(((q >> dgs) & 255) * ia + 127);
+					TUint ob = pb + PhDiv255(((q >> dbs) & 255) * ia + 127), oa = pa + PhDiv255(((q >> das) & 255) * ia + 127);
 					if (orr > 255) orr = 255;
 					if (og > 255) og = 255;
 					if (ob > 255) ob = 255;

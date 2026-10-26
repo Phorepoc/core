@@ -37,6 +37,8 @@
 #undef private
 #undef protected
 #include <e32atomics.h>
+// floor(n / 255) for n < 65535 (exact; every blend term here is at most 255*255+127): no division call on ARMv5
+static inline unsigned PhDiv255(unsigned n) { return (n + 1 + (n >> 8)) >> 8; }
 
 //==============================================================================================
 
@@ -723,7 +725,7 @@ static bool PhFastPixel(const PixelPipe& pp, int x, int y, RIfloat coverage, int
         const bool pre = (dd.internalFormat & Color::PREMULTIPLIED) != 0;
         if(!pre && da != 255)
         {
-            dr = (dr * da + 127) / 255; dg = (dg * da + 127) / 255; db = (db * da + 127) / 255;
+            dr = PhDiv255(dr * da + 127); dg = PhDiv255(dg * da + 127); db = PhDiv255(db * da + 127);
         }
         int rr, rg, rb, ra;
         if(pp.m_blendMode == VG_BLEND_SRC)
@@ -733,7 +735,7 @@ static bool PhFastPixel(const PixelPipe& pp, int x, int y, RIfloat coverage, int
         else
         {
             const int ia = 255 - sa;
-            rr = sr + (dr * ia + 127) / 255; rg = sg + (dg * ia + 127) / 255; rb = sb + (db * ia + 127) / 255; ra = sa + (da * ia + 127) / 255;
+            rr = sr + PhDiv255(dr * ia + 127); rg = sg + PhDiv255(dg * ia + 127); rb = sb + PhDiv255(db * ia + 127); ra = sa + PhDiv255(da * ia + 127);
         }
         const int c = (int)(coverage * 256.0f + 0.5f);
         if(c < 256)
@@ -970,7 +972,7 @@ bool PhPixelSpan(const PixelPipe& pp, int x0, int x1, int y, RIfloat coverage)
             int da = dd.alphaBits ? (int)((v >> dd.alphaShift) & 255) : 255;
             if(!pre && da != 255)
             {
-                dr = (dr * da + 127) / 255; dg = (dg * da + 127) / 255; db = (db * da + 127) / 255;
+                dr = PhDiv255(dr * da + 127); dg = PhDiv255(dg * da + 127); db = PhDiv255(db * da + 127);
             }
             if(src)
             {
@@ -979,7 +981,7 @@ bool PhPixelSpan(const PixelPipe& pp, int x0, int x1, int y, RIfloat coverage)
             else
             {
                 const int ia = 255 - sa;
-                rr = sr + (dr * ia + 127) / 255; rg = sg + (dg * ia + 127) / 255; rb = sb + (db * ia + 127) / 255; ra = sa + (da * ia + 127) / 255;
+                rr = sr + PhDiv255(dr * ia + 127); rg = sg + PhDiv255(dg * ia + 127); rb = sb + PhDiv255(db * ia + 127); ra = sa + PhDiv255(da * ia + 127);
             }
             if(c < 256)
             {

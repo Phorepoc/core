@@ -592,7 +592,7 @@ void CHuiEnv::StartRefresh(TInt aIntervalInMilliSeconds, TInt aDelayInMillisecon
                          TCallBack(CHuiEnv::RefreshCallBack, this));  
 #endif
         iRefreshLoopActive = ETrue;
-        RDebug::Printf("PH: alf: HuiEnv::StartRefresh interval %d ms delay %d ms (refresh loop ON)", aIntervalInMilliSeconds, aDelayInMilliseconds);
+        { static TUint phs; if (++phs <= 6 || (phs & 1023) == 0) RDebug::Printf("PH: alf: HuiEnv::StartRefresh #%u interval %d ms delay %d ms (refresh loop ON)", phs, aIntervalInMilliSeconds, aDelayInMilliseconds); }
 
         // Store current refresh interval                   
         iRefreshInterval = aIntervalInMilliSeconds; 
