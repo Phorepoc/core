@@ -182,8 +182,17 @@ extern "C" void __wrap__ZN4User5LeaveEi(TInt aReason)
 	if (n < 60)
 		{
 		UserSvr::DllSetTls(KTlsHandle + 1, KDllUid_Special, (TAny*)(n + 1));
-		RDebug::Printf("PH: LEAVE %d lr=%08x top=%s", aReason, (TUint)__builtin_return_address(0),
-			!t ? "NONE" : (t->iResult == (TInt*)KMarkTag ? "marker" : "setjmp"));
+		// + the first ROM code addresses on the stack: lr is often euser's own LeaveIfError, the caller is above it
+		TUint ra[4] = {0, 0, 0, 0};
+		const TUint* sp;
+		asm volatile("mov %0, sp" : "=r"(sp));
+		TThreadStackInfo si;
+		const TInt words = RThread().StackInfo(si) == KErrNone ? Min(48, TInt((si.iBase - TLinAddr(sp)) / 4)) : 0;
+		for (TInt i = 0, k = 0; i < words && k < 4; ++i)
+			if (sp[i] >= 0x80000000u && sp[i] < 0x90000000u)
+				ra[k++] = sp[i];
+		RDebug::Printf("PH: LEAVE %d lr=%08x top=%s st=%08x %08x %08x %08x", aReason, (TUint)__builtin_return_address(0),
+			!t ? "NONE" : (t->iResult == (TInt*)KMarkTag ? "marker" : "setjmp"), ra[0], ra[1], ra[2], ra[3]);
 		}
 	if (t)
 		{
