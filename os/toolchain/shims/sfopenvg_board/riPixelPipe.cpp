@@ -851,8 +851,8 @@ static bool PhRampColour(const PixelPipe& pp, RIfloat g, int dstFmt, int* ch)
 
 #ifdef PH_RI_TIMING
 TUint gPhPaintPix[8];
-TUint gPhSlowPix, gPhSlowWhy;	// pixels the float path took since the call began, and the last one's (bpp<<24 | samples<<16 | mask<<12 | blend<<4 | paint)	//OURS (timing builds): pixels per paint type (0 solid, 1 linear, 2 radial, 3 pattern, 4 image)
 #endif
+TUint gPhSlowPix, gPhSlowWhy;	// pixels the float path took since the call began, and the last one's (bpp<<24 | samples<<16 | mask<<12 | blend<<4 | paint)	//OURS (timing builds): pixels per paint type (0 solid, 1 linear, 2 radial, 3 pattern, 4 image)
 void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMask) const
 {
 #ifdef PH_RI_TIMING
