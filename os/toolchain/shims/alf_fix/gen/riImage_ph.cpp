@@ -931,6 +931,41 @@ void Image::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, int 
 			m_mipmapsValid = false;
 			return;
 		}
+		//OURS (perf 2026-10-26): 8-bit RGBA into 16-bit RGB 565 (same linearity, non-premultiplied source; rounded like
+		//Color::pack) and into an alpha-only A8 image: a 640x640 layer copied into both took 100-300 ms per frame
+		if(sd.bitsPerPixel == 32 && !(sd.internalFormat & Color::LUMINANCE) && !sp &&
+		   sd.redBits == 8 && sd.greenBits == 8 && sd.blueBits == 8 && sd.alphaBits == 8)
+		{
+			const bool to565 = dd.bitsPerPixel == 16 && dd.redBits == 5 && dd.greenBits == 6 && dd.blueBits == 5 && dd.alphaBits == 0 &&
+				!(dd.internalFormat & Color::LUMINANCE) && (sd.internalFormat & Color::NONLINEAR) == (dd.internalFormat & Color::NONLINEAR);
+			const bool toA8 = dd.bitsPerPixel == 8 && dd.alphaBits == 8 && dd.redBits == 0 && dd.greenBits == 0 && dd.blueBits == 0 &&
+				!(dd.internalFormat & Color::LUMINANCE);
+			if(to565 || toA8)
+			{
+				for(int y=0;y<h;y++)
+				{
+					const RIuint32* s = (const RIuint32*)(si->m_data + (sy + y + si->m_storageOffsetY) * si->m_stride) + sx + si->m_storageOffsetX;
+					if(to565)
+					{
+						unsigned short* d = (unsigned short*)(m_data + (dy + y + m_storageOffsetY) * m_stride) + dx + m_storageOffsetX;
+						for(int x=0;x<w;x++)
+						{
+							const RIuint32 p = s[x];
+							const RIuint32 r = ((p >> sd.redShift) & 0xff) * 31 + 127, g = ((p >> sd.greenShift) & 0xff) * 63 + 127, b = ((p >> sd.blueShift) & 0xff) * 31 + 127;
+							d[x] = (unsigned short)(((r / 255) << dd.redShift) | ((g / 255) << dd.greenShift) | ((b / 255) << dd.blueShift));
+						}
+					}
+					else
+					{
+						RIuint8* d = m_data + (dy + y + m_storageOffsetY) * m_stride + dx + m_storageOffsetX;
+						for(int x=0;x<w;x++)
+							d[x] = (RIuint8)(s[x] >> sd.alphaShift);
+					}
+				}
+				m_mipmapsValid = false;
+				return;
+			}
+		}
 		static unsigned slow = 0;
 		if(slow < 8 || (slow & (slow - 1)) == 0)
 			RDebug::Printf("PH: vg blit surface->image slow path #%u %dx%d: src fmt %d bpp %d a%d@%d r@%d, dst fmt %d bpp %d a%d@%d r@%d",
@@ -2183,7 +2218,7 @@ void Surface::clear(const Color& clearColor, int x, int y, int w, int h, const A
 			switch(bytes)
 			{
 			case 4: { RIuint32* d = (RIuint32*)row0; for(int i=0;i<n;i++) d[i] = (RIuint32)p; break; }
-			case 2: { RIuint16* d = (RIuint16*)row0; for(int i=0;i<n;i++) d[i] = (RIuint16)p; break; }
+			case 2: { unsigned short* d = (unsigned short*)row0; for(int i=0;i<n;i++) d[i] = (RIuint16)p; break; }
 			case 1: { RIuint8* d = row0; for(int i=0;i<n;i++) d[i] = (RIuint8)p; break; }
 			default: { for(int i=0;i<n;i++) for(int b=0;b<bytes;b++) row0[i*bytes+b] = (RIuint8)(p >> (8*b)); break; }
 			}
