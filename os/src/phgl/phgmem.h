@@ -15,6 +15,8 @@
 #define PHGMEM_H
 #include <e32std.h>
 #include <e32atomics.h>
+#include <e32hal.h>
+#include <e32svr.h>
 
 namespace PhGMem
 	{

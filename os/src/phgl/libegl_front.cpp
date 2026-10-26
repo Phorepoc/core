@@ -31,6 +31,9 @@
 #define EGL_PROF_MEMORY_USAGE_THRESHOLD_NOK 0x3077
 #define EGL_SYNC_RESOURCE_PROFILING_NOK 0x3078
 #endif
+#ifndef EGL_SYNC_CONDITION_KHR
+#define EGL_SYNC_CONDITION_KHR 0x30F8
+#endif
 #ifdef PH_ALF_TRACE		// ALF bring-up (components.py libegl_alf, staged as libEGL.dll at ALF>=s2): "PH:" lines on the OpenVG route
 #define PH_VGT(...) RDebug::Printf("PH: alf: libEGL " __VA_ARGS__)
 #else
