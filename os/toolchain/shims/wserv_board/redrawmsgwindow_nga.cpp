@@ -929,9 +929,6 @@ void CWsRedrawMsgWindow::DrawCommandsL()
 			WS_ASSERT_DEBUG(header.iOpcode == EWsStoreAllGcAttributes, EWsPanicDrawCommandsBufferCorrupt);
 #endif
 
-			// OURS: the draw mode and brush alpha of the playback, for the transparent-clear skip below
-			TBool phWriteAlpha = EFalse;
-			TBool phBrushClear = EFalse;
 			// Read through remaining commands
 			while (pos < length)
 				{
@@ -984,21 +981,6 @@ void CWsRedrawMsgWindow::DrawCommandsL()
 						if (HasElement() && (opcode == EWsGcOpClear || opcode == EWsGcOpClearRect))
 							{
 							{ static TInt phSk = 0; if (phSk++ < 10) RDebug::Printf("PH: redraw skip op %d on a window with a background surface", opcode); }
-							opcode = -1;
-							}
-						// OURS: a window with an alpha channel (the home screen's transparent status pane, akntitle.cpp etc.) clears
-						// its area to alpha 0 in WriteAlpha mode so the window behind shows through. On the device every window is
-						// its own composited layer; here all windows share one UI buffer, so that clear erased what the windows
-						// behind had already drawn (composed over black = the black home-screen top bar). In one buffer
-						// "transparent" means "leave the pixels below": skip such a clear.
-						if (opcode == EWsGcOpSetDrawMode)
-							phWriteAlpha = (*reinterpret_cast<const TUint*>(buf.Ptr()) == CGraphicsContext::EDrawModeWriteAlpha);
-						else if (opcode == EWsGcOpSetBrushColor)
-							phBrushClear = (reinterpret_cast<const TRgb*>(buf.Ptr())->Alpha() == 0);
-						else if (phWriteAlpha && phBrushClear && CliWin()->HasAlpha() &&
-								 (opcode == EWsGcOpClear || opcode == EWsGcOpClearRect || opcode == EWsGcOpDrawRect))
-							{
-							{ static TInt phTc = 0; if (phTc++ < 10) RDebug::Printf("PH: redraw skip transparent clear op %d", opcode); }
 							opcode = -1;
 							}
 						if (opcode > -1)
