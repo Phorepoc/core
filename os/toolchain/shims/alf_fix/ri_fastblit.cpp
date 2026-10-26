@@ -244,6 +244,7 @@ void PhPathProf(void* aPath, int aSegs, int aTx, int aTy, unsigned aModes, unsig
 	for (int i = 0; i < 32; i++) gPathProf[i].iN = 0;
 	gPathProfDropped = 0;
 	}
+static TUint gBlitPix[2], gBlitTicks[2], gBlitMulPix;	// (timing builds) PhRiFastDrawImage CPU loops: pixels and ticks
 static void PhTimeReport()
 	{
 	static TInt freq;
@@ -253,8 +254,8 @@ static void PhTimeReport()
 		RDebug::Printf("PH: alf: RI time inside the calls: drawImage %u ms (x%u), drawPath %u ms (x%u), vgClear %u ms (x%u)",
 			(TUint)((TUint64)gTimeTicks[0] * 1000 / freq), gTimeN[0], (TUint)((TUint64)gTimeTicks[1] * 1000 / freq), gTimeN[1], (TUint)((TUint64)gTimeTicks[2] * 1000 / freq), gTimeN[2]);
 	if ((n & 255) == 0 && n)
-		RDebug::Printf("PH: alf: RI cpu inside the calls: drawImage %u ms, drawPath %u ms, vgClear %u ms",
-			(TUint)(gCpuUs[0] / 1000), (TUint)(gCpuUs[1] / 1000), (TUint)(gCpuUs[2] / 1000));
+		RDebug::Printf("PH: alf: RI blit loops: same-format %u px %u ms, general %u px %u ms (multiply %u px)",
+			gBlitPix[0], (TUint)((TUint64)gBlitTicks[0] * 1000 / freq), gBlitPix[1], (TUint)((TUint64)gBlitTicks[1] * 1000 / freq), gBlitMulPix);
 	}
 static TUint gFmtN;
 static void PhDeny(TInt aWhy) { ++gDeny[aWhy]; }
@@ -496,6 +497,9 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 	// not mirrored, no tint: a row copy where the result is the source, else two channels at a time in one multiply
 	const bool same32 = bpp == 32 && !multiply && !flipX && rs == drs && gs == dgs && bs == dbs &&
 		(srcAlpha ? (srcPre && as == das) : true);
+#ifdef PH_RI_TIMING
+	const TUint phB0 = User::FastCounter();
+#endif
 	if (same32)
 		{
 		const RIuint32 amask = 255u << das;
@@ -593,6 +597,11 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 					}
 				}
 		}
+#ifdef PH_RI_TIMING
+	gBlitTicks[same32 ? 0 : 1] += User::FastCounter() - phB0;
+	gBlitPix[same32 ? 0 : 1] += bnd.width * bnd.height;
+	if (multiply) gBlitMulPix += bnd.width * bnd.height;
+#endif
 	}
 	++taken;
 	if (taken == 1 || (taken & 1023) == 0)
