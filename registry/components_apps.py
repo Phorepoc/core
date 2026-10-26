@@ -241,6 +241,17 @@ COMPONENTS = {
     "alfresourcepool": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/resourcepool/group/alfresourcepool.mmp"),   # <- alfwidgetmodel
     "mulmodelutility": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/muldatamodel/group/mulmodelutility.mmp"),   # <- glxuiutilities
     "mullogging": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/mullogging/group/mullogging.mmp"),   # <- mulmodelutility
+    # the Alf widget plug-ins the widget factory loads by name (Photos' full-screen view: alfviewwidget + mulcoverflowwidget;
+    # without them createViewWidget throws and the view leaves KErrGeneral)
+    "mulutility": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/common/group/mulxmlutility.mmp"),
+    "muldatamodel": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/muldatamodel/group/muldatamodel.mmp"),
+    "muldatamodelplugin": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/muldatamodel/group/muldatamodelplugin.mmp"),
+    "alfcontainerwidgetstatic": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/alfcontainerwidget/group/alfcontainerwidgetstatic.mmp"),
+    "alfcontainerwidget": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/alfcontainerwidget/group/alfcontainerwidget.mmp"),
+    "alfviewwidget": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/alfviewwidget/group/alfviewwidget.mmp"),
+    "alfscrollbarwidget": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/alfscrollbarwidget/group/alfscrollbarwidget.mmp"),
+    "mulsliderwidget": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/mulsliderwidget/group/mulsliderwidget.mmp"),
+    "mulcoverflowwidget": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/mulcoverflowwidget/group/mulcoverflowwidget.mmp"),
     "mediaclientvideodisplay": dict(mmp="oss.FCL.sf.os.mmaudio/mmlibs/mmfw/MMPFiles/client/mediaclientvideodisplay.mmp"),   # <- mpxvideoplaybackviews
 }
 
@@ -289,7 +300,8 @@ for _k, _c in COMPONENTS.items():
         _c["arm_flags"] = list(_c.get("arm_flags", [])) + ["-D__SOFTFP="]
 # ... and these throw and catch C++ exceptions themselves (RVCT built them with exceptions on): build_mmp.py `cxx_eh`
 for _k in ("osncore", "alfresourcepool", "alfwidgetmodel", "alfwidgetutils", "mulmodelutility", "glxdataprovider",
-           "glxfullscreenview"):
+           "glxfullscreenview", "mulutility", "muldatamodel", "muldatamodelplugin", "alfcontainerwidgetstatic",
+           "alfcontainerwidget", "alfviewwidget", "alfscrollbarwidget", "mulsliderwidget", "mulcoverflowwidget"):
     COMPONENTS[_k]["cxx_eh"] = True
     # (with exceptions on, e32cmn.h's placement new must say throw () as <new> does: GCCE's __NO_THROW, as libstdcpp)
     COMPONENTS[_k]["arm_flags"] = list(COMPONENTS[_k].get("arm_flags", [])) + [
