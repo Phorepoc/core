@@ -254,7 +254,7 @@ static void PhTimeReport()
 		RDebug::Printf("PH: alf: RI time inside the calls: drawImage %u ms (x%u), drawPath %u ms (x%u), vgClear %u ms (x%u)",
 			(TUint)((TUint64)gTimeTicks[0] * 1000 / freq), gTimeN[0], (TUint)((TUint64)gTimeTicks[1] * 1000 / freq), gTimeN[1], (TUint)((TUint64)gTimeTicks[2] * 1000 / freq), gTimeN[2]);
 	if ((n & 255) == 0 && n)
-		RDebug::Printf("PH: alf: RI blit loops: same-format %u px %u ms, general %u px %u ms (multiply %u px)",
+		RDebug::Printf("PH: alf: RI blit loops: fast %u px %u ms, general %u px %u ms (multiply %u px)",
 			gBlitPix[0], (TUint)((TUint64)gBlitTicks[0] * 1000 / freq), gBlitPix[1], (TUint)((TUint64)gBlitTicks[1] * 1000 / freq), gBlitMulPix);
 	}
 static TUint gFmtN;
@@ -551,6 +551,57 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 				}
 			}
 		}
+	// (perf 2026-10-26) 32-bit 8:8:8:8 source in another channel order (ARGB into RGBA: full-screen layers every frame):
+	// the channels moved into place, then the same packed blend as above
+	else if (bpp == 32 && !multiply && !flipX && dsd.alphaBits == 8 && sd.redBits == 8 && sd.greenBits == 8 && sd.blueBits == 8 &&
+		(srcAlpha ? (srcPre && sd.alphaBits == 8) : true))
+		{
+		const RIuint32 amask = 255u << das;
+		for (TInt y = bnd.y; y < bnd.y + bnd.height; y++)
+			{
+			const int ns = PhRowSpans(clips, nclip, y, bnd.x, bnd.x + bnd.width, sp);
+			const TInt j = flipY ? ity - y - 1 : y - ity;
+			const RIuint32* srow = (const RIuint32*)(img->m_data + (j + srcOffY) * img->m_stride) + srcOffX - itx;
+			RIuint32* drow = (RIuint32*)(dst->m_data + (y + dstOffY) * dst->m_stride) + dstOffX;
+			for (int si = 0; si < ns; si++)
+				for (TInt x = sp[si][0]; x < sp[si][1]; x++)
+					{
+					const RIuint32 v = srow[x];
+					const RIuint32 sa = srcAlpha ? (v >> as) & 255 : 255;
+					const RIuint32 s = (((v >> rs) & 255) << drs) | (((v >> gs) & 255) << dgs) | (((v >> bs) & 255) << dbs) | (sa << das);
+					if (sa == 255 || !over)
+						drow[x] = s | (srcAlpha ? 0 : amask);
+					else if (sa != 0)
+						{
+						const RIuint32 ia = 255 - sa, d = drow[x];
+						RIuint32 rb = (d & 0x00ff00ffu) * ia, ag = ((d >> 8) & 0x00ff00ffu) * ia;
+						rb = ((rb + 0x00800080u + ((rb >> 8) & 0x00ff00ffu)) >> 8) & 0x00ff00ffu;	// /255, rounded
+						ag = ((ag + 0x00800080u + ((ag >> 8) & 0x00ff00ffu)) >> 8) & 0x00ff00ffu;
+						drow[x] = s + (rb | (ag << 8));
+						}
+					}
+			}
+		}
+	// (perf 2026-10-26) opaque 16-bit 5:6:5 (full-screen layers): three tables of destination words, already shifted
+	else if (bpp == 16 && !multiply && !flipX && !srcAlpha && !lmax && dsd.alphaBits == 8 && sd.redBits == 5 && sd.greenBits == 6 && sd.blueBits == 5)
+		{
+		RIuint32 tR[32], tG[64], tB[32];
+		for (TUint v = 0; v < 32; v++) { tR[v] = ((RIuint32)eR[v] << drs) | (255u << das); tB[v] = (RIuint32)eB[v] << dbs; }
+		for (TUint v = 0; v < 64; v++) tG[v] = (RIuint32)eG[v] << dgs;
+		for (TInt y = bnd.y; y < bnd.y + bnd.height; y++)
+			{
+			const int ns = PhRowSpans(clips, nclip, y, bnd.x, bnd.x + bnd.width, sp);
+			const TInt j = flipY ? ity - y - 1 : y - ity;
+			const RIuint16* srow = (const RIuint16*)(img->m_data + (j + srcOffY) * img->m_stride) + srcOffX - itx;
+			RIuint32* drow = (RIuint32*)(dst->m_data + (y + dstOffY) * dst->m_stride) + dstOffX;
+			for (int si = 0; si < ns; si++)
+				for (TInt x = sp[si][0]; x < sp[si][1]; x++)
+					{
+					const TUint p = srow[x];
+					drow[x] = tR[(p >> rs) & 31] | tG[(p >> gs) & 63] | tB[(p >> bs) & 31];
+					}
+			}
+		}
 	else
 	for (TInt y = bnd.y; y < bnd.y + bnd.height; y++)
 		{
@@ -611,8 +662,11 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 				}
 		}
 #ifdef PH_RI_TIMING
-	gBlitTicks[same32 ? 0 : 1] += User::FastCounter() - phB0;
-	gBlitPix[same32 ? 0 : 1] += bnd.width * bnd.height;
+	{
+	const int k = same32 ? 0 : (bpp == 32 && !multiply && !flipX) || (bpp == 16 && !multiply && !flipX && !srcAlpha) ? 0 : 1;
+	gBlitTicks[k] += User::FastCounter() - phB0;
+	gBlitPix[k] += bnd.width * bnd.height;
+	}
 	if (multiply) gBlitMulPix += bnd.width * bnd.height;
 #endif
 	}
