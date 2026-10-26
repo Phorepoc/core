@@ -298,7 +298,10 @@ for _k, _c in COMPONENTS.items():
         _c["arm_only"] = True
         # (stdapis' time.h/wchar.h define __SOFTFP themselves only for WINSCW; with the STLport pre-include they come
         # before e32def.h, which defines it for ARM -- as libstdcpp)
-        _c["arm_flags"] = list(_c.get("arm_flags", [])) + ["-D__SOFTFP="]
+        # -fno-devirtualize: g++ turns a virtual call on an object it just built into a direct call -- through a
+        # this-adjusting thunk the RVCT-frozen .defs never export (muldatamodelplugin -> MulModelImpl's makeInterface
+        # thunk: unimpl stub, EUSRNIMP opening a picture). A vtable call needs no export.
+        _c["arm_flags"] = list(_c.get("arm_flags", [])) + ["-D__SOFTFP=", "-fno-devirtualize"]
 # ... and these throw and catch C++ exceptions themselves (RVCT built them with exceptions on): build_mmp.py `cxx_eh`
 for _k in ("osncore", "alfresourcepool", "alfwidgetmodel", "alfwidgetutils", "mulmodelutility", "glxdataprovider",
            "glxfullscreenview", "alfwidgetfactory", "mulutility", "muldatamodel", "muldatamodelplugin", "alfcontainerwidgetstatic",
