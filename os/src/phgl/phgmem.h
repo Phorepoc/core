@@ -119,8 +119,18 @@ namespace PhGMem
 		// iTotalRamInBytes is 2 GB+ here: as a TInt that is negative; and the hybrid heap reserves TWICE the size asked
 		// (heap_hybrid.cpp ChunkHeap) -- over 1 GB that overflows too. Either way RChunk::Create panics USER 99, not an error
 		const TInt64 ram = (TInt64)(TUint)info().iTotalRamInBytes;
+		// (perf 2026-10-26) on a NORMAL chunk, not the disconnected one UserHeap::ChunkHeap(name, ...) makes: the hybrid heap
+		// then runs Doug Lea only (heap_hybrid.cpp: Commit fails -> dlOnly). Its page allocator mapped and unmapped (zero-filled)
+		// fresh pages for every cell of 64 KB or more -- every pixel buffer, every frame -- in kernel time the sampler never saw
 		for (TInt max = ram > 0x3ff00000 ? 0x3ff00000 : (TInt)(ram & ~0xfffff); !h && max >= 0x1000000; max /= 2)
-			h = UserHeap::ChunkHeap(NULL, 0x10000, max, 0x100000);
+			{
+			RChunk c;
+			if (c.CreateLocal(0x100000, max) != KErrNone)
+				continue;
+			h = UserHeap::ChunkHeap(c, 0x100000, 0x100000, max);
+			if (!h)
+				c.Close();
+			}
 		pool = h;
 		__e32_atomic_store_ord32(&state, 2);
 		return pool;
