@@ -33,6 +33,7 @@
 #include "riRasterizer.h"
 #include <centralrepository.h>
 #include <e32debug.h>
+#include <hal.h>
 
 //==============================================================================================
 
@@ -348,8 +349,27 @@ int Rasterizer::setupSamplingPattern(VGRenderingQuality renderingQuality, int nu
 * \note		
 *//*-------------------------------------------------------------------*/
 
+#ifdef PH_RI_TIMING
+// OURS (timing builds): wall time inside Rasterizer::fill, to split vgDrawPath into tessellation and rasterisation
+struct TPhFillTimer
+	{
+	TUint32 iT0;
+	TPhFillTimer() : iT0(User::FastCounter()) {}
+	~TPhFillTimer()
+		{
+		static TUint64 total; static TUint n; static TInt freq;
+		if (!freq) HAL::Get(HAL::EFastCounterFrequency, freq);
+		total += User::FastCounter() - iT0;
+		if ((++n & 127) == 0)
+			RDebug::Printf("PH: alf: RI time inside Rasterizer::fill: %u ms (x%u)", (TUint)(total * 1000 / freq), n);
+		}
+	};
+#endif
 void Rasterizer::fill()
 {
+#ifdef PH_RI_TIMING
+	TPhFillTimer phTimer;
+#endif
 	// OURS (O2): a solid-colour fill the GPU engine can do (riPhvg.cpp); anything else falls through to the CPU
 	if(m_pixelPipe && !m_covBuffer && PhvgTryFill(*this))
 		return;
