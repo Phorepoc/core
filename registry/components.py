@@ -2642,6 +2642,8 @@ if _ALFTRACE:
         "toolchain/shims/alf_fix/gen/riImage_ph.cpp", "toolchain/shims/alf_fix/gen/riMiniEGL_ph.cpp", "toolchain/shims/alf_fix/ri_assert.cpp",
         "toolchain/shims/alf_fix/gen/riApi_ph.cpp", "toolchain/shims/alf_fix/ri_fastblit.cpp"]
     _riw["defs"] = list(_riw["defs"]) + ["PH_ALF_FASTCLEAR"]   # riImage.cpp Surface::clear row fast path (the alf window mask clear took minutes)
+    if os.environ.get("ALF_TIMING") == "1":   # time every vgDrawImage/vgDrawPath/vgClear ("RI time inside the calls"; off: ~5% of the compositor)
+        _riw["defs"] = list(_riw["defs"]) + ["PH_RI_TIMING"]
     _riw["libs"] = list(_riw.get("libs", [])) + ["hal.lib"]   # ri_fastblit.cpp: HAL::Get(EFastCounterFrequency)
     _riw.update(alf=2, rom="sflibopenvgrefimpl_alf.dll", rom_as="sflibopenvgrefimpl.dll")
     COMPONENTS["sflibopenvgrefimpl_alf"] = _riw

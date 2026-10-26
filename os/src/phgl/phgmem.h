@@ -126,6 +126,8 @@ namespace PhGMem
 		return pool;
 		}
 
+	const TInt KHeadroomBig = 256 * 1024;	// a pixel buffer this big refreshes the headroom at once
+
 	// aBytes > 0: allocated; < 0: freed
 	inline void Add(TInt aBytes)
 		{
@@ -139,6 +141,11 @@ namespace PhGMem
 			if (now > s->iPeak)
 				s->iPeak = now;
 			}
+		// the headroom needs AllocSize, a walk of the whole heap: every 64th change or a big one only (perf 2026-10-26:
+		// once per pixel buffer, it was ~6% of the compositor while scrolling)
+		static TUint changes;
+		if ((++changes & 63) && aBytes < KHeadroomBig && aBytes > -KHeadroomBig)
+			return;
 		RHeap* h = Pool();
 		if (!h)
 			h = &User::Heap();
