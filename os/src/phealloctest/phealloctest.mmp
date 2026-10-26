@@ -1,0 +1,13 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// phealloctest.mmp -- OURS: allocator and fast-exec cost on this kernel (see phealloctest.cpp)
+TARGET			phealloctest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157A7
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phealloctest.cpp
+LIBRARY			euser.lib
