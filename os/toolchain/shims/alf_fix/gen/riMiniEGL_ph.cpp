@@ -1636,6 +1636,7 @@ EGLSurface eglCreatePbufferFromClientBuffer(EGLDisplay dpy, EGLenum buftype, EGL
 	RIEGLSurface* s = NULL;
 	try
 	{
+		{ static unsigned phN, phPx; ++phN; phPx += (unsigned)(image->getWidth() * image->getHeight()); if (phN <= 4 || (phN & (phN - 1)) == 0 || (phN & 63) == 0) PHRI("PH: alf: pbuffer-from-image #%u (%dx%d), %u px rasterised so far", phN, image->getWidth(), image->getHeight(), phPx); }
 		d = RI_NEW(Drawable, (image, display->getConfig(config).m_maskBits));
 		RI_ASSERT(d);
 		s = RI_NEW(RIEGLSurface,(NULL, config, d, false, EGL_BACK_BUFFER));	//throws bad_alloc
