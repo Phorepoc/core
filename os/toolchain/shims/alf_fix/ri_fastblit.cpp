@@ -199,6 +199,40 @@ void PhRiTimeAdd(int kind, TUint ticks)
 	for (int i = 0; i < 10; i++) gPrevDeny[i] = gDeny[i];
 	for (int i = 0; i < 12; i++) gPrevFill[i] = gFillDeny[i];
 	}
+// OURS (perf 2026-10-26): which paths does ALF draw, how often and from where. Keyed by (path, caller); every 256 vgDrawPath
+// calls the 8 most expensive entries since the last report are printed and the table restarts. tx/ty = the path's translation
+// on its target; caller = the return address into the ALF renderer (symbolise against the ROM map).
+struct TPhPathProf { void* iPath; void* iCaller; TUint iTicks, iN; int iSegs, iTx, iTy; TUint iModes; };
+static TPhPathProf gPathProf[32];
+static TUint gPathProfCalls, gPathProfDropped;
+void PhPathProf(void* aPath, int aSegs, int aTx, int aTy, unsigned aModes, unsigned aTicks, void* aCaller)
+	{
+	TPhPathProf* e = NULL;
+	for (int i = 0; i < 32 && !e; i++)
+		if (gPathProf[i].iN && gPathProf[i].iPath == aPath && gPathProf[i].iCaller == aCaller) e = &gPathProf[i];
+	for (int i = 0; i < 32 && !e; i++)
+		if (!gPathProf[i].iN) { e = &gPathProf[i]; e->iPath = aPath; e->iCaller = aCaller; }
+	if (e) { e->iTicks += aTicks; ++e->iN; e->iSegs = aSegs; e->iTx = aTx; e->iTy = aTy; e->iModes = aModes; }
+	else ++gPathProfDropped;
+	if ((++gPathProfCalls & 255) != 0)
+		return;
+	static TInt freq;
+	if (!freq) HAL::Get(HAL::EFastCounterFrequency, freq);
+	RDebug::Printf("PH: alf: path prof: 256 drawPath calls, %u not tracked; top by time:", gPathProfDropped);
+	for (int k = 0; k < 8; k++)
+		{
+		int best = -1;
+		for (int i = 0; i < 32; i++)
+			if (gPathProf[i].iN && (best < 0 || gPathProf[i].iTicks > gPathProf[best].iTicks)) best = i;
+		if (best < 0) break;
+		const TPhPathProf& b = gPathProf[best];
+		RDebug::Printf("PH: alf: path prof: path %08x caller %08x n=%u %u us segs=%d at %d,%d modes=%u",
+			(TUint)b.iPath, (TUint)b.iCaller, b.iN, (TUint)((TUint64)b.iTicks * 1000000 / freq), b.iSegs, b.iTx, b.iTy, b.iModes);
+		gPathProf[best].iN = 0;
+		}
+	for (int i = 0; i < 32; i++) gPathProf[i].iN = 0;
+	gPathProfDropped = 0;
+	}
 static void PhTimeReport()
 	{
 	static TInt freq;
