@@ -499,6 +499,19 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 		(srcAlpha ? (srcPre && as == das) : true);
 #ifdef PH_RI_TIMING
 	const TUint phB0 = User::FastCounter();
+	if (!same32 && bnd.width * bnd.height >= 4096)
+		{	// which big images miss the same-format loop (first 12 distinct)
+		static TUint seen[12]; static int nseen;
+		const TUint key = (TUint)sd.internalFormat << 24 ^ (TUint)bpp << 16 ^ rs << 12 ^ gs << 8 ^ bs << 4 ^ as ^ (multiply ? 1u << 31 : 0) ^ (flipX ? 1u << 30 : 0) ^ (srcPre ? 1u << 29 : 0);
+		int k = 0;
+		while (k < nseen && seen[k] != key) k++;
+		if (k == nseen && nseen < 12)
+			{
+			seen[nseen++] = key;
+			RDebug::Printf("PH: alf: RI blit general: %dx%d src fmt %x bpp %d shifts r%u g%u b%u a%u alpha %d pre %d, dst fmt %x shifts r%u g%u b%u a%u, flipX %d multiply %d",
+				w, h, (unsigned)sd.internalFormat, bpp, rs, gs, bs, as, (int)srcAlpha, (int)srcPre, (unsigned)dsd.internalFormat, drs, dgs, dbs, das, (int)flipX, (int)multiply);
+			}
+		}
 #endif
 	if (same32)
 		{
