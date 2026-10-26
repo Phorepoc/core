@@ -368,6 +368,7 @@ struct TPhFillTimer
 		}
 	};
 #endif
+bool PhPixelSpan(const PixelPipe& pp, int x0, int x1, int y, RIfloat coverage);
 TUint gPhFillStat[5];	//OURS (timing builds, the current vgDrawPath): GPU-try ticks, edges, scanlines, coverage evaluations, pixels
 void Rasterizer::fill()
 {
@@ -596,6 +597,9 @@ void Rasterizer::fill()
 #ifdef PH_RI_TIMING
 			if(sampleMask) gPhFillStat[4] += endSpan - i;
 #endif
+			//OURS (perf 2026-10-26): a long constant-coverage run in one call (PhPixelSpan, riPixelPipe.cpp)
+			if(sampleMask && !m_scissor && !m_covBuffer && endSpan - i >= 16 && PhPixelSpan(*m_pixelPipe, i, endSpan, j, coverage))
+				i = endSpan;
 			if(sampleMask)
 			{
 				for(;i<endSpan;i++)

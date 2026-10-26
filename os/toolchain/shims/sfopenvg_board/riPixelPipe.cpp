@@ -850,9 +850,167 @@ static bool PhRampColour(const PixelPipe& pp, RIfloat g, int dstFmt, int* ch)
 }
 
 #ifdef PH_RI_TIMING
-TUint gPhPaintPix[8];
+TUint gPhPaintPix[8];	//OURS (timing builds): pixels per paint type (0 solid, 1 linear, 2 radial, 3 pattern, 4 image)
 #endif
-TUint gPhSlowPix, gPhSlowWhy;	// pixels the float path took since the call began, and the last one's (bpp<<24 | samples<<16 | mask<<12 | blend<<4 | paint)	//OURS (timing builds): pixels per paint type (0 solid, 1 linear, 2 radial, 3 pattern, 4 image)
+//OURS (perf 2026-10-26): a run of pixels with one coverage (the rasteriser's constant-coverage spans: full-screen
+//backgrounds were ~0.65 us a pixel through pixelPipe's per-pixel set-up). Solid, linear and radial paint into a 32-bit
+//8:8:8(:8) single-sample buffer, no mask, SRC / SRC_OVER; same arithmetic as PhFastPixel. false = not handled, nothing written.
+static bool PhSpread(RIfloat& g, int mode)
+{
+    switch(mode)
+    {
+    case VG_COLOR_RAMP_SPREAD_PAD: g = RI_CLAMP(g, 0.0f, 1.0f); break;
+    case VG_COLOR_RAMP_SPREAD_REFLECT: { RIfloat m = RI_MOD(g, 2.0f); g = (m < 1.0f) ? m : 2.0f - m; break; }
+    default: g = g - (RIfloat)floor(g); break;
+    }
+    return true;
+}
+
+bool PhPixelSpan(const PixelPipe& pp, int x0, int x1, int y, RIfloat coverage)
+{
+    const Paint* p = pp.m_paint;
+    if(!p || pp.m_image || pp.m_colorTransform)
+        return false;
+    const VGPaintType pt = p->m_paintType;
+    if(pt != VG_PAINT_TYPE_COLOR && pt != VG_PAINT_TYPE_LINEAR_GRADIENT && pt != VG_PAINT_TYPE_RADIAL_GRADIENT)
+        return false;
+    Surface* cb = pp.m_drawable->getColorBuffer();
+    const Color::Descriptor& dd = cb->getDescriptor();
+    if(pp.m_drawable->getNumSamples() != 1 || (pp.m_masking && pp.m_drawable->getMaskBuffer()) ||
+       (pp.m_blendMode != VG_BLEND_SRC_OVER && pp.m_blendMode != VG_BLEND_SRC) ||
+       dd.bitsPerPixel != 32 || dd.redBits != 8 || dd.greenBits != 8 || dd.blueBits != 8 ||
+       (dd.alphaBits != 8 && dd.alphaBits != 0) || (dd.internalFormat & Color::LUMINANCE) || !cb->m_image)
+        return false;
+    const int dstFmt = (int)(dd.internalFormat | Color::PREMULTIPLIED);
+    int solid[4];
+    RIuint8 ramp[KPhRampN + 1][4];
+    if(pt == VG_PAINT_TYPE_COLOR)
+    {
+        Color c = p->m_paintColor;
+        c.convert((Color::InternalFormat)dstFmt);
+        solid[0] = (int)(RI_CLAMP(c.r, 0.0f, 1.0f) * 255.0f + 0.5f); solid[1] = (int)(RI_CLAMP(c.g, 0.0f, 1.0f) * 255.0f + 0.5f);
+        solid[2] = (int)(RI_CLAMP(c.b, 0.0f, 1.0f) * 255.0f + 0.5f); solid[3] = (int)(RI_CLAMP(c.a, 0.0f, 1.0f) * 255.0f + 0.5f);
+    }
+    else
+    {   //a local copy of the ramp table: one lookup builds or finds it, then a seqlock-checked copy
+        int ch[4];
+        if(!PhRampColour(pp, 0.0f, dstFmt, ch))
+            return false;
+        bool copied = false;
+        for(int k=0;k<KPhRampSlots && !copied;k++)
+        {
+            TPhRamp& r = gPhRamp[k];
+            const TUint32 s0 = r.iSeq;
+            if((s0 & 1) || !PhRampKey(r, p, dstFmt))
+                continue;
+            Mem::Copy(ramp, r.iC, sizeof(ramp));
+            copied = r.iSeq == s0;
+        }
+        if(!copied)
+            return false;
+    }
+    if(gPhvgLive && *gPhvgLive)
+        PhvgCpuAccess(cb, true);
+    //linear: g is affine in x along the span
+    RIfloat lg = 0.0f, ldg = 0.0f;
+    if(pt == VG_PAINT_TYPE_LINEAR_GRADIENT)
+    {
+        const Vector2 u = p->m_linearGradientPoint1 - p->m_linearGradientPoint0;
+        const RIfloat usq = dot(u, u);
+        if(usq > 0.0f)
+        {
+            Vector2 q = affineTransform(pp.m_surfaceToPaintMatrix, Vector2(x0 + 0.5f, y + 0.5f));
+            q -= p->m_linearGradientPoint0;
+            lg = dot(q, u) / usq;
+            ldg = (u.x * pp.m_surfaceToPaintMatrix[0][0] + u.y * pp.m_surfaceToPaintMatrix[1][0]) / usq;
+        }
+        else
+            lg = 1.0f;
+    }
+    const int spread = (int)p->m_colorRampSpreadMode;
+    const bool pre = (dd.internalFormat & Color::PREMULTIPLIED) != 0;
+    const bool src = pp.m_blendMode == VG_BLEND_SRC;
+    const int c = (int)(coverage * 256.0f + 0.5f);
+    Image* im = cb->m_image;
+    RIuint32* px = (RIuint32*)(im->m_data + (y + im->m_storageOffsetY) * im->m_stride) + x0 + im->m_storageOffsetX;
+    for(int x=x0;x<x1;x++, px++)
+    {
+        int sr, sg, sb, sa;
+        if(pt == VG_PAINT_TYPE_COLOR)
+        {
+            sr = solid[0]; sg = solid[1]; sb = solid[2]; sa = solid[3];
+        }
+        else
+        {
+            RIfloat g;
+            if(pt == VG_PAINT_TYPE_LINEAR_GRADIENT)
+                g = lg + ldg * (RIfloat)(x - x0);
+            else
+            {
+                RIfloat rho;
+                pp.radialGradient(g, rho, x + 0.5f, y + 0.5f);
+            }
+            PhSpread(g, spread);
+            const RIuint8* e = ramp[(int)(RI_CLAMP(g, 0.0f, 1.0f) * (RIfloat)KPhRampN + 0.5f)];
+            sr = e[0]; sg = e[1]; sb = e[2]; sa = e[3];
+        }
+        int rr, rg, rb, ra;
+        if(src && c >= 256)
+        {
+            rr = sr; rg = sg; rb = sb; ra = sa;
+            if(!pre && ra != 255)
+                goto unpremultiply;
+            *px = ((RIuint32)rr << dd.redShift) | ((RIuint32)rg << dd.greenShift) | ((RIuint32)rb << dd.blueShift) |
+                  (dd.alphaBits ? (RIuint32)ra << dd.alphaShift : 0);
+            continue;
+        }
+        {
+            const RIuint32 v = *px;
+            int dr = (v >> dd.redShift) & 255, dg = (v >> dd.greenShift) & 255, db = (v >> dd.blueShift) & 255;
+            int da = dd.alphaBits ? (int)((v >> dd.alphaShift) & 255) : 255;
+            if(!pre && da != 255)
+            {
+                dr = (dr * da + 127) / 255; dg = (dg * da + 127) / 255; db = (db * da + 127) / 255;
+            }
+            if(src)
+            {
+                rr = sr; rg = sg; rb = sb; ra = sa;
+            }
+            else
+            {
+                const int ia = 255 - sa;
+                rr = sr + (dr * ia + 127) / 255; rg = sg + (dg * ia + 127) / 255; rb = sb + (db * ia + 127) / 255; ra = sa + (da * ia + 127) / 255;
+            }
+            if(c < 256)
+            {
+                rr = dr + (((rr - dr) * c) >> 8); rg = dg + (((rg - dg) * c) >> 8);
+                rb = db + (((rb - db) * c) >> 8); ra = da + (((ra - da) * c) >> 8);
+            }
+        }
+        if(!pre && ra != 255)
+        {
+unpremultiply:
+            if(ra == 0)
+                rr = rg = rb = 0;
+            else
+            {
+                rr = (rr * 255 + ra / 2) / ra; rg = (rg * 255 + ra / 2) / ra; rb = (rb * 255 + ra / 2) / ra;
+                if(rr > 255) rr = 255;
+                if(rg > 255) rg = 255;
+                if(rb > 255) rb = 255;
+            }
+        }
+        *px = ((RIuint32)rr << dd.redShift) | ((RIuint32)rg << dd.greenShift) | ((RIuint32)rb << dd.blueShift) |
+              (dd.alphaBits ? (RIuint32)ra << dd.alphaShift : 0);
+    }
+    im->m_mipmapsValid = false;
+#ifdef PH_RI_TIMING
+    gPhPaintPix[pt - VG_PAINT_TYPE_COLOR] += x1 - x0;
+#endif
+    return true;
+}
+
+TUint gPhSlowPix, gPhSlowWhy;	// (timing builds) pixels the float path took in the current call, the last one's bpp<<24 | samples<<16 | mask<<12 | format<<8 | blend<<4 | paint
 void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMask) const
 {
 #ifdef PH_RI_TIMING
