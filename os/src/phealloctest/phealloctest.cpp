@@ -40,10 +40,10 @@ GLDEF_C TInt E32Main()
 	for (TInt i = 0; i < KN; i++) { TAny* p = User::Alloc(64); User::Free(p); }
 	Report("User::Alloc+Free 64 B", User::FastCounter() - t0, KN);
 
-	RHeap& h = User::Allocator();
+	RAllocator& h = User::Allocator();
 	t0 = User::FastCounter();
 	for (TInt i = 0; i < KN; i++) { TAny* p = h.Alloc(64); h.Free(p); }
-	Report("RHeap::Alloc+Free 64 B (heap held)", User::FastCounter() - t0, KN);
+	Report("RAllocator::Alloc+Free 64 B (allocator held)", User::FastCounter() - t0, KN);
 
 	const TInt kBig = KN / 100;
 	t0 = User::FastCounter();
