@@ -906,6 +906,14 @@ void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMas
             return;
     }
 
+    if(m_paint && m_paint->m_paintType == VG_PAINT_TYPE_RADIAL_GRADIENT && !m_image && !m_colorTransform)
+    {   //OURS: radial gradients through the same ramp table (full-screen radial backgrounds at boot: ~0.5 s each)
+        RIfloat g, rho;
+        radialGradient(g, rho, x + 0.5f, y + 0.5f);
+        int ch[4];
+        if(PhRampColour(*this, g, (int)dstFormat, ch) && PhFastPixel(*this, x, y, coverage, ch[0], ch[1], ch[2], ch[3]))
+            return;
+    }
     if(m_paint && m_paint->m_paintType == VG_PAINT_TYPE_LINEAR_GRADIENT && !m_image && !m_colorTransform)
     {   //OURS: the gradient value only (linearGradient also computes the filter width with a sqrt), then the ramp table
         const Vector2 u = m_paint->m_linearGradientPoint1 - m_paint->m_linearGradientPoint0;
