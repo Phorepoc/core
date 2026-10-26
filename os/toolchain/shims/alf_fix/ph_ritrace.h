@@ -7,17 +7,25 @@
 #define PH_RITRACE_H
 #include <e32std.h>
 #include <e32debug.h>
-// (perf 2026-10-26: the answer is cached for the last thread asked -- the name copy + fold compare ran on every call)
+// (perf 2026-10-26) the answer is cached for the stack range of the last thread asked: a thread is known by the address
+// of a local, with no exec (RThread().Id() on every call was ~10% of the compositor; the name copy + fold compare before it more)
 inline TBool PhRiAlfThread()
 	{
-	static TUint lastId;
+	static TUint lastLo, lastHi;
 	static TBool lastAlf;
-	const TUint id = (TUint)RThread().Id();
-	if (id != lastId)
+	const TUint sp = (TUint)&sp;
+	if (sp - lastLo >= lastHi - lastLo)
 		{
 		TName n = RThread().Name();
 		lastAlf = n.Length() >= 11 && n.Left(11).CompareF(_L("alfredserve")) == 0;
-		lastId = id;
+		TThreadStackInfo si;
+		if (RThread().StackInfo(si) == KErrNone)
+			{
+			lastLo = (TUint)si.iLimit;
+			lastHi = (TUint)si.iBase;
+			}
+		else
+			lastLo = lastHi = 0;
 		}
 	return lastAlf;
 	}
