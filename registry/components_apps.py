@@ -302,6 +302,9 @@ for _k, _c in COMPONENTS.items():
         # this-adjusting thunk the RVCT-frozen .defs never export (muldatamodelplugin -> MulModelImpl's makeInterface
         # thunk: unimpl stub, EUSRNIMP opening a picture). A vtable call needs no export.
         _c["arm_flags"] = list(_c.get("arm_flags", [])) + ["-D__SOFTFP=", "-fno-devirtualize"]
+        # typeinfo_bases: the widget stack dynamic_casts across DLLs (CAlfControl* -> CAlfWidgetControl*); typeinfo the
+        # image lacks is rebuilt with its real bases from our provider builds (pdk build_mmp), not as a base-less root
+        _c["typeinfo_bases"] = True
 # ... and these throw and catch C++ exceptions themselves (RVCT built them with exceptions on): build_mmp.py `cxx_eh`
 for _k in ("osncore", "alfresourcepool", "alfwidgetmodel", "alfwidgetutils", "mulmodelutility", "glxdataprovider",
            "glxfullscreenview", "alfwidgetfactory", "mulutility", "muldatamodel", "muldatamodelplugin", "alfcontainerwidgetstatic",
