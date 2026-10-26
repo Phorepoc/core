@@ -681,6 +681,9 @@ EGLDisplay EGL::findDisplay(EGLContext ctx) const
 
 RIEGLThread* EGL::getCurrentThread() const
 {
+	//OURS (perf 2026-10-26): this EGL lives in the calling thread's TLS (getEGL), so every RIEGLThread in it is the calling
+	//thread's: no RThread().Id() exec per VG call (~6% of the compositor)
+	return m_currentThreads.size() ? m_currentThreads[0] : NULL;
 	void* currentThreadID = OSGetCurrentThreadID();
 	for(int i=0;i<m_currentThreads.size();i++)
 	{
@@ -699,6 +702,8 @@ RIEGLThread* EGL::getCurrentThread() const
 
 RIEGLThread* EGL::getThread()
 {
+	if(m_threads.size())
+		return m_threads[0];	//OURS: see getCurrentThread
 	void* currentThreadID = OSGetCurrentThreadID();
 	for(int i=0;i<m_threads.size();i++)
 	{
