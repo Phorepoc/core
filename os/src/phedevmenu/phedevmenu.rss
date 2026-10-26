@@ -78,6 +78,13 @@ RESOURCE AVKON_SETTING_ITEM_LIST r_phedevmenu_items
 			},
 		AVKON_SETTING_ITEM
 			{
+			identifier = EPheItemAntialias;
+			setting_page_resource = r_phedevmenu_aa_page;
+			associated_resource = r_phedevmenu_aa_texts;
+			name = "UI anti-aliasing";
+			},
+		AVKON_SETTING_ITEM
+			{
 			identifier = EPheItemGuardTimeout;
 			setting_page_resource = r_phedevmenu_guard_page;
 			name = "Boot guard timeout (s)";
@@ -118,6 +125,35 @@ RESOURCE ARRAY r_phedevmenu_render_values
 RESOURCE ARRAY r_phedevmenu_render_popup
 	{
 	items = { LBUF { txt = "Classic"; }, LBUF { txt = "Alfred (GPU)"; } };
+	}
+
+RESOURCE AVKON_SETTING_PAGE r_phedevmenu_aa_page
+	{
+	label = "UI anti-aliasing";
+	hint_text = "Takes effect after reboot. Smoother edges cost drawing speed: Fast halves the work, Off is fastest.";
+	type = EAknCtPopupSettingList;
+	editor_resource_id = r_phedevmenu_popup_list;
+	}
+
+RESOURCE AVKON_POPUP_SETTING_TEXTS r_phedevmenu_aa_texts
+	{
+	setting_texts_resource = r_phedevmenu_aa_values;
+	popped_up_texts_resource = r_phedevmenu_aa_popup;
+	}
+
+RESOURCE ARRAY r_phedevmenu_aa_values
+	{
+	items =
+		{
+		AVKON_ENUMERATED_TEXT { value = 0; text = "Best"; },
+		AVKON_ENUMERATED_TEXT { value = 1; text = "Fast"; },
+		AVKON_ENUMERATED_TEXT { value = 2; text = "Off"; }
+		};
+	}
+
+RESOURCE ARRAY r_phedevmenu_aa_popup
+	{
+	items = { LBUF { txt = "Best"; }, LBUF { txt = "Fast"; }, LBUF { txt = "Off"; } };
 	}
 
 RESOURCE AVKON_SETTING_PAGE r_phedevmenu_cp_page

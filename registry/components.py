@@ -985,7 +985,7 @@ COMPONENTS = {
     # USE_NEW_ELEAVE makes allocation failure a (setjmp) leave anyway.
     # riEGLOS.cpp = OURS two-hunk fix of the snapshot's file (toolchain/shims/stems): it mapped
     # EColor16MA/MU to sRGBA/sRGBX -- Symbian's pixel words are sARGB/sXRGB.
-    "sflibopenvgrefimpl": dict(mmp=_SFVG + "sfopenvg.mmp", libs=["estlib.lib"], allow_wsd=True, vfp=True,
+    "sflibopenvgrefimpl": dict(mmp=_SFVG + "sfopenvg.mmp", libs=["estlib.lib", "centralrepository.lib"], allow_wsd=True, vfp=True,
                                # x32: riDefs.h wants the COMPILER's <float.h>, which -nostdinc hides
                                x32_flags=["-idirafter", "/usr/lib/gcc/x86_64-linux-gnu/13/include"],
                                # the reference 0.75-px Gaussian left edge pixels 89% opaque: a line at every skin-frame slice join

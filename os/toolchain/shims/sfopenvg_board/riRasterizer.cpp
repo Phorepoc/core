@@ -31,8 +31,25 @@
  *//*-------------------------------------------------------------------*/
 
 #include "riRasterizer.h"
+#include <centralrepository.h>
+#include <e32debug.h>
 
 //==============================================================================================
+
+// OURS: samples per pixel for VG_RENDERING_QUALITY_BETTER from the developer menu (repository 0xE7015A01 key 7,
+// src/phedevmenu/phedevmenu.h): 0 Best = 16, 1 Fast = 8, 2 Off = 1. Read once per process; absent = Best.
+static int PheAntialiasSamples()
+{
+	static int samples = 0;
+	if(!samples)
+	{
+		TInt v = 0;
+		TRAPD(err, CRepository* rep = CRepository::NewL(TUid::Uid(0xE7015A01)); rep->Get(7, v); delete rep);
+		samples = (err == KErrNone && v == 1) ? 8 : (err == KErrNone && v == 2) ? 1 : 16;
+		RDebug::Printf("PH: vg anti-aliasing setting %d -> %d samples per pixel", (int)v, samples);
+	}
+	return samples;
+}
 
 namespace OpenVGRI
 {
@@ -288,7 +305,8 @@ int Rasterizer::setupSamplingPattern(VGRenderingQuality renderingQuality, int nu
 			// 16 samples, not RI_MAX_SAMPLES (32) (2026-10-08, PhoneLab hotspots: fill() = 34% of the S60 menu's first
 			// draw): 17 coverage levels, hardware-rasterizer territory, half the per-pixel edge tests. The n-rooks
 			// pattern below stays a permutation (13 is coprime with 16).
-			m_numSamples = 16;
+			// The count is the developer menu's "UI anti-aliasing" (2026-10-26): 16 Best, 8 Fast, 1 Off; 13 stays coprime.
+			m_numSamples = PheAntialiasSamples();
 			m_sampleRadius = 0.5f;
 			for(int i=0;i<m_numSamples;i++)
 			{

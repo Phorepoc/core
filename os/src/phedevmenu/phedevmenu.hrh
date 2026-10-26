@@ -9,7 +9,8 @@ enum TPheDevMenuItems
 	EPheItemShell = 1,
 	EPheItemCpShortcut,
 	EPheItemGuardTimeout,
-	EPheItemRenderer
+	EPheItemRenderer,
+	EPheItemAntialias
 	};
 enum TPheDevMenuCommands
 	{

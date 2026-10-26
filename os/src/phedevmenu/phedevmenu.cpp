@@ -57,7 +57,8 @@ public:
 		iCp = Get(KPheDevKeyCpShortcut, 0);
 		iGuard = Get(KPheDevKeyGuardTimeout, KPheGuardDefault);
 		iRender = Get(KPheDevKeyRenderer, KPheRendererClassic);
-		RDebug::Printf("[phedevmenu] loaded: shell=%d cpshortcut=%d guard=%d renderer=%d", iShell, iCp, iGuard, iRender);
+		iAa = Get(KPheDevKeyAntialias, KPheAntialiasBest);
+		RDebug::Printf("[phedevmenu] loaded: shell=%d cpshortcut=%d guard=%d renderer=%d antialias=%d", iShell, iCp, iGuard, iRender, iAa);
 		}
 	CAknSettingItem* CreateSettingItemL(TInt aId)
 		{
@@ -66,6 +67,7 @@ public:
 		case EPheItemShell:		return new (ELeave) CAknEnumeratedTextPopupSettingItem(aId, iShell);
 		case EPheItemCpShortcut:	return new (ELeave) CAknEnumeratedTextPopupSettingItem(aId, iCp);
 		case EPheItemRenderer:		return new (ELeave) CAknEnumeratedTextPopupSettingItem(aId, iRender);
+		case EPheItemAntialias:		return new (ELeave) CAknEnumeratedTextPopupSettingItem(aId, iAa);
 		case EPheItemGuardTimeout:	return new (ELeave) CAknIntegerEdwinSettingItem(aId, iGuard);
 			}
 		return NULL;
@@ -93,11 +95,12 @@ private:
 		TInt e2 = iRepo.Set(KPheDevKeyCpShortcut, iCp);
 		TInt e3 = iRepo.Set(KPheDevKeyGuardTimeout, iGuard);
 		TInt e4 = iRepo.Set(KPheDevKeyRenderer, iRender);
-		RDebug::Printf("[phedevmenu] saved renderer=%d (%d)", iRender, e4);
+		TInt e5 = iRepo.Set(KPheDevKeyAntialias, iAa);
+		RDebug::Printf("[phedevmenu] saved renderer=%d (%d) antialias=%d (%d)", iRender, e4, iAa, e5);
 		RDebug::Printf("[phedevmenu] saved: shell=%d cpshortcut=%d guard=%d (%d %d %d)", iShell, iCp, iGuard, e1, e2, e3);
 		}
 	CRepository& iRepo;
-	TInt iShell, iCp, iGuard, iRender;
+	TInt iShell, iCp, iGuard, iRender, iAa;
 	};
 
 // the window-owning container; the list is a component control

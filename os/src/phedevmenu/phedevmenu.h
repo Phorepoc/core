@@ -38,6 +38,10 @@ const TInt KPheRenderersAlfred = 2;
 const TUint32 KPheDevKeyShellsAvail = 6;
 const TInt KPheShellsS3 = 1;
 const TInt KPheShellsS4 = 2;
+// key 7: UI anti-aliasing of the software VG renderer (paths drawn by the compositor): 0 = Best (16 samples per pixel, the
+// default), 1 = Fast (8), 2 = Off (1). Read once by the renderer (sfopenvg_board riRasterizer.cpp) when the compositor starts
+const TUint32 KPheDevKeyAntialias = 7;
+const TInt KPheAntialiasBest = 0;
 // the guard's own default (src/phorepoc-arm a64_glue.cpp A64_BOOT_GUARD_S: seconds after the first watchdog feeding)
 const TInt KPheGuardDefault = 180;
 
