@@ -108,7 +108,9 @@ namespace PhGMem
 		TMemoryInfoV1Buf info;
 		UserHal::MemoryInfo(info);
 		RHeap* h = NULL;
-		for (TInt max = info().iTotalRamInBytes; !h && max >= 0x1000000; max /= 2)
+		// iTotalRamInBytes is 2 GB+ here: as a TInt that is negative (RChunk::Create panics USER 99, not an error)
+		const TInt64 ram = (TInt64)(TUint)info().iTotalRamInBytes;
+		for (TInt max = ram > 0x7ff00000 ? 0x7ff00000 : (TInt)(ram & ~0xfffff); !h && max >= 0x1000000; max /= 2)
 			h = UserHeap::ChunkHeap(NULL, 0x10000, max, 0x100000);
 		if (!h)
 			return NULL;
