@@ -258,58 +258,6 @@ static inline EGLBoolean PhVgSwapBuffers(EGLDisplay aDpy, EGLSurface aSurf, EGLC
 			pixels += r.Width() * r.Height();
 			}
 		const TUint t1 = User::FastCounter();
-		{	// (2026-10-27, measuring) on the printed swaps: the first rectangle again, through a heap buffer (cached memory) and then a
-			// row copy into the surface -- is the read slow, or the surface memory?
-			static TUint nexp;
-			const TRect& r = rects[0];
-			TUint8* tmp = (++nexp & 15) == 1 ? (TUint8*)User::Alloc(r.Width() * r.Height() * 4) : NULL;
-			if (tmp)
-				{
-				const TInt rowb = r.Width() * 4;
-				const TUint e0 = User::FastCounter();
-				vgReadPixels(tmp + (r.Height() - 1) * rowb, -rowb, VG_sARGB_8888_PRE, r.iTl.iX, ht0 - r.iBr.iY, r.Width(), r.Height());
-				const TUint e1 = User::FastCounter();
-				for (TInt y = 0; y < r.Height(); y++)
-					Mem::Copy(w0->iChunk.Base() + (r.iTl.iY + y) * w0->iStride + r.iTl.iX * 4, tmp + y * rowb, rowb);
-				const TUint e2 = User::FastCounter();
-				TUint sum = 0;
-				for (TInt y = 0; y < r.Height(); y++)
-					{
-					const TUint32* q = (const TUint32*)(w0->iChunk.Base() + (r.iTl.iY + y) * w0->iStride + r.iTl.iX * 4);
-					for (TInt x = 0; x < r.Width(); x++)
-						sum += q[x];
-					}
-				const TUint e3 = User::FastCounter();
-				// plain heap memory: a second buffer, one memcpy, then a summing read of it twice (the second pass is cache-warm
-				// only if it fits: 921 KB does not fit the 512 KB L2, so both passes measure DRAM streaming)
-				const TInt bytes = r.Width() * r.Height() * 4;
-				TUint8* tmp2 = (TUint8*)User::Alloc(bytes);
-				TUint f0 = 0, f1 = 0, f2 = 0, f3 = 0, f4 = 0;
-				if (tmp2)
-					{
-					f0 = User::FastCounter();
-					Mem::Copy(tmp2, tmp, bytes);
-					f1 = User::FastCounter();
-					const TUint32* q = (const TUint32*)tmp2;
-					for (TInt i = 0; i < bytes / 4; i++)
-						sum += q[i];
-					f2 = User::FastCounter();
-					// 32 KB (fits L1) summed 8 times: the cached-load rate
-					for (TInt k = 0; k < 8; k++)
-						for (TInt i = 0; i < 8192; i++)
-							sum += q[i];
-					f3 = User::FastCounter();
-					Mem::FillZ(tmp2, bytes);
-					f4 = User::FastCounter();
-					User::Free(tmp2);
-					}
-				User::Free(tmp);
-				RDebug::Printf("PH: alf: vgwin swap experiment: %d px: vgReadPixels into the heap %u us, row copy heap -> surface %u us, read the surface %u us (sum %x)",
-					r.Width() * r.Height(), PhVgUs(e1 - e0), PhVgUs(e2 - e1), PhVgUs(e3 - e2), sum);
-				RDebug::Printf("PH: alf: vgwin memory: %d bytes: heap memcpy %u us, heap sum %u us, 256 KB of L1-resident sums %u us, heap fill %u us",
-					bytes, PhVgUs(f1 - f0), PhVgUs(f2 - f1), PhVgUs(f3 - f2), PhVgUs(f4 - f3));
-				}
-		}
 		const TInt rc = w0->iSus.SubmitUpdate(w0->iScreen, w0->iSid, 0, &reg);
 		const TUint t2 = User::FastCounter();
 		++w0->iSwaps;
