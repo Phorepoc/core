@@ -504,6 +504,8 @@ COMPONENTS = {
     "aknlayout2hierarchy": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.uiresources/layouts/aknlayout2/group/aknlayout2hierarchy.mmp"),
     "layoutinst": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.uiresources/layouts/aknlayout2/group/../generated/layoutinst.mmp", rom="101fe2aa.dll"),
     "layoutinst_nhd4": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.uiresources/layouts/aknlayout2/group/../generated/Nhd4_akn_app/layoutinst_nhd4.mmp", rom="2001cb93.dll"),
+    # the nHD UiAccel layout pack (AknLayoutScalable_UiAccel: the Alf widgets, Photos' cover-flow; CdlEng 1 without it)
+    "layoutinst_nhd4_uiaccel": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.uiresources/layouts/aknlayout2/group/../generated/Nhd4_uiaccel/uiaccel_layoutinst_nhd4.mmp", rom="2001e2b1.dll"),
     "cdlserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.uiresources/layouts/cdl/CdlServer/group/CdlServer.mmp"),
     # WSERV-side animation plug-ins (RAnimDll::Load by name)
     "clocka": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/lafagnosticuifoundation/clockanim/group/CLOCKA.MMP"),
