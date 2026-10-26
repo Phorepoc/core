@@ -869,6 +869,18 @@ void Image::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, int 
 	if(PhvgTryBlitOut(src, this, sx, sy, dx, dy, w, h))	//OURS (O3): straight from the GPU shadow, the surface stays resident
 		return;
 	PhvgCpuAccess(src, false);	//OURS (O2)
+	{	//OURS (2026-10-27, measuring): which formats a big surface read-out sees (the alf swap: ~8 ms per full screen)
+		static int nb;
+		if(w * h >= 100000 && nb < 4)
+		{
+			++nb;
+			const Color::Descriptor& a = src->m_image->m_desc;
+			const Color::Descriptor& b = m_desc;
+			RDebug::Printf("PH: RI blit surface->image %dx%d samples %d: src fmt %x bpp %d rgba bits %d%d%d%d shifts %d,%d,%d,%d -> dst fmt %x bpp %d rgba bits %d%d%d%d shifts %d,%d,%d,%d",
+				w, h, src->m_numSamples, (int)a.internalFormat, a.bitsPerPixel, a.redBits, a.greenBits, a.blueBits, a.alphaBits, a.redShift, a.greenShift, a.blueShift, a.alphaShift,
+				(int)b.internalFormat, b.bitsPerPixel, b.redBits, b.greenBits, b.blueBits, b.alphaBits, b.redShift, b.greenShift, b.blueShift, b.alphaShift);
+		}
+	}
 
 	//OURS (perf 2026-10-26): a single-sample surface into an image of the same 32-bit layout is a row copy; the generic
 	//loop below unpacks, converts and repacks every pixel through floats (eglSwapBuffers / vgReadPixels of a whole
