@@ -177,9 +177,9 @@ extern "C" void __real__ZN4User5LeaveEi(TInt aReason);
 extern "C" void __wrap__ZN4User5LeaveEi(TInt aReason)
 	{
 	TTrap* t = Exec::PopTrapFrame();
-	// bring-up trace: the first 60 leaves of each thread (count kept as the TLS value itself)
+	// bring-up trace: the first 300 leaves of each thread (count kept as the TLS value itself)
 	TInt n = (TInt)UserSvr::DllTls(KTlsHandle + 1, KDllUid_Special);
-	if (n < 60)
+	if (n < 300)
 		{
 		UserSvr::DllSetTls(KTlsHandle + 1, KDllUid_Special, (TAny*)(n + 1));
 		// + the first ROM code addresses on the stack: lr is often euser's own LeaveIfError, the caller is above it
