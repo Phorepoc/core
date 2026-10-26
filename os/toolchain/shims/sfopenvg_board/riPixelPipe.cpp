@@ -850,7 +850,8 @@ static bool PhRampColour(const PixelPipe& pp, RIfloat g, int dstFmt, int* ch)
 }
 
 #ifdef PH_RI_TIMING
-TUint gPhPaintPix[8];	//OURS (timing builds): pixels per paint type (0 solid, 1 linear, 2 radial, 3 pattern, 4 image)
+TUint gPhPaintPix[8];
+TUint gPhSlowPix, gPhSlowWhy;	// pixels the float path took since the call began, and the last one's (bpp<<24 | samples<<16 | mask<<12 | blend<<4 | paint)	//OURS (timing builds): pixels per paint type (0 solid, 1 linear, 2 radial, 3 pattern, 4 image)
 #endif
 void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMask) const
 {
@@ -1053,6 +1054,14 @@ void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMas
                        (int)(RI_CLAMP(s.b, 0.0f, 1.0f) * 255.0f + 0.5f), (int)(RI_CLAMP(s.a, 0.0f, 1.0f) * 255.0f + 0.5f)))
             return;
     }
+#ifdef PH_RI_TIMING
+    {
+        const Color::Descriptor& d = m_drawable->getColorBuffer()->getDescriptor();
+        gPhSlowPix++;
+        gPhSlowWhy = ((TUint)d.bitsPerPixel << 24) | ((TUint)m_drawable->getNumSamples() << 16) | ((m_masking && m_drawable->getMaskBuffer()) ? 1u << 12 : 0) |
+                     (((TUint)m_blendMode - VG_BLEND_SRC) << 4) | (m_image ? 8u : m_paint ? ((TUint)m_paint->m_paintType - VG_PAINT_TYPE_COLOR) & 7 : 7u) | ((TUint)(d.internalFormat & 0xff) << 8);
+    }
+#endif
     RI_ASSERT(s.getInternalFormat() == Color::lRGBA_PRE || s.getInternalFormat() == Color::sRGBA_PRE || s.getInternalFormat() == Color::lLA_PRE || s.getInternalFormat() == Color::sLA_PRE);
     s.assertConsistency();
 
