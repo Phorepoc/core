@@ -849,8 +849,14 @@ static bool PhRampColour(const PixelPipe& pp, RIfloat g, int dstFmt, int* ch)
     return true;
 }
 
+#ifdef PH_RI_TIMING
+TUint gPhPaintPix[8];	//OURS (timing builds): pixels per paint type (0 solid, 1 linear, 2 radial, 3 pattern, 4 image)
+#endif
 void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMask) const
 {
+#ifdef PH_RI_TIMING
+    gPhPaintPix[m_image ? 4 : (m_paint ? (int)(m_paint->m_paintType - VG_PAINT_TYPE_COLOR) & 3 : 0)]++;
+#endif
     RI_ASSERT(m_drawable);
     RI_ASSERT(sampleMask);
     RI_ASSERT(coverage > 0.0f);

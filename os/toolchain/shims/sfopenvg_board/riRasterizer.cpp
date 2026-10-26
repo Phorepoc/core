@@ -361,7 +361,10 @@ struct TPhFillTimer
 		if (!freq) HAL::Get(HAL::EFastCounterFrequency, freq);
 		total += User::FastCounter() - iT0;
 		if ((++n & 127) == 0)
-			RDebug::Printf("PH: alf: RI time inside Rasterizer::fill: %u ms (x%u)", (TUint)(total * 1000 / freq), n);
+			{
+			extern TUint gPhPaintPix[8];
+			RDebug::Printf("PH: alf: RI time inside Rasterizer::fill: %u ms (x%u), pixels solid %u linear %u radial %u pattern %u image %u", (TUint)(total * 1000 / freq), n, gPhPaintPix[0], gPhPaintPix[1], gPhPaintPix[2], gPhPaintPix[3], gPhPaintPix[4]);
+			}
 		}
 	};
 #endif
