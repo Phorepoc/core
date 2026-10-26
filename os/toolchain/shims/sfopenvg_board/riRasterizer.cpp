@@ -368,14 +368,24 @@ struct TPhFillTimer
 		}
 	};
 #endif
+TUint gPhFillStat[5];	//OURS (timing builds, the current vgDrawPath): GPU-try ticks, edges, scanlines, coverage evaluations, pixels
 void Rasterizer::fill()
 {
 #ifdef PH_RI_TIMING
 	TPhFillTimer phTimer;
 #endif
 	// OURS (O2): a solid-colour fill the GPU engine can do (riPhvg.cpp); anything else falls through to the CPU
+#ifdef PH_RI_TIMING
+	const TUint32 phG = User::FastCounter();
+	const bool phGpu = m_pixelPipe && !m_covBuffer && PhvgTryFill(*this);
+	gPhFillStat[0] += User::FastCounter() - phG;
+	gPhFillStat[1] += m_edges.size();
+	if(phGpu)
+		return;
+#else
 	if(m_pixelPipe && !m_covBuffer && PhvgTryFill(*this))
 		return;
+#endif
 	if(m_covBuffer && !m_pixelPipe && PhvgStrokePiece(*this))
 		return;	// OURS (O4): one piece of a stroke the GPU paints (the coverage buffer stays empty)
 
@@ -480,6 +490,9 @@ void Rasterizer::fill()
 		}
 		if(!aet.size())
 			continue;	//no edges on the whole scanline, skip it
+#ifdef PH_RI_TIMING
+		gPhFillStat[2]++;
+#endif
 
 		//sort AET by edge minx
 		aet.sort();
@@ -562,6 +575,9 @@ void Rasterizer::fill()
 				}
 			}
 
+#ifdef PH_RI_TIMING
+			gPhFillStat[3]++;
+#endif
 			//constant coverage optimization:
 			//scan AET from left to right and skip all the edges that are completely to the left of the pixel filter.
 			//since AET is sorted by minx, the edge we stop at is the leftmost of the edges we haven't passed yet.
@@ -577,6 +593,9 @@ void Rasterizer::fill()
 			RI_ASSERT(coverage >= 0.0f && coverage <= 1.0f);
 
 			//fill a run of pixels with constant coverage
+#ifdef PH_RI_TIMING
+			if(sampleMask) gPhFillStat[4] += endSpan - i;
+#endif
 			if(sampleMask)
 			{
 				for(;i<endSpan;i++)

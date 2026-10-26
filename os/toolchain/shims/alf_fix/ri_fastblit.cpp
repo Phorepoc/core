@@ -182,11 +182,11 @@ static TUint gPrevDeny[10], gPrevFill[12];
 // OURS (timing builds): thread CPU time across the same calls; wall >> CPU = the call blocks
 static TInt64 gCpuMark, gCpuUs[3];
 TUint32 gPhDrawSplit[3];
-extern TUint gPhSlowPix, gPhSlowWhy;	// drawPath: tessellate / rasterise / stroke ticks of the current call (riApi_ph.cpp)
+extern TUint gPhSlowPix, gPhSlowWhy, gPhFillStat[5];	// drawPath: tessellate / rasterise / stroke ticks of the current call (riApi_ph.cpp)
 void PhRiCpuMark()
 	{
 	TTimeIntervalMicroSeconds c;
-	gPhDrawSplit[0] = gPhDrawSplit[1] = gPhDrawSplit[2] = 0; gPhSlowPix = gPhSlowWhy = 0;
+	gPhDrawSplit[0] = gPhDrawSplit[1] = gPhDrawSplit[2] = 0; gPhSlowPix = gPhSlowWhy = 0; gPhFillStat[0] = gPhFillStat[1] = gPhFillStat[2] = gPhFillStat[3] = gPhFillStat[4] = 0;
 	if (RThread().GetCpuTime(c) == KErrNone) gCpuMark = c.Int64();
 	}
 void PhRiTimeAdd(int kind, TUint ticks)
@@ -204,7 +204,7 @@ void PhRiTimeAdd(int kind, TUint ticks)
 			TBuf8<96> d;
 			for (int i = 0; i < 10; i++) if (gDeny[i] != gPrevDeny[i]) d.AppendFormat(_L8("img%d "), i);
 			for (int i = 0; i < 12; i++) if (gFillDeny[i] != gPrevFill[i]) d.AppendFormat(_L8("rect%d "), i);
-			RDebug::Printf("PH: alf: RI slow call: %s %u ms (n=%u) tessellate %u fill %u stroke %u ms, float-path pixels %u (last 0x%08x), refusals during it: %S", kind == 0 ? "drawImage" : kind == 1 ? "drawPath" : "vgClear", ms, gTimeN[kind], (TUint)((TUint64)gPhDrawSplit[0] * 1000 / freq), (TUint)((TUint64)gPhDrawSplit[1] * 1000 / freq), (TUint)((TUint64)gPhDrawSplit[2] * 1000 / freq), gPhSlowPix, gPhSlowWhy, &d);
+			RDebug::Printf("PH: alf: RI slow call: %s %u ms (n=%u) tessellate %u fill %u stroke %u ms, float-path pixels %u (last 0x%08x), gpu-try %u ms, edges %u rows %u coverage evals %u pixels %u, refusals during it: %S", kind == 0 ? "drawImage" : kind == 1 ? "drawPath" : "vgClear", ms, gTimeN[kind], (TUint)((TUint64)gPhDrawSplit[0] * 1000 / freq), (TUint)((TUint64)gPhDrawSplit[1] * 1000 / freq), (TUint)((TUint64)gPhDrawSplit[2] * 1000 / freq), gPhSlowPix, gPhSlowWhy, (TUint)((TUint64)gPhFillStat[0] * 1000 / freq), gPhFillStat[1], gPhFillStat[2], gPhFillStat[3], gPhFillStat[4], &d);
 			}
 		}
 	for (int i = 0; i < 10; i++) gPrevDeny[i] = gDeny[i];
