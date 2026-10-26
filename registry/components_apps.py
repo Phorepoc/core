@@ -162,7 +162,9 @@ COMPONENTS = {
     "glxcollectionpluginall": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/plugins/glxcollectionpluginall/group/glxcollectionpluginall.mmp"),
     # (no glxcollectionplugindownloads: RCL_3 dropped it -- no bld.inf or iby builds it, its .hrh is gone)
     "glxcollectionpluginimageviewer": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/plugins/glxcollectionpluginimageviewer/group/glxcollectionpluginimageviewer.mmp"),
-    "glxcollectionpluginmonths": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/plugins/glxcollectionpluginmonths/group/glxcollectionpluginmonths.mmp"),
+    # (no glxcollectionpluginmonths: RCL_3 dropped it too -- no bld.inf or iby, and its registration still names
+    # EGlxCollectionPluginMonths, gone from glxcollectionpluginpriority.hrh: the MPX opaque-data parser fails on the
+    # literal text with KErrGeneral and the whole MPX collection server exits -2 at start)
     "glxcollectionplugintags": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/collectionframework/plugins/tagcollectionplugin/group/glxcollectionplugintags.mmp"),
     "glxcommandhandlerbase": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/viewframework/commandhandlers/commandhandlerbase/group/glxcommandhandlerbase.mmp"),
     "glxcommandhandlerdrm": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/viewframework/commandhandlers/commandhandlerdrm/group/glxcommandhandlerdrm.mmp"),
