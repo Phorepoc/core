@@ -2576,6 +2576,15 @@ for _k in _APPS.COMPONENTS:
     assert _k not in COMPONENTS, "components_apps: key already in components.py: " + _k
 COMPONENTS.update(_APPS.COMPONENTS)
 
+# MdS (and Photos' MdS data source) read the TMdC* records in place from a serialization buffer that keeps only 2-byte
+# alignment (mdcserializationbuffer.cpp pads to even sizes), so a TInt64 / TReal64 member lands on a 2-aligned address.
+# armv5te g++ loads such a member with LDRD, which faults on it (alignment fault, fsr 1: the harvester in
+# CMdEProperty::NewLC); armv5t has no LDRD/STRD, so the 64-bit members become two LDR/STR, which the board allows
+# unaligned (SCTLR.A off)
+for _k, _c in COMPONENTS.items():
+    if "oss.FCL.sf.mw.mds/" in _c.get("mmp", "") or _k == "glxdatasourcemde":
+        _c["arm_flags"] = list(_c.get("arm_flags", [])) + ["-march=armv5t"]
+
 import components_phetty as _PHETTY  # noqa: E402
 for _k in _PHETTY.COMPONENTS:
     assert _k not in COMPONENTS, "components_phetty: key already in components.py: " + _k
