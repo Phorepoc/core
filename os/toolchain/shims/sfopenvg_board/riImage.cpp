@@ -891,6 +891,43 @@ void Image::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, int 
 			m_mipmapsValid = false;
 			return;
 		}
+		//OURS (perf 2026-10-26): 8-bit RGBA into 8-bit RGB(A) of another channel order, and premultiplied into
+		//non-premultiplied, in integers (eglSwapBuffers of an sRGBA_8888_PRE surface into an sARGB_8888(_PRE) window)
+		const int sp = sd.internalFormat & Color::PREMULTIPLIED, dp = dd.internalFormat & Color::PREMULTIPLIED;
+		if(sd.bitsPerPixel == 32 && dd.bitsPerPixel == 32 &&
+		   !(sd.internalFormat & Color::LUMINANCE) && !(dd.internalFormat & Color::LUMINANCE) &&
+		   (sd.internalFormat & Color::NONLINEAR) == (dd.internalFormat & Color::NONLINEAR) &&
+		   sd.redBits == 8 && sd.greenBits == 8 && sd.blueBits == 8 && sd.alphaBits == 8 &&
+		   dd.redBits == 8 && dd.greenBits == 8 && dd.blueBits == 8 && (dd.alphaBits == 8 || dd.alphaBits == 0) &&
+		   (sp == dp || (sp && !dp)))
+		{
+			const bool unpre = sp && !dp;
+			for(int y=0;y<h;y++)
+			{
+				const RIuint32* s = (const RIuint32*)(si->m_data + (sy + y + si->m_storageOffsetY) * si->m_stride) + sx + si->m_storageOffsetX;
+				RIuint32* d = (RIuint32*)(m_data + (dy + y + m_storageOffsetY) * m_stride) + dx + m_storageOffsetX;
+				for(int x=0;x<w;x++)
+				{
+					const RIuint32 p = s[x];
+					RIuint32 r = (p >> sd.redShift) & 0xff, g = (p >> sd.greenShift) & 0xff, b = (p >> sd.blueShift) & 0xff;
+					const RIuint32 a = (p >> sd.alphaShift) & 0xff;
+					if(unpre && a != 255)
+					{
+						if(a == 0)
+							r = g = b = 0;
+						else
+						{
+							r = (r * 255 + a / 2) / a; if(r > 255) r = 255;
+							g = (g * 255 + a / 2) / a; if(g > 255) g = 255;
+							b = (b * 255 + a / 2) / a; if(b > 255) b = 255;
+						}
+					}
+					d[x] = (r << dd.redShift) | (g << dd.greenShift) | (b << dd.blueShift) | (dd.alphaBits ? a << dd.alphaShift : 0);
+				}
+			}
+			m_mipmapsValid = false;
+			return;
+		}
 		static unsigned slow = 0;
 		if(slow < 8 || (slow & (slow - 1)) == 0)
 			RDebug::Printf("PH: vg blit surface->image slow path #%u %dx%d: src fmt %d bpp %d a%d@%d r@%d, dst fmt %d bpp %d a%d@%d r@%d",
