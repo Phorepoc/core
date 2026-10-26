@@ -584,7 +584,7 @@ void CHuiVg10RenderPlugin::ReadAllowsVisualPBufferSurfaces()
         {
         RDebug::Print(_L("CHuiVg10RenderPlugin::ReadAllowsVisualPBufferSurfaces() -- EFalse"));            
         }
-    iAllowsVisualPBufferSurfaces = found;
+    iAllowsVisualPBufferSurfaces = ETrue;   // OURS (was: found = vendor "Br..."): per-visual render buffers, the transparent status pane over the home background
 #endif
     }
 
