@@ -586,20 +586,8 @@ EGL::~EGL()
 *//*-------------------------------------------------------------------*/
 
 //static EGL* g_egl = NULL;	//never use this directly
-//OURS (perf 2026-10-26): getEGL caches this thread's EGL in the CPU's user read/write thread ID register (TPIDRURW). The SMP
-//scheduler (SMP and not) saves and restores it per thread, a new thread starts with 0, and nothing else in the OS uses it: no Dll::Tls exec
-//per VG call (~6% of the compositor while swiping). ARMv7-class only: an ARMv5 board (Syborg) builds with -DPH_NO_TPIDRURW.
-#if defined(__arm__) && !defined(PH_NO_TPIDRURW)
-static inline EGL* PhEglTidGet() { EGL* p; asm volatile("mrc p15, 0, %0, c13, c0, 2" : "=r"(p)); return p; }
-static inline void PhEglTidSet(EGL* p) { asm volatile("mcr p15, 0, %0, c13, c0, 2" : : "r"(p)); }
-#else
-static inline EGL* PhEglTidGet() { return NULL; }
-static inline void PhEglTidSet(EGL*) {}
-#endif
 EGL* getEGL()
 {
-	if(EGL* tid = PhEglTidGet())
-		return tid;
 	/*if(!g_egl)
 	{
 		try
@@ -624,7 +612,6 @@ EGL* getEGL()
 		pEgl = RI_NEW(EGL, ());
 		Dll::SetTls(pEgl);
 		}
-	PhEglTidSet(pEgl);
 	return pEgl;
 
 	
@@ -644,7 +631,6 @@ static void releaseEGL()
 	EGL* pEgl = static_cast<EGL*>(Dll::Tls());
 	if (pEgl)
 		delete pEgl; 
-	PhEglTidSet(NULL);
 	Dll::SetTls(NULL);
 
 }
