@@ -102,9 +102,17 @@ namespace PhGMem
 	// size of physical RAM (halved until the address space gives it), committed as used.
 	inline RHeap* Pool()
 		{
+		// tried once, on the first pixel allocation: either every pixel buffer of the process comes from the pool or none
+		// does, so FreePixels needs no ownership test (the hybrid heap's big cells sit outside Base()..MaxLength() anyway)
 		static RHeap* volatile pool;
-		if (pool)
+		static volatile TUint32 state;		// 0 not tried, 1 being made (another thread waits), 2 settled
+		TUint32 expect = 0;
+		if (!__e32_atomic_cas_ord32(&state, &expect, 1))
+			{
+			while (state == 1)
+				User::AfterHighRes(100);
 			return pool;
+			}
 		TMemoryInfoV1Buf info;
 		UserHal::MemoryInfo(info);
 		RHeap* h = NULL;
@@ -113,28 +121,9 @@ namespace PhGMem
 		const TInt64 ram = (TInt64)(TUint)info().iTotalRamInBytes;
 		for (TInt max = ram > 0x3ff00000 ? 0x3ff00000 : (TInt)(ram & ~0xfffff); !h && max >= 0x1000000; max /= 2)
 			h = UserHeap::ChunkHeap(NULL, 0x10000, max, 0x100000);
-		if (!h)
-			return NULL;
-		TAny* none = NULL;
-		if (!__e32_atomic_cas_ord_ptr(&pool, &none, h))
-			h->Close();		// another thread made it first
+		pool = h;
+		__e32_atomic_store_ord32(&state, 2);
 		return pool;
-		}
-
-	// the pool chunk's whole reservation: the hybrid heap puts big cells (every pixel buffer) in its page-allocated half,
-	// beyond Base() + MaxLength() -- testing only that range sent them to User::Free (alfredserver heap corruption)
-	inline TBool InPool(RHeap* aPool, const TAny* aPtr)
-		{
-		static const TUint8* volatile base;
-		static TInt size;
-		if (!base)
-			{
-			RChunk c;
-			c.SetHandle(aPool->ChunkHandle());
-			size = c.MaxSize();
-			base = c.Base();
-			}
-		return (const TUint8*)aPtr >= base && (const TUint8*)aPtr < base + size;
 		}
 
 	// aBytes > 0: allocated; < 0: freed
@@ -173,7 +162,7 @@ namespace PhGMem
 		if (!aPtr)
 			return;
 		RHeap* h = Pool();
-		if (h && InPool(h, aPtr))
+		if (h)
 			h->Free(aPtr);
 		else
 			User::Free(aPtr);
