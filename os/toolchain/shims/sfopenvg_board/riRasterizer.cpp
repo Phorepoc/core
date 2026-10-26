@@ -409,6 +409,11 @@ void Rasterizer::fill()
 	//fill the screen
 	Array<ActiveEdge> aet;
 	Array<ScissorEdge> scissorAet;
+	//OURS (perf 2026-10-26): edges sorted by top y and a window of the ones that can still touch a scanline; the
+	//reference scanned every edge of the path on every scanline (NVG skin shapes: ~4 ms a path while scrolling)
+	m_edges.sort();	//throws bad_alloc
+	Array<int> window;
+	int nextEdge = 0;
 	for(int j=sy;j<ey;j++)
 	{
 		//gather scissor edges intersecting this scanline
@@ -427,8 +432,20 @@ void Rasterizer::fill()
 
 		//simple AET: scan through all the edges and pick the ones intersecting this scanline
 		aet.clear();
-		for(int e=0;e<m_edges.size();e++)
 		{
+			const RScalar wminy = (RScalar)j - m_sampleRadius + 0.5f;
+			const RScalar wmaxy = (RScalar)j + m_sampleRadius + 0.5f;
+			while(nextEdge < m_edges.size() && m_edges[nextEdge].v0.y <= wmaxy)
+				window.push_back(nextEdge++);	//throws bad_alloc
+			int kept = 0;
+			for(int w=0;w<window.size();w++)
+				if(m_edges[window[w]].v1.y > wminy)
+					window[kept++] = window[w];
+			window.resize(kept);
+		}
+		for(int w=0;w<window.size();w++)
+		{
+			const int e = window[w];
 			RScalar cminy = (RScalar)j - m_sampleRadius + 0.5f;
 			RScalar cmaxy = (RScalar)j + m_sampleRadius + 0.5f;
 			const Edge& ed = m_edges[e];
