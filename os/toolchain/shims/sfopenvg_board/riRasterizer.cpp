@@ -598,8 +598,20 @@ void Rasterizer::fill()
 			if(sampleMask) gPhFillStat[4] += endSpan - i;
 #endif
 			//OURS (perf 2026-10-26): a long constant-coverage run in one call (PhPixelSpan, riPixelPipe.cpp)
-			if(sampleMask && !m_scissor && !m_covBuffer && endSpan - i >= 16 && PhPixelSpan(*m_pixelPipe, i, endSpan, j, coverage))
-				i = endSpan;
+			if(sampleMask && !m_covBuffer && endSpan - i >= 16)
+			{	//pieces between scissor edges; a piece the span fill declines goes through the loop below
+				while(i < endSpan)
+				{
+					while(scissorIndex < scissorAet.size() && scissorAet[scissorIndex].x <= i)
+						scissorWinding += scissorAet[scissorIndex++].direction;
+					int pieceEnd = endSpan;
+					if(scissorIndex < scissorAet.size() && scissorAet[scissorIndex].x < pieceEnd)
+						pieceEnd = scissorAet[scissorIndex].x;
+					if(scissorWinding && !PhPixelSpan(*m_pixelPipe, i, pieceEnd, j, coverage))
+						break;
+					i = pieceEnd;
+				}
+			}
 			if(sampleMask)
 			{
 				for(;i<endSpan;i++)
