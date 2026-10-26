@@ -1622,13 +1622,13 @@ EGLSurface eglCreatePbufferFromClientBuffer(EGLDisplay dpy, EGLenum buftype, EGL
 	EGL_IF_ERROR(buftype != EGL_OPENVG_IMAGE, EGL_BAD_PARAMETER, EGL_NO_SURFACE);
 	EGL_IF_ERROR(!buffer, EGL_BAD_PARAMETER, EGL_NO_SURFACE);	//TODO should also check if buffer really is a valid VGImage object (needs VG context for that)
     Image* image = (Image*)buffer;
-	EGL_IF_ERROR(image->isInUse(), EGL_BAD_ACCESS, EGL_NO_SURFACE);	//buffer is in use by OpenVG
+	EGL_IF_ERROR(image->isInUse(), (PhRiAlfThread() ? RDebug::Printf("PH: alf: eglCreatePbufferFromClientBuffer image in use") : (void)0, EGL_BAD_ACCESS), EGL_NO_SURFACE);	//buffer is in use by OpenVG
 	EGL_IF_ERROR(!display->configExists(config), EGL_BAD_CONFIG, EGL_NO_SURFACE);
 	EGL_IF_ERROR(attrib_list && attrib_list[0] != EGL_NONE, EGL_BAD_ATTRIBUTE, EGL_NO_SURFACE);	//there are no valid attribs for OpenVG
 	const Color::Descriptor& bc = ((Image*)buffer)->getDescriptor();
 	const Color::Descriptor& cc = display->getConfig(config).m_desc;
 	EGL_IF_ERROR(bc.redBits != cc.redBits || bc.greenBits != cc.greenBits || bc.blueBits != cc.blueBits ||
-				 bc.alphaBits != cc.alphaBits || bc.luminanceBits != cc.luminanceBits, EGL_BAD_MATCH, EGL_NO_SURFACE);
+				 bc.alphaBits != cc.alphaBits || bc.luminanceBits != cc.luminanceBits, (PhRiAlfThread() ? RDebug::Printf("PH: alf: eglCreatePbufferFromClientBuffer BAD_MATCH image rgba %d%d%d%d l%d config rgba %d%d%d%d l%d", bc.redBits, bc.greenBits, bc.blueBits, bc.alphaBits, bc.luminanceBits, cc.redBits, cc.greenBits, cc.blueBits, cc.alphaBits, cc.luminanceBits) : (void)0, EGL_BAD_MATCH), EGL_NO_SURFACE);
 
 	//TODO If buffer is already bound to another pbuffer, an EGL BAD ACCESS error is generated.
 
