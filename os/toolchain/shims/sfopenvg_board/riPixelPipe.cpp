@@ -761,6 +761,94 @@ static bool PhFastPixel(const PixelPipe& pp, int x, int y, RIfloat coverage, int
     return false;
 }
 
+//OURS (perf 2026-10-26): linear gradients through a table of the colour ramp, already in the destination format and
+//premultiplied (Menu's gradient-filled paths: ~0.5 s each through colorRamp per pixel). The table samples the unfiltered
+//ramp (rho 0): the ramp's own anti-aliasing filter only matters for gradients steeper than a pixel. Four paints are kept,
+//keyed by paint, stops, spread mode and destination format; each entry is a seqlock (threads of a process share it).
+enum { KPhRampN = 256, KPhRampStops = 8, KPhRampSlots = 4 };
+struct TPhRamp
+{
+    volatile TUint32 iSeq;
+    const Paint* iPaint;
+    int iSpread, iPre, iDstFmt, iNStops;
+    RIfloat iStop[KPhRampStops][5];
+    RIuint8 iC[KPhRampN + 1][4];
+};
+static TPhRamp gPhRamp[KPhRampSlots];
+static TUint32 gPhRampNext;
+
+static bool PhRampKey(const TPhRamp& r, const Paint* p, int dstFmt)
+{
+    if(r.iPaint != p || r.iSpread != (int)p->m_colorRampSpreadMode || r.iPre != (int)p->m_colorRampPremultiplied ||
+       r.iDstFmt != dstFmt || r.iNStops != p->m_colorRampStops.size())
+        return false;
+    for(int i=0;i<r.iNStops;i++)
+    {
+        const Paint::GradientStop& s = p->m_colorRampStops[i];
+        if(r.iStop[i][0] != s.offset || r.iStop[i][1] != s.color.r || r.iStop[i][2] != s.color.g ||
+           r.iStop[i][3] != s.color.b || r.iStop[i][4] != s.color.a)
+            return false;
+    }
+    return true;
+}
+
+//the ramp colour at gradient value g (spread applied), as premultiplied destination channels; false = not available
+static bool PhRampColour(const PixelPipe& pp, RIfloat g, int dstFmt, int* ch)
+{
+    const Paint* p = pp.m_paint;
+    if(p->m_colorRampStops.size() < 2 || p->m_colorRampStops.size() > KPhRampStops)
+        return false;
+    switch(p->m_colorRampSpreadMode)
+    {
+    case VG_COLOR_RAMP_SPREAD_PAD:
+        g = RI_CLAMP(g, 0.0f, 1.0f);
+        break;
+    case VG_COLOR_RAMP_SPREAD_REFLECT:
+    {
+        RIfloat m = RI_MOD(g, 2.0f);
+        g = (m < 1.0f) ? m : 2.0f - m;
+        break;
+    }
+    default:
+        g = g - (RIfloat)floor(g);
+        break;
+    }
+    const int idx = (int)(RI_CLAMP(g, 0.0f, 1.0f) * (RIfloat)KPhRampN + 0.5f);
+    for(int k=0;k<KPhRampSlots;k++)
+    {
+        TPhRamp& r = gPhRamp[k];
+        const TUint32 s0 = r.iSeq;
+        if((s0 & 1) || !PhRampKey(r, p, dstFmt))
+            continue;
+        ch[0] = r.iC[idx][0]; ch[1] = r.iC[idx][1]; ch[2] = r.iC[idx][2]; ch[3] = r.iC[idx][3];
+        if(r.iSeq == s0)
+            return true;
+    }
+    //build it into the next slot (if another thread is writing that one, give up for this pixel)
+    TPhRamp& r = gPhRamp[__e32_atomic_add_ord32(&gPhRampNext, 1) % KPhRampSlots];
+    TUint32 expect = r.iSeq & ~1u;
+    if(!__e32_atomic_cas_acq32((TUint32*)&r.iSeq, &expect, expect + 1))
+        return false;
+    r.iPaint = p; r.iSpread = (int)p->m_colorRampSpreadMode; r.iPre = (int)p->m_colorRampPremultiplied;
+    r.iDstFmt = dstFmt; r.iNStops = p->m_colorRampStops.size();
+    for(int i=0;i<r.iNStops;i++)
+    {
+        const Paint::GradientStop& s = p->m_colorRampStops[i];
+        r.iStop[i][0] = s.offset; r.iStop[i][1] = s.color.r; r.iStop[i][2] = s.color.g; r.iStop[i][3] = s.color.b; r.iStop[i][4] = s.color.a;
+    }
+    for(int i=0;i<=KPhRampN;i++)
+    {
+        Color c = pp.colorRamp((RIfloat)i / (RIfloat)KPhRampN, 0.0f);
+        c.premultiply();
+        c.convert((Color::InternalFormat)dstFmt);
+        r.iC[i][0] = (RIuint8)(RI_CLAMP(c.r, 0.0f, 1.0f) * 255.0f + 0.5f); r.iC[i][1] = (RIuint8)(RI_CLAMP(c.g, 0.0f, 1.0f) * 255.0f + 0.5f);
+        r.iC[i][2] = (RIuint8)(RI_CLAMP(c.b, 0.0f, 1.0f) * 255.0f + 0.5f); r.iC[i][3] = (RIuint8)(RI_CLAMP(c.a, 0.0f, 1.0f) * 255.0f + 0.5f);
+    }
+    ch[0] = r.iC[idx][0]; ch[1] = r.iC[idx][1]; ch[2] = r.iC[idx][2]; ch[3] = r.iC[idx][3];
+    __e32_atomic_store_rel32((TUint32*)&r.iSeq, expect + 2);
+    return true;
+}
+
 void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMask) const
 {
     RI_ASSERT(m_drawable);
@@ -808,6 +896,22 @@ void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMas
             }
         }
         if(PhFastPixel(*this, x, y, coverage, ch[0], ch[1], ch[2], ch[3]))
+            return;
+    }
+
+    if(m_paint && m_paint->m_paintType == VG_PAINT_TYPE_LINEAR_GRADIENT && !m_image && !m_colorTransform)
+    {   //OURS: the gradient value only (linearGradient also computes the filter width with a sqrt), then the ramp table
+        const Vector2 u = m_paint->m_linearGradientPoint1 - m_paint->m_linearGradientPoint0;
+        const RIfloat usq = dot(u, u);
+        RIfloat g = 1.0f;
+        if(usq > 0.0f)
+        {
+            Vector2 q = affineTransform(m_surfaceToPaintMatrix, Vector2(x + 0.5f, y + 0.5f));
+            q -= m_paint->m_linearGradientPoint0;
+            g = dot(q, u) / usq;
+        }
+        int ch[4];
+        if(PhRampColour(*this, g, (int)dstFormat, ch) && PhFastPixel(*this, x, y, coverage, ch[0], ch[1], ch[2], ch[3]))
             return;
     }
 
