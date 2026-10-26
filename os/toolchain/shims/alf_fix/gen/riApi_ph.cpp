@@ -2562,6 +2562,7 @@ void RI_APIENTRY vgTransformPath(VGPath dstPath, VGPath srcPath)
 *//*-------------------------------------------------------------------*/
 
 namespace OpenVGRI { bool PhRiFastFillRect(VGContext* c, VGPath p, const Matrix3x3& m, VGbitfield modes); }
+namespace OpenVGRI { extern TUint32 gPhDrawSplit[3]; }
 static bool drawPath(VGContext* context, VGPath path, const Matrix3x3& userToSurfaceMatrix, VGbitfield paintModes)
 {
 	if (OpenVGRI::PhRiFastFillRect(context, path, userToSurfaceMatrix, paintModes))
@@ -2598,8 +2599,11 @@ static bool drawPath(VGContext* context, VGPath path, const Matrix3x3& userToSur
 			pixelPipe.setSurfaceToPaintMatrix(surfaceToPaintMatrix);
 
             rasterizer.setup(0, 0, drawable->getWidth(), drawable->getHeight(), context->m_fillRule, &pixelPipe, NULL);
+			TUint32 phS = PH_RI_NOW();
 			((Path*)path)->fill(userToSurface, rasterizer);	//throws bad_alloc
+			TUint32 phS2 = PH_RI_NOW(); OpenVGRI::gPhDrawSplit[0] += phS2 - phS;
 			rasterizer.fill();	//throws bad_alloc
+			OpenVGRI::gPhDrawSplit[1] += PH_RI_NOW() - phS2;
 		}
 	}
 
@@ -2613,7 +2617,9 @@ static bool drawPath(VGContext* context, VGPath path, const Matrix3x3& userToSur
 			surfaceToPaintMatrix[2].set(0,0,1);		//force affinity
 			pixelPipe.setSurfaceToPaintMatrix(surfaceToPaintMatrix);
 
+			TUint32 phS = PH_RI_NOW();
             renderStroke(context, drawable->getWidth(), drawable->getHeight(), numSamples, (Path*)path, rasterizer, &pixelPipe, userToSurface);
+			OpenVGRI::gPhDrawSplit[2] += PH_RI_NOW() - phS;
 		}
 	}
 	return true;

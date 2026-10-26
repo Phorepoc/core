@@ -181,9 +181,11 @@ static TUint gPrevDeny[10], gPrevFill[12];
 // every RI call slower than 80 ms is logged with the fast-path refusals that happened during it (empty = the call was taken by a fast path, i.e. it was just big)
 // OURS (timing builds): thread CPU time across the same calls; wall >> CPU = the call blocks
 static TInt64 gCpuMark, gCpuUs[3];
+TUint32 gPhDrawSplit[3];	// drawPath: tessellate / rasterise / stroke ticks of the current call (riApi_ph.cpp)
 void PhRiCpuMark()
 	{
 	TTimeIntervalMicroSeconds c;
+	gPhDrawSplit[0] = gPhDrawSplit[1] = gPhDrawSplit[2] = 0;
 	if (RThread().GetCpuTime(c) == KErrNone) gCpuMark = c.Int64();
 	}
 void PhRiTimeAdd(int kind, TUint ticks)
@@ -201,7 +203,7 @@ void PhRiTimeAdd(int kind, TUint ticks)
 			TBuf8<96> d;
 			for (int i = 0; i < 10; i++) if (gDeny[i] != gPrevDeny[i]) d.AppendFormat(_L8("img%d "), i);
 			for (int i = 0; i < 12; i++) if (gFillDeny[i] != gPrevFill[i]) d.AppendFormat(_L8("rect%d "), i);
-			RDebug::Printf("PH: alf: RI slow call: %s %u ms (n=%u) refusals during it: %S", kind == 0 ? "drawImage" : kind == 1 ? "drawPath" : "vgClear", ms, gTimeN[kind], &d);
+			RDebug::Printf("PH: alf: RI slow call: %s %u ms (n=%u) tessellate %u fill %u stroke %u ms, refusals during it: %S", kind == 0 ? "drawImage" : kind == 1 ? "drawPath" : "vgClear", ms, gTimeN[kind], (TUint)((TUint64)gPhDrawSplit[0] * 1000 / freq), (TUint)((TUint64)gPhDrawSplit[1] * 1000 / freq), (TUint)((TUint64)gPhDrawSplit[2] * 1000 / freq), &d);
 			}
 		}
 	for (int i = 0; i < 10; i++) gPrevDeny[i] = gDeny[i];
