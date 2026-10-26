@@ -559,6 +559,10 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 		(srcAlpha ? (srcPre && sd.alphaBits == 8) : true))
 		{
 		const RIuint32 amask = 255u << das;
+		// (perf 2026-10-27) every channel moved by the same amount (ARGB -> RGBA: 8 bits up) = one word rotate; without source
+		// alpha the byte rotated into the alpha slot is overwritten by amask below
+		const int rot = (int)((drs - rs) & 31), lrot = (32 - rot) & 31;
+		const bool isRot = rot != 0 && ((dgs - gs) & 31) == (TUint)rot && ((dbs - bs) & 31) == (TUint)rot && (!srcAlpha || ((das - as) & 31) == (TUint)rot);
 		for (TInt y = bnd.y; y < bnd.y + bnd.height; y++)
 			{
 			const int ns = PhRowSpans(clips, nclip, y, bnd.x, bnd.x + bnd.width, sp);
@@ -570,7 +574,8 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 					{
 					const RIuint32 v = srow[x];
 					const RIuint32 sa = srcAlpha ? (v >> as) & 255 : 255;
-					const RIuint32 s = (((v >> rs) & 255) << drs) | (((v >> gs) & 255) << dgs) | (((v >> bs) & 255) << dbs) | (sa << das);
+					const RIuint32 s = isRot ? (srcAlpha ? (v << rot) | (v >> lrot) : ((v << rot) | (v >> lrot)) & ~amask)
+						: (((v >> rs) & 255) << drs) | (((v >> gs) & 255) << dgs) | (((v >> bs) & 255) << dbs) | (sa << das);
 					if (sa == 255 || !over)
 						drow[x] = s | (srcAlpha ? 0 : amask);
 					else if (sa != 0)
