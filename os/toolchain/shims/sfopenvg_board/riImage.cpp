@@ -899,13 +899,14 @@ void Image::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, int 
 		   (sd.internalFormat & Color::NONLINEAR) == (dd.internalFormat & Color::NONLINEAR) &&
 		   sd.redBits == 8 && sd.greenBits == 8 && sd.blueBits == 8 && sd.alphaBits == 8 &&
 		   dd.redBits == 8 && dd.greenBits == 8 && dd.blueBits == 8 && (dd.alphaBits == 8 || dd.alphaBits == 0) &&
-		   (sp == dp || (sp && !dp)))
+		   (sp == dp || (sp && !dp) || (!sp && dp && dd.alphaBits == 8)))
 		{
 			const bool unpre = sp && !dp;
+			const bool topre = !sp && dp;	//OURS (2026-10-27): straight sRGBA surface -> premultiplied window (the swap): premultiply, rounded like Color
 			//OURS (perf 2026-10-27): same premultiplication and every channel at the same offset modulo 32 = a word rotate
 			//(sRGBA_PRE surface -> sARGB_PRE window, the swap's vgReadPixels: ~8 ms per full-screen frame through the loop below)
 			const int rot = (sd.redShift - dd.redShift) & 31;
-			if(!unpre && dd.alphaBits == 8 && ((sd.greenShift - dd.greenShift) & 31) == rot &&
+			if(!unpre && !topre && dd.alphaBits == 8 && ((sd.greenShift - dd.greenShift) & 31) == rot &&
 			   ((sd.blueShift - dd.blueShift) & 31) == rot && ((sd.alphaShift - dd.alphaShift) & 31) == rot)
 			{
 				const int lrot = (32 - rot) & 31;
@@ -928,6 +929,8 @@ void Image::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, int 
 				m_mipmapsValid = false;
 				return;
 			}
+			const int srs = sd.redShift, sgs = sd.greenShift, sbs = sd.blueShift, sas = sd.alphaShift;
+			const int drs = dd.redShift, dgs = dd.greenShift, dbs = dd.blueShift, das = dd.alphaShift, dab = dd.alphaBits;
 			for(int y=0;y<h;y++)
 			{
 				const RIuint32* s = (const RIuint32*)(si->m_data + (sy + y + si->m_storageOffsetY) * si->m_stride) + sx + si->m_storageOffsetX;
@@ -935,8 +938,14 @@ void Image::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, int 
 				for(int x=0;x<w;x++)
 				{
 					const RIuint32 p = s[x];
-					RIuint32 r = (p >> sd.redShift) & 0xff, g = (p >> sd.greenShift) & 0xff, b = (p >> sd.blueShift) & 0xff;
-					const RIuint32 a = (p >> sd.alphaShift) & 0xff;
+					RIuint32 r = (p >> srs) & 0xff, g = (p >> sgs) & 0xff, b = (p >> sbs) & 0xff;
+					const RIuint32 a = (p >> sas) & 0xff;
+					if(topre && a != 255)
+					{	// round(c * a / 255) = floor((c * a + 127) / 255), divide-free for n < 65535
+						RIuint32 n = r * a + 127; r = (n + 1 + (n >> 8)) >> 8;
+						n = g * a + 127; g = (n + 1 + (n >> 8)) >> 8;
+						n = b * a + 127; b = (n + 1 + (n >> 8)) >> 8;
+					}
 					if(unpre && a != 255)
 					{
 						if(a == 0)
@@ -948,7 +957,7 @@ void Image::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, int 
 							b = (b * 255 + a / 2) / a; if(b > 255) b = 255;
 						}
 					}
-					d[x] = (r << dd.redShift) | (g << dd.greenShift) | (b << dd.blueShift) | (dd.alphaBits ? a << dd.alphaShift : 0);
+					d[x] = (r << drs) | (g << dgs) | (b << dbs) | (dab ? a << das : 0);
 				}
 			}
 			m_mipmapsValid = false;
