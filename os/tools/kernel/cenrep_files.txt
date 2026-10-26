@@ -8,7 +8,8 @@
 ../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/CenRep/101F876E.txt
 ../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/aknphysics/cenrep/20021192.txt
 ../symbian-rcl3/oss.FCL.sf.mw.classicui/akntouchgesturefw/cenrep/2002676F.txt
-../symbian-rcl3/oss.FCL.sf.mw.uiresources/skins/AknSkins/CenRep/101F876F.txt
+# OURS copy of the shipped file: Haze as the default theme (key 0x14)
+../../tools/kernel/cenrep/101F876F.txt
 ../symbian-rcl3/oss.FCL.sf.mw.appsupport/appfw/apparchitecture/tdata/10003a3f.txt
 ../symbian-rcl3/oss.FCL.sf.mw.appsupport/appfw/apparchitecture/tdata/1028583d.txt
 ../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/msgsrvnstore/server/group/10286a26.txt
