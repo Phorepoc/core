@@ -350,21 +350,16 @@ int Rasterizer::setupSamplingPattern(VGRenderingQuality renderingQuality, int nu
 *//*-------------------------------------------------------------------*/
 
 #ifdef PH_RI_TIMING
-static TUint gPhFillRows, gPhFillPix, gPhFillTests, gPhFillSpans;
 // OURS (timing builds): wall time inside Rasterizer::fill, to split vgDrawPath into tessellation and rasterisation
 struct TPhFillTimer
 	{
 	TUint32 iT0;
-	int iEdges;
-	TPhFillTimer(int aEdges) : iT0(User::FastCounter()), iEdges(aEdges) { gPhFillRows = gPhFillPix = gPhFillTests = gPhFillSpans = 0; }
+	TPhFillTimer() : iT0(User::FastCounter()) {}
 	~TPhFillTimer()
 		{
 		static TUint64 total; static TUint n; static TInt freq;
 		if (!freq) HAL::Get(HAL::EFastCounterFrequency, freq);
-		const TUint32 dt = User::FastCounter() - iT0;
-		total += dt;
-		if ((TUint64)dt * 1000 / freq >= 5)
-			RDebug::Printf("PH: alf: RI slow fill %u ms: edges %d rows %u spans %u pixels %u edge-tests %u", (TUint)((TUint64)dt * 1000 / freq), iEdges, gPhFillRows, gPhFillSpans, gPhFillPix, gPhFillTests);
+		total += User::FastCounter() - iT0;
 		if ((++n & 127) == 0)
 			RDebug::Printf("PH: alf: RI time inside Rasterizer::fill: %u ms (x%u)", (TUint)(total * 1000 / freq), n);
 		}
@@ -373,7 +368,7 @@ struct TPhFillTimer
 void Rasterizer::fill()
 {
 #ifdef PH_RI_TIMING
-	TPhFillTimer phTimer(m_edges.size());
+	TPhFillTimer phTimer;
 #endif
 	// OURS (O2): a solid-colour fill the GPU engine can do (riPhvg.cpp); anything else falls through to the CPU
 	if(m_pixelPipe && !m_covBuffer && PhvgTryFill(*this))
@@ -482,9 +477,6 @@ void Rasterizer::fill()
 		}
 		if(!aet.size())
 			continue;	//no edges on the whole scanline, skip it
-#ifdef PH_RI_TIMING
-		gPhFillRows++;
-#endif
 
 		//sort AET by edge minx
 		aet.sort();
@@ -517,9 +509,6 @@ void Rasterizer::fill()
 
 				//compute winding number by evaluating the edge functions of edges to the left of the sampling point
 				int winding = 0;
-#ifdef PH_RI_TIMING
-				gPhFillTests += aes;
-#endif
 				for(int e=0;e<aes;e++)
 				{
 					if(sp.y >= aet[e].v0.y && sp.y < aet[e].v1.y)
@@ -553,10 +542,6 @@ void Rasterizer::fill()
 			RI_ASSERT(coverage >= 0.0f && coverage <= 1.0f);
 
 			//fill a run of pixels with constant coverage
-#ifdef PH_RI_TIMING
-			gPhFillSpans++;
-			if(sampleMask) gPhFillPix += endSpan - i;
-#endif
 			if(sampleMask)
 			{
 				for(;i<endSpan;i++)
