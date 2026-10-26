@@ -179,11 +179,19 @@ static TUint gTimeTicks[3], gTimeN[3];	// 0 drawImage, 1 drawPath, 2 vgClear: to
 static TUint gDeny[10];		// 0 masking/colour transform, 1 image mode, 2 blend, 3 matrix, 4 fractional, 5 format, 6 overlap, 7 paint, 8 samples, 9 other
 static TUint gPrevDeny[10], gPrevFill[12];
 // every RI call slower than 80 ms is logged with the fast-path refusals that happened during it (empty = the call was taken by a fast path, i.e. it was just big)
+// OURS (timing builds): thread CPU time across the same calls; wall >> CPU = the call blocks
+static TInt64 gCpuMark, gCpuUs[3];
+void PhRiCpuMark()
+	{
+	TTimeIntervalMicroSeconds c;
+	if (RThread().GetCpuTime(c) == KErrNone) gCpuMark = c.Int64();
+	}
 void PhRiTimeAdd(int kind, TUint ticks)
 	{
 	static TInt freq;
 	if (!freq) HAL::Get(HAL::EFastCounterFrequency, freq);
 	gTimeTicks[kind] += ticks; ++gTimeN[kind];
+	{ TTimeIntervalMicroSeconds c; if (gCpuMark && RThread().GetCpuTime(c) == KErrNone) gCpuUs[kind] += c.Int64() - gCpuMark; gCpuMark = 0; }
 	const TUint ms = (TUint)((TUint64)ticks * 1000 / freq);
 	if (ms >= 80)
 		{
@@ -241,6 +249,9 @@ static void PhTimeReport()
 	if ((n & 255) == 0 && n)
 		RDebug::Printf("PH: alf: RI time inside the calls: drawImage %u ms (x%u), drawPath %u ms (x%u), vgClear %u ms (x%u)",
 			(TUint)((TUint64)gTimeTicks[0] * 1000 / freq), gTimeN[0], (TUint)((TUint64)gTimeTicks[1] * 1000 / freq), gTimeN[1], (TUint)((TUint64)gTimeTicks[2] * 1000 / freq), gTimeN[2]);
+	if ((n & 255) == 0 && n)
+		RDebug::Printf("PH: alf: RI cpu inside the calls: drawImage %u ms, drawPath %u ms, vgClear %u ms",
+			(TUint)(gCpuUs[0] / 1000), (TUint)(gCpuUs[1] / 1000), (TUint)(gCpuUs[2] / 1000));
 	}
 static TUint gFmtN;
 static void PhDeny(TInt aWhy) { ++gDeny[aWhy]; }

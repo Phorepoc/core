@@ -2,8 +2,11 @@
 #include <e32std.h>
 #ifdef PH_RI_TIMING
 #define PH_RI_NOW() User::FastCounter()
+namespace OpenVGRI { void PhRiCpuMark(); }
+#define PH_RI_CPUMARK() OpenVGRI::PhRiCpuMark()
 #else
 #define PH_RI_NOW() 0u
+#define PH_RI_CPUMARK() ((void)0)
 #endif
 namespace OpenVGRI { void PhRiTimeAdd(int kind, unsigned ticks); void PhPathProf(void* aPath, int aSegs, int aTx, int aTy, unsigned aModes, unsigned aTicks, void* aCaller); }
 static unsigned phT0; static bool phR;
@@ -2296,9 +2299,9 @@ void RI_APIENTRY vgClear(VGint x, VGint y, VGint width, VGint height)
 	try
 	{
 		if(context->m_scissoring)
-			{ phT0 = PH_RI_NOW(); drawable->getColorBuffer()->clear(context->m_clearColor, x, y, width, height, context->m_scissor); OpenVGRI::PhRiTimeAdd(2, PH_RI_NOW() - phT0); }
+			{ PH_RI_CPUMARK(); phT0 = PH_RI_NOW(); drawable->getColorBuffer()->clear(context->m_clearColor, x, y, width, height, context->m_scissor); OpenVGRI::PhRiTimeAdd(2, PH_RI_NOW() - phT0); }
 		else
-			{ phT0 = PH_RI_NOW(); drawable->getColorBuffer()->clear(context->m_clearColor, x, y, width, height); OpenVGRI::PhRiTimeAdd(2, PH_RI_NOW() - phT0); }
+			{ PH_RI_CPUMARK(); phT0 = PH_RI_NOW(); drawable->getColorBuffer()->clear(context->m_clearColor, x, y, width, height); OpenVGRI::PhRiTimeAdd(2, PH_RI_NOW() - phT0); }
 	}
 	catch(std::bad_alloc)
 	{
@@ -2629,7 +2632,7 @@ void RI_APIENTRY vgDrawPath(VGPath path, VGbitfield paintModes)
 
 	try
 	{
-		phT0 = PH_RI_NOW(); phR = drawPath(context, path, context->m_pathUserToSurface, paintModes); OpenVGRI::PhRiTimeAdd(1, PH_RI_NOW() - phT0); OpenVGRI::PhPathProf((void*)path, ((Path*)path)->getNumSegments(), (int)context->m_pathUserToSurface[0][2], (int)context->m_pathUserToSurface[1][2], paintModes, PH_RI_NOW() - phT0, __builtin_return_address(0));
+		PH_RI_CPUMARK(); phT0 = PH_RI_NOW(); phR = drawPath(context, path, context->m_pathUserToSurface, paintModes); OpenVGRI::PhRiTimeAdd(1, PH_RI_NOW() - phT0); OpenVGRI::PhPathProf((void*)path, ((Path*)path)->getNumSegments(), (int)context->m_pathUserToSurface[0][2], (int)context->m_pathUserToSurface[1][2], paintModes, PH_RI_NOW() - phT0, __builtin_return_address(0));
 		if(!phR)
 		{
 			RI_RETURN(RI_NO_RETVAL);
@@ -3335,7 +3338,7 @@ void RI_APIENTRY vgDrawImage(VGImage image)
 
 	try
 	{
-		phT0 = PH_RI_NOW(); phR = drawImage(context, image, context->m_imageUserToSurface); OpenVGRI::PhRiTimeAdd(0, PH_RI_NOW() - phT0);
+		PH_RI_CPUMARK(); phT0 = PH_RI_NOW(); phR = drawImage(context, image, context->m_imageUserToSurface); OpenVGRI::PhRiTimeAdd(0, PH_RI_NOW() - phT0);
 		if(!phR)
 		{
 			RI_RETURN(RI_NO_RETVAL);
