@@ -487,6 +487,31 @@ void Rasterizer::fill()
 		//sort scissor AET by edge x
 		scissorAet.sort();
 
+		//OURS (perf 2026-10-26): each sampling row's edge crossings, sorted by x, once per scanline; a pixel's winding is then
+		//a walk along them (sampling points only move right) instead of testing every edge to its left for every sample
+		enum { KXSamples = 8, KXEdges = 64 };
+		RScalar xc[KXSamples][KXEdges];
+		int xd[KXSamples][KXEdges], xn[KXSamples], xp[KXSamples], xw[KXSamples];
+		bool xfast = m_numSamples <= KXSamples;
+		for(int s=0;xfast && s<m_numSamples;s++)
+		{
+			const RScalar sy = (RScalar)j + 0.5f + m_samples[s].y;
+			int n = 0;
+			for(int e=0;e<aet.size();e++)
+			{
+				const ActiveEdge& ae = aet[e];
+				if(!(sy >= ae.v0.y && sy < ae.v1.y))
+					continue;
+				if(n == KXEdges) { xfast = false; break; }
+				//side <= 0 <=> x >= (cnst - sy*n.y) / n.x  (n.x = v0.y - v1.y < 0)
+				const RScalar x = (ae.cnst - sy * ae.n.y) / ae.n.x;
+				int k = n++;
+				while(k > 0 && xc[s][k-1] > x) { xc[s][k] = xc[s][k-1]; xd[s][k] = xd[s][k-1]; k--; }
+				xc[s][k] = x; xd[s][k] = ae.direction;
+			}
+			xn[s] = n; xp[s] = 0; xw[s] = 0;
+		}
+
 		//fill the scanline
 		int scissorWinding = m_scissor ? 0 : 1;	//if scissoring is off, winding is always 1
 		int scissorIndex = 0;
@@ -512,6 +537,13 @@ void Rasterizer::fill()
 
 				//compute winding number by evaluating the edge functions of edges to the left of the sampling point
 				int winding = 0;
+				if(xfast)
+				{
+					while(xp[s] < xn[s] && xc[s][xp[s]] <= sp.x)
+						xw[s] += xd[s][xp[s]++];
+					winding = xw[s];
+				}
+				else
 				for(int e=0;e<aes;e++)
 				{
 					if(sp.y >= aet[e].v0.y && sp.y < aet[e].v1.y)
