@@ -243,6 +243,7 @@ COMPONENTS = {
     "mullogging": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/mullogging/group/mullogging.mmp"),   # <- mulmodelutility
     # the Alf widget plug-ins the widget factory loads by name (Photos' full-screen view: alfviewwidget + mulcoverflowwidget;
     # without them createViewWidget throws and the view leaves KErrGeneral)
+    "alfwidgetfactory": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/widgetmodel/alfwidgetfactory/group/alfwidgetfactory.mmp"),
     "mulutility": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/common/group/mulxmlutility.mmp"),
     "muldatamodel": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/muldatamodel/group/muldatamodel.mmp"),
     "muldatamodelplugin": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.mmuifw/mulwidgets/muldatamodel/group/muldatamodelplugin.mmp"),
@@ -300,7 +301,7 @@ for _k, _c in COMPONENTS.items():
         _c["arm_flags"] = list(_c.get("arm_flags", [])) + ["-D__SOFTFP="]
 # ... and these throw and catch C++ exceptions themselves (RVCT built them with exceptions on): build_mmp.py `cxx_eh`
 for _k in ("osncore", "alfresourcepool", "alfwidgetmodel", "alfwidgetutils", "mulmodelutility", "glxdataprovider",
-           "glxfullscreenview", "mulutility", "muldatamodel", "muldatamodelplugin", "alfcontainerwidgetstatic",
+           "glxfullscreenview", "alfwidgetfactory", "mulutility", "muldatamodel", "muldatamodelplugin", "alfcontainerwidgetstatic",
            "alfcontainerwidget", "alfviewwidget", "alfscrollbarwidget", "mulsliderwidget", "mulcoverflowwidget"):
     COMPONENTS[_k]["cxx_eh"] = True
     # (with exceptions on, e32cmn.h's placement new must say throw () as <new> does: GCCE's __NO_THROW, as libstdcpp)
