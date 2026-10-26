@@ -30,7 +30,12 @@
  * \note    
  *//*-------------------------------------------------------------------*/
 
+//OURS (perf 2026-10-26): pixelPipe's integer fast path writes the colour buffer's pixels directly
+#define private public
+#define protected public
 #include "riPixelPipe.h"
+#undef private
+#undef protected
 
 //==============================================================================================
 
@@ -831,6 +836,63 @@ void PixelPipe::pixelPipe(int x, int y, RIfloat coverage, unsigned int sampleMas
         ag = s.a;
         ab = s.a;
         s.convert(dstFormat);   //convert paint color to destination color space
+
+        //OURS (perf 2026-10-26): paint only, one sample, no mask, SRC / SRC_OVER into a 32-bit 8:8:8(:8) colour buffer, in
+        //integers. The float path below blends, converts both colours to linear light for the coverage mix and back, and
+        //repacks every pixel (Menu's gradient-filled paths took ~1 s each at boot). Difference: edge pixels (coverage < 1)
+        //are mixed in the buffer's own colour space; fully covered pixels are the same.
+        Surface* cb = m_drawable->getColorBuffer();
+        const Color::Descriptor& dd = cb->getDescriptor();
+        if(m_drawable->getNumSamples() == 1 && !(m_masking && m_drawable->getMaskBuffer()) &&
+           (m_blendMode == VG_BLEND_SRC_OVER || m_blendMode == VG_BLEND_SRC) &&
+           dd.bitsPerPixel == 32 && dd.redBits == 8 && dd.greenBits == 8 && dd.blueBits == 8 &&
+           (dd.alphaBits == 8 || dd.alphaBits == 0) && !(dd.internalFormat & Color::LUMINANCE) && cb->m_image)
+        {
+            Image* im = cb->m_image;
+            RIuint32* px = (RIuint32*)(im->m_data + (y + im->m_storageOffsetY) * im->m_stride) + x + im->m_storageOffsetX;
+            const RIuint32 v = *px;
+            int dr = (v >> dd.redShift) & 255, dg = (v >> dd.greenShift) & 255, db = (v >> dd.blueShift) & 255;
+            int da = dd.alphaBits ? (int)((v >> dd.alphaShift) & 255) : 255;
+            const bool pre = (dd.internalFormat & Color::PREMULTIPLIED) != 0;
+            if(!pre && da != 255)
+            {
+                dr = (dr * da + 127) / 255; dg = (dg * da + 127) / 255; db = (db * da + 127) / 255;
+            }
+            const int sr = (int)(RI_CLAMP(s.r, 0.0f, 1.0f) * 255.0f + 0.5f), sg = (int)(RI_CLAMP(s.g, 0.0f, 1.0f) * 255.0f + 0.5f);
+            const int sb = (int)(RI_CLAMP(s.b, 0.0f, 1.0f) * 255.0f + 0.5f), sa = (int)(RI_CLAMP(s.a, 0.0f, 1.0f) * 255.0f + 0.5f);
+            int rr, rg, rb, ra;
+            if(m_blendMode == VG_BLEND_SRC)
+            {
+                rr = sr; rg = sg; rb = sb; ra = sa;
+            }
+            else
+            {
+                const int ia = 255 - sa;
+                rr = sr + (dr * ia + 127) / 255; rg = sg + (dg * ia + 127) / 255; rb = sb + (db * ia + 127) / 255; ra = sa + (da * ia + 127) / 255;
+            }
+            const int c = (int)(coverage * 256.0f + 0.5f);
+            if(c < 256)
+            {
+                rr = dr + (((rr - dr) * c) >> 8); rg = dg + (((rg - dg) * c) >> 8);
+                rb = db + (((rb - db) * c) >> 8); ra = da + (((ra - da) * c) >> 8);
+            }
+            if(!pre && ra != 255)
+            {
+                if(ra == 0)
+                    rr = rg = rb = 0;
+                else
+                {
+                    rr = (rr * 255 + ra / 2) / ra; rg = (rg * 255 + ra / 2) / ra; rb = (rb * 255 + ra / 2) / ra;
+                    if(rr > 255) rr = 255;
+                    if(rg > 255) rg = 255;
+                    if(rb > 255) rb = 255;
+                }
+            }
+            *px = ((RIuint32)rr << dd.redShift) | ((RIuint32)rg << dd.greenShift) | ((RIuint32)rb << dd.blueShift) |
+                  (dd.alphaBits ? (RIuint32)ra << dd.alphaShift : 0);
+            im->m_mipmapsValid = false;
+            return;
+        }
     }
     RI_ASSERT(s.getInternalFormat() == Color::lRGBA_PRE || s.getInternalFormat() == Color::sRGBA_PRE || s.getInternalFormat() == Color::lLA_PRE || s.getInternalFormat() == Color::sLA_PRE);
     s.assertConsistency();
