@@ -2628,6 +2628,11 @@ for _src, _k, _v in _EXTEND:
     for _field, _val in _v.items():
         _c[_field] = list(_c.get(_field) or []) + list(_val) if isinstance(_val, list) else _val
 
+# Canvas render buffer cache budget (perf 2026-10-26): the release keeps 0 KB of unused render buffers, so a hidden window
+# is redrawn in full into a new buffer when shown again; huicanvastexturecache_ph.cpp keeps up to 8 MB of them.
+COMPONENTS["hitchcock"]["drop"] = list(COMPONENTS["hitchcock"].get("drop") or []) + ["huicanvastexturecache.cpp"]
+COMPONENTS["hitchcock"]["extra"] = list(COMPONENTS["hitchcock"].get("extra") or []) + [_AG + "huicanvastexturecache_ph.cpp"]
+
 # Staged as sflibopenvgrefimpl.dll at ALF>=s2 in place of the default one.
 if _ALFTRACE:
     _riw = dict(COMPONENTS["sflibopenvgrefimpl"])
