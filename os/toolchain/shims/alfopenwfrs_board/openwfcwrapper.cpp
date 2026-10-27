@@ -759,8 +759,11 @@ TInt COpenWfcWrapper::AddElement(MWsElement* aElement, MWsElement* aAbove)
     //the UI element is a special case since we set and maintain the surface
     TUint32 renderStageFlags;
     addedElement->GetRenderStageFlags(renderStageFlags);
-    if (renderStageFlags & MWsElement::EElementIsIndirectlyRenderedUserInterface || 
-        renderStageFlags & MWsElement::EElementIsDirectlyRenderedUserInterface)
+    // OURS (2026-10-27): a DIRECTLY rendered UI element that brings its own surface keeps it -- WSERV flags a portrait DSA
+    // window's element so (its surface is the screen's DSA buffer, the game's pixels); attaching the alf UI surface to it
+    // showed the alf layer twice and the game never (SkyForce black under Alfred)
+    if (renderStageFlags & MWsElement::EElementIsIndirectlyRenderedUserInterface ||
+        (renderStageFlags & MWsElement::EElementIsDirectlyRenderedUserInterface && addedElement->ConnectedSurface().IsNull()))
         {
         err = AttachSurfaceToUiElement(addedElement);
         }
