@@ -323,8 +323,11 @@ COMPONENTS = {
         mmp="oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/domainmgr/group/domainpolicy.mmp"),
     "domainpolicy2": dict(
         mmp="oss.FCL.sf.os.devicesrv/sysstatemgmt/systemstatemgr/dompolicy/group/domainpolicy2.mmp"),
+    # ECOM_TRACE=1 ph component build ... ecomserver: the server's own RDebug tracing (EComDebug.h ECOM_TRACE): discovery per drive,
+    # rejected plug-ins (SID / UID2 / hash mismatches), startup states
     "ecomserver": dict(
-        mmp=f"{OSSRV}/lowlevellibsandfws/pluginfw/Framework/MMPFiles/EComServer.mmp"),
+        mmp=f"{OSSRV}/lowlevellibsandfws/pluginfw/Framework/MMPFiles/EComServer.mmp",
+        **(dict(defs=["ECOM_TRACE"]) if os.environ.get("ECOM_TRACE") == "1" else {})),
     # minigui: the text console implemented ON the graphical window server
     "econswserv": dict(mmp=f"{G}/windowing/windowserver/minigui/group/econswserv.mmp"),
     # --- central repository server + its leaves ------------------------------------
