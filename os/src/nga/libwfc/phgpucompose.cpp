@@ -249,7 +249,7 @@ namespace
 		}
 
 	// the cached EGLImage + texture of a stream buffer (made on first use); NULL = cannot import
-	TEntry* Lookup(void* aStream, void* aBuffer, void* aData, TInt aW, TInt aH, TInt aStride, TInt aOwf)
+	TEntry* Lookup(void* aStream, void* aBuffer, void* aData, TInt aW, TInt aH, TInt aStride, TInt aOwf, TUint aUsage = 0)
 		{
 		khronos_int32_t index = -1;
 		const TSurfaceId* sid = NULL;
@@ -281,7 +281,7 @@ namespace
 		m.iWidth = aW;
 		m.iHeight = aH;
 		m.iFormat = MemFormat(aOwf);
-		m.iUsage = 0;
+		m.iUsage = aUsage;		// 1 = the composition target (EGL keeps it out of the sources' clean-only cache rule)
 		EGLImageKHR img = gl.CreateImageKHR(gDpy, EGL_NO_CONTEXT, EGL_SYMBIAN_MEMORY_IMAGE_PH, (EGLClientBuffer)&m, NULL);
 		if (!img)
 			{
@@ -355,7 +355,7 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 	gT0 = User::FastCounter();
 	if (!MemFormat(aFormat) || (aStride & 7))
 		return 0;
-	TEntry* t = Lookup(aStream, aBuffer, aPixels, aW, aH, aStride, aFormat);
+	TEntry* t = Lookup(aStream, aBuffer, aPixels, aW, aH, aStride, aFormat, 1);
 	if (!t)
 		return 0;
 	if (!t->iFbo)
