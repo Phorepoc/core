@@ -1796,7 +1796,8 @@ void CHuiRosterImpl::RemoveExternalContentVisualFromParentL(CHuiVisual* aExterna
 void CHuiRosterImpl::FreezeVisibleContentL(TBool aEnable)
     {
     iRosterIsFrozen = aEnable;
-    
+    RDebug::Printf("PH: alf: roster FreezeVisibleContentL %d (render buffer %d)", aEnable, UseRenderBufferForFreeze());
+
     if (aEnable && !iMonitorMemoryLevel && iDisplay)
         {
         iDisplay->Env().AddMemoryLevelObserver(this);
