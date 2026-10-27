@@ -4165,6 +4165,9 @@ void CAlfBridge::HandleSetSurfaceExtentL( TAlfBridgerData& aData )
 	if (viz && iAlfWindowGroupNodeId != windowGroupNodeId && controlgroup && controlgroup->SecureId() != iAlfSecureId )
 		{
         viz->SetLayerExtent(windowAttributes->iSurfaceExtent);
+        { const TRect& e = windowAttributes->iSurfaceExtent; const TRect d = viz->DisplayRect();
+          RDebug::Printf("PH: alf: surface extent win %d grp %d: %d,%d-%d,%d visual %d,%d-%d,%d orientation %d", windowNodeId, windowGroupNodeId,
+            e.iTl.iX, e.iTl.iY, e.iBr.iX, e.iBr.iY, d.iTl.iX, d.iTl.iY, d.iBr.iX, d.iBr.iY, iAlfScreens.Count() ? (TInt)iAlfScreens[0]->iDisplay->Orientation() : -1); }
 		// Set surface extend area to be cleared with fully transparent color
 		// Note: does not support extend that is bigger that the visual
 		// if surface extent is (0,0,0,0) then the background item array is reseted 
