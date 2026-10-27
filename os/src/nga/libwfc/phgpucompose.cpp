@@ -347,6 +347,25 @@ int PhGpu_SourceOk(int aFormat, int aLinear, int aW, int aH, int aStride)
 	return MemFormat(aFormat) != 0 && !aLinear && aW > 0 && aH > 0 && aW <= 4096 && aH <= 4096 && (aStride & 7) == 0;
 	}
 
+// white-frame detector (the Applications-folder scroll flash): an 8x8 grid of a buffer's pixels, how many near white
+struct TPhSeen { const TUint8* iPix; TInt iW, iH, iStride; TReal32 iDst[4]; };
+static TPhSeen gTgt, gSrc[6];
+static TInt gNSrc;
+static TInt WhiteGrid(const TPhSeen& aB)
+	{
+	TInt n = 0;
+	if (!aB.iPix)
+		return 0;
+	for (TInt gy = 0; gy < 8; gy++)
+		for (TInt gx = 0; gx < 8; gx++)
+			{
+			const TUint32 v = *(const TUint32*)(aB.iPix + (aB.iH * (2 * gy + 1) / 16) * aB.iStride + (aB.iW * (2 * gx + 1) / 16) * 4);
+			if ((v & 0xF0F0F0) == 0xF0F0F0)
+				n++;
+			}
+	return n;
+	}
+
 int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int aStride, int aFormat, int aIw, int aIh,
                 int aRot, unsigned aBackground)
 	{
@@ -373,6 +392,8 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 			}
 		}
 	gTw = aW; gTh = aH; gIw = aIw; gIh = aIh; gRot = aRot & 3;
+	gTgt.iPix = (const TUint8*)aPixels; gTgt.iW = aW; gTgt.iH = aH; gTgt.iStride = aStride;
+	gNSrc = 0;
 	gl.BindFramebuffer(KGlFramebuffer, t->iFbo);
 	gl.Viewport(0, 0, aW, aH);
 	gl.Disable(KGlScissorTest);
@@ -400,6 +421,13 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 		return 0;
 		}
 	gElems++;
+	if (gNSrc < 6)
+		{
+		TPhSeen& s = gSrc[gNSrc++];
+		s.iPix = (const TUint8*)aPixels; s.iW = aW; s.iH = aH; s.iStride = aStride;
+		for (TInt i = 0; i < 4; i++)
+			s.iDst[i] = aDstRect[i];
+		}
 	// source corners TL TR BR BL (source pixels), flipped vertically, then turned clockwise: each quarter turn moves
 	// the bottom-left corner to the top-left
 	const TReal32 sx = aSrcRect[0], sy = aSrcRect[1], sw = aSrcRect[2], sh = aSrcRect[3];
@@ -461,6 +489,19 @@ int PhGpu_End(void)
 	gl.Finish();
 	const TUint w1 = User::FastCounter();
 	const GLenum err = gl.GetError();
+	{
+	static TInt said;
+	const TInt w = WhiteGrid(gTgt);
+	if (w >= 24 && said < 40)
+		{
+		said++;
+		RDebug::Printf("PH: wfc gpu: WHITE composition %u: %d/64 white, %d elements", gComp, w, gNSrc);
+		for (TInt i = 0; i < gNSrc; i++)
+			RDebug::Printf("PH: wfc gpu:   el %d %dx%d -> %d,%d %dx%d: %d/64 white, px0 %08x", i, gSrc[i].iW, gSrc[i].iH,
+				(TInt)gSrc[i].iDst[0], (TInt)gSrc[i].iDst[1], (TInt)gSrc[i].iDst[2], (TInt)gSrc[i].iDst[3],
+				WhiteGrid(gSrc[i]), gSrc[i].iPix ? *(const TUint32*)gSrc[i].iPix : 0);
+		}
+	}
 	DropIdle();
 	const TUint dt = User::FastCounter() - gT0;
 	gTicks += dt;
