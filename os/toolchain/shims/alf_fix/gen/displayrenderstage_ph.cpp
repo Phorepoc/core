@@ -1205,8 +1205,13 @@ RDebug::Printf("PH: alf: CDisplayRenderStage::ElementAdded L1160 __ALFLOGSTRING1
 RDebug::Printf("PH: alf: CDisplayRenderStage::ElementAdded L1161 if (index == KErrNotFound)");
 	if (index == KErrNotFound)
 		{
-		ASSERT(EFalse);
-		return; // error
+		//OURS (2026-10-27): nothing in the 2010 release ever fills iElementArray, so every window element (a DSA game's
+		//screen surface, a GL window's surface) stopped here: alf never got EAlfNodeLayerAdded, never punched the window's
+		//hole and drew its own copy of the window over the element (SkyForce sheared/black, DH2 white under Alfred).
+		const TInt err = iElementArray.Append(TElementData((MWsElement*)&aElement, aElement.ConnectedSurface(), windowGroupId, windowId, nodeId));
+		if (err != KErrNone)
+			return;
+		index = iElementArray.Count() - 1;
 		}
 	
 
@@ -1236,12 +1241,13 @@ RDebug::Printf("PH: alf: CDisplayRenderStage::ElementAdded L1182 TInt array[] = 
             extent.iTl.iX,
             extent.iTl.iY,
             extent.iBr.iX,
-            extent.iBr.iY
+            extent.iBr.iY,
+            aElement.ConnectedSurface().Type() == TSurfaceId::EScreenSurface	//OURS: the isDSA word DoNodeLayerExtentChangedL reads
             }; 
 RDebug::Printf("PH: alf: CDisplayRenderStage::ElementAdded L1189 iAlfBridge->WriteIntsL(");
     iAlfBridge->WriteIntsL( 
     	EAlfNodeLayerAdded,
-        5,
+        6,
         array );
 RDebug::Printf("PH: alf: CDisplayRenderStage::ElementAdded L1193 iAlfBridge->CommitL();");
 	iAlfBridge->CommitL();
