@@ -353,6 +353,16 @@ void COpenWfcWrapper::DestroyElement(MWsElement* aElement)
 	          {
 	             delete element;
 	          }
+	    else
+	          {
+	          // PHOREPOC delta (2026-10-27): an element still in the composed scene was only unlinked here -- never removed
+	          // from the wfc scene, never deleted -- so it stayed on screen for good (the ended DSA element of Dungeon
+	          // Hunter 2's intro video covered the GL game, white). Queue it like RemoveElement does, flagged Destroy:
+	          // FlushSceneElementChanges removes it from the scene and deletes it.
+	          RDebug::Printf("PH: alf: wrapper DestroyElement %x still in the scene: queued for removal", (TUint)element);
+	          element->InsertAfter(iRemoveElementList,NULL,CElementWrapper::EUpdate_Destroy);
+	          SetCompositionModified();
+	          }
 	    }
 	}
 
