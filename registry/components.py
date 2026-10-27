@@ -1077,7 +1077,9 @@ COMPONENTS = {
     "hnengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.homescreen/menufw/hierarchynavigator/hnengine/group/hnengine.mmp", **_XDOM),
     "mmextensionmanager": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.homescreen/menufw/menufwui/mmextensions/mmextensionmanager/group/mmextensionmanager.mmp", **_XDOM),
     "mmwidgets": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.homescreen/menufw/menufwui/mmwidgets/group/mmwidgets.mmp", defs=_XDOM["defs"],
-                      flags=_XDOM["flags"]),
+                      flags=_XDOM["flags"],
+                      # traced copy: where the skin background could not be drawn (white scroll flashes)
+                      drop=["mmlistboxitemdrawer.cpp"], extra=["toolchain/shims/mm_fix/mmlistboxitemdrawer.cpp"]),
     "matrixmenu": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.homescreen/menufw/menufwui/matrixmenu/group/matrixmenu.mmp", **_XDOM,
                        # no EPOCSTACKSIZE = the 8K default: enough under RVCT, but our g++ -O2 frames
                        # overflow it in CAknToolbar layout during AppUi construction
