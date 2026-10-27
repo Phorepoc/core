@@ -1166,6 +1166,25 @@ EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surface)
 	{
 	if (VgHas(surface))
 		SWFWD(EOrdSwapBuffers, EGLBoolean, EGL_FALSE, (EGLDisplay, EGLSurface), (d, surface))
+	// TRACE (Let's Golf 2 black frames, 2026-10-27): what the GL back buffer holds at every 30th swap (capped)
+	static TInt swaps;
+	if (++swaps % 30 == 0 && swaps <= 3000)
+		{
+		typedef void (*TReadPixels)(int, int, int, int, unsigned, unsigned, void*);
+		typedef void (*TGetIv)(unsigned, int*);
+		TReadPixels readPixels = (TReadPixels)PhglResolve(0, "glReadPixels");
+		TGetIv getIv = (TGetIv)PhglResolve(0, "glGetIntegerv");
+		if (readPixels && getIv)
+			{
+			int vp[4] = {0, 0, 0, 0};
+			getIv(0x0BA2, vp);
+			TUint32 px[3] = {0, 0, 0};
+			readPixels(vp[2] / 2, vp[3] / 2, 1, 1, 0x1908, 0x1401, &px[0]);
+			readPixels(vp[2] / 4, vp[3] / 4, 1, 1, 0x1908, 0x1401, &px[1]);
+			readPixels(3 * vp[2] / 4, 3 * vp[3] / 4, 1, 1, 0x1908, 0x1401, &px[2]);
+			RDebug::Printf("PH: phgl swap %d viewport %dx%d back buffer %08x %08x %08x", swaps, vp[2], vp[3], px[0], px[1], px[2]);
+			}
+		}
 	FORWARD(EOrdSwapBuffers, EGLBoolean, EGL_FALSE, (EGLDisplay, EGLSurface), (d, surface))
 	}
 
