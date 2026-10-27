@@ -237,3 +237,16 @@ void PhglTraceProbe(const char* aName, int aArg)
 	               depthTest, depthFunc, depthMask, (int)(clearDepth * 1000), (int)(range[0] * 1000), (int)(range[1] * 1000), cull, cullMode,
 	               front, scissor, sbox[0], sbox[1], sbox[2], sbox[3], stencil);
 	}
+
+void PhglTraceMatrix(int aLocation, const float* aM)
+	{
+	static TInt n;
+	if (n >= 12)
+		return;
+	++n;
+	int v[16];
+	for (TInt i = 0; i < 16; ++i)
+		v[i] = (int)(aM[i] * 10000);
+	RDebug::Printf("PH: phgl matrix loc %d (x1e4, column-major): %d %d %d %d | %d %d %d %d | %d %d %d %d | %d %d %d %d", aLocation, v[0], v[1],
+	               v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12], v[13], v[14], v[15]);
+	}

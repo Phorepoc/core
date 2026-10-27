@@ -18,6 +18,7 @@ TLibraryFunction PhglResolveEgl(TInt aOrdinal, const char* aName);
 void PhglCheckStatus(const char* aWhat, unsigned aObj, unsigned aStatusEnum, const char* aQuery, const char* aLog);
 // TRACE (2026-10-27): the first 3 calls of each GLES2 function + any GL error pending on entry ("PH:" lines, capped)
 void PhglTraceCall(const char* aName);
+void PhglTraceMatrix(int aLocation, const float* aM);
 void PhglTraceProbe(const char* aName, int aArg);
 void PhglTraceSource(unsigned aShader, int aCount, const char** aStrings, const int* aLengths);
 void PhglTraceArgs(const char* aName, unsigned aA, unsigned aB, int aC, int aD);
