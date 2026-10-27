@@ -472,16 +472,27 @@ TInt COpenWFC_RI_DisplayChannel::UpdateDisplay()
     const TBool normal = (iNewRotation == EScreenRotate0 || iNewRotation == EScreenRotate180);
     const TInt rows = normal ? iScreenInfo.iNormalHeight : iScreenInfo.iFlippedHeight;
     const TInt dstStride = normal ? iScreenInfo.iNormalStride : iScreenInfo.iFlippedStride;
-    const TInt srcStride = (normal ? iScreenInfo.iNormalWidth : iScreenInfo.iFlippedWidth) * 4;
-    if (srcStride == dstStride || srcStride > dstStride)
+    const TInt rowBytes = (normal ? iScreenInfo.iNormalWidth : iScreenInfo.iFlippedWidth) * 4;
+    // OURS (2026-10-27): the scene stream's own stride -- the Alfred renderer's stream is padded like the display (1472 B),
+    // and copying it as packed sheared every row by 8 pixels (the games under Alfred)
+    khronos_int32_t sw = 0, sh = 0, sStride = 0, sFmt = 0, sPix = 0;
+    SymbianStreamGetHeader(iCurrentSceneStream, &sw, &sh, &sStride, &sFmt, &sPix);
+    const TInt srcStride = sStride >= rowBytes ? (TInt)sStride : rowBytes;
+    if (srcStride == dstStride)
         {
         Mem::Move(firstPixelAddr, pixelDataPtr, size);
+        }
+    else if (srcStride > dstStride)
+        {
+        const TUint8* src = (const TUint8*)pixelDataPtr;
+        for (TInt y = 0; y < rows; ++y)
+            Mem::Copy(firstPixelAddr + y * dstStride, src + y * srcStride, dstStride);
         }
     else
         {
         const TUint8* src = (const TUint8*)pixelDataPtr;
         for (TInt y = 0; y < rows; ++y)
-            Mem::Copy(firstPixelAddr + y * dstStride, src + y * srcStride, srcStride);
+            Mem::Copy(firstPixelAddr + y * dstStride, src + y * srcStride, rowBytes);
         }
     }
     SymbianStreamReleaseReadBuffer(iCurrentSceneStream, frontBuffer);
