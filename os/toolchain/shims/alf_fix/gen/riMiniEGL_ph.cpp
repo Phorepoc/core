@@ -245,6 +245,7 @@ RIEGLSurface::RIEGLSurface(void* OSWindowContext, const EGLConfig config, Drawab
 //OURS (perf 2026-10-26): the images live pbuffers were made from (eglCreatePbufferFromClientBuffer). Only those can be
 //a current surface's colour buffer, so eglvgIsInUse answers "no" for any other image without getEGL's Dll::Tls exec
 //(it ran on every vgDrawImage: ~15% of the compositor). More than KPhBoundMax live at once = the full check, always.
+void PhvgSurfaceReleased(const Surface* aS);	//OURS (riPhvg.cpp)
 static const int KPhBoundMax = 32;
 static Image* gPhBound[KPhBoundMax];
 static int gPhBoundOverflow;
@@ -2069,6 +2070,8 @@ EGLBoolean eglMakeCurrent(EGLDisplay dpy, EGLSurface draw, EGLSurface read, EGLC
 		}
 		if(ps)
 		{
+			if(ps != s && ps->getDrawable())
+				PhvgSurfaceReleased(ps->getDrawable()->getColorBuffer());	//OURS (riPhvg.cpp): GPU pixels back into a VGImage
 			if(!ps->removeReference())
 				RI_DELETE(ps);
 		}
@@ -2470,6 +2473,8 @@ EGLBoolean eglReleaseThread(void)
 		}
 		if(ps)
 		{
+			if(ps->getDrawable())
+				PhvgSurfaceReleased(ps->getDrawable()->getColorBuffer());	//OURS (riPhvg.cpp)
 			if(!ps->removeReference())
 				RI_DELETE(ps);
 		}
