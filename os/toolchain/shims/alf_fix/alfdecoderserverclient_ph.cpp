@@ -7,6 +7,7 @@
 // that sits in a loop or a wait shows the same pc each time -- no instrumentation needed to find where it is.
 #include <e32debug.h>
 #include <e32property.h>
+#include <centralrepository.h>
 #include <alf/alfappui.h>
 #include "alfdecoderserverclient.h"
 #include "alfstreamerconsts.h"
@@ -88,20 +89,23 @@ static TInt PhAlfWatchMain(TAny* aId)
 	return 0;
 	}
 
-// ALF_PHVG=1 (build env of this component): switch the OpenVG facade of the WSERV process to the GPU engine (phvg.dll: fills / gradients / strokes on the Mali;
-// images and masked blits stay on the CPU = the RI fast blit). The switch is an int property KPhvgModeKey in the process's own category (its SID) or the
-// system category (src/phvg/phvg.h, riPhvg.cpp ReadMode): a process may define keys in its own SID category.
-#ifdef PH_ALF_PHVG
+// GPU mode: switch the OpenVG facade of this process to the GPU engine (phvg.dll: fills / gradients / strokes on the Mali; images and masked
+// blits stay on the CPU = the RI fast blit). The developer menu's "UI GPU acceleration" (repository 0xE7015A01 key 8, src/phedevmenu/phedevmenu.h;
+// 0 = off, the default) decides at every start -- a runtime setting, not a build switch (an env-only build switch used to stay on silently in
+// partial builds). The engine reads an int property KPhvgModeKey in the process's own category (its SID; src/phvg/phvg.h, riPhvg.cpp ReadMode).
 static void PhAlfPhvgOn()
 	{
+	TInt v = 0;
+	TRAPD(err, CRepository* rep = CRepository::NewL(TUid::Uid(0xE7015A01)); rep->Get(8, v); delete rep);
+	if (err != KErrNone)
+		v = 0;
 	const TUid cat = TUid::Uid((TInt)RProcess().SecureId());
 	const TUint key = 0x50564731;			// 'PVG1' (phvg.h KPhvgModeKey)
 	TInt r = RProperty::Define(cat, key, RProperty::EInt);
 	if (r == KErrNone || r == KErrAlreadyExists)
-		r = RProperty::Set(cat, key, 1);
-	RDebug::Printf("PH: alf: phvg GPU mode property (cat %x key %x) -> 1: %d", (TUint)cat.iUid, key, r);
+		r = RProperty::Set(cat, key, v ? 1 : 0);
+	RDebug::Printf("PH: alf: GPU acceleration setting %d (repository %d) -> phvg mode property %d: %d", v, err, v ? 1 : 0, r);
 	}
-#endif
 
 static void PhAlfStartWatch()
 	{
@@ -116,11 +120,7 @@ static void PhAlfStartWatch()
 		}
 	}
 
-#ifdef PH_ALF_PHVG
 #define PH_PHVG_ON() PhAlfPhvgOn()
-#else
-#define PH_PHVG_ON() ((void)0)
-#endif
 #define RenameThread(n) RenameThread(n) + (RDebug::Printf("PH: alf: alfredserver thread running, frame %x", (TUint)__builtin_frame_address(0)), PhAlfStartWatch(), PH_PHVG_ON(), 0)
 #define ConstructL() ConstructL(); RDebug::Printf("PH: alf: alfredserver thread: CAlfAppUi::ConstructL returned, scheduler starting")
 

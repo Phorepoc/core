@@ -42,6 +42,10 @@ const TInt KPheShellsS4 = 2;
 // default), 1 = Fast (8), 2 = Off (1). Read once by the renderer (sfopenvg_board riRasterizer.cpp) when the compositor starts
 const TUint32 KPheDevKeyAntialias = 7;
 const TInt KPheAntialiasBest = 0;
+// key 8: UI GPU acceleration of the Alfred renderer (phvg: fills, gradients, strokes on the Mali): 0 = off (the default), 1 = on.
+// Read by the Alfred server when it starts (alf_fix alfdecoderserverclient_ph.cpp), so after a reboot
+const TUint32 KPheDevKeyGpu = 8;
+const TInt KPheGpuOff = 0;
 // the guard's own default (src/phorepoc-arm a64_glue.cpp A64_BOOT_GUARD_S: seconds after the first watchdog feeding)
 const TInt KPheGuardDefault = 180;
 
