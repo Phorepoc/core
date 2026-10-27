@@ -592,6 +592,7 @@ void COpenWfcWrapper::RemoveElement(MWsElement* aElement)
         }
 	
 	CElementWrapper* removeElement = static_cast<CElementWrapper*>(aElement);
+	RDebug::Printf("PH: alf: wrapper RemoveElement %x", (TUint)removeElement);
 	
 	//the UI element is a special case since we set and maintain the surface
 	TUint32 renderStageFlags;

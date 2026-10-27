@@ -19,6 +19,7 @@
 // 
 //
 
+#include <e32debug.h>
 #include "openwfcpanics.h"
 #include "elementwrapper.h"
 #include <WF/wfc.h>
@@ -912,6 +913,7 @@ TBool CElementWrapper::FlushSceneChanges()
     // (Dungeon Hunter 2 under the Alfred renderer: the ended intro video's DSA element covered the GL game, white).
     if (updateFlags&(EUpdate_Remove|EUpdate_Destroy))
         {
+        RDebug::Printf("PH: alf: element wrapper %x (wfc %d) flush remove, flags 0x%x", (TUint)this, (TInt)iElement, updateFlags);
         if (updateFlags&EUpdate_SceneCommited)
             {
             wfcRemoveElement(iOpenWfcWrapper.Device(),iElement);
