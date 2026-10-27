@@ -262,7 +262,7 @@ namespace
 			TEntry& e = gEntry[i];
 			if (e.iImage && e.iIndex == index && Mem::Compare((const TUint8*)e.iSid, 16, (const TUint8*)id, 16) == 0)
 				{
-				if (0 && e.iData == aData && e.iW == aW && e.iH == aH && e.iStride == aStride && e.iFormat == aOwf)	// TEST: sources re-imported
+				if (e.iData == aData && e.iW == aW && e.iH == aH && e.iStride == aStride && e.iFormat == aOwf)
 					{
 					e.iUsed = gComp;
 					return &e;
@@ -373,7 +373,6 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 			}
 		}
 	gTw = aW; gTh = aH; gIw = aIw; gIh = aIh; gRot = aRot & 3;
-	eglWaitNative(EGL_CORE_NATIVE_ENGINE);		// the CPU's writes into every imported buffer reach memory
 	gl.BindFramebuffer(KGlFramebuffer, t->iFbo);
 	gl.Viewport(0, 0, aW, aH);
 	gl.Disable(KGlScissorTest);
@@ -454,8 +453,10 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 
 int PhGpu_End(void)
 	{
-	eglWaitNative(EGL_CORE_NATIVE_ENGINE);	// the sources again: writes since Begin reach memory before the job runs
-	eglWaitClient();		// the GPU finished; the CPU's caches over every imported buffer are invalidated
+	// the cache maintenance on both sides of the job: the sources cleaned right before it is submitted, the target
+	// invalidated once the GPU finished (egl_symbian.c sym_wait_client; eglWaitNative does nothing for this
+	// surfaceless context)
+	eglWaitClient();
 	const GLenum err = gl.GetError();
 	DropIdle();
 	const TUint dt = User::FastCounter() - gT0;
