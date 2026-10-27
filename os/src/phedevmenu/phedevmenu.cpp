@@ -59,7 +59,8 @@ public:
 		iRender = Get(KPheDevKeyRenderer, KPheRendererClassic);
 		iAa = Get(KPheDevKeyAntialias, KPheAntialiasBest);
 		iGpu = Get(KPheDevKeyGpu, KPheGpuOff);
-		RDebug::Printf("[phedevmenu] loaded: shell=%d cpshortcut=%d guard=%d renderer=%d antialias=%d gpu=%d", iShell, iCp, iGuard, iRender, iAa, iGpu);
+		iCompose = Get(KPheDevKeyCompose, KPheComposeOn);
+		RDebug::Printf("[phedevmenu] loaded: shell=%d cpshortcut=%d guard=%d renderer=%d antialias=%d gpu=%d compose=%d", iShell, iCp, iGuard, iRender, iAa, iGpu, iCompose);
 		}
 	CAknSettingItem* CreateSettingItemL(TInt aId)
 		{
@@ -70,6 +71,7 @@ public:
 		case EPheItemRenderer:		return new (ELeave) CAknEnumeratedTextPopupSettingItem(aId, iRender);
 		case EPheItemAntialias:		return new (ELeave) CAknEnumeratedTextPopupSettingItem(aId, iAa);
 		case EPheItemGpu:		return new (ELeave) CAknEnumeratedTextPopupSettingItem(aId, iGpu);
+		case EPheItemCompose:		return new (ELeave) CAknEnumeratedTextPopupSettingItem(aId, iCompose);
 		case EPheItemGuardTimeout:	return new (ELeave) CAknIntegerEdwinSettingItem(aId, iGuard);
 			}
 		return NULL;
@@ -99,11 +101,12 @@ private:
 		TInt e4 = iRepo.Set(KPheDevKeyRenderer, iRender);
 		TInt e5 = iRepo.Set(KPheDevKeyAntialias, iAa);
 		TInt e6 = iRepo.Set(KPheDevKeyGpu, iGpu);
-		RDebug::Printf("[phedevmenu] saved renderer=%d (%d) antialias=%d (%d) gpu=%d (%d)", iRender, e4, iAa, e5, iGpu, e6);
+		TInt e7 = iRepo.Set(KPheDevKeyCompose, iCompose);
+		RDebug::Printf("[phedevmenu] saved renderer=%d (%d) antialias=%d (%d) gpu=%d (%d) compose=%d (%d)", iRender, e4, iAa, e5, iGpu, e6, iCompose, e7);
 		RDebug::Printf("[phedevmenu] saved: shell=%d cpshortcut=%d guard=%d (%d %d %d)", iShell, iCp, iGuard, e1, e2, e3);
 		}
 	CRepository& iRepo;
-	TInt iShell, iCp, iGuard, iRender, iAa, iGpu;
+	TInt iShell, iCp, iGuard, iRender, iAa, iGpu, iCompose;
 	};
 
 // the window-owning container; the list is a component control

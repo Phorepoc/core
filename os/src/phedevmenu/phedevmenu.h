@@ -46,6 +46,10 @@ const TInt KPheAntialiasBest = 0;
 // Read by the Alfred server when it starts (alf_fix alfdecoderserverclient_ph.cpp), so after a reboot
 const TUint32 KPheDevKeyGpu = 8;
 const TInt KPheGpuOff = 0;
+// key 9: GPU composition (libWFC composes the screen's layers on the Mali, phgpucompose.cpp): 1 = on (the default),
+// 0 = the CPU composes. Read when the compositor starts, so after a reboot; without a usable GPU the CPU composes anyway
+const TUint32 KPheDevKeyCompose = 9;
+const TInt KPheComposeOn = 1;
 // the guard's own default (src/phorepoc-arm a64_glue.cpp A64_BOOT_GUARD_S: seconds after the first watchdog feeding)
 const TInt KPheGuardDefault = 180;
 

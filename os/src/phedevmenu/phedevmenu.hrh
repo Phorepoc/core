@@ -11,7 +11,8 @@ enum TPheDevMenuItems
 	EPheItemGuardTimeout,
 	EPheItemRenderer,
 	EPheItemAntialias,
-	EPheItemGpu
+	EPheItemGpu,
+	EPheItemCompose
 	};
 enum TPheDevMenuCommands
 	{

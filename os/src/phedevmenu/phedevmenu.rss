@@ -92,6 +92,13 @@ RESOURCE AVKON_SETTING_ITEM_LIST r_phedevmenu_items
 			},
 		AVKON_SETTING_ITEM
 			{
+			identifier = EPheItemCompose;
+			setting_page_resource = r_phedevmenu_compose_page;
+			associated_resource = r_phedevmenu_gpu_texts;
+			name = "GPU composition";
+			},
+		AVKON_SETTING_ITEM
+			{
 			identifier = EPheItemGuardTimeout;
 			setting_page_resource = r_phedevmenu_guard_page;
 			name = "Boot guard timeout (s)";
@@ -167,6 +174,14 @@ RESOURCE AVKON_SETTING_PAGE r_phedevmenu_gpu_page
 	{
 	label = "UI GPU acceleration";
 	hint_text = "Takes effect after reboot. Alfred draws fills and strokes on the GPU.";
+	type = EAknCtPopupSettingList;
+	editor_resource_id = r_phedevmenu_popup_list;
+	}
+
+RESOURCE AVKON_SETTING_PAGE r_phedevmenu_compose_page
+	{
+	label = "GPU composition";
+	hint_text = "Takes effect after reboot. The GPU puts the screen's layers together; Off = the CPU does.";
 	type = EAknCtPopupSettingList;
 	editor_resource_id = r_phedevmenu_popup_list;
 	}
