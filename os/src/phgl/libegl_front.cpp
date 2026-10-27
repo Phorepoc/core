@@ -909,6 +909,9 @@ EGLBoolean eglWaitClient(void)
 	{
 	typedef EGLBoolean (*F)(void);
 	F f = VgBound() ? (F)SwFn(EOrdWaitClient) : gMesaInitialized ? (F)Fn(EOrdWaitClient) : NULL;
+	static TInt said;
+	if (said++ < 4)
+		RDebug::Printf("[libEGL] eglWaitClient vg %d mesa %d -> %08x", VgBound(), gMesaInitialized, (TUint)f);
 	return f ? f() : EGL_TRUE;
 	}
 
