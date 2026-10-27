@@ -16,9 +16,11 @@ static void GetInfo(const TDesC& aPath)
 	const TInt r = RLibrary::GetInfo(aPath, info);
 	TBuf8<128> p;
 	p.Copy(aPath.Left(127));
+	TUint32 caps[2];
+	Mem::Copy(caps, &info().iSecurityInfo.iCaps, sizeof(caps));
 	RDebug::Printf("PH: [phecaps] getinfo %s -> %d uids %08x %08x %08x sid %08x vid %08x caps %08x %08x", p.PtrZ(), r,
 		info().iUids[0].iUid, info().iUids[1].iUid, info().iUids[2].iUid, (TUint)info().iSecurityInfo.iSecureId,
-		(TUint)info().iSecurityInfo.iVendorId, info().iSecurityInfo.iCaps[0], info().iSecurityInfo.iCaps[1]);
+		(TUint)info().iSecurityInfo.iVendorId, caps[0], caps[1]);
 	RFs fs;
 	if (fs.Connect() != KErrNone)
 		return;
