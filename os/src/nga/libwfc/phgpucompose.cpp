@@ -456,15 +456,20 @@ int PhGpu_End(void)
 	// the cache maintenance on both sides of the job: the sources cleaned right before it is submitted, the target
 	// invalidated once the GPU finished (egl_symbian.c sym_wait_client; eglWaitNative does nothing for this
 	// surfaceless context)
+	const TUint w0 = User::FastCounter();
 	eglWaitClient();
+	const TUint w1 = User::FastCounter();
+	gl.Finish();		// TEST: does a real finish still wait after eglWaitClient?
+	const TUint w2 = User::FastCounter();
 	const GLenum err = gl.GetError();
 	DropIdle();
 	const TUint dt = User::FastCounter() - gT0;
 	gTicks += dt;
 	gFrames++;
 	if (gComp <= 40 || gComp % 300 == 0)		// bring-up trace: the first compositions, then a sample
-		RDebug::Printf("PH: wfc gpu: composition %u: %u elements so far, %u us", gComp, gElems,
-			gFreq ? (TUint)((TUint64)dt * 1000000 / gFreq) : 0);
+		RDebug::Printf("PH: wfc gpu: composition %u: %u elements so far, %u us (wait %u us, finish after %u us)", gComp,
+			gElems, gFreq ? (TUint)((TUint64)dt * 1000000 / gFreq) : 0,
+			gFreq ? (TUint)((TUint64)(w1 - w0) * 1000000 / gFreq) : 0, gFreq ? (TUint)((TUint64)(w2 - w1) * 1000000 / gFreq) : 0);
 	if (err || gFailed)
 		{
 		static TInt said;
