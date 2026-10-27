@@ -322,7 +322,7 @@ WFC_Scene_LockSourcesAndMasks(WFC_SCENE* scene)
           OWF_IMAGE* phim = element->source ? element->source->lockedStream.image : NULL;
           if (phim && phim->data && phim->pixelSize == 4 && phim->height > 1)
               { OWFuint8* phb = (OWFuint8*)phim->data;
-                ph_wfc_img_trace((int)element->handle, phim->width, phim->height, (int)(((unsigned)phim->data) >> 4) /* data ptr >>4 in the stride slot of this build */, (int)phim->format.pixelFormat, (int)phim->format.premultiplied, (int)phim->format.linear,
+                ph_wfc_img_trace((int)element->handle, phim->width, phim->height, (int)phim->stride, (int)phim->format.pixelFormat, (int)phim->format.premultiplied, (int)phim->format.linear,
                                  *(unsigned*)phb, *(unsigned*)(phb + (phim->height/2)*phim->stride + (phim->width/2)*4), *(unsigned*)(phb + (phim->height-1)*phim->stride)); } }
         if (!element->skipCompose &&
             WFC_INVALID_HANDLE != element->maskHandle &&

@@ -156,6 +156,6 @@ extern "C" void ph_wfc_img_trace(int aHandle, int aW, int aH, int aStride, int a
 	if (aHandle >= 3000 && n < 400 && key != last)
 		{
 		++n; last = key;
-		RDebug::Printf("PH: wfc img element %d %dx%d dataptr>>4=%x pixfmt=%d premult=%d linear=%d px(0,0)=%08x px(mid)=%08x px(0,last)=%08x", aHandle, aW, aH, aStride, aFmt, aPre, aLin, aP0, aP1, aP2);
+		RDebug::Printf("PH: wfc img element %d %dx%d stride=%d pixfmt=%d premult=%d linear=%d px(0,0)=%08x px(mid)=%08x px(0,last)=%08x", aHandle, aW, aH, aStride, aFmt, aPre, aLin, aP0, aP1, aP2);
 		}
 	}
