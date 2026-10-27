@@ -35,6 +35,7 @@ void PhvgCpuAccess(const Surface* aS, bool aWrite);	// riPhvg.cpp
 bool PhvgSurfaceGpu(const Surface* aS);			// riPhvg.cpp (O4b)
 unsigned PhvgImgEpoch();					// riPhvg.cpp: write generation of all Images
 const unsigned* PhvgPerf();				// riPhvg.cpp: 0 surface uploads, 1 ticks, 2 readbacks, 3 ticks, 4 DrawImage calls, 5 round-trip ticks, 6 misses
+const unsigned* PhvgFillStats();			// riPhvg.cpp: path fills 0 GPU, 1 coverage, 2 scissor, 3 surface, 4 paint, 5 GPU failed
 int PhvgDrawImage(Surface* aS, const void* aKey, int aIw, int aIh, unsigned aHash, const float* aM, int aBlendSrc,
                   const float* aMul, const int* aRects, int aN, const unsigned char* aPixels);
 
@@ -172,6 +173,9 @@ static void PhGpuReport()
 		RDebug::Printf("PH: alf: RI gpu: images %u (declined %u), rect fills %u (declined %u)", gGpuImg, gGpuImgDecl, gGpuFill, gGpuFillDecl);
 		RDebug::Printf("PH: alf: RI gpu perf ms: hash %u (full %u, skipped %u) convert %u | surface upload %u (x%u) readback %u (x%u) | draw calls %u (x%u, %u misses)",
 			PHMS(gHashTicks), gHashFull, gHashSkips, PHMS(gConvTicks), PHMS(p[1]), p[0], PHMS(p[3]), p[2], PHMS(p[5]), p[4], p[6]);
+		const TUint* fs = PhvgFillStats();
+		RDebug::Printf("PH: alf: RI gpu path fills: gpu %u | cpu: coverage %u scissor %u surface %u paint %u gpu-failed %u",
+			fs[0], fs[1], fs[2], fs[3], fs[4], fs[5]);
 		}
 	}
 

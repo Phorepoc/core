@@ -803,19 +803,29 @@ void PhvgStrokeEnd(const Rasterizer* aR)
 	gStroke.iOwner = NULL;
 	}
 
+// why path fills stay on the CPU (GPU mode only; ri_fastblit.cpp prints them with the "RI gpu" line):
+// 0 done on the GPU, 1 coverage buffer / mask, 2 scissor, 3 surface not eligible (a pbuffer over a VGImage, a child image,
+// luminance / linear format), 4 paint (pattern / image paint), 5 the surface or the fill failed on the GPU side
+static TUint gFillStat[6];
+const unsigned* PhvgFillStats() { return gFillStat; }
+
 // Rasterizer::fill. True = the GPU painted the path (solid colour, linear or radial gradient).
 bool PhvgTryFill(const Rasterizer& aR)
 	{
 	const PixelPipe* p = aR.m_pixelPipe;
-	if (!p || aR.m_covBuffer || aR.m_scissor || !p->m_drawable || !WantGpu(EFalse))
+	if (!p || !p->m_drawable || !WantGpu(EFalse))
 		return false;
+	if (aR.m_covBuffer)
+		return gFillStat[1]++, false;
+	if (aR.m_scissor)
+		return gFillStat[2]++, false;
 	Surface* s = p->m_drawable->getColorBuffer();
 	if (!s || !Eligible(s))
-		return false;
+		return gFillStat[3]++, false;
 	TPhvgFill f;
 	Mem::FillZ(&f, sizeof(f));
 	if (!BuildPaint(p, f))
-		return false;
+		return gFillStat[4]++, false;
 	const int n = aR.m_edges.size();
 	if (n == 0)
 		return true;							// an empty path paints nothing
@@ -859,6 +869,7 @@ bool PhvgTryFill(const Rasterizer& aR)
 			}
 		}
 	User::Free(edges);
+	gFillStat[done ? 0 : 5]++;
 	return done;
 	}
 
