@@ -518,8 +518,10 @@ TInt COpenWFC_RI_DisplayChannel::UpdateDisplay()
     if (++iStatCount % 60 == 0)
         {
         const TUint32 us = iStatFreq / 1000000 ? iStatFreq / 1000000 : 1;	// ticks per microsecond (24 MHz: 24)
-        RDebug::Printf("PH: [wfcdisp] %u updates: period %u us, buffer wait %u us, copy %u us, buffer %u", iStatCount,
-            iStatPeriodSum / 60 / us, iStatWaitSum / 60 / us, iStatCopySum / 60 / us, bufferIndex);
+        const TUint32* fb = (const TUint32*)firstPixelAddr;
+        const TInt dw = (iNewRotation == EScreenRotate0 || iNewRotation == EScreenRotate180) ? iScreenInfo.iNormalStride / 4 : iScreenInfo.iFlippedStride / 4;
+        RDebug::Printf("PH: [wfcdisp] %u updates: period %u us, buffer wait %u us, copy %u us, buffer %u rot %d fb %08x %08x %08x", iStatCount,
+            iStatPeriodSum / 60 / us, iStatWaitSum / 60 / us, iStatCopySum / 60 / us, bufferIndex, (TInt)iNewRotation, fb[0], fb[100 * dw + 100], fb[300 * dw + 180]);
         iStatPeriodSum = iStatWaitSum = iStatCopySum = 0;
         }
 
