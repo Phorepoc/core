@@ -245,6 +245,9 @@ int TMovie::Parse(const uint8_t* aMoov, uint32_t aLen)
 	iNalLenSize = 4;
 	iAvcC = 0;
 	iAvcCLen = 0;
+	iVideoFourCC = 0;
+	iVol = 0;
+	iVolLen = 0;
 	iHasAudio = false;
 	iAudioFourCC = 0;
 	iAudioOk = false;
@@ -334,8 +337,9 @@ int TMovie::Parse(const uint8_t* aMoov, uint32_t aLen)
 			}
 		if (found || handler != FOURCC('v', 'i', 'd', 'e'))
 			continue;
-		if (entryType != FOURCC('a', 'v', 'c', '1') && entryType != FOURCC('a', 'v', 'c', '3'))
-			continue;						// another video codec: skipped (only H.264 so far)
+		const bool mp4v = entryType == FOURCC('m', 'p', '4', 'v');
+		if (entryType != FOURCC('a', 'v', 'c', '1') && entryType != FOURCC('a', 'v', 'c', '3') && !mp4v)
+			continue;						// another video codec: skipped (H.264 and MPEG-4 Part 2 so far)
 
 		// the sample entry: VisualSampleEntry (78 bytes after its 8-byte header) then child boxes (avcC)
 		const uint8_t* e = stsd.iPayload + 8;
@@ -350,7 +354,17 @@ int TMovie::Parse(const uint8_t* aMoov, uint32_t aLen)
 		entryBoxes.iType = 0;
 		entryBoxes.iPayload = e + 8 + 78;
 		entryBoxes.iLen = esize - 8 - 78;
-		if (!FindChild(entryBoxes, FOURCC('a', 'v', 'c', 'C'), avcc) || avcc.iLen < 7)
+		const uint8_t* vol = 0;
+		uint32_t volLen = 0;
+		if (mp4v)
+			{
+			// MPEG-4 Visual: the esds DecoderSpecificInfo is the VisualObjectSequence / VOL header the decoder needs first
+			uint32_t oti = 0, avg = 0;
+			if (!FindChild(entryBoxes, FOURCC('e', 's', 'd', 's'), avcc) || !Esds(avcc, oti, avg, vol, volLen) || oti != 0x20
+				|| !vol || !volLen)
+				return KErrCorrupt;
+			}
+		else if (!FindChild(entryBoxes, FOURCC('a', 'v', 'c', 'C'), avcc) || avcc.iLen < 7)
 			return KErrCorrupt;
 
 		uint32_t timescale = 0;
@@ -360,9 +374,19 @@ int TMovie::Parse(const uint8_t* aMoov, uint32_t aLen)
 		if (LoadTables(stbl.iPayload, stbl.iLen, iV) != KOk)
 			return KErrCorrupt;
 
-		iAvcC = avcc.iPayload;
-		iAvcCLen = avcc.iLen;
-		iNalLenSize = (avcc.iPayload[4] & 3) + 1;
+		iVideoFourCC = entryType;
+		if (mp4v)
+			{
+			iVol = vol;
+			iVolLen = volLen;
+			iNalLenSize = 0;		// the samples are plain MPEG-4 Visual frames (start codes in band)
+			}
+		else
+			{
+			iAvcC = avcc.iPayload;
+			iAvcCLen = avcc.iLen;
+			iNalLenSize = (avcc.iPayload[4] & 3) + 1;
+			}
 		iTimescale = timescale;
 		iDuration = duration;
 		iWidth = width;
@@ -381,6 +405,13 @@ uint32_t TMovie::ParameterSetsSize() const
 
 uint32_t TMovie::ParameterSets(uint8_t* aDst, uint32_t aMax) const
 	{
+	if (iVol)						// MPEG-4 Part 2: the VOL header as is
+		{
+		if (aDst && aMax >= iVolLen)
+			for (uint32_t i = 0; i < iVolLen; ++i)
+				aDst[i] = iVol[i];
+		return iVolLen;
+		}
 	if (!iAvcC || iAvcCLen < 7)
 		return 0;
 	const uint8_t* p = iAvcC + 5;

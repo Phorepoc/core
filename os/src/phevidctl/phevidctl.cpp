@@ -33,6 +33,7 @@
 #include "rphedeov.h"		// the DE2 video plane (src/phorepoc-arm/a64/display; de2-overlay-plan.md): used when the kernel has it
 
 _LIT8(KMimeH264, "video/H264");
+_LIT8(KMimeMp4v, "video/mp4v-es");		// MPEG-4 Part 2 (game intro clips): decoded in software (phevdecsw)
 const TInt KReadChunk = 0x10000;			// file reads (the moov box is read in pieces of this size)
 const TInt KMaxMoov = 32 * 1024 * 1024;
 const TInt KMaxSample = 16 * 1024 * 1024;
@@ -199,6 +200,7 @@ private:
 	static TInt FeedCb(TAny* aSelf) { ((CPheVidCtl*)aSelf)->Feed(); return 0; }
 	static TInt FinishCb(TAny* aSelf);
 	TInt FillInputL(const TSampleRec& aRec, TVideoInputBuffer*& aBuf, TBool aWrite);
+	const TDesC8& VideoMime() const;			// the track's DevVideo MIME type (H.264 or MPEG-4 Part 2)
 	void PullPictures();
 	void Pump();
 	TBool PresentOne();
@@ -623,8 +625,9 @@ void CPheVidCtl::PrepareL()
 	iDvp = CMMFDevVideoPlay::NewL(*this);
 	RArray<TUid> decoders;
 	CleanupClosePushL(decoders);
-	iDvp->FindDecodersL(KMimeH264, 0, decoders, EFalse);
-	RDebug::Printf("PH: vc devvideo decoders for H.264: %d", decoders.Count());
+	const TDesC8& mime = VideoMime();
+	iDvp->FindDecodersL(mime, 0, decoders, EFalse);
+	RDebug::Printf("PH: vc devvideo decoders for %s: %d", iMovie.iNalLenSize ? "H.264" : "MPEG-4 Part 2", decoders.Count());
 	TBool ok = EFalse;
 	for (TInt i = 0; i < decoders.Count() && !ok; ++i)
 		{
@@ -645,7 +648,7 @@ void CPheVidCtl::PrepareL()
 	CleanupStack::PopAndDestroy(&decoders);
 	if (!ok)
 		User::Leave(KErrNotFound);
-	CCompressedVideoFormat* fmt = CCompressedVideoFormat::NewL(KMimeH264);
+	CCompressedVideoFormat* fmt = CCompressedVideoFormat::NewL(mime);
 	CleanupStack::PushL(fmt);
 	iDvp->SetInputFormatL(iHw, *fmt, EDuCodedPicture, EDuElementaryStream, ETrue);
 	CleanupStack::PopAndDestroy(fmt);
@@ -1196,7 +1199,9 @@ TInt CPheVidCtl::FillInputL(const TSampleRec& aRec, TVideoInputBuffer*& aBuf, TB
 		User::Leave(KErrCorrupt);
 	// size
 	TInt total = aRec.iSync || iNext == 0 ? iPsets->Length() : 0;
-	for (TInt p = 0; p < n;)
+	if (!L)
+		total += n;							// MPEG-4 Part 2: the sample as is (start codes in band)
+	for (TInt p = 0; L && p < n;)
 		{
 		if (p + L > n)
 			User::Leave(KErrCorrupt);
@@ -1222,7 +1227,12 @@ TInt CPheVidCtl::FillInputL(const TSampleRec& aRec, TVideoInputBuffer*& aBuf, TB
 		Mem::Copy(d, iPsets->Ptr(), iPsets->Length());
 		o = iPsets->Length();
 		}
-	for (TInt p = 0; p < n;)
+	if (!L)
+		{
+		Mem::Copy(d + o, raw, n);
+		o += n;
+		}
+	for (TInt p = 0; L && p < n;)
 		{
 		TUint32 len = 0;
 		for (TInt i = 0; i < L; ++i)
@@ -1614,7 +1624,12 @@ void CPheVidCtl::MvcGetVideoFrameSizeL(TSize& aSize)
 		User::Leave(KErrNotReady);
 	aSize = TSize(iMovie.iWidth, iMovie.iHeight);
 	}
-void CPheVidCtl::MvcGetVideoMimeTypeL(TDes8& aMimeType) { aMimeType.Copy(KMimeH264); }
+void CPheVidCtl::MvcGetVideoMimeTypeL(TDes8& aMimeType) { aMimeType.Copy(VideoMime()); }
+
+const TDesC8& CPheVidCtl::VideoMime() const
+	{
+	return iMovie.iNalLenSize ? (const TDesC8&)KMimeH264 : (const TDesC8&)KMimeMp4v;
+	}
 
 // The first Draw used to pay for creating the DSA double-buffer bitmap (a chunk) and the scratch rows while the clock already ran: measured on VirtualBox (stage
 // timing, 2026-10-16) about 0.7e9 ticks of "region/setup" = the first frames 300-800 ms late. Done here, before the clock starts, with the movie's own size.

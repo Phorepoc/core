@@ -59,6 +59,9 @@ public:
 	uint32_t iNalLenSize;		// 1..4: the length prefix of the NAL units in the samples
 	const uint8_t* iAvcC;		// the AVCDecoderConfigurationRecord (payload of the avcC box)
 	uint32_t iAvcCLen;
+	uint32_t iVideoFourCC;	// the video sample entry: 'avc1' / 'avc3' (H.264) or 'mp4v' (MPEG-4 Part 2)
+	const uint8_t* iVol;		// mp4v: the esds DecoderSpecificInfo (VOS / VOL headers); iNalLenSize is then 0
+	uint32_t iVolLen;
 	bool iHasAudio;			// an audio ('soun') track exists
 	uint32_t iAudioFourCC;	// its sample entry type ('mp4a', ...)
 	// the first 'mp4a' audio track with an esds AAC AudioSpecificConfig is usable (iAudioOk); other audio is noted and skipped
@@ -74,7 +77,7 @@ public:
 	uint32_t iAscLen;
 	uint64_t iAudioSkip;		// first edit-list media_time of the audio track (encoder priming), iAudioTimescale units: leading PCM to drop
 
-	// avcC -> Annex B parameter sets: writes 00 00 00 01 + SPS... and PPS... to aDst (aMax bytes); returns the length, 0 on error
+	// avcC -> Annex B parameter sets (mp4v: the VOL header): writes 00 00 00 01 + SPS... and PPS... to aDst (aMax bytes); returns the length, 0 on error
 	uint32_t ParameterSets(uint8_t* aDst, uint32_t aMax) const;
 	uint32_t ParameterSetsSize() const;
 
