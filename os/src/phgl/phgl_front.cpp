@@ -168,14 +168,16 @@ void PhglTraceSource(unsigned aShader, int aCount, const char** aStrings, const 
 			continue;
 		TInt len = aLengths && aLengths[s] >= 0 ? aLengths[s] : User::StringLength((const TUint8*)p);
 		TInt line = 0;
-		while (len > 0 && line < 80)
+		while (len > 0 && *p && line < 120)
 			{
 			TInt n = 0;
-			while (n < len && p[n] != '\n' && n < 200)
+			while (n < len && p[n] && p[n] != '\n' && n < 200)
 				++n;
 			TBuf8<204> b;
 			b.Copy(TPtrC8((const TUint8*)p, n));
-			RDebug::Printf("PH: phgl src %u.%d: %S", aShader, line++, &b);
+			b.TrimAll();
+			if (b.Length())
+				RDebug::Printf("PH: phgl src %u.%d.%d: %S", aShader, s, line++, &b);
 			if (n < len && p[n] == '\n')
 				++n;
 			p += n;
