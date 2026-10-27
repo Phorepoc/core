@@ -1166,6 +1166,7 @@ EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surface)
 	{
 	if (VgHas(surface))
 		SWFWD(EOrdSwapBuffers, EGLBoolean, EGL_FALSE, (EGLDisplay, EGLSurface), (d, surface))
+#ifdef PHGL_TRACE
 	// TRACE (Let's Golf 2 black frames, 2026-10-27): what the GL back buffer holds at every 30th swap (capped)
 	static TInt swaps;
 	if (++swaps <= 5)
@@ -1187,6 +1188,7 @@ EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surface)
 			RDebug::Printf("PH: phgl swap %d viewport %dx%d back buffer %08x %08x %08x", swaps, vp[2], vp[3], px[0], px[1], px[2]);
 			}
 		}
+#endif
 	FORWARD(EOrdSwapBuffers, EGLBoolean, EGL_FALSE, (EGLDisplay, EGLSurface), (d, surface))
 	}
 

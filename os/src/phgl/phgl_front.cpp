@@ -100,8 +100,10 @@ void PhglCheckStatus(const char* aWhat, unsigned aObj, unsigned aStatusEnum, con
 	RDebug::Printf("PH: phgl %s %u FAILED: %s", aWhat, aObj, buf);
 	}
 
+// Diagnostic GL traces (Let's Golf 2, 2026-10-27): compiled in with -DPHGL_TRACE only (glGetError per call, readbacks)
 void PhglTraceCall(const char* aName)
 	{
+#ifdef PHGL_TRACE
 	static const char* names[192];
 	static TUint8 counts[192];
 	static TInt lines, errors;
@@ -133,10 +135,12 @@ void PhglTraceCall(const char* aName)
 			}
 		}
 	inside = EFalse;
+#endif
 	}
 
 void PhglTraceArgs(const char* aName, unsigned aA, unsigned aB, int aC, int aD)
 	{
+#ifdef PHGL_TRACE
 	static const char* names[32];
 	static TInt counts[32];
 	typedef unsigned (*TGetError)();
@@ -153,10 +157,12 @@ void PhglTraceArgs(const char* aName, unsigned aA, unsigned aB, int aC, int aD)
 		++counts[i];
 		RDebug::Printf("PH: phgl args %s(0x%x, 0x%x, %d, %d) -> error 0x%x", aName, aA, aB, aC, aD, err);
 		}
+#endif
 	}
 
 void PhglTraceSource(unsigned aShader, int aCount, const char** aStrings, const int* aLengths)
 	{
+#ifdef PHGL_TRACE
 	static TInt shaders;
 	if (shaders >= 16 || !aStrings)
 		return;
@@ -184,10 +190,12 @@ void PhglTraceSource(unsigned aShader, int aCount, const char** aStrings, const 
 			len -= n;
 			}
 		}
+#endif
 	}
 
 void PhglTraceProbe(const char* aName, int aArg)
 	{
+#ifdef PHGL_TRACE
 	static TInt probes;
 	if (probes >= 120)
 		return;
@@ -236,10 +244,12 @@ void PhglTraceProbe(const char* aName, int aArg)
 	RDebug::Printf("PH: phgl probe   depth test %d func 0x%x mask %d clear x1000 %d range x1000 %d..%d cull %d 0x%x front 0x%x scissor %d %d,%d %dx%d stencil %d",
 	               depthTest, depthFunc, depthMask, (int)(clearDepth * 1000), (int)(range[0] * 1000), (int)(range[1] * 1000), cull, cullMode,
 	               front, scissor, sbox[0], sbox[1], sbox[2], sbox[3], stencil);
+#endif
 	}
 
 void PhglTraceMatrix(int aLocation, const float* aM, TUint32 aCaller)
 	{
+#ifdef PHGL_TRACE
 	static TInt n;
 	if (n >= 12)
 		return;
@@ -247,4 +257,5 @@ void PhglTraceMatrix(int aLocation, const float* aM, TUint32 aCaller)
 	const TUint32* v = (const TUint32*)aM;
 	RDebug::Printf("PH: phgl matrix caller %08x loc %d (float bits, column-major): %08x %08x %08x %08x | %08x %08x %08x %08x | %08x %08x %08x %08x | %08x %08x %08x %08x",
 	               aCaller, aLocation, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12], v[13], v[14], v[15]);
+#endif
 	}
