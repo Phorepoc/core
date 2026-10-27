@@ -95,6 +95,8 @@ namespace
 		void (*EGLImageTargetTexture2DOES)(GLenum, GLeglImageOES);
 		EGLImageKHR (*CreateImageKHR)(EGLDisplay, EGLContext, EGLenum, EGLClientBuffer, const EGLint*);
 		EGLBoolean (*DestroyImageKHR)(EGLDisplay, EGLImageKHR);
+		EGLBoolean (*WaitClient)();		// Mesa's own: the import-linked eglWaitClient never reached the driver
+										// (returned in ~0.1 ms, the job still running; no cache maintenance)
 		};
 
 	// one cached EGLImage (a source buffer, or a target buffer with its framebuffer)
@@ -182,7 +184,8 @@ namespace
 			"glCreateShader", "glShaderSource", "glCompileShader", "glGetShaderiv", "glCreateProgram", "glAttachShader",
 			"glBindAttribLocation", "glLinkProgram", "glGetProgramiv", "glUseProgram", "glGetUniformLocation",
 			"glUniform1i", "glUniform1f", "glVertexAttribPointer", "glEnableVertexAttribArray", "glDrawArrays",
-			"glFinish", "glGetError", "glEGLImageTargetTexture2DOES", "eglCreateImageKHR", "eglDestroyImageKHR" };
+			"glFinish", "glGetError", "glEGLImageTargetTexture2DOES", "eglCreateImageKHR", "eglDestroyImageKHR",
+			"eglWaitClient" };
 		for (TUint i = 0; i < sizeof(KNames) / sizeof(KNames[0]); i++)
 			if (!Proc(f[i], KNames[i]))
 				return EFalse;
@@ -457,19 +460,16 @@ int PhGpu_End(void)
 	// invalidated once the GPU finished (egl_symbian.c sym_wait_client; eglWaitNative does nothing for this
 	// surfaceless context)
 	const TUint w0 = User::FastCounter();
-	eglWaitClient();
+	gl.WaitClient();
 	const TUint w1 = User::FastCounter();
-	gl.Finish();		// TEST: does a real finish still wait after eglWaitClient?
-	const TUint w2 = User::FastCounter();
 	const GLenum err = gl.GetError();
 	DropIdle();
 	const TUint dt = User::FastCounter() - gT0;
 	gTicks += dt;
 	gFrames++;
 	if (gComp <= 40 || gComp % 300 == 0)		// bring-up trace: the first compositions, then a sample
-		RDebug::Printf("PH: wfc gpu: composition %u: %u elements so far, %u us (wait %u us, finish after %u us)", gComp,
-			gElems, gFreq ? (TUint)((TUint64)dt * 1000000 / gFreq) : 0,
-			gFreq ? (TUint)((TUint64)(w1 - w0) * 1000000 / gFreq) : 0, gFreq ? (TUint)((TUint64)(w2 - w1) * 1000000 / gFreq) : 0);
+		RDebug::Printf("PH: wfc gpu: composition %u: %u elements so far, %u us (GPU wait %u us)", gComp, gElems,
+			gFreq ? (TUint)((TUint64)dt * 1000000 / gFreq) : 0, gFreq ? (TUint)((TUint64)(w1 - w0) * 1000000 / gFreq) : 0);
 	if (err || gFailed)
 		{
 		static TInt said;
