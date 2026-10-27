@@ -656,6 +656,41 @@ static void PhFollowUiSurface(CElementWrapper* aElement, const TSize& aOldSize, 
 		}
 	}
 
+// OURS (2026-10-27): alf renders a rotated screen itself (its display orientation, EAlfSetScreenRotation) into its portrait
+// UI surface, while the compositor rotates the scene for the apps' own surfaces (GL, DSA). The UI element gets the inverse
+// source rotation and the whole rotated scene as destination, so the alf layer is not rotated twice (DH2's GL title was
+// covered by a portrait-shaped alf layer).
+static void PhUiElementForRotation(CElementWrapper* aElement, MWsScene::TSceneRotation aRotation, const TSize& aUiSize)
+	{
+	if (!aElement || aUiSize.iWidth <= 0 || aUiSize.iHeight <= 0)
+		{
+		return;
+		}
+	MWsElement::TElementRotation inverse = MWsElement::EElementAntiClockwise0;
+	TSize dest = aUiSize;
+	switch (aRotation)
+		{
+		case MWsScene::ESceneAntiClockwise90:
+			inverse = MWsElement::EElementAntiClockwise270;
+			dest = TSize(aUiSize.iHeight, aUiSize.iWidth);
+			break;
+		case MWsScene::ESceneAntiClockwise180:
+			inverse = MWsElement::EElementAntiClockwise180;
+			break;
+		case MWsScene::ESceneAntiClockwise270:
+			inverse = MWsElement::EElementAntiClockwise90;
+			dest = TSize(aUiSize.iHeight, aUiSize.iWidth);
+			break;
+		default:
+			break;
+		}
+	const TInt e1 = aElement->SetSourceRectangle(TRect(aUiSize));
+	const TInt e2 = aElement->SetSourceRotation(inverse);
+	const TInt e3 = aElement->SetDestinationRectangle(TRect(dest));
+	RDebug::Printf("PH: alf: UI element %x for scene rotation %d: source rotation %d dest %dx%d (r %d %d %d)", (TUint)aElement,
+		(TInt)aRotation, (TInt)inverse, dest.iWidth, dest.iHeight, e1, e2, e3);
+	}
+
 static TSize PhSurfaceSize(RSurfaceManager& aSurfaceManager, const TSurfaceId& aSurface)
 	{
 	RSurfaceManager::TInfoBuf info;
@@ -1053,6 +1088,9 @@ void COpenWfcWrapper::SetScreenRotation(MWsScene::TSceneRotation aRotation)
         iRotation = aRotation;
         wfcSetContextAttribi(iDevice, iOnScreenContext, WFC_CONTEXT_ROTATION, wfcRotation);
         OPENWFC_ASSERT_DEBUG(TranslateOpenWfcError(wfcGetError(iDevice)) == KErrNone, EPanicWfcBadAttribute);
+        const TSize uiSize = PhSurfaceSize(SurfaceManager(), iUiSurface);
+        PhUiElementForRotation(iUiElement1, aRotation, uiSize);
+        PhUiElementForRotation(iUiElement2, aRotation, uiSize);
         }
 	
 	SetCompositionModified();
@@ -1291,5 +1329,10 @@ TInt COpenWfcWrapper::AttachSurfaceToUiElement(CElementWrapper* aNewUiElement)
 	else
 		STD_ASSERT_DEBUG(EFalse, EPluginPanicDuplicateUiElement);
 
-	return aNewUiElement->ConnectSurface(iUiSurface);
+	const TInt err = aNewUiElement->ConnectSurface(iUiSurface);
+	if (!err && iRotation != MWsScene::ESceneAntiClockwise0)
+		{
+		PhUiElementForRotation(aNewUiElement, iRotation, PhSurfaceSize(SurfaceManager(), iUiSurface));
+		}
+	return err;
 	}

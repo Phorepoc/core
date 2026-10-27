@@ -1115,7 +1115,7 @@ COMPONENTS = {
                        **{"def": "oss.FCL.sf.os.graphics/egl/eglinterface/eabi/libegl14U.def"}),
     "alfopenwfrs": dict(mmp=_ALF + "plugins/openwfcrs/group/alfopenwfrs.mmp", alf=1, nga=True, allow_wsd=_ALFTRACE,
                         # as wsstdplugin_nga: elementwrapper.cpp checks a rotated (landscape) DSA viewport only with this, else KErrArgument -> WSERV 76
-                        defs=["SYMBIAN_ROTATION_MODE_CHANGES"],
+                        defs=["SYMBIAN_ROTATION_MODE_CHANGES"], libs=["alfdecoderserverclient.lib"],
                         drop=["openwfcwrapper.cpp"] + (["displayrenderstage.cpp", "displayrenderstagefactory.cpp"] if _ALFTRACE else []),
                         extra=["toolchain/shims/alfopenwfrs_board/openwfcwrapper.cpp"] + (
                             ["toolchain/shims/alf_fix/gen/displayrenderstage_ph.cpp", "toolchain/shims/alf_fix/displayrenderstagefactory_ph.cpp"] if _ALFTRACE else [])),

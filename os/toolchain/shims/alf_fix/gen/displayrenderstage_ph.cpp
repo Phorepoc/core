@@ -21,6 +21,8 @@
 //
 
 #include "displayrenderstage.h"
+#include "alfdecoderserverclient.h"
+#include "alfstreamerconsts.h"
 #include <graphics/wselement.h>
 #include <hal.h>
 #include "openwfcwrapper.h"
@@ -367,6 +369,21 @@ TInt CDisplayRenderStage::SetSceneRotation(const MWsScene::TSceneRotation aScene
 
     //rotate in compositor 
     iOpenWfcWrapper->SetScreenRotation(aSceneRotation);
+    //OURS (2026-10-27): alf renders the rotated screen itself into its portrait UI surface (the wrapper gives the UI
+    //element the inverse rotation); nothing in the 2010 release tells alf: the draw command frames carry the orientation
+    //(MAlfBridge::SetOrientation) and the alf display rotates on EAlfSetScreenRotation (CAlfBridge EAlfBridgeSetScreenRotation).
+    if (aSceneRotation != oldRotation)
+        {
+        if (iAlfBridge)
+            iAlfBridge->SetOrientation(aSceneRotation);
+        RAlfBridgerClient phAlf;
+        if (phAlf.Connect() == KErrNone)
+            {
+            const TInt phErr = phAlf.SendSynch(EAlfSetScreenRotation, TIpcArgs((TInt)aSceneRotation));
+            RDebug::Printf("PH: alf: render stage tells alf the screen rotation %d: %d", (TInt)aSceneRotation, phErr);
+            phAlf.Close();
+            }
+        }
 
 /*  switch (aSceneRotation)
         {
