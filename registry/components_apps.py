@@ -313,3 +313,10 @@ for _k in ("osncore", "alfresourcepool", "alfwidgetmodel", "alfwidgetutils", "mu
     # (with exceptions on, e32cmn.h's placement new must say throw () as <new> does: GCCE's __NO_THROW, as libstdcpp)
     COMPONENTS[_k]["arm_flags"] = list(COMPONENTS[_k].get("arm_flags", [])) + [
         "-include", os.path.join(OS_ROOT, "toolchain/shims/stdcpp_board/gcce_nothrow.h")]
+# x86 (x32): C++ exceptions across DLLs need ONE unwinder per process (pheeh.dll). `eh` compiles the module with exceptions,
+# keeps its .eh_frame (x32_dll_eh.ld) and registers it with pheeh when it attaches. ARM ignores the option (its own EHABI runtime).
+for _k in ("osncore", "alfresourcepool", "glxfullscreenview", "alfwidgetmodel", "mulmodelutility", "glxdataprovider"):
+    COMPONENTS[_k]["eh"] = True
+COMPONENTS["pheeh"] = dict(mmp=os.path.join(OS_ROOT, "src/pheeh/pheeh.mmp"), allow_wsd=True, static_ctors=True, eh=True,
+                           x32_sys_archives=["libgcc_eh.a", "libsupc++.a"],
+                           **{"def": os.path.join(OS_ROOT, "src/pheeh/pheeh.def")})

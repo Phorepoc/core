@@ -1,0 +1,27 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// pheeh.mmp -- OURS: pheeh.dll, the ONE C++ exception runtime of an x86 (x32) process. It carries the unwinder (GCC's
+// libgcc_eh: _Unwind_*, the frame registry __register_frame_info) and the C++ ABI half of libsupc++ (__cxa_throw,
+// the catch/rethrow calls, __gxx_personality_v0, std::terminate, the type_info classes), built from the toolchain's x32
+// archives (component option x32_sys_archives). A DLL built with eh=True registers its .eh_frame here when it is
+// attached, so an exception thrown in one module is caught in another. pheeh.cpp supplies what the archives would take
+// from libc and from TLS.
+TARGET			pheeh.dll
+TARGETTYPE		dll
+UID				0x1000008d 0xE7015790
+
+CAPABILITY		All -Tcb
+VENDORID		0
+
+EPOCALLOWDLLDATA
+DEFFILE			pheeh.def
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			pheeh.cpp
+
+LIBRARY			euser.lib
+
+SMPSAFE
