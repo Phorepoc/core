@@ -61,6 +61,7 @@ private:
     RArray <TBufferAddress*> iCompositionBuffer;
     RDisplayChannel iDispChan;
     TScreenRotation iNewRotation;
+    TUint32 iPhLastFrameKey;    // OURS trace: the last composed frame key logged
     SymbianStreamType iCurrentSceneStream;
     // OURS diagnosis: the compose cycle timing printed every 200 updates (members: a DLL has no writable statics)
     TUint32 iStatFreq, iStatLast, iStatPeriodSum, iStatWaitSum, iStatCopySum, iStatCount;
