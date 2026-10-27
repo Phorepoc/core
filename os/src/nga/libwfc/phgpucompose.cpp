@@ -262,7 +262,7 @@ namespace
 			TEntry& e = gEntry[i];
 			if (e.iImage && e.iIndex == index && Mem::Compare((const TUint8*)e.iSid, 16, (const TUint8*)id, 16) == 0)
 				{
-				if (e.iData == aData && e.iW == aW && e.iH == aH && e.iStride == aStride && e.iFormat == aOwf)
+				if (!aUsage && e.iData == aData && e.iW == aW && e.iH == aH && e.iStride == aStride && e.iFormat == aOwf)
 					{
 					e.iUsed = gComp;
 					return &e;
