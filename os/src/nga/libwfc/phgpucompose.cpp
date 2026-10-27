@@ -342,9 +342,11 @@ int PhGpu_Want(void)
 	return gState == 1 && (TUint)RThread().Id() == gThread;
 	}
 
-int PhGpu_SourceOk(int aFormat, int aLinear, int aW, int aH, int aStride)
+int PhGpu_SourceOk(const void* aData, int aFormat, int aLinear, int aW, int aH, int aStride)
 	{
-	return MemFormat(aFormat) != 0 && !aLinear && aW > 0 && aH > 0 && aW <= 4096 && aH <= 4096 && (aStride & 7) == 0;
+	// the Mali import maps whole pages: a buffer that does not start on one (Classic's streams: header + 0x60) stays
+	// on the CPU
+	return ((TUint)aData & 0xFFF) == 0 && MemFormat(aFormat) != 0 && !aLinear && aW > 0 && aH > 0 && aW <= 4096 && aH <= 4096 && (aStride & 7) == 0;
 	}
 
 // white-frame detector (the Applications-folder scroll flash): an 8x8 grid of a buffer's pixels, how many near white
@@ -372,7 +374,7 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 	gComp++;
 	gFailed = EFalse;
 	gT0 = User::FastCounter();
-	if (!MemFormat(aFormat) || (aStride & 7))
+	if (!MemFormat(aFormat) || (aStride & 7) || ((TUint)aPixels & 0xFFF))
 		return 0;
 	TEntry* t = Lookup(aStream, aBuffer, aPixels, aW, aH, aStride, aFormat, 1);
 	if (!t)

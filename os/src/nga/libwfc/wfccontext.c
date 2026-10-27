@@ -47,7 +47,7 @@
 /* OURS (G8): the scene composed by the GPU (phgpucompose.cpp); every function declines (0) when the GPU path is off,
  * unavailable (no Mali: x86) or cannot do what the scene asks, and the 2010 CPU pipeline composes instead. */
 extern int PhGpu_Want(void);
-extern int PhGpu_SourceOk(int aFormat, int aLinear, int aW, int aH, int aStride);
+extern int PhGpu_SourceOk(const void* aData, int aFormat, int aLinear, int aW, int aH, int aStride);
 extern int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int aStride, int aFormat,
                        int aIw, int aIh, int aRot, unsigned aBackground);
 extern int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int aStride, int aFormat,
@@ -1190,7 +1190,7 @@ WFC_Context_PhGpuCompose(WFC_CONTEXT* context)
             return OWF_FALSE;
         src = e->source ? e->source->lockedStream.image : NULL;
         if (!src || !src->data ||
-            !PhGpu_SourceOk(src->format.pixelFormat, src->format.linear, src->width, src->height, src->stride))
+            !PhGpu_SourceOk(src->data, src->format.pixelFormat, src->format.linear, src->width, src->height, src->stride))
             return OWF_FALSE;
     }
     if (!WFC_Context_LockTargetForWriting(context))
