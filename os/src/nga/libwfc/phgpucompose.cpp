@@ -95,8 +95,6 @@ namespace
 		void (*EGLImageTargetTexture2DOES)(GLenum, GLeglImageOES);
 		EGLImageKHR (*CreateImageKHR)(EGLDisplay, EGLContext, EGLenum, EGLClientBuffer, const EGLint*);
 		EGLBoolean (*DestroyImageKHR)(EGLDisplay, EGLImageKHR);
-		EGLBoolean (*WaitClient)();		// Mesa's own: the import-linked eglWaitClient never reached the driver
-										// (returned in ~0.1 ms, the job still running; no cache maintenance)
 		};
 
 	// one cached EGLImage (a source buffer, or a target buffer with its framebuffer)
@@ -184,8 +182,7 @@ namespace
 			"glCreateShader", "glShaderSource", "glCompileShader", "glGetShaderiv", "glCreateProgram", "glAttachShader",
 			"glBindAttribLocation", "glLinkProgram", "glGetProgramiv", "glUseProgram", "glGetUniformLocation",
 			"glUniform1i", "glUniform1f", "glVertexAttribPointer", "glEnableVertexAttribArray", "glDrawArrays",
-			"glFinish", "glGetError", "glEGLImageTargetTexture2DOES", "eglCreateImageKHR", "eglDestroyImageKHR",
-			"eglWaitClient" };
+			"glFinish", "glGetError", "glEGLImageTargetTexture2DOES", "eglCreateImageKHR", "eglDestroyImageKHR" };
 		for (TUint i = 0; i < sizeof(KNames) / sizeof(KNames[0]); i++)
 			if (!Proc(f[i], KNames[i]))
 				return EFalse;
@@ -456,11 +453,12 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 
 int PhGpu_End(void)
 	{
-	// the cache maintenance on both sides of the job: the sources cleaned right before it is submitted, the target
-	// invalidated once the GPU finished (egl_symbian.c sym_wait_client; eglWaitNative does nothing for this
-	// surfaceless context)
+	// submit + wait for the job (glFinish: eglWaitClient never reaches the driver from this thread -- Mesa sees no
+	// current EGL context here -- and returned with the job still running). The CPU cache maintenance on both sides
+	// rides on the job itself (drm_symbian.c sym_drm_sync_hook): sources cleaned ahead of the submit, the target
+	// invalidated when it finished.
 	const TUint w0 = User::FastCounter();
-	gl.WaitClient();
+	gl.Finish();
 	const TUint w1 = User::FastCounter();
 	const GLenum err = gl.GetError();
 	DropIdle();
