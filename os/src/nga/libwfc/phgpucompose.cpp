@@ -42,7 +42,9 @@ const GLenum KGlTexture2D = 0x0DE1, KGlTextureMinFilter = 0x2801, KGlTextureMagF
 	KGlLinkStatus = 0x8B82, KGlTexture0 = 0x84C0, KGlScissorTest = 0x0C11, KGlDither = 0x0BD0;
 #define EGL_SYMBIAN_MEMORY_IMAGE_PH 0x3FF1		// egl_symbian.c: buffer = a symgl_sgimage (below)
 #define EGL_NO_CONFIG_KHR ((EGLConfig)0)
+#ifndef EGL_KHR_image
 typedef void* EGLImageKHR;
+#endif
 
 namespace
 	{
