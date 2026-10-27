@@ -96,7 +96,10 @@ static TInt PhAlfWatchMain(TAny* aId)
 static void PhAlfPhvgOn()
 	{
 	TInt v = 0;
+	// (called first thing in the alfredserver thread, before it has a cleanup stack: CRepository::NewL needs one, CBase 69)
+	CTrapCleanup* tc = User::TrapHandler() ? NULL : CTrapCleanup::New();
 	TRAPD(err, CRepository* rep = CRepository::NewL(TUid::Uid(0xE7015A01)); rep->Get(8, v); delete rep);
+	delete tc;
 	if (err != KErrNone)
 		v = 0;
 	const TUid cat = TUid::Uid((TInt)RProcess().SecureId());
