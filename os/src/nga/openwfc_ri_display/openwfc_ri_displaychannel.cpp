@@ -495,6 +495,24 @@ TInt COpenWFC_RI_DisplayChannel::UpdateDisplay()
             Mem::Copy(firstPixelAddr + y * dstStride, src + y * srcStride, rowBytes);
         }
     }
+    {   // OURS trace (2026-10-27): the composed frame's corners + centre, when they change (what the panel gets)
+        static TUint32 phLast;
+        const TUint8* p = (const TUint8*)pixelDataPtr;
+        const TBool normal = (iNewRotation == EScreenRotate0 || iNewRotation == EScreenRotate180);
+        const TInt rows = normal ? iScreenInfo.iNormalHeight : iScreenInfo.iFlippedHeight;
+        const TInt w = normal ? iScreenInfo.iNormalWidth : iScreenInfo.iFlippedWidth;
+        khronos_int32_t sw = 0, sh = 0, sStride = 0, sFmt = 0, sPix = 0;
+        SymbianStreamGetHeader(iCurrentSceneStream, &sw, &sh, &sStride, &sFmt, &sPix);
+        const TInt srcStride = sStride >= w * 4 ? (TInt)sStride : w * 4;
+        const TUint32 c0 = *(const TUint32*)p, cm = *(const TUint32*)(p + (rows / 2) * srcStride + (w / 2) * 4),
+            cl = *(const TUint32*)(p + (rows - 1) * srcStride + (w - 1) * 4);
+        const TUint32 key = c0 ^ (cm * 3) ^ (cl * 5) ^ (TUint32)iNewRotation;
+        if (key != phLast)
+            {
+            phLast = key;
+            RDebug::Printf("PH: [wfcdisp] frame %dx%d stride %d rot %d px(0,0)=%08x mid=%08x last=%08x", w, rows, srcStride, (TInt)iNewRotation, c0, cm, cl);
+            }
+    }
     SymbianStreamReleaseReadBuffer(iCurrentSceneStream, frontBuffer);
     iStatCopySum += User::FastCounter() - t1;
     if (++iStatCount % 60 == 0)

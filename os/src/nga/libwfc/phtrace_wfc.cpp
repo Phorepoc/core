@@ -139,11 +139,12 @@ extern "C" EXPORT_C void wfcSetElementAttribf(WFCDevice dev, WFCElement element,
 extern "C" void ph_wfc_scene_trace(int aHandle, int aSkip, int aAffects, int aHasData, int aTransp)
 	{
 	static TInt n = 0;
-	static TInt last = -1;
-	TInt key = aHandle * 16 + aSkip * 8 + aAffects * 4 + (aHasData + 1);
-	if (aHandle >= 3000 && n < 300 && key != last)
+	static TInt last[16];	// per element (handle 3000..3015), 2000 lines at most
+	TInt key = aHandle * 16 + aSkip * 8 + aAffects * 4 + (aHasData + 1) + 1;
+	TInt& l = last[(aHandle - 3000) & 15];
+	if (aHandle >= 3000 && n < 2000 && key != l)
 		{
-		++n; last = key;
+		++n; l = key;
 		RDebug::Printf("PH: wfc scene element %d skipCompose=%d affects=%d srcHasData=%d transp=0x%x", aHandle, aSkip, aAffects, aHasData, aTransp);
 		}
 	}
