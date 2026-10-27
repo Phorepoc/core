@@ -71,3 +71,31 @@ TLibraryFunction PhglResolveEgl(TInt aOrdinal, const char* aName)
 		User::After(1000);
 	return state == 2 ? egl.Lookup(aOrdinal) : NULL;
 	}
+
+void PhglCheckStatus(const char* aWhat, unsigned aObj, unsigned aStatusEnum, const char* aQuery, const char* aLog)
+	{
+	static TInt traced;
+	if (traced >= 24)
+		return;
+	typedef void (*TGetIv)(unsigned, unsigned, int*);
+	typedef void (*TGetLog)(unsigned, int, int*, char*);
+	TGetIv getIv = (TGetIv)PhglResolve(0, aQuery);
+	TGetLog getLog = (TGetLog)PhglResolve(0, aLog);
+	if (!getIv)
+		return;
+	int ok = 1;
+	getIv(aObj, aStatusEnum, &ok);
+	if (ok)
+		return;
+	++traced;
+	char buf[200];
+	int len = 0;
+	buf[0] = 0;
+	if (getLog)
+		getLog(aObj, sizeof(buf) - 1, &len, buf);
+	buf[len >= 0 && len < (int)sizeof(buf) ? len : sizeof(buf) - 1] = 0;
+	for (char* p = buf; *p; ++p)
+		if (*p == '\n' || *p == '\r')
+			*p = ' ';
+	RDebug::Printf("PH: phgl %s %u FAILED: %s", aWhat, aObj, buf);
+	}

@@ -213,6 +213,7 @@ void glCompileShader(GLuint shader)
 	if (!f)
 		return;
 	f(shader);
+	PhglCheckStatus("shader", shader, 0x8B81, "glGetShaderiv", "glGetShaderInfoLog");
 	}
 
 void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void* data)
@@ -834,6 +835,7 @@ void glLinkProgram(GLuint program)
 	if (!f)
 		return;
 	f(program);
+	PhglCheckStatus("program", program, 0x8B82, "glGetProgramiv", "glGetProgramInfoLog");
 	}
 
 void glPixelStorei(GLenum pname, GLint param)

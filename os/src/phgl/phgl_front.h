@@ -14,5 +14,7 @@ TLibraryFunction PhglResolve(TInt aOrdinal, const char* aName);
 
 // libEGL.dll's function at aOrdinal (libegl14U.def) -- for a front that re-exports egl* (libGLES_CM.dll); NULL without it
 TLibraryFunction PhglResolveEgl(TInt aOrdinal, const char* aName);
+// TRACE (2026-10-27): after glCompileShader / glLinkProgram -- a failure (status 0) is logged with its info log ("PH:" line)
+void PhglCheckStatus(const char* aWhat, unsigned aObj, unsigned aStatusEnum, const char* aQuery, const char* aLog);
 
 #endif
