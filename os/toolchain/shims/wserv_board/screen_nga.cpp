@@ -1103,6 +1103,7 @@ TBool CScreen::UpdateOrientation(MWsScene::TSceneRotation* aOldRotation)
 	
 // Some of this method has to be done when changing mode even if not changing rotation
 	TBool rotating=(oldRotation != newRotation);
+	RDebug::Printf("PH: wserv UpdateOrientation gc %d scene %d -> %d", (TInt)gcOrientation, (TInt)oldRotation, (TInt)newRotation);
 	if (rotating)
 		{
 	

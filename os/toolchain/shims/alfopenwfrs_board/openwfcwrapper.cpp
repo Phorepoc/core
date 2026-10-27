@@ -1026,6 +1026,7 @@ TBitFlags32 COpenWfcWrapper::SupportedScreenRotations() const
 
 void COpenWfcWrapper::SetScreenRotation(MWsScene::TSceneRotation aRotation)
 	{
+	RDebug::Printf("PH: alf: wrapper SetScreenRotation %d", (TInt)aRotation);
 #ifdef _DEBUG
     // clean previous errors
     (void)wfcGetError(iDevice);
