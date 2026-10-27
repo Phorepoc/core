@@ -685,11 +685,12 @@ TBool TWsPointer::PreProcessDriverEvent(TRawEvent &aRawEvent)
 	if (!IsPointerEventType(type)) 
 		return ETrue;
 	
+	{ static TInt phN = 0; if (phN < 24 && type != TRawEvent::EPointerMove) { ++phN; RDebug::Printf("PH: WSERV raw pointer type=%d pos=%d,%d xy=%d max=%d", (TInt)type, aRawEvent.Pos().iX, aRawEvent.Pos().iY, (TInt)XyInput(), iMaxPointers); } }
 	if (!XyInput())
 		{
 		return EFalse;
 		}
-	
+
 	//** Log the type, pointer number, and its coordinates
 #ifdef LOG_WSERV_EVENTS
 	RDebug::Printf("_WSEVENT_POINTER: Pointer number = %d RawEvent Type = %d Coordinates [%d, %d]", 
