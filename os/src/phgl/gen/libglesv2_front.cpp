@@ -245,6 +245,7 @@ void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, G
 	if (!f)
 		return;
 	f(target, level, internalformat, width, height, border, imageSize, data);
+	PhglTraceArgs("glCompressedTexImage2D", internalformat, level, width, height);
 	}
 
 void glCompressedTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void* data)
@@ -1098,6 +1099,7 @@ void glTexParameterf(GLenum target, GLenum pname, GLfloat param) __SOFTFP
 	if (!f)
 		return;
 	f(target, pname, param);
+	PhglTraceArgs("glTexParameterf", target, pname, (int)param, 0);
 	}
 
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params)

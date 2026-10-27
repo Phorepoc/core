@@ -134,3 +134,18 @@ void PhglTraceCall(const char* aName)
 		}
 	inside = EFalse;
 	}
+
+void PhglTraceArgs(const char* aName, unsigned aA, unsigned aB, int aC, int aD)
+	{
+	static TInt lines;
+	typedef unsigned (*TGetError)();
+	static TGetError getError;
+	if (!getError)
+		getError = (TGetError)PhglResolve(0, "glGetError");
+	const unsigned err = getError ? getError() : 0;
+	if (lines < 200 && (err || lines < 40))
+		{
+		++lines;
+		RDebug::Printf("PH: phgl args %s(0x%x, 0x%x, %d, %d) -> error 0x%x", aName, aA, aB, aC, aD, err);
+		}
+	}
