@@ -238,13 +238,13 @@ void PhglTraceProbe(const char* aName, int aArg)
 	               front, scissor, sbox[0], sbox[1], sbox[2], sbox[3], stencil);
 	}
 
-void PhglTraceMatrix(int aLocation, const float* aM)
+void PhglTraceMatrix(int aLocation, const float* aM, TUint32 aCaller)
 	{
 	static TInt n;
 	if (n >= 12)
 		return;
 	++n;
 	const TUint32* v = (const TUint32*)aM;
-	RDebug::Printf("PH: phgl matrix loc %d (float bits, column-major): %08x %08x %08x %08x | %08x %08x %08x %08x | %08x %08x %08x %08x | %08x %08x %08x %08x",
-	               aLocation, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12], v[13], v[14], v[15]);
+	RDebug::Printf("PH: phgl matrix caller %08x loc %d (float bits, column-major): %08x %08x %08x %08x | %08x %08x %08x %08x | %08x %08x %08x %08x | %08x %08x %08x %08x",
+	               aCaller, aLocation, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12], v[13], v[14], v[15]);
 	}

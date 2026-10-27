@@ -1357,7 +1357,7 @@ void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, cons
 	f(location, count, transpose, value);
 	PhglTraceArgs("glUniformMatrix4fv", (unsigned)location, transpose, value ? (int)(value[0] * 1000) : -1, value ? (int)(value[15] * 1000) : -1);
 	if (value)
-		PhglTraceMatrix(location, value);
+		PhglTraceMatrix(location, value, (TUint32)__builtin_return_address(0));
 	}
 
 void glUseProgram(GLuint program)
