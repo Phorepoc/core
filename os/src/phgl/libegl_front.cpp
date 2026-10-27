@@ -1168,7 +1168,9 @@ EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surface)
 		SWFWD(EOrdSwapBuffers, EGLBoolean, EGL_FALSE, (EGLDisplay, EGLSurface), (d, surface))
 	// TRACE (Let's Golf 2 black frames, 2026-10-27): what the GL back buffer holds at every 30th swap (capped)
 	static TInt swaps;
-	if (++swaps % 30 == 0 && swaps <= 3000)
+	if (++swaps <= 5)
+		RDebug::Printf("PH: phgl swap %d (glReadPixels %x)", swaps, (TUint)PhglResolve(0, "glReadPixels"));
+	if (swaps % 30 == 0 && swaps <= 3000)
 		{
 		typedef void (*TReadPixels)(int, int, int, int, unsigned, unsigned, void*);
 		typedef void (*TGetIv)(unsigned, int*);
