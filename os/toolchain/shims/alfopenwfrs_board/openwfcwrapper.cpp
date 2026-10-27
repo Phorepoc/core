@@ -660,10 +660,22 @@ static void PhFollowUiSurface(CElementWrapper* aElement, const TSize& aOldSize, 
 // UI surface, while the compositor rotates the scene for the apps' own surfaces (GL, DSA). The UI element gets the inverse
 // source rotation and the whole rotated scene as destination, so the alf layer is not rotated twice (DH2's GL title was
 // covered by a portrait-shaped alf layer).
-static void PhUiElementForRotation(CElementWrapper* aElement, MWsScene::TSceneRotation aRotation, const TSize& aUiSize)
+static void PhUiElementForRotation(CElementWrapper* aElement, MWsScene::TSceneRotation aRotation, const TSize& aSurfaceSize)
 	{
-	if (!aElement || aUiSize.iWidth <= 0 || aUiSize.iHeight <= 0)
+	if (!aElement)
 		{
+		return;
+		}
+	TSize aUiSize = aSurfaceSize;
+	if (aUiSize.iWidth <= 0 || aUiSize.iHeight <= 0)
+		{	// the alf EGL surface is not always known to the surface manager: its source rectangle is the whole surface
+		TRect src;
+		aElement->GetSourceRectangle(src);
+		aUiSize = src.Size();
+		}
+	if (aUiSize.iWidth <= 0 || aUiSize.iHeight <= 0)
+		{
+		RDebug::Printf("PH: alf: UI element %x: no size for the scene rotation", (TUint)aElement);
 		return;
 		}
 	MWsElement::TElementRotation inverse = MWsElement::EElementAntiClockwise0;
