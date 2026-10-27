@@ -377,7 +377,13 @@ void COpenWfcWrapper::Compose(TRequestStatus* aCompleted)
 	}
 	{
 	static TInt phN;
-	if (++phN <= 6 || (phN & 63) == 0)
+	static TUint32 phSig;	// the scene's elements + surfaces: print again whenever it changes
+	TUint32 sig = 0;
+	for (CElementWrapper* e = iSceneElementList; e; e = e->MyElementAbove())
+		sig = sig * 31 + (TUint32)e + e->ConnectedSurface().iInternal[0] + e->ConnectedSurface().iInternal[3];
+	const TBool changed = sig != phSig;
+	phSig = sig;
+	if (++phN <= 6 || (phN & 63) == 0 || changed)
 		{
 		TInt n = 0;
 		for (CElementWrapper* e = iSceneElementList; e; e = e->MyElementAbove())
@@ -389,7 +395,10 @@ void COpenWfcWrapper::Compose(TRequestStatus* aCompleted)
 			TRect d;
 			e->GetDestinationRectangle(d);
 			const TSurfaceId& sid = e->ConnectedSurface();
-			RDebug::Printf("PH: alf:   element %d: surface %s %08x:%08x:%08x:%08x dest %d,%d-%d,%d", k, sid.IsNull() ? "NULL" : "set",
+			TUint32 fl = 0;
+			e->GetRenderStageFlags(fl);
+			RDebug::Printf("PH: alf:   element %d (%x flags %x%s): surface %s %08x:%08x:%08x:%08x dest %d,%d-%d,%d", k, (TUint)e, fl,
+				e == iUiElement1 ? " ui1" : e == iUiElement2 ? " ui2" : "", sid.IsNull() ? "NULL" : "set",
 				sid.iInternal[0], sid.iInternal[1], sid.iInternal[2], sid.iInternal[3], d.iTl.iX, d.iTl.iY, d.iBr.iX, d.iBr.iY);
 			}
 		}
