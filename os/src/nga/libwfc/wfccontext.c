@@ -127,7 +127,7 @@ WFC_Context_CreateState(WFC_CONTEXT* context)
     if (context->type == WFC_CONTEXT_TYPE_ON_SCREEN)
         {
         /* The unrotated target buffer: Can't get real address without locking for writing!  NO STRIDE */
-        context->state.unrotatedTargetImage=OWF_Image_Create(context->targetWidth,context->targetHeight,&fExt,context->scratchBuffer[2],0);
+        context->state.unrotatedTargetImage=OWF_Image_Create(context->targetWidth,context->targetHeight,&fExt,context->scratchBuffer[2],stride);   /* PH: the stream's own stride (padded for the GPU, see WFC_Context_Initialize) */
         /* The rotated version of the target buffer for hardware rotation
          * or a de-rotated version of the internal buffer into another scratch buffer for software rotation
          */ 
@@ -426,6 +426,11 @@ WFC_Context_Initialize(WFC_CONTEXT* context,
        imageFormat.premultiplied   = OWF_SURFACE_PREMULTIPLIED;
        imageFormat.linear          = OWF_SURFACE_LINEAR;
        imageFormat.rowPadding      = OWF_SURFACE_ROWPADDING;
+       /* PH (G8): rows padded to 64 bytes = 16 pixels -- the Mali (lima) renders only into buffers whose stride covers a
+          16-pixel aligned width (360 -> 1472 bytes); the CPU pipeline and the display adapter honour any stride. Not
+          with display rotation, where the target is also seen with swapped dimensions and no stride. */
+       if (!OWF_Screen_Rotation_Supported(context->displayContext))
+           imageFormat.rowPadding = 64;
     
        width = screen.normal.width;
        height = screen.normal.height;
