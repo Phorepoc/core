@@ -1268,6 +1268,7 @@ void CPheVidCtl::Feed()
 		TRAP(r, FillInputL(iSamples[iNext], b, ETrue));
 		if (r != KErrNone)
 			{
+			RDebug::Printf("PH: vc feed: input buffer for sample %d (%d B) failed %d", iNext, (TInt)iSamples[iNext].iSize, r);
 			FailPlayback(r);
 			return;
 			}
@@ -1276,6 +1277,7 @@ void CPheVidCtl::Feed()
 		TRAP(r, iDvp->WriteCodedDataL(b));
 		if (r != KErrNone)
 			{
+			RDebug::Printf("PH: vc feed: WriteCodedDataL for sample %d failed %d", iNext, r);
 			FailPlayback(r);
 			return;
 			}
