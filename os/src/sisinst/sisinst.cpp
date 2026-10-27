@@ -22,8 +22,9 @@ static TInt Run()
 	TPtrC drv = lex.NextToken();
 	if (file.Length() == 0)
 		{
-		RDebug::Printf("PH: [sisinst] usage: sisinst <path.sis> [drive] | sisinst -u <package uid, hex>");
-		return KErrArgument;
+		// no arguments (a boot test: ssm-test=sisinst starts it bare): the package put on the disk as C:\sisinst.sis
+		RDebug::Printf("PH: [sisinst] usage: sisinst <path.sis> [drive] | sisinst -u <package uid, hex>; none given: c:\\sisinst.sis");
+		file.Set(_L("c:\\sisinst.sis"));
 		}
 	if (file == _L("-u"))
 		{
