@@ -157,7 +157,10 @@ namespace
 		if (d.isLuminance() || !d.isNonlinear())
 			return EFalse;
 		const Image* im = aS->m_image;
-		return im->m_ownsData && im->m_referenceCount == 1 && !im->m_parent;
+		// its own pixels, or a pbuffer over a whole VGImage (one reference each: the VGImage handle, this surface; no child
+		// images or paint patterns on it). The RI refuses every VG use of the image while the pbuffer is current
+		// (eglvgIsInUse), and PhvgSurfaceReleased brings the pixels back when it stops being current
+		return im->m_ownsData && !im->m_parent && (im->m_referenceCount == 1 || (im->m_referenceCount == 2 && im->m_inUse == 0));
 		}
 
 	TUint8 Pack(RIfloat aV)
@@ -535,11 +538,21 @@ bool PhvgTryBlitOut(const Surface* aS, Image* aDst, int aSx, int aSy, int aDx, i
 	return true;
 	}
 
-// The surface is being destroyed.
+// The surface is being destroyed. Over a VGImage (that outlives it) the GPU's pixels go into the image first.
 void PhvgForget(const Surface* aS)
 	{
-	if (gLoad == 1)
-		gT.Forget((TAny*)aS);
+	if (gLoad != 1)
+		return;
+	if (aS->m_image->m_referenceCount > 1)
+		PhvgCpuAccess(aS, true);
+	gT.Forget((TAny*)aS);
+	}
+
+// eglMakeCurrent released the surface: a pbuffer over a VGImage hands the pixels back to the image (VG may now use it)
+void PhvgSurfaceReleased(const Surface* aS)
+	{
+	if (aS && aS->m_image->m_referenceCount > 1)
+		PhvgCpuAccess(aS, true);
 	}
 
 // Surface::clear (no scissor). True = the GPU did it (or there was nothing to do).
