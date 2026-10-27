@@ -188,6 +188,7 @@ void glClear(GLbitfield mask)
 	if (!f)
 		return;
 	f(mask);
+	PhglTraceProbe("glClear", mask);
 	}
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) __SOFTFP
@@ -457,6 +458,7 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices
 	if (!f)
 		return;
 	f(mode, count, type, indices);
+	PhglTraceProbe("glDrawElements", count);
 	PhglTraceArgs("glDrawElements", mode, type, count, (int)(TUint)indices);
 	}
 

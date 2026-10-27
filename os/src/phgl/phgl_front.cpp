@@ -185,3 +185,32 @@ void PhglTraceSource(unsigned aShader, int aCount, const char** aStrings, const 
 			}
 		}
 	}
+
+void PhglTraceProbe(const char* aName, int aArg)
+	{
+	static TInt probes;
+	if (probes >= 120)
+		return;
+	++probes;
+	typedef void (*TReadPixels)(int, int, int, int, unsigned, unsigned, void*);
+	typedef void (*TGetIv)(unsigned, int*);
+	static TReadPixels readPixels;
+	static TGetIv getIv;
+	if (!readPixels)
+		readPixels = (TReadPixels)PhglResolve(0, "glReadPixels");
+	if (!getIv)
+		getIv = (TGetIv)PhglResolve(0, "glGetIntegerv");
+	if (!readPixels || !getIv)
+		return;
+	int vp[4] = {0, 0, 0, 0}, prog = 0, tex = 0, unit = 0, blend = 0, cmask[4] = {0, 0, 0, 0};
+	getIv(0x0BA2, vp);
+	getIv(0x8B8D, &prog);
+	getIv(0x8069, &tex);
+	getIv(0x84E0, &unit);
+	getIv(0x0BE2, &blend);
+	getIv(0x0C23, cmask);
+	TUint32 px = 0;
+	readPixels(vp[2] / 2, vp[3] / 2, 1, 1, 0x1908, 0x1401, &px);
+	RDebug::Printf("PH: phgl probe %s(0x%x): centre %08x prog %d tex %d unit 0x%x blend %d colormask %d%d%d%d", aName, aArg, px, prog,
+	               tex, unit, blend, cmask[0], cmask[1], cmask[2], cmask[3]);
+	}
