@@ -1033,6 +1033,7 @@ void glShaderSource(GLuint shader, GLsizei count, const char** string, const GLi
 	if (!f)
 		return;
 	f(shader, count, string, length);
+	PhglTraceSource(shader, count, string, length);
 	}
 
 void glStencilFunc(GLenum func, GLint ref, GLuint mask)

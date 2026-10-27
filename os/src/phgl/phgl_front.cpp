@@ -154,3 +154,32 @@ void PhglTraceArgs(const char* aName, unsigned aA, unsigned aB, int aC, int aD)
 		RDebug::Printf("PH: phgl args %s(0x%x, 0x%x, %d, %d) -> error 0x%x", aName, aA, aB, aC, aD, err);
 		}
 	}
+
+void PhglTraceSource(unsigned aShader, int aCount, const char** aStrings, const int* aLengths)
+	{
+	static TInt shaders;
+	if (shaders >= 16 || !aStrings)
+		return;
+	++shaders;
+	for (TInt s = 0; s < aCount; ++s)
+		{
+		const char* p = aStrings[s];
+		if (!p)
+			continue;
+		TInt len = aLengths && aLengths[s] >= 0 ? aLengths[s] : User::StringLength((const TUint8*)p);
+		TInt line = 0;
+		while (len > 0 && line < 80)
+			{
+			TInt n = 0;
+			while (n < len && p[n] != '\n' && n < 200)
+				++n;
+			TBuf8<204> b;
+			b.Copy(TPtrC8((const TUint8*)p, n));
+			RDebug::Printf("PH: phgl src %u.%d: %S", aShader, line++, &b);
+			if (n < len && p[n] == '\n')
+				++n;
+			p += n;
+			len -= n;
+			}
+		}
+	}
