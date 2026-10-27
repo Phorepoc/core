@@ -1094,8 +1094,10 @@ COMPONENTS = {
                                         **({"drop": ["alfdecoderserverclient.cpp"], "extra": ["toolchain/shims/alf_fix/alfdecoderserverclient_ph.cpp"]} if _ALFTRACE else {}),
                                         rom="alfdecoderserverclient_real.dll", rom_as="alfdecoderserverclient.dll"),
     "alfappservercore": dict(mmp=_ALF + "ServerCore/Src/alfappservercore.mmp", alf=2, allow_wsd=_ALFTRACE, flags=_ALFT_FLAGS, **_ALFLOG,
-                             drop=["alfstreamerserver.cpp"] + (["alfappui.cpp", "alfbridge.cpp", "alfscreen.cpp"] if _ALFTRACE else []),
-                             extra=["toolchain/shims/alf_fix/gen/alfstreamerserver_ph.cpp"] + ([_AG + "alfappui_ph.cpp", _AG + "alfbridge_ph.cpp", _AG + "alfscreen_ph.cpp"] if _ALFTRACE else []) + [
+                             # alfstreamerbridge_ph: the bridge thread's RunL reads the message array + var-data buffer under
+                             # the queue lock too (a writer's realloc tore them: data abort in HandleSetTransparencyAlphaChannelL)
+                             drop=["alfstreamerserver.cpp", "alfstreamerbridge.cpp"] + (["alfappui.cpp", "alfbridge.cpp", "alfscreen.cpp"] if _ALFTRACE else []),
+                             extra=["toolchain/shims/alf_fix/gen/alfstreamerserver_ph.cpp", "toolchain/shims/alf_fix/gen/alfstreamerbridge_ph.cpp"] + ([_AG + "alfappui_ph.cpp", _AG + "alfbridge_ph.cpp", _AG + "alfscreen_ph.cpp"] if _ALFTRACE else []) + [
                                                     "toolchain/shims/alf_fix/huitexturehandle_local.cpp"]),
     "inlinetext": dict(mmp="oss.FCL.sf.os.textandloc/textandlocutils/inlinetext/group/InlineText.mmp", alf=2),   # (alfclient.mmp links it)
     # the WSERV render stage (ECOM 200184B5/200184B6, wsini [alf]) -> streams the window draw commands to the alf server
