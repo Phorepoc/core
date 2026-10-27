@@ -730,8 +730,18 @@ TInt COpenWfcWrapper::AddElement(MWsElement* aElement, MWsElement* aAbove)
         return KErrArgument;
         }
     
-    if (insertAboveThisElement && 
-        ((!insertAboveThisElement->RefsMyElementBelow() && iSceneElementList != insertAboveThisElement) || 
+    // OURS (2026-10-27): under Alfred WSERV's own UI element is withheld from the scene (the alf window's element is composed
+    // instead), so a surface window (a DSA game) placed "above" it named an element that is not in the scene and was refused:
+    // the game layer was never composed (black screen). Such an element goes to the bottom, under the alf UI layer, which is
+    // transparent where the window is.
+    if (insertAboveThisElement && !insertAboveThisElement->RefsMyElementBelow() && iSceneElementList != insertAboveThisElement &&
+        !(insertAboveThisElement->UpdateFlags() & (CElementWrapper::EUpdate_Remove | CElementWrapper::EUpdate_Destroy)))
+        {
+        RDebug::Printf("PH: alf: wrapper AddElement %x: 'above' %x is not in the scene -> bottom", (TUint)aElement, (TUint)aAbove);
+        insertAboveThisElement = NULL;
+        }
+    if (insertAboveThisElement &&
+        ((!insertAboveThisElement->RefsMyElementBelow() && iSceneElementList != insertAboveThisElement) ||
         (insertAboveThisElement->UpdateFlags() & (CElementWrapper::EUpdate_Remove | CElementWrapper::EUpdate_Destroy))))
         {
         return KErrArgument;
