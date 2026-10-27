@@ -201,7 +201,10 @@ TInt CDisplayRenderStage::ScreenNumber() const
 
 TDisplayMode CDisplayRenderStage::DisplayMode() const
     {
-    return EColor16MAP;//iRenderTarget->DisplayMode();
+    //OURS (2026-10-27): the screen's 32-bit mode as the screen driver has it (scdv: CFbsDrawDevice::DisplayMode16M() = EColor16MA),
+    //as the Classic chain reports. Clients build their own CFbsScreenDevice in this mode (DSA games: SkyForce, DH2);
+    //EColor16MAP made that leave KErrNotSupported -> game crash / WSERV 76 under the Alfred renderer.
+    return EColor16MA;
     }
 
 TSize CDisplayRenderStage::SizeInPixels() const
