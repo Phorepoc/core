@@ -809,6 +809,55 @@ void PhvgStrokeEnd(const Rasterizer* aR)
 static TUint gFillStat[6];
 const unsigned* PhvgFillStats() { return gFillStat; }
 
+// the scissor rectangles of the last Rasterizer::setScissor (one rasterizer per draw call, set just before its fill)
+static const void* gScOwner;
+static TInt gScRect[KPhvgMaxScissor * 4];
+static TInt gScN;			// -1 = too many to keep
+void PhvgNoteScissor(const void* aOwner, const Array<Rectangle>& aRects)
+	{
+	gScOwner = aOwner;
+	gScN = 0;
+	for (int i = 0; i < aRects.size(); i++)
+		{
+		const Rectangle& r = aRects[i];
+		if (r.width <= 0 || r.height <= 0)
+			continue;
+		if (gScN == KPhvgMaxScissor)
+			{
+			gScN = -1;
+			return;
+			}
+		TInt* d = gScRect + gScN++ * 4;
+		d[0] = r.x; d[1] = r.y; d[2] = r.width; d[3] = r.height;
+		}
+	}
+
+// the noted rectangles clipped to the surface, into aOut; -1 = not usable (another rasterizer's, too many, or overlapping:
+// the scissor is their union and the GPU would paint an overlap twice)
+static TInt ScissorRects(const Rasterizer& aR, TInt aW, TInt aH, TInt* aOut)
+	{
+	if (gScOwner != &aR || gScN < 0)
+		return -1;
+	TInt n = 0;
+	for (TInt i = 0; i < gScN; i++)
+		{
+		const TInt* r = gScRect + i * 4;
+		TInt x0 = r[0] < 0 ? 0 : r[0], y0 = r[1] < 0 ? 0 : r[1];
+		TInt x1 = r[0] + r[2] > aW ? aW : r[0] + r[2], y1 = r[1] + r[3] > aH ? aH : r[1] + r[3];
+		if (x1 <= x0 || y1 <= y0)
+			continue;
+		for (TInt j = 0; j < n; j++)
+			{
+			const TInt* o = aOut + j * 4;
+			if (x0 < o[0] + o[2] && o[0] < x1 && y0 < o[1] + o[3] && o[1] < y1)
+				return -1;
+			}
+		TInt* d = aOut + n++ * 4;
+		d[0] = x0; d[1] = y0; d[2] = x1 - x0; d[3] = y1 - y0;
+		}
+	return n;
+	}
+
 // Rasterizer::fill. True = the GPU painted the path (solid colour, linear or radial gradient).
 bool PhvgTryFill(const Rasterizer& aR)
 	{
@@ -817,11 +866,19 @@ bool PhvgTryFill(const Rasterizer& aR)
 		return false;
 	if (aR.m_covBuffer)
 		return gFillStat[1]++, false;
-	if (aR.m_scissor)
-		return gFillStat[2]++, false;
 	Surface* s = p->m_drawable->getColorBuffer();
 	if (!s || !Eligible(s))
 		return gFillStat[3]++, false;
+	TInt sc[KPhvgMaxScissor * 4];
+	TInt nsc = 0;
+	if (aR.m_scissor)
+		{
+		nsc = ScissorRects(aR, s->getWidth(), s->getHeight(), sc);
+		if (nsc < 0)
+			return gFillStat[2]++, false;
+		if (nsc == 0)
+			return gFillStat[0]++, true;		// scissored away: nothing to paint
+		}
 	TPhvgFill f;
 	Mem::FillZ(&f, sizeof(f));
 	if (!BuildPaint(p, f))
@@ -865,6 +922,8 @@ bool PhvgTryFill(const Rasterizer& aR)
 			f.iEdges = edges;
 			f.iCount = n;
 			f.iEvenOdd = aR.m_fillRule == VG_EVEN_ODD;
+			f.iRects = nsc ? sc : NULL;
+			f.iNRects = nsc;
 			done = gT.Fill(&f) == 1;
 			}
 		}

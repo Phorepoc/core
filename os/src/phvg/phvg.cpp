@@ -698,7 +698,20 @@ namespace
 		return ETrue;
 		}
 
+	TInt DoFillOne(const TPhvgFill& f, const TInt* aClip);
+
+	// a scissored fill: the whole stencil-and-cover once per (disjoint) rectangle, under glScissor
 	TInt DoFill(const TPhvgFill& f)
+		{
+		if (f.iNRects <= 0)
+			return DoFillOne(f, NULL);
+		for (TInt i = 0; i < f.iNRects; i++)
+			if (!DoFillOne(f, f.iRects + i * 4))
+				return 0;
+		return 1;
+		}
+
+	TInt DoFillOne(const TPhvgFill& f, const TInt* aClip)
 		{
 		TShadow* s = Get(f.iCookie, f.iW, f.iH, EFalse);
 		if (!s || !s->iFbo0 || s->iState == 0)
@@ -708,7 +721,13 @@ namespace
 		const TReal32 W = (TReal32)s->iW, H = (TReal32)s->iH;
 		glBindFramebuffer(GL_FRAMEBUFFER, s->iFbo0);
 		glViewport(0, 0, s->iW * s->iS, s->iH * s->iS);
-		glDisable(GL_SCISSOR_TEST);
+		if (aClip)
+			{
+			glEnable(GL_SCISSOR_TEST);
+			glScissor(aClip[0] * s->iS, aClip[1] * s->iS, aClip[2] * s->iS, aClip[3] * s->iS);
+			}
+		else
+			glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_BLEND);
 		glUseProgram(gProgFlat);
 		glUniform2f(gFlatScale, 2.0f / W, 2.0f / H);

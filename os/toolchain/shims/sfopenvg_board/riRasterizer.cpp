@@ -192,9 +192,12 @@ void Rasterizer::setup(int vpx, int vpy, int vpwidth, int vpheight, VGFillRule f
 * \note		
 *//*-------------------------------------------------------------------*/
 
+void PhvgNoteScissor(const void* aOwner, const Array<Rectangle>& aRects);	//OURS (riPhvg.cpp): the GPU fill clips to them
+
 void Rasterizer::setScissor(const Array<Rectangle>& scissors)
 {
 	m_scissor = true;
+	PhvgNoteScissor(this, scissors);	//OURS
 	try
 	{
 		m_scissorEdges.clear();

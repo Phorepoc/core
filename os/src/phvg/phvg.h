@@ -30,6 +30,9 @@ struct TPhvgFill
 	const TUint8* iRamp;		// KPhvgRamp RGBA8 PREMULTIPLIED sRGB texels: the colour ramp sampled at (i+0.5)/KPhvgRamp
 	const TReal32* iLeft;		// optional, one per edge: the x its trapezoid starts from (default: the surface's left edge -1)
 	TInt		iStroke;		// 1 = the edges are a stroke (union of pieces; statistics only)
+	// scissoring: iNRects > 0 = paint only inside these DISJOINT rectangles x,y,w,h (surface pixels, y up); 0 = no scissor
+	const TInt*	iRects;
+	TInt		iNRects;
 	};
 
 // O4b: one vgDrawImage on the GPU (pixel-aligned flip/translate of an RGBA8 premultiplied sRGB source image, NORMAL or MULTIPLY mode)
@@ -49,6 +52,7 @@ struct TPhvgImage
 	};
 
 const TInt KPhvgRamp = 512;
+const TInt KPhvgMaxScissor = 16;		// TPhvgFill::iNRects at most (more scissor rectangles: the CPU draws)
 
 // ordinals of phvg.def (looked up by name-less ordinal with RLibrary::Lookup)
 enum TPhvgOrdinal
