@@ -161,3 +161,34 @@ extern "C" void ph_wfc_img_trace(int aHandle, int aW, int aH, int aStride, int a
 		RDebug::Printf("PH: wfc img element %d %dx%d stride=%d pixfmt=%d premult=%d linear=%d px(0,0)=%08x px(mid)=%08x px(0,last)=%08x", aHandle, aW, aH, aStride, aFmt, aPre, aLin, aP0, aP1, aP2);
 		}
 	}
+
+// 2026-10-27: the scene's element order (bottom first) with destination / source rotation / global alpha / source size,
+// printed whenever a compose pass's list differs from the previous one (capped)
+extern "C" void ph_wfc_order_trace(int aIdx, int aHandle, int aX, int aY, int aW, int aH, int aRot, int aAlpha, int aSrc)
+	{
+	static TInt n = 0;
+	static TInt cur[8][8], prev[8][8], prevCount = -1;
+	if (aIdx >= 0)
+		{
+		if (aIdx < 8)
+			{
+			TInt* c = cur[aIdx];
+			c[0] = aHandle; c[1] = aX; c[2] = aY; c[3] = aW; c[4] = aH; c[5] = aRot; c[6] = aAlpha; c[7] = aSrc;
+			}
+		return;
+		}
+	const TInt count = aHandle < 8 ? aHandle : 8;
+	TBool same = count == prevCount;
+	for (TInt i = 0; same && i < count; ++i)
+		for (TInt j = 0; j < 8; ++j)
+			if (cur[i][j] != prev[i][j]) same = EFalse;
+	if (same || n >= 300)
+		return;
+	++n; prevCount = count;
+	for (TInt i = 0; i < count; ++i)
+		{
+		for (TInt j = 0; j < 8; ++j) prev[i][j] = cur[i][j];
+		RDebug::Printf("PH: wfc order %d/%d: element %d dst %d,%d %dx%d rot %d alpha %d src %dx%d", i, count, cur[i][0], cur[i][1],
+			cur[i][2], cur[i][3], cur[i][4], cur[i][5], cur[i][6], cur[i][7] / 10000, cur[i][7] % 10000);
+		}
+	}

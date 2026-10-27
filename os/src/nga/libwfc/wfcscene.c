@@ -288,6 +288,10 @@ WFC_Scene_LockSourcesAndMasks(WFC_SCENE* scene)
     OWF_NODE*               node = NULL;
 
     DPRINT(("WFC_Scene_LockSourcesAndMasks(scene = %p)", scene));
+    { extern void ph_wfc_order_trace(int, int, int, int, int, int, int, int, int); int phi = 0; OWF_NODE* phn;
+      for (phn = scene->elements; phn; phn = phn->next, ++phi) { WFC_ELEMENT* e = ELEMENT(phn->data);
+        ph_wfc_order_trace(phi, (int)e->handle, (int)e->dstRect[0], (int)e->dstRect[1], (int)e->dstRect[2], (int)e->dstRect[3], (int)e->sourceRotation, (int)(e->globalAlpha * 1000), (int)e->srcRect[2] * 10000 + (int)e->srcRect[3]); }
+      ph_wfc_order_trace(-1, phi, 0, 0, 0, 0, 0, 0, 0); }
 
     for (node = scene->elements; NULL != node; node = node->next)
     {
