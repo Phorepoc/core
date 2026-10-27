@@ -693,15 +693,15 @@ static void PhUiElementForRotation(CElementWrapper* aElement, MWsScene::TSceneRo
 	TSize dest = aUiSize;
 	switch (aRotation)
 		{
-		case MWsScene::ESceneAntiClockwise90:
-			inverse = MWsElement::EElementAntiClockwise270;
+		case MWsScene::ESceneAntiClockwise90:	// (the scene's enum maps to WFC_ROTATION_90, the element's
+			inverse = MWsElement::EElementAntiClockwise90;	// anticlockwise 90 to WFC_ROTATION_270: they cancel)
 			dest = TSize(aUiSize.iHeight, aUiSize.iWidth);
 			break;
 		case MWsScene::ESceneAntiClockwise180:
 			inverse = MWsElement::EElementAntiClockwise180;
 			break;
 		case MWsScene::ESceneAntiClockwise270:
-			inverse = MWsElement::EElementAntiClockwise90;
+			inverse = MWsElement::EElementAntiClockwise270;
 			dest = TSize(aUiSize.iHeight, aUiSize.iWidth);
 			break;
 		default:
