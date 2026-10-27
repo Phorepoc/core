@@ -457,8 +457,12 @@ int PhGpu_End(void)
 	eglWaitClient();		// the GPU finished; the CPU's caches over every imported buffer are invalidated
 	const GLenum err = gl.GetError();
 	DropIdle();
-	gTicks += User::FastCounter() - gT0;
+	const TUint dt = User::FastCounter() - gT0;
+	gTicks += dt;
 	gFrames++;
+	if (gComp <= 40 || gComp % 300 == 0)		// bring-up trace: the first compositions, then a sample
+		RDebug::Printf("PH: wfc gpu: composition %u: %u elements so far, %u us", gComp, gElems,
+			gFreq ? (TUint)((TUint64)dt * 1000000 / gFreq) : 0);
 	if (err || gFailed)
 		{
 		static TInt said;
