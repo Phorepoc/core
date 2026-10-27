@@ -454,6 +454,7 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 
 int PhGpu_End(void)
 	{
+	eglWaitNative(EGL_CORE_NATIVE_ENGINE);	// the sources again: writes since Begin reach memory before the job runs
 	eglWaitClient();		// the GPU finished; the CPU's caches over every imported buffer are invalidated
 	const GLenum err = gl.GetError();
 	DropIdle();
