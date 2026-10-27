@@ -1185,7 +1185,7 @@ void glUniform1i(GLint location, GLint x)
 	if (!f)
 		return;
 	f(location, x);
-	PhglTraceArgs("glUniform1i", (unsigned)location, 0, v0, 0);
+	PhglTraceArgs("glUniform1i", (unsigned)location, 0, x, 0);
 	}
 
 void glUniform1iv(GLint location, GLsizei count, const GLint* v)
@@ -1457,7 +1457,7 @@ void glVertexAttribPointer(GLuint indx, GLint size, GLenum type, GLboolean norma
 	if (!f)
 		return;
 	f(indx, size, type, normalized, stride, ptr);
-	PhglTraceArgs("glVertexAttribPointer", index, size, type, (int)stride);
+	PhglTraceArgs("glVertexAttribPointer", indx, size, type, (int)stride);
 	}
 
 void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
