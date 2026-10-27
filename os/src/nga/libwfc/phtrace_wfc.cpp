@@ -151,11 +151,12 @@ extern "C" void ph_wfc_scene_trace(int aHandle, int aSkip, int aAffects, int aHa
 extern "C" void ph_wfc_img_trace(int aHandle, int aW, int aH, int aStride, int aFmt, int aPre, int aLin, unsigned aP0, unsigned aP1, unsigned aP2)
 	{
 	static TInt n = 0;
-	static unsigned last = 0;
+	static unsigned last[16];	// per element (handle 3000..3015): print when its pixels change, 2000 lines at most
 	unsigned key = aP0 ^ (aP1 * 3) ^ (aP2 * 5) ^ (unsigned)aHandle ^ (unsigned)aStride;
-	if (aHandle >= 3000 && n < 400 && key != last)
+	unsigned& l = last[(aHandle - 3000) & 15];
+	if (aHandle >= 3000 && n < 2000 && key != l)
 		{
-		++n; last = key;
+		++n; l = key;
 		RDebug::Printf("PH: wfc img element %d %dx%d stride=%d pixfmt=%d premult=%d linear=%d px(0,0)=%08x px(mid)=%08x px(0,last)=%08x", aHandle, aW, aH, aStride, aFmt, aPre, aLin, aP0, aP1, aP2);
 		}
 	}
