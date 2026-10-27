@@ -213,4 +213,27 @@ void PhglTraceProbe(const char* aName, int aArg)
 	readPixels(vp[2] / 2, vp[3] / 2, 1, 1, 0x1908, 0x1401, &px);
 	RDebug::Printf("PH: phgl probe %s(0x%x): centre %08x prog %d tex %d unit 0x%x blend %d colormask %d%d%d%d", aName, aArg, px, prog,
 	               tex, unit, blend, cmask[0], cmask[1], cmask[2], cmask[3]);
+	typedef void (*TGetFv)(unsigned, float*);
+	static TGetFv getFv;
+	if (!getFv)
+		getFv = (TGetFv)PhglResolve(0, "glGetFloatv");
+	int depthTest = 0, depthFunc = 0, depthMask = 0, cull = 0, cullMode = 0, front = 0, scissor = 0, sbox[4] = {0, 0, 0, 0}, stencil = 0;
+	float clearDepth = -1, range[2] = {-1, -1};
+	getIv(0x0B71, &depthTest);
+	getIv(0x0B74, &depthFunc);
+	getIv(0x0B72, &depthMask);
+	getIv(0x0B44, &cull);
+	getIv(0x0B45, &cullMode);
+	getIv(0x0B46, &front);
+	getIv(0x0C11, &scissor);
+	getIv(0x0C10, sbox);
+	getIv(0x0B90, &stencil);
+	if (getFv)
+		{
+		getFv(0x0B73, &clearDepth);
+		getFv(0x0B70, range);
+		}
+	RDebug::Printf("PH: phgl probe   depth test %d func 0x%x mask %d clear x1000 %d range x1000 %d..%d cull %d 0x%x front 0x%x scissor %d %d,%d %dx%d stencil %d",
+	               depthTest, depthFunc, depthMask, (int)(clearDepth * 1000), (int)(range[0] * 1000), (int)(range[1] * 1000), cull, cullMode,
+	               front, scissor, sbox[0], sbox[1], sbox[2], sbox[3], stencil);
 	}
