@@ -28,6 +28,7 @@ extern "C"
 
 void glActiveTexture(GLenum texture)
 	{
+	PhglTraceCall("glActiveTexture");
 	typedef void (*F)(GLenum);
 	F f = (F)Fn(0, 102, "glActiveTexture");
 	if (!f)
@@ -37,6 +38,7 @@ void glActiveTexture(GLenum texture)
 
 void glAttachShader(GLuint program, GLuint shader)
 	{
+	PhglTraceCall("glAttachShader");
 	typedef void (*F)(GLuint, GLuint);
 	F f = (F)Fn(1, 103, "glAttachShader");
 	if (!f)
@@ -46,6 +48,7 @@ void glAttachShader(GLuint program, GLuint shader)
 
 void glBindAttribLocation(GLuint program, GLuint index, const char* name)
 	{
+	PhglTraceCall("glBindAttribLocation");
 	typedef void (*F)(GLuint, GLuint, const char*);
 	F f = (F)Fn(2, 104, "glBindAttribLocation");
 	if (!f)
@@ -55,6 +58,7 @@ void glBindAttribLocation(GLuint program, GLuint index, const char* name)
 
 void glBindBuffer(GLenum target, GLuint buffer)
 	{
+	PhglTraceCall("glBindBuffer");
 	typedef void (*F)(GLenum, GLuint);
 	F f = (F)Fn(3, 105, "glBindBuffer");
 	if (!f)
@@ -64,6 +68,7 @@ void glBindBuffer(GLenum target, GLuint buffer)
 
 void glBindFramebuffer(GLenum target, GLuint framebuffer)
 	{
+	PhglTraceCall("glBindFramebuffer");
 	typedef void (*F)(GLenum, GLuint);
 	F f = (F)Fn(4, 106, "glBindFramebuffer");
 	if (!f)
@@ -73,6 +78,7 @@ void glBindFramebuffer(GLenum target, GLuint framebuffer)
 
 void glBindRenderbuffer(GLenum target, GLuint renderbuffer)
 	{
+	PhglTraceCall("glBindRenderbuffer");
 	typedef void (*F)(GLenum, GLuint);
 	F f = (F)Fn(5, 107, "glBindRenderbuffer");
 	if (!f)
@@ -82,6 +88,7 @@ void glBindRenderbuffer(GLenum target, GLuint renderbuffer)
 
 void glBindTexture(GLenum target, GLuint texture)
 	{
+	PhglTraceCall("glBindTexture");
 	typedef void (*F)(GLenum, GLuint);
 	F f = (F)Fn(6, 108, "glBindTexture");
 	if (!f)
@@ -91,6 +98,7 @@ void glBindTexture(GLenum target, GLuint texture)
 
 void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) __SOFTFP
 	{
+	PhglTraceCall("glBlendColor");
 	typedef void (*F)(GLclampf, GLclampf, GLclampf, GLclampf) __SOFTFP;
 	F f = (F)Fn(7, 109, "glBlendColor");
 	if (!f)
@@ -100,6 +108,7 @@ void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) _
 
 void glBlendEquation(GLenum mode)
 	{
+	PhglTraceCall("glBlendEquation");
 	typedef void (*F)(GLenum);
 	F f = (F)Fn(8, 110, "glBlendEquation");
 	if (!f)
@@ -109,6 +118,7 @@ void glBlendEquation(GLenum mode)
 
 void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 	{
+	PhglTraceCall("glBlendEquationSeparate");
 	typedef void (*F)(GLenum, GLenum);
 	F f = (F)Fn(9, 111, "glBlendEquationSeparate");
 	if (!f)
@@ -118,6 +128,7 @@ void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 
 void glBlendFunc(GLenum sfactor, GLenum dfactor)
 	{
+	PhglTraceCall("glBlendFunc");
 	typedef void (*F)(GLenum, GLenum);
 	F f = (F)Fn(10, 112, "glBlendFunc");
 	if (!f)
@@ -127,6 +138,7 @@ void glBlendFunc(GLenum sfactor, GLenum dfactor)
 
 void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
 	{
+	PhglTraceCall("glBlendFuncSeparate");
 	typedef void (*F)(GLenum, GLenum, GLenum, GLenum);
 	F f = (F)Fn(11, 113, "glBlendFuncSeparate");
 	if (!f)
@@ -136,6 +148,7 @@ void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum d
 
 void glBufferData(GLenum target, GLsizeiptr size, const void* data, GLenum usage)
 	{
+	PhglTraceCall("glBufferData");
 	typedef void (*F)(GLenum, GLsizeiptr, const void*, GLenum);
 	F f = (F)Fn(12, 114, "glBufferData");
 	if (!f)
@@ -145,6 +158,7 @@ void glBufferData(GLenum target, GLsizeiptr size, const void* data, GLenum usage
 
 void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data)
 	{
+	PhglTraceCall("glBufferSubData");
 	typedef void (*F)(GLenum, GLintptr, GLsizeiptr, const void*);
 	F f = (F)Fn(13, 115, "glBufferSubData");
 	if (!f)
@@ -154,6 +168,7 @@ void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void
 
 GLenum glCheckFramebufferStatus(GLenum target)
 	{
+	PhglTraceCall("glCheckFramebufferStatus");
 	typedef GLenum (*F)(GLenum);
 	F f = (F)Fn(14, 116, "glCheckFramebufferStatus");
 	if (!f)
@@ -163,6 +178,7 @@ GLenum glCheckFramebufferStatus(GLenum target)
 
 void glClear(GLbitfield mask)
 	{
+	PhglTraceCall("glClear");
 	typedef void (*F)(GLbitfield);
 	F f = (F)Fn(15, 117, "glClear");
 	if (!f)
@@ -172,6 +188,7 @@ void glClear(GLbitfield mask)
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) __SOFTFP
 	{
+	PhglTraceCall("glClearColor");
 	typedef void (*F)(GLclampf, GLclampf, GLclampf, GLclampf) __SOFTFP;
 	F f = (F)Fn(16, 118, "glClearColor");
 	if (!f)
@@ -181,6 +198,7 @@ void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) _
 
 void glClearDepthf(GLclampf depth) __SOFTFP
 	{
+	PhglTraceCall("glClearDepthf");
 	typedef void (*F)(GLclampf) __SOFTFP;
 	F f = (F)Fn(17, 119, "glClearDepthf");
 	if (!f)
@@ -190,6 +208,7 @@ void glClearDepthf(GLclampf depth) __SOFTFP
 
 void glClearStencil(GLint s)
 	{
+	PhglTraceCall("glClearStencil");
 	typedef void (*F)(GLint);
 	F f = (F)Fn(18, 120, "glClearStencil");
 	if (!f)
@@ -199,6 +218,7 @@ void glClearStencil(GLint s)
 
 void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 	{
+	PhglTraceCall("glColorMask");
 	typedef void (*F)(GLboolean, GLboolean, GLboolean, GLboolean);
 	F f = (F)Fn(19, 121, "glColorMask");
 	if (!f)
@@ -208,6 +228,7 @@ void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha
 
 void glCompileShader(GLuint shader)
 	{
+	PhglTraceCall("glCompileShader");
 	typedef void (*F)(GLuint);
 	F f = (F)Fn(20, 122, "glCompileShader");
 	if (!f)
@@ -218,6 +239,7 @@ void glCompileShader(GLuint shader)
 
 void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void* data)
 	{
+	PhglTraceCall("glCompressedTexImage2D");
 	typedef void (*F)(GLenum, GLint, GLenum, GLsizei, GLsizei, GLint, GLsizei, const void*);
 	F f = (F)Fn(21, 123, "glCompressedTexImage2D");
 	if (!f)
@@ -227,6 +249,7 @@ void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, G
 
 void glCompressedTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void* data)
 	{
+	PhglTraceCall("glCompressedTexSubImage2D");
 	typedef void (*F)(GLenum, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLsizei, const void*);
 	F f = (F)Fn(22, 124, "glCompressedTexSubImage2D");
 	if (!f)
@@ -236,6 +259,7 @@ void glCompressedTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint 
 
 void glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
 	{
+	PhglTraceCall("glCopyTexImage2D");
 	typedef void (*F)(GLenum, GLint, GLenum, GLint, GLint, GLsizei, GLsizei, GLint);
 	F f = (F)Fn(23, 125, "glCopyTexImage2D");
 	if (!f)
@@ -245,6 +269,7 @@ void glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x
 
 void glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
 	{
+	PhglTraceCall("glCopyTexSubImage2D");
 	typedef void (*F)(GLenum, GLint, GLint, GLint, GLint, GLint, GLsizei, GLsizei);
 	F f = (F)Fn(24, 126, "glCopyTexSubImage2D");
 	if (!f)
@@ -254,6 +279,7 @@ void glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffse
 
 GLuint glCreateProgram(void)
 	{
+	PhglTraceCall("glCreateProgram");
 	typedef GLuint (*F)(void);
 	F f = (F)Fn(25, 127, "glCreateProgram");
 	if (!f)
@@ -263,6 +289,7 @@ GLuint glCreateProgram(void)
 
 GLuint glCreateShader(GLenum type)
 	{
+	PhglTraceCall("glCreateShader");
 	typedef GLuint (*F)(GLenum);
 	F f = (F)Fn(26, 128, "glCreateShader");
 	if (!f)
@@ -272,6 +299,7 @@ GLuint glCreateShader(GLenum type)
 
 void glCullFace(GLenum mode)
 	{
+	PhglTraceCall("glCullFace");
 	typedef void (*F)(GLenum);
 	F f = (F)Fn(27, 129, "glCullFace");
 	if (!f)
@@ -281,6 +309,7 @@ void glCullFace(GLenum mode)
 
 void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 	{
+	PhglTraceCall("glDeleteBuffers");
 	typedef void (*F)(GLsizei, const GLuint*);
 	F f = (F)Fn(28, 130, "glDeleteBuffers");
 	if (!f)
@@ -290,6 +319,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 
 void glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers)
 	{
+	PhglTraceCall("glDeleteFramebuffers");
 	typedef void (*F)(GLsizei, const GLuint*);
 	F f = (F)Fn(29, 131, "glDeleteFramebuffers");
 	if (!f)
@@ -299,6 +329,7 @@ void glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers)
 
 void glDeleteProgram(GLuint program)
 	{
+	PhglTraceCall("glDeleteProgram");
 	typedef void (*F)(GLuint);
 	F f = (F)Fn(30, 132, "glDeleteProgram");
 	if (!f)
@@ -308,6 +339,7 @@ void glDeleteProgram(GLuint program)
 
 void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers)
 	{
+	PhglTraceCall("glDeleteRenderbuffers");
 	typedef void (*F)(GLsizei, const GLuint*);
 	F f = (F)Fn(31, 133, "glDeleteRenderbuffers");
 	if (!f)
@@ -317,6 +349,7 @@ void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers)
 
 void glDeleteShader(GLuint shader)
 	{
+	PhglTraceCall("glDeleteShader");
 	typedef void (*F)(GLuint);
 	F f = (F)Fn(32, 134, "glDeleteShader");
 	if (!f)
@@ -326,6 +359,7 @@ void glDeleteShader(GLuint shader)
 
 void glDeleteTextures(GLsizei n, const GLuint* textures)
 	{
+	PhglTraceCall("glDeleteTextures");
 	typedef void (*F)(GLsizei, const GLuint*);
 	F f = (F)Fn(33, 135, "glDeleteTextures");
 	if (!f)
@@ -335,6 +369,7 @@ void glDeleteTextures(GLsizei n, const GLuint* textures)
 
 void glDepthFunc(GLenum func)
 	{
+	PhglTraceCall("glDepthFunc");
 	typedef void (*F)(GLenum);
 	F f = (F)Fn(34, 136, "glDepthFunc");
 	if (!f)
@@ -344,6 +379,7 @@ void glDepthFunc(GLenum func)
 
 void glDepthMask(GLboolean flag)
 	{
+	PhglTraceCall("glDepthMask");
 	typedef void (*F)(GLboolean);
 	F f = (F)Fn(35, 137, "glDepthMask");
 	if (!f)
@@ -353,6 +389,7 @@ void glDepthMask(GLboolean flag)
 
 void glDepthRangef(GLclampf zNear, GLclampf zFar) __SOFTFP
 	{
+	PhglTraceCall("glDepthRangef");
 	typedef void (*F)(GLclampf, GLclampf) __SOFTFP;
 	F f = (F)Fn(36, 138, "glDepthRangef");
 	if (!f)
@@ -362,6 +399,7 @@ void glDepthRangef(GLclampf zNear, GLclampf zFar) __SOFTFP
 
 void glDetachShader(GLuint program, GLuint shader)
 	{
+	PhglTraceCall("glDetachShader");
 	typedef void (*F)(GLuint, GLuint);
 	F f = (F)Fn(37, 139, "glDetachShader");
 	if (!f)
@@ -371,6 +409,7 @@ void glDetachShader(GLuint program, GLuint shader)
 
 void glDisable(GLenum cap)
 	{
+	PhglTraceCall("glDisable");
 	typedef void (*F)(GLenum);
 	F f = (F)Fn(38, 140, "glDisable");
 	if (!f)
@@ -380,6 +419,7 @@ void glDisable(GLenum cap)
 
 void glDisableVertexAttribArray(GLuint index)
 	{
+	PhglTraceCall("glDisableVertexAttribArray");
 	typedef void (*F)(GLuint);
 	F f = (F)Fn(39, 141, "glDisableVertexAttribArray");
 	if (!f)
@@ -389,6 +429,7 @@ void glDisableVertexAttribArray(GLuint index)
 
 void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	{
+	PhglTraceCall("glDrawArrays");
 	typedef void (*F)(GLenum, GLint, GLsizei);
 	F f = (F)Fn(40, 142, "glDrawArrays");
 	if (!f)
@@ -398,6 +439,7 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 
 void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices)
 	{
+	PhglTraceCall("glDrawElements");
 	typedef void (*F)(GLenum, GLsizei, GLenum, const void*);
 	F f = (F)Fn(41, 143, "glDrawElements");
 	if (!f)
@@ -407,6 +449,7 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices
 
 void glEnable(GLenum cap)
 	{
+	PhglTraceCall("glEnable");
 	typedef void (*F)(GLenum);
 	F f = (F)Fn(42, 144, "glEnable");
 	if (!f)
@@ -416,6 +459,7 @@ void glEnable(GLenum cap)
 
 void glEnableVertexAttribArray(GLuint index)
 	{
+	PhglTraceCall("glEnableVertexAttribArray");
 	typedef void (*F)(GLuint);
 	F f = (F)Fn(43, 145, "glEnableVertexAttribArray");
 	if (!f)
@@ -425,6 +469,7 @@ void glEnableVertexAttribArray(GLuint index)
 
 void glFinish(void)
 	{
+	PhglTraceCall("glFinish");
 	typedef void (*F)(void);
 	F f = (F)Fn(44, 146, "glFinish");
 	if (!f)
@@ -434,6 +479,7 @@ void glFinish(void)
 
 void glFlush(void)
 	{
+	PhglTraceCall("glFlush");
 	typedef void (*F)(void);
 	F f = (F)Fn(45, 147, "glFlush");
 	if (!f)
@@ -443,6 +489,7 @@ void glFlush(void)
 
 void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)
 	{
+	PhglTraceCall("glFramebufferRenderbuffer");
 	typedef void (*F)(GLenum, GLenum, GLenum, GLuint);
 	F f = (F)Fn(46, 148, "glFramebufferRenderbuffer");
 	if (!f)
@@ -452,6 +499,7 @@ void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbu
 
 void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
 	{
+	PhglTraceCall("glFramebufferTexture2D");
 	typedef void (*F)(GLenum, GLenum, GLenum, GLuint, GLint);
 	F f = (F)Fn(47, 149, "glFramebufferTexture2D");
 	if (!f)
@@ -461,6 +509,7 @@ void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, 
 
 void glFrontFace(GLenum mode)
 	{
+	PhglTraceCall("glFrontFace");
 	typedef void (*F)(GLenum);
 	F f = (F)Fn(48, 150, "glFrontFace");
 	if (!f)
@@ -470,6 +519,7 @@ void glFrontFace(GLenum mode)
 
 void glGenBuffers(GLsizei n, GLuint* buffers)
 	{
+	PhglTraceCall("glGenBuffers");
 	typedef void (*F)(GLsizei, GLuint*);
 	F f = (F)Fn(49, 151, "glGenBuffers");
 	if (!f)
@@ -479,6 +529,7 @@ void glGenBuffers(GLsizei n, GLuint* buffers)
 
 void glGenFramebuffers(GLsizei n, GLuint* framebuffers)
 	{
+	PhglTraceCall("glGenFramebuffers");
 	typedef void (*F)(GLsizei, GLuint*);
 	F f = (F)Fn(50, 152, "glGenFramebuffers");
 	if (!f)
@@ -488,6 +539,7 @@ void glGenFramebuffers(GLsizei n, GLuint* framebuffers)
 
 void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers)
 	{
+	PhglTraceCall("glGenRenderbuffers");
 	typedef void (*F)(GLsizei, GLuint*);
 	F f = (F)Fn(51, 153, "glGenRenderbuffers");
 	if (!f)
@@ -497,6 +549,7 @@ void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers)
 
 void glGenTextures(GLsizei n, GLuint* textures)
 	{
+	PhglTraceCall("glGenTextures");
 	typedef void (*F)(GLsizei, GLuint*);
 	F f = (F)Fn(52, 154, "glGenTextures");
 	if (!f)
@@ -506,6 +559,7 @@ void glGenTextures(GLsizei n, GLuint* textures)
 
 void glGenerateMipmap(GLenum target)
 	{
+	PhglTraceCall("glGenerateMipmap");
 	typedef void (*F)(GLenum);
 	F f = (F)Fn(53, 155, "glGenerateMipmap");
 	if (!f)
@@ -515,6 +569,7 @@ void glGenerateMipmap(GLenum target)
 
 void glGetActiveAttrib(GLuint program, GLuint index, GLsizei bufsize, GLsizei* length, GLint* size, GLenum* type, char* name)
 	{
+	PhglTraceCall("glGetActiveAttrib");
 	typedef void (*F)(GLuint, GLuint, GLsizei, GLsizei*, GLint*, GLenum*, char*);
 	F f = (F)Fn(54, 156, "glGetActiveAttrib");
 	if (!f)
@@ -524,6 +579,7 @@ void glGetActiveAttrib(GLuint program, GLuint index, GLsizei bufsize, GLsizei* l
 
 void glGetActiveUniform(GLuint program, GLuint index, GLsizei bufsize, GLsizei* length, GLint* size, GLenum* type, char* name)
 	{
+	PhglTraceCall("glGetActiveUniform");
 	typedef void (*F)(GLuint, GLuint, GLsizei, GLsizei*, GLint*, GLenum*, char*);
 	F f = (F)Fn(55, 157, "glGetActiveUniform");
 	if (!f)
@@ -533,6 +589,7 @@ void glGetActiveUniform(GLuint program, GLuint index, GLsizei bufsize, GLsizei* 
 
 void glGetAttachedShaders(GLuint program, GLsizei maxcount, GLsizei* count, GLuint* shaders)
 	{
+	PhglTraceCall("glGetAttachedShaders");
 	typedef void (*F)(GLuint, GLsizei, GLsizei*, GLuint*);
 	F f = (F)Fn(56, 158, "glGetAttachedShaders");
 	if (!f)
@@ -542,6 +599,7 @@ void glGetAttachedShaders(GLuint program, GLsizei maxcount, GLsizei* count, GLui
 
 int glGetAttribLocation(GLuint program, const char* name)
 	{
+	PhglTraceCall("glGetAttribLocation");
 	typedef int (*F)(GLuint, const char*);
 	F f = (F)Fn(57, 159, "glGetAttribLocation");
 	if (!f)
@@ -551,6 +609,7 @@ int glGetAttribLocation(GLuint program, const char* name)
 
 void glGetBooleanv(GLenum pname, GLboolean* params)
 	{
+	PhglTraceCall("glGetBooleanv");
 	typedef void (*F)(GLenum, GLboolean*);
 	F f = (F)Fn(58, 160, "glGetBooleanv");
 	if (!f)
@@ -560,6 +619,7 @@ void glGetBooleanv(GLenum pname, GLboolean* params)
 
 void glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params)
 	{
+	PhglTraceCall("glGetBufferParameteriv");
 	typedef void (*F)(GLenum, GLenum, GLint*);
 	F f = (F)Fn(59, 161, "glGetBufferParameteriv");
 	if (!f)
@@ -578,6 +638,7 @@ GLenum glGetError(void)
 
 void glGetFloatv(GLenum pname, GLfloat* params)
 	{
+	PhglTraceCall("glGetFloatv");
 	typedef void (*F)(GLenum, GLfloat*);
 	F f = (F)Fn(61, 163, "glGetFloatv");
 	if (!f)
@@ -587,6 +648,7 @@ void glGetFloatv(GLenum pname, GLfloat* params)
 
 void glGetFramebufferAttachmentParameteriv(GLenum target, GLenum attachment, GLenum pname, GLint* params)
 	{
+	PhglTraceCall("glGetFramebufferAttachmentParameteriv");
 	typedef void (*F)(GLenum, GLenum, GLenum, GLint*);
 	F f = (F)Fn(62, 164, "glGetFramebufferAttachmentParameteriv");
 	if (!f)
@@ -596,6 +658,7 @@ void glGetFramebufferAttachmentParameteriv(GLenum target, GLenum attachment, GLe
 
 void glGetIntegerv(GLenum pname, GLint* params)
 	{
+	PhglTraceCall("glGetIntegerv");
 	typedef void (*F)(GLenum, GLint*);
 	F f = (F)Fn(63, 165, "glGetIntegerv");
 	if (!f)
@@ -605,6 +668,7 @@ void glGetIntegerv(GLenum pname, GLint* params)
 
 void glGetProgramInfoLog(GLuint program, GLsizei bufsize, GLsizei* length, char* infolog)
 	{
+	PhglTraceCall("glGetProgramInfoLog");
 	typedef void (*F)(GLuint, GLsizei, GLsizei*, char*);
 	F f = (F)Fn(64, 166, "glGetProgramInfoLog");
 	if (!f)
@@ -614,6 +678,7 @@ void glGetProgramInfoLog(GLuint program, GLsizei bufsize, GLsizei* length, char*
 
 void glGetProgramiv(GLuint program, GLenum pname, GLint* params)
 	{
+	PhglTraceCall("glGetProgramiv");
 	typedef void (*F)(GLuint, GLenum, GLint*);
 	F f = (F)Fn(65, 167, "glGetProgramiv");
 	if (!f)
@@ -623,6 +688,7 @@ void glGetProgramiv(GLuint program, GLenum pname, GLint* params)
 
 void glGetRenderbufferParameteriv(GLenum target, GLenum pname, GLint* params)
 	{
+	PhglTraceCall("glGetRenderbufferParameteriv");
 	typedef void (*F)(GLenum, GLenum, GLint*);
 	F f = (F)Fn(66, 168, "glGetRenderbufferParameteriv");
 	if (!f)
@@ -632,6 +698,7 @@ void glGetRenderbufferParameteriv(GLenum target, GLenum pname, GLint* params)
 
 void glGetShaderInfoLog(GLuint shader, GLsizei bufsize, GLsizei* length, char* infolog)
 	{
+	PhglTraceCall("glGetShaderInfoLog");
 	typedef void (*F)(GLuint, GLsizei, GLsizei*, char*);
 	F f = (F)Fn(67, 169, "glGetShaderInfoLog");
 	if (!f)
@@ -641,6 +708,7 @@ void glGetShaderInfoLog(GLuint shader, GLsizei bufsize, GLsizei* length, char* i
 
 void glGetShaderPrecisionFormat(GLenum shadertype, GLenum precisiontype, GLint* range, GLint* precision)
 	{
+	PhglTraceCall("glGetShaderPrecisionFormat");
 	typedef void (*F)(GLenum, GLenum, GLint*, GLint*);
 	F f = (F)Fn(68, 170, "glGetShaderPrecisionFormat");
 	if (!f)
@@ -650,6 +718,7 @@ void glGetShaderPrecisionFormat(GLenum shadertype, GLenum precisiontype, GLint* 
 
 void glGetShaderSource(GLuint shader, GLsizei bufsize, GLsizei* length, char* source)
 	{
+	PhglTraceCall("glGetShaderSource");
 	typedef void (*F)(GLuint, GLsizei, GLsizei*, char*);
 	F f = (F)Fn(69, 171, "glGetShaderSource");
 	if (!f)
@@ -659,6 +728,7 @@ void glGetShaderSource(GLuint shader, GLsizei bufsize, GLsizei* length, char* so
 
 void glGetShaderiv(GLuint shader, GLenum pname, GLint* params)
 	{
+	PhglTraceCall("glGetShaderiv");
 	typedef void (*F)(GLuint, GLenum, GLint*);
 	F f = (F)Fn(70, 172, "glGetShaderiv");
 	if (!f)
@@ -668,6 +738,7 @@ void glGetShaderiv(GLuint shader, GLenum pname, GLint* params)
 
 const GLubyte* glGetString(GLenum name)
 	{
+	PhglTraceCall("glGetString");
 	typedef const GLubyte* (*F)(GLenum);
 	F f = (F)Fn(71, 173, "glGetString");
 	if (!f)
@@ -677,6 +748,7 @@ const GLubyte* glGetString(GLenum name)
 
 void glGetTexParameterfv(GLenum target, GLenum pname, GLfloat* params)
 	{
+	PhglTraceCall("glGetTexParameterfv");
 	typedef void (*F)(GLenum, GLenum, GLfloat*);
 	F f = (F)Fn(72, 174, "glGetTexParameterfv");
 	if (!f)
@@ -686,6 +758,7 @@ void glGetTexParameterfv(GLenum target, GLenum pname, GLfloat* params)
 
 void glGetTexParameteriv(GLenum target, GLenum pname, GLint* params)
 	{
+	PhglTraceCall("glGetTexParameteriv");
 	typedef void (*F)(GLenum, GLenum, GLint*);
 	F f = (F)Fn(73, 175, "glGetTexParameteriv");
 	if (!f)
@@ -695,6 +768,7 @@ void glGetTexParameteriv(GLenum target, GLenum pname, GLint* params)
 
 int glGetUniformLocation(GLuint program, const char* name)
 	{
+	PhglTraceCall("glGetUniformLocation");
 	typedef int (*F)(GLuint, const char*);
 	F f = (F)Fn(74, 176, "glGetUniformLocation");
 	if (!f)
@@ -704,6 +778,7 @@ int glGetUniformLocation(GLuint program, const char* name)
 
 void glGetUniformfv(GLuint program, GLint location, GLfloat* params)
 	{
+	PhglTraceCall("glGetUniformfv");
 	typedef void (*F)(GLuint, GLint, GLfloat*);
 	F f = (F)Fn(75, 177, "glGetUniformfv");
 	if (!f)
@@ -713,6 +788,7 @@ void glGetUniformfv(GLuint program, GLint location, GLfloat* params)
 
 void glGetUniformiv(GLuint program, GLint location, GLint* params)
 	{
+	PhglTraceCall("glGetUniformiv");
 	typedef void (*F)(GLuint, GLint, GLint*);
 	F f = (F)Fn(76, 178, "glGetUniformiv");
 	if (!f)
@@ -722,6 +798,7 @@ void glGetUniformiv(GLuint program, GLint location, GLint* params)
 
 void glGetVertexAttribPointerv(GLuint index, GLenum pname, void** pointer)
 	{
+	PhglTraceCall("glGetVertexAttribPointerv");
 	typedef void (*F)(GLuint, GLenum, void**);
 	F f = (F)Fn(77, 179, "glGetVertexAttribPointerv");
 	if (!f)
@@ -731,6 +808,7 @@ void glGetVertexAttribPointerv(GLuint index, GLenum pname, void** pointer)
 
 void glGetVertexAttribfv(GLuint index, GLenum pname, GLfloat* params)
 	{
+	PhglTraceCall("glGetVertexAttribfv");
 	typedef void (*F)(GLuint, GLenum, GLfloat*);
 	F f = (F)Fn(78, 180, "glGetVertexAttribfv");
 	if (!f)
@@ -740,6 +818,7 @@ void glGetVertexAttribfv(GLuint index, GLenum pname, GLfloat* params)
 
 void glGetVertexAttribiv(GLuint index, GLenum pname, GLint* params)
 	{
+	PhglTraceCall("glGetVertexAttribiv");
 	typedef void (*F)(GLuint, GLenum, GLint*);
 	F f = (F)Fn(79, 181, "glGetVertexAttribiv");
 	if (!f)
@@ -749,6 +828,7 @@ void glGetVertexAttribiv(GLuint index, GLenum pname, GLint* params)
 
 void glHint(GLenum target, GLenum mode)
 	{
+	PhglTraceCall("glHint");
 	typedef void (*F)(GLenum, GLenum);
 	F f = (F)Fn(80, 182, "glHint");
 	if (!f)
@@ -758,6 +838,7 @@ void glHint(GLenum target, GLenum mode)
 
 GLboolean glIsBuffer(GLuint buffer)
 	{
+	PhglTraceCall("glIsBuffer");
 	typedef GLboolean (*F)(GLuint);
 	F f = (F)Fn(81, 183, "glIsBuffer");
 	if (!f)
@@ -767,6 +848,7 @@ GLboolean glIsBuffer(GLuint buffer)
 
 GLboolean glIsEnabled(GLenum cap)
 	{
+	PhglTraceCall("glIsEnabled");
 	typedef GLboolean (*F)(GLenum);
 	F f = (F)Fn(82, 184, "glIsEnabled");
 	if (!f)
@@ -776,6 +858,7 @@ GLboolean glIsEnabled(GLenum cap)
 
 GLboolean glIsFramebuffer(GLuint framebuffer)
 	{
+	PhglTraceCall("glIsFramebuffer");
 	typedef GLboolean (*F)(GLuint);
 	F f = (F)Fn(83, 185, "glIsFramebuffer");
 	if (!f)
@@ -785,6 +868,7 @@ GLboolean glIsFramebuffer(GLuint framebuffer)
 
 GLboolean glIsProgram(GLuint program)
 	{
+	PhglTraceCall("glIsProgram");
 	typedef GLboolean (*F)(GLuint);
 	F f = (F)Fn(84, 186, "glIsProgram");
 	if (!f)
@@ -794,6 +878,7 @@ GLboolean glIsProgram(GLuint program)
 
 GLboolean glIsRenderbuffer(GLuint renderbuffer)
 	{
+	PhglTraceCall("glIsRenderbuffer");
 	typedef GLboolean (*F)(GLuint);
 	F f = (F)Fn(85, 187, "glIsRenderbuffer");
 	if (!f)
@@ -803,6 +888,7 @@ GLboolean glIsRenderbuffer(GLuint renderbuffer)
 
 GLboolean glIsShader(GLuint shader)
 	{
+	PhglTraceCall("glIsShader");
 	typedef GLboolean (*F)(GLuint);
 	F f = (F)Fn(86, 188, "glIsShader");
 	if (!f)
@@ -812,6 +898,7 @@ GLboolean glIsShader(GLuint shader)
 
 GLboolean glIsTexture(GLuint texture)
 	{
+	PhglTraceCall("glIsTexture");
 	typedef GLboolean (*F)(GLuint);
 	F f = (F)Fn(87, 189, "glIsTexture");
 	if (!f)
@@ -821,6 +908,7 @@ GLboolean glIsTexture(GLuint texture)
 
 void glLineWidth(GLfloat width) __SOFTFP
 	{
+	PhglTraceCall("glLineWidth");
 	typedef void (*F)(GLfloat) __SOFTFP;
 	F f = (F)Fn(88, 190, "glLineWidth");
 	if (!f)
@@ -830,6 +918,7 @@ void glLineWidth(GLfloat width) __SOFTFP
 
 void glLinkProgram(GLuint program)
 	{
+	PhglTraceCall("glLinkProgram");
 	typedef void (*F)(GLuint);
 	F f = (F)Fn(89, 191, "glLinkProgram");
 	if (!f)
@@ -840,6 +929,7 @@ void glLinkProgram(GLuint program)
 
 void glPixelStorei(GLenum pname, GLint param)
 	{
+	PhglTraceCall("glPixelStorei");
 	typedef void (*F)(GLenum, GLint);
 	F f = (F)Fn(90, 192, "glPixelStorei");
 	if (!f)
@@ -849,6 +939,7 @@ void glPixelStorei(GLenum pname, GLint param)
 
 void glPolygonOffset(GLfloat factor, GLfloat units) __SOFTFP
 	{
+	PhglTraceCall("glPolygonOffset");
 	typedef void (*F)(GLfloat, GLfloat) __SOFTFP;
 	F f = (F)Fn(91, 193, "glPolygonOffset");
 	if (!f)
@@ -858,6 +949,7 @@ void glPolygonOffset(GLfloat factor, GLfloat units) __SOFTFP
 
 void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void* pixels)
 	{
+	PhglTraceCall("glReadPixels");
 	typedef void (*F)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*);
 	F f = (F)Fn(92, 194, "glReadPixels");
 	if (!f)
@@ -867,6 +959,7 @@ void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format
 
 void glReleaseShaderCompiler(void)
 	{
+	PhglTraceCall("glReleaseShaderCompiler");
 	typedef void (*F)(void);
 	F f = (F)Fn(93, 195, "glReleaseShaderCompiler");
 	if (!f)
@@ -876,6 +969,7 @@ void glReleaseShaderCompiler(void)
 
 void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height)
 	{
+	PhglTraceCall("glRenderbufferStorage");
 	typedef void (*F)(GLenum, GLenum, GLsizei, GLsizei);
 	F f = (F)Fn(94, 196, "glRenderbufferStorage");
 	if (!f)
@@ -885,6 +979,7 @@ void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, 
 
 void glSampleCoverage(GLclampf value, GLboolean invert) __SOFTFP
 	{
+	PhglTraceCall("glSampleCoverage");
 	typedef void (*F)(GLclampf, GLboolean) __SOFTFP;
 	F f = (F)Fn(95, 197, "glSampleCoverage");
 	if (!f)
@@ -894,6 +989,7 @@ void glSampleCoverage(GLclampf value, GLboolean invert) __SOFTFP
 
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 	{
+	PhglTraceCall("glScissor");
 	static TInt traced;
 	if (traced < 16)
 		{ ++traced; RDebug::Printf("PH: libGLESv2.dll glScissor(%d,%d,%d,%d)", (TInt)x, (TInt)y, (TInt)width, (TInt)height); }
@@ -906,6 +1002,7 @@ void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 
 void glShaderBinary(GLint n, const GLuint* shaders, GLenum binaryformat, const void* binary, GLint length)
 	{
+	PhglTraceCall("glShaderBinary");
 	typedef void (*F)(GLint, const GLuint*, GLenum, const void*, GLint);
 	F f = (F)Fn(97, 199, "glShaderBinary");
 	if (!f)
@@ -915,6 +1012,7 @@ void glShaderBinary(GLint n, const GLuint* shaders, GLenum binaryformat, const v
 
 void glShaderSource(GLuint shader, GLsizei count, const char** string, const GLint* length)
 	{
+	PhglTraceCall("glShaderSource");
 	typedef void (*F)(GLuint, GLsizei, const char**, const GLint*);
 	F f = (F)Fn(98, 200, "glShaderSource");
 	if (!f)
@@ -924,6 +1022,7 @@ void glShaderSource(GLuint shader, GLsizei count, const char** string, const GLi
 
 void glStencilFunc(GLenum func, GLint ref, GLuint mask)
 	{
+	PhglTraceCall("glStencilFunc");
 	typedef void (*F)(GLenum, GLint, GLuint);
 	F f = (F)Fn(99, 201, "glStencilFunc");
 	if (!f)
@@ -933,6 +1032,7 @@ void glStencilFunc(GLenum func, GLint ref, GLuint mask)
 
 void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
 	{
+	PhglTraceCall("glStencilFuncSeparate");
 	typedef void (*F)(GLenum, GLenum, GLint, GLuint);
 	F f = (F)Fn(100, 202, "glStencilFuncSeparate");
 	if (!f)
@@ -942,6 +1042,7 @@ void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
 
 void glStencilMask(GLuint mask)
 	{
+	PhglTraceCall("glStencilMask");
 	typedef void (*F)(GLuint);
 	F f = (F)Fn(101, 203, "glStencilMask");
 	if (!f)
@@ -951,6 +1052,7 @@ void glStencilMask(GLuint mask)
 
 void glStencilMaskSeparate(GLenum face, GLuint mask)
 	{
+	PhglTraceCall("glStencilMaskSeparate");
 	typedef void (*F)(GLenum, GLuint);
 	F f = (F)Fn(102, 204, "glStencilMaskSeparate");
 	if (!f)
@@ -960,6 +1062,7 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 
 void glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
 	{
+	PhglTraceCall("glStencilOp");
 	typedef void (*F)(GLenum, GLenum, GLenum);
 	F f = (F)Fn(103, 205, "glStencilOp");
 	if (!f)
@@ -969,6 +1072,7 @@ void glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
 
 void glStencilOpSeparate(GLenum face, GLenum fail, GLenum zfail, GLenum zpass)
 	{
+	PhglTraceCall("glStencilOpSeparate");
 	typedef void (*F)(GLenum, GLenum, GLenum, GLenum);
 	F f = (F)Fn(104, 206, "glStencilOpSeparate");
 	if (!f)
@@ -978,6 +1082,7 @@ void glStencilOpSeparate(GLenum face, GLenum fail, GLenum zfail, GLenum zpass)
 
 void glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* pixels)
 	{
+	PhglTraceCall("glTexImage2D");
 	typedef void (*F)(GLenum, GLint, GLenum, GLsizei, GLsizei, GLint, GLenum, GLenum, const void*);
 	F f = (F)Fn(105, 207, "glTexImage2D");
 	if (!f)
@@ -987,6 +1092,7 @@ void glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei wid
 
 void glTexParameterf(GLenum target, GLenum pname, GLfloat param) __SOFTFP
 	{
+	PhglTraceCall("glTexParameterf");
 	typedef void (*F)(GLenum, GLenum, GLfloat) __SOFTFP;
 	F f = (F)Fn(106, 208, "glTexParameterf");
 	if (!f)
@@ -996,6 +1102,7 @@ void glTexParameterf(GLenum target, GLenum pname, GLfloat param) __SOFTFP
 
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params)
 	{
+	PhglTraceCall("glTexParameterfv");
 	typedef void (*F)(GLenum, GLenum, const GLfloat*);
 	F f = (F)Fn(107, 209, "glTexParameterfv");
 	if (!f)
@@ -1005,6 +1112,7 @@ void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params)
 
 void glTexParameteri(GLenum target, GLenum pname, GLint param)
 	{
+	PhglTraceCall("glTexParameteri");
 	typedef void (*F)(GLenum, GLenum, GLint);
 	F f = (F)Fn(108, 210, "glTexParameteri");
 	if (!f)
@@ -1014,6 +1122,7 @@ void glTexParameteri(GLenum target, GLenum pname, GLint param)
 
 void glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
 	{
+	PhglTraceCall("glTexParameteriv");
 	typedef void (*F)(GLenum, GLenum, const GLint*);
 	F f = (F)Fn(109, 211, "glTexParameteriv");
 	if (!f)
@@ -1023,6 +1132,7 @@ void glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
 
 void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void* pixels)
 	{
+	PhglTraceCall("glTexSubImage2D");
 	typedef void (*F)(GLenum, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, const void*);
 	F f = (F)Fn(110, 212, "glTexSubImage2D");
 	if (!f)
@@ -1032,6 +1142,7 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 
 void glUniform1f(GLint location, GLfloat x) __SOFTFP
 	{
+	PhglTraceCall("glUniform1f");
 	typedef void (*F)(GLint, GLfloat) __SOFTFP;
 	F f = (F)Fn(111, 213, "glUniform1f");
 	if (!f)
@@ -1041,6 +1152,7 @@ void glUniform1f(GLint location, GLfloat x) __SOFTFP
 
 void glUniform1fv(GLint location, GLsizei count, const GLfloat* v)
 	{
+	PhglTraceCall("glUniform1fv");
 	typedef void (*F)(GLint, GLsizei, const GLfloat*);
 	F f = (F)Fn(112, 214, "glUniform1fv");
 	if (!f)
@@ -1050,6 +1162,7 @@ void glUniform1fv(GLint location, GLsizei count, const GLfloat* v)
 
 void glUniform1i(GLint location, GLint x)
 	{
+	PhglTraceCall("glUniform1i");
 	typedef void (*F)(GLint, GLint);
 	F f = (F)Fn(113, 215, "glUniform1i");
 	if (!f)
@@ -1059,6 +1172,7 @@ void glUniform1i(GLint location, GLint x)
 
 void glUniform1iv(GLint location, GLsizei count, const GLint* v)
 	{
+	PhglTraceCall("glUniform1iv");
 	typedef void (*F)(GLint, GLsizei, const GLint*);
 	F f = (F)Fn(114, 216, "glUniform1iv");
 	if (!f)
@@ -1068,6 +1182,7 @@ void glUniform1iv(GLint location, GLsizei count, const GLint* v)
 
 void glUniform2f(GLint location, GLfloat x, GLfloat y) __SOFTFP
 	{
+	PhglTraceCall("glUniform2f");
 	typedef void (*F)(GLint, GLfloat, GLfloat) __SOFTFP;
 	F f = (F)Fn(115, 217, "glUniform2f");
 	if (!f)
@@ -1077,6 +1192,7 @@ void glUniform2f(GLint location, GLfloat x, GLfloat y) __SOFTFP
 
 void glUniform2fv(GLint location, GLsizei count, const GLfloat* v)
 	{
+	PhglTraceCall("glUniform2fv");
 	typedef void (*F)(GLint, GLsizei, const GLfloat*);
 	F f = (F)Fn(116, 218, "glUniform2fv");
 	if (!f)
@@ -1086,6 +1202,7 @@ void glUniform2fv(GLint location, GLsizei count, const GLfloat* v)
 
 void glUniform2i(GLint location, GLint x, GLint y)
 	{
+	PhglTraceCall("glUniform2i");
 	typedef void (*F)(GLint, GLint, GLint);
 	F f = (F)Fn(117, 219, "glUniform2i");
 	if (!f)
@@ -1095,6 +1212,7 @@ void glUniform2i(GLint location, GLint x, GLint y)
 
 void glUniform2iv(GLint location, GLsizei count, const GLint* v)
 	{
+	PhglTraceCall("glUniform2iv");
 	typedef void (*F)(GLint, GLsizei, const GLint*);
 	F f = (F)Fn(118, 220, "glUniform2iv");
 	if (!f)
@@ -1104,6 +1222,7 @@ void glUniform2iv(GLint location, GLsizei count, const GLint* v)
 
 void glUniform3f(GLint location, GLfloat x, GLfloat y, GLfloat z) __SOFTFP
 	{
+	PhglTraceCall("glUniform3f");
 	typedef void (*F)(GLint, GLfloat, GLfloat, GLfloat) __SOFTFP;
 	F f = (F)Fn(119, 221, "glUniform3f");
 	if (!f)
@@ -1113,6 +1232,7 @@ void glUniform3f(GLint location, GLfloat x, GLfloat y, GLfloat z) __SOFTFP
 
 void glUniform3fv(GLint location, GLsizei count, const GLfloat* v)
 	{
+	PhglTraceCall("glUniform3fv");
 	typedef void (*F)(GLint, GLsizei, const GLfloat*);
 	F f = (F)Fn(120, 222, "glUniform3fv");
 	if (!f)
@@ -1122,6 +1242,7 @@ void glUniform3fv(GLint location, GLsizei count, const GLfloat* v)
 
 void glUniform3i(GLint location, GLint x, GLint y, GLint z)
 	{
+	PhglTraceCall("glUniform3i");
 	typedef void (*F)(GLint, GLint, GLint, GLint);
 	F f = (F)Fn(121, 223, "glUniform3i");
 	if (!f)
@@ -1131,6 +1252,7 @@ void glUniform3i(GLint location, GLint x, GLint y, GLint z)
 
 void glUniform3iv(GLint location, GLsizei count, const GLint* v)
 	{
+	PhglTraceCall("glUniform3iv");
 	typedef void (*F)(GLint, GLsizei, const GLint*);
 	F f = (F)Fn(122, 224, "glUniform3iv");
 	if (!f)
@@ -1140,6 +1262,7 @@ void glUniform3iv(GLint location, GLsizei count, const GLint* v)
 
 void glUniform4f(GLint location, GLfloat x, GLfloat y, GLfloat z, GLfloat w) __SOFTFP
 	{
+	PhglTraceCall("glUniform4f");
 	typedef void (*F)(GLint, GLfloat, GLfloat, GLfloat, GLfloat) __SOFTFP;
 	F f = (F)Fn(123, 225, "glUniform4f");
 	if (!f)
@@ -1149,6 +1272,7 @@ void glUniform4f(GLint location, GLfloat x, GLfloat y, GLfloat z, GLfloat w) __S
 
 void glUniform4fv(GLint location, GLsizei count, const GLfloat* v)
 	{
+	PhglTraceCall("glUniform4fv");
 	typedef void (*F)(GLint, GLsizei, const GLfloat*);
 	F f = (F)Fn(124, 226, "glUniform4fv");
 	if (!f)
@@ -1158,6 +1282,7 @@ void glUniform4fv(GLint location, GLsizei count, const GLfloat* v)
 
 void glUniform4i(GLint location, GLint x, GLint y, GLint z, GLint w)
 	{
+	PhglTraceCall("glUniform4i");
 	typedef void (*F)(GLint, GLint, GLint, GLint, GLint);
 	F f = (F)Fn(125, 227, "glUniform4i");
 	if (!f)
@@ -1167,6 +1292,7 @@ void glUniform4i(GLint location, GLint x, GLint y, GLint z, GLint w)
 
 void glUniform4iv(GLint location, GLsizei count, const GLint* v)
 	{
+	PhglTraceCall("glUniform4iv");
 	typedef void (*F)(GLint, GLsizei, const GLint*);
 	F f = (F)Fn(126, 228, "glUniform4iv");
 	if (!f)
@@ -1176,6 +1302,7 @@ void glUniform4iv(GLint location, GLsizei count, const GLint* v)
 
 void glUniformMatrix2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
 	{
+	PhglTraceCall("glUniformMatrix2fv");
 	typedef void (*F)(GLint, GLsizei, GLboolean, const GLfloat*);
 	F f = (F)Fn(127, 229, "glUniformMatrix2fv");
 	if (!f)
@@ -1185,6 +1312,7 @@ void glUniformMatrix2fv(GLint location, GLsizei count, GLboolean transpose, cons
 
 void glUniformMatrix3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
 	{
+	PhglTraceCall("glUniformMatrix3fv");
 	typedef void (*F)(GLint, GLsizei, GLboolean, const GLfloat*);
 	F f = (F)Fn(128, 230, "glUniformMatrix3fv");
 	if (!f)
@@ -1194,6 +1322,7 @@ void glUniformMatrix3fv(GLint location, GLsizei count, GLboolean transpose, cons
 
 void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
 	{
+	PhglTraceCall("glUniformMatrix4fv");
 	typedef void (*F)(GLint, GLsizei, GLboolean, const GLfloat*);
 	F f = (F)Fn(129, 231, "glUniformMatrix4fv");
 	if (!f)
@@ -1203,6 +1332,7 @@ void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, cons
 
 void glUseProgram(GLuint program)
 	{
+	PhglTraceCall("glUseProgram");
 	typedef void (*F)(GLuint);
 	F f = (F)Fn(130, 232, "glUseProgram");
 	if (!f)
@@ -1212,6 +1342,7 @@ void glUseProgram(GLuint program)
 
 void glValidateProgram(GLuint program)
 	{
+	PhglTraceCall("glValidateProgram");
 	typedef void (*F)(GLuint);
 	F f = (F)Fn(131, 233, "glValidateProgram");
 	if (!f)
@@ -1221,6 +1352,7 @@ void glValidateProgram(GLuint program)
 
 void glVertexAttrib1f(GLuint indx, GLfloat x) __SOFTFP
 	{
+	PhglTraceCall("glVertexAttrib1f");
 	typedef void (*F)(GLuint, GLfloat) __SOFTFP;
 	F f = (F)Fn(132, 234, "glVertexAttrib1f");
 	if (!f)
@@ -1230,6 +1362,7 @@ void glVertexAttrib1f(GLuint indx, GLfloat x) __SOFTFP
 
 void glVertexAttrib1fv(GLuint indx, const GLfloat* values)
 	{
+	PhglTraceCall("glVertexAttrib1fv");
 	typedef void (*F)(GLuint, const GLfloat*);
 	F f = (F)Fn(133, 235, "glVertexAttrib1fv");
 	if (!f)
@@ -1239,6 +1372,7 @@ void glVertexAttrib1fv(GLuint indx, const GLfloat* values)
 
 void glVertexAttrib2f(GLuint indx, GLfloat x, GLfloat y) __SOFTFP
 	{
+	PhglTraceCall("glVertexAttrib2f");
 	typedef void (*F)(GLuint, GLfloat, GLfloat) __SOFTFP;
 	F f = (F)Fn(134, 236, "glVertexAttrib2f");
 	if (!f)
@@ -1248,6 +1382,7 @@ void glVertexAttrib2f(GLuint indx, GLfloat x, GLfloat y) __SOFTFP
 
 void glVertexAttrib2fv(GLuint indx, const GLfloat* values)
 	{
+	PhglTraceCall("glVertexAttrib2fv");
 	typedef void (*F)(GLuint, const GLfloat*);
 	F f = (F)Fn(135, 237, "glVertexAttrib2fv");
 	if (!f)
@@ -1257,6 +1392,7 @@ void glVertexAttrib2fv(GLuint indx, const GLfloat* values)
 
 void glVertexAttrib3f(GLuint indx, GLfloat x, GLfloat y, GLfloat z) __SOFTFP
 	{
+	PhglTraceCall("glVertexAttrib3f");
 	typedef void (*F)(GLuint, GLfloat, GLfloat, GLfloat) __SOFTFP;
 	F f = (F)Fn(136, 238, "glVertexAttrib3f");
 	if (!f)
@@ -1266,6 +1402,7 @@ void glVertexAttrib3f(GLuint indx, GLfloat x, GLfloat y, GLfloat z) __SOFTFP
 
 void glVertexAttrib3fv(GLuint indx, const GLfloat* values)
 	{
+	PhglTraceCall("glVertexAttrib3fv");
 	typedef void (*F)(GLuint, const GLfloat*);
 	F f = (F)Fn(137, 239, "glVertexAttrib3fv");
 	if (!f)
@@ -1275,6 +1412,7 @@ void glVertexAttrib3fv(GLuint indx, const GLfloat* values)
 
 void glVertexAttrib4f(GLuint indx, GLfloat x, GLfloat y, GLfloat z, GLfloat w) __SOFTFP
 	{
+	PhglTraceCall("glVertexAttrib4f");
 	typedef void (*F)(GLuint, GLfloat, GLfloat, GLfloat, GLfloat) __SOFTFP;
 	F f = (F)Fn(138, 240, "glVertexAttrib4f");
 	if (!f)
@@ -1284,6 +1422,7 @@ void glVertexAttrib4f(GLuint indx, GLfloat x, GLfloat y, GLfloat z, GLfloat w) _
 
 void glVertexAttrib4fv(GLuint indx, const GLfloat* values)
 	{
+	PhglTraceCall("glVertexAttrib4fv");
 	typedef void (*F)(GLuint, const GLfloat*);
 	F f = (F)Fn(139, 241, "glVertexAttrib4fv");
 	if (!f)
@@ -1293,6 +1432,7 @@ void glVertexAttrib4fv(GLuint indx, const GLfloat* values)
 
 void glVertexAttribPointer(GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* ptr)
 	{
+	PhglTraceCall("glVertexAttribPointer");
 	typedef void (*F)(GLuint, GLint, GLenum, GLboolean, GLsizei, const void*);
 	F f = (F)Fn(140, 242, "glVertexAttribPointer");
 	if (!f)
@@ -1302,6 +1442,7 @@ void glVertexAttribPointer(GLuint indx, GLint size, GLenum type, GLboolean norma
 
 void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 	{
+	PhglTraceCall("glViewport");
 	static TInt traced;
 	if (traced < 16)
 		{ ++traced; RDebug::Printf("PH: libGLESv2.dll glViewport(%d,%d,%d,%d)", (TInt)x, (TInt)y, (TInt)width, (TInt)height); }

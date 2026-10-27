@@ -99,3 +99,38 @@ void PhglCheckStatus(const char* aWhat, unsigned aObj, unsigned aStatusEnum, con
 			*p = ' ';
 	RDebug::Printf("PH: phgl %s %u FAILED: %s", aWhat, aObj, buf);
 	}
+
+void PhglTraceCall(const char* aName)
+	{
+	static const char* names[192];
+	static TUint8 counts[192];
+	static TInt lines, errors;
+	static TBool inside;
+	if (inside || (lines >= 1500 && errors >= 64))
+		return;
+	inside = ETrue;
+	typedef unsigned (*TGetError)();
+	static TGetError getError;
+	if (!getError)
+		getError = (TGetError)PhglResolve(0, "glGetError");
+	const unsigned err = getError ? getError() : 0;
+	if (err && errors < 64)
+		{
+		++errors;
+		RDebug::Printf("PH: phgl GL error 0x%x pending on entry to %s", err, aName);
+		}
+	TInt i = 0;
+	while (i < 192 && names[i] && names[i] != aName)
+		++i;
+	if (i < 192)
+		{
+		names[i] = aName;
+		if (counts[i] < 3 && lines < 1500)
+			{
+			++counts[i];
+			++lines;
+			RDebug::Printf("PH: phgl call %s #%d", aName, counts[i]);
+			}
+		}
+	inside = EFalse;
+	}
