@@ -601,8 +601,10 @@ void CMmListBoxItemDrawer::DrawBackground( const TRect& aItemTextRect ) const
             }
         if( !bgDrawn )
             {
-            static TInt said;
-            if ( said++ < 30 )
+            // rate limit in the DLL's TLS word (no writable static data in a DLL; mmwidgets uses no TLS)
+            const TInt said = (TInt)Dll::Tls();
+            Dll::SetTls( (TAny*)(said + 1) );
+            if ( said < 30 )
                 RDebug::Printf( "PH: mm: item background not drawn (control %d ctx %d) %d,%d %dx%d", control != NULL,
                     iBgContext != NULL, aItemTextRect.iTl.iX, aItemTextRect.iTl.iY, aItemTextRect.Width(),
                     aItemTextRect.Height() );
