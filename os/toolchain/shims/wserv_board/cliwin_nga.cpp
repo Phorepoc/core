@@ -376,6 +376,18 @@ void CWsClientWindow::GenerateArea(RWsRegion &aArea, TBool aClipTranslucent) con
 					{
 					aArea.SubRegion(*cwin->iBaseArea);
 					}
+				if (aClipTranslucent && !aArea.Count())
+					{
+					static const CWsTopClientWindow* phLast;
+					if (cwin != phLast)
+						{
+						phLast = cwin;
+						const TRect b = cwin->iBaseArea->BoundingRect();
+						RDebug::Printf("PH: toparea of win %x (grp %d) emptied by top win %x grp %d sid %x translucent=%d box %d,%d-%d,%d",
+							(TUint)this, WinGroup()->Identifier(), (TUint)cwin, cwin->WinGroup()->Identifier(),
+							cwin->WsOwner() ? cwin->WsOwner()->SecureId().iId : 0, cwin->IsTranslucent(), b.iTl.iX, b.iTl.iY, b.iBr.iX, b.iBr.iY);
+						}
+					}
 				}
 			}
 		aArea.Tidy();
