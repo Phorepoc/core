@@ -1116,8 +1116,8 @@ COMPONENTS = {
     "alfopenwfrs": dict(mmp=_ALF + "plugins/openwfcrs/group/alfopenwfrs.mmp", alf=1, nga=True, allow_wsd=_ALFTRACE,
                         # as wsstdplugin_nga: elementwrapper.cpp checks a rotated (landscape) DSA viewport only with this, else KErrArgument -> WSERV 76
                         defs=["SYMBIAN_ROTATION_MODE_CHANGES"], libs=["alfdecoderserverclient.lib"],
-                        drop=["openwfcwrapper.cpp"] + (["displayrenderstage.cpp", "displayrenderstagefactory.cpp"] if _ALFTRACE else []),
-                        extra=["toolchain/shims/alfopenwfrs_board/openwfcwrapper.cpp"] + (
+                        drop=["openwfcwrapper.cpp", "elementwrapper.cpp"] + (["displayrenderstage.cpp", "displayrenderstagefactory.cpp"] if _ALFTRACE else []),
+                        extra=["toolchain/shims/alfopenwfrs_board/openwfcwrapper.cpp", "toolchain/shims/alfopenwfrs_board/elementwrapper.cpp"] + (
                             ["toolchain/shims/alf_fix/gen/displayrenderstage_ph.cpp", "toolchain/shims/alf_fix/displayrenderstagefactory_ph.cpp"] if _ALFTRACE else [])),
     # goommonitor, the window-transition effects)
     "alfhintplugin": dict(mmp=_ALF + "AlfHintPlugin/group/AlfHintPlugin.mmp", alf=3),
