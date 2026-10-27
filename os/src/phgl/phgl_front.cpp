@@ -137,15 +137,15 @@ void PhglTraceCall(const char* aName)
 
 void PhglTraceArgs(const char* aName, unsigned aA, unsigned aB, int aC, int aD)
 	{
-	static const char* names[8];
-	static TInt counts[8];
+	static const char* names[32];
+	static TInt counts[32];
 	typedef unsigned (*TGetError)();
 	static TGetError getError;
 	if (!getError)
 		getError = (TGetError)PhglResolve(0, "glGetError");
 	const unsigned err = getError ? getError() : 0;
 	TInt i = 0;
-	while (i < 7 && names[i] && names[i] != aName)
+	while (i < 31 && names[i] && names[i] != aName)
 		++i;
 	names[i] = aName;
 	if (counts[i] < 60)
