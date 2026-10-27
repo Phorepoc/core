@@ -1233,7 +1233,6 @@ WFC_Context_PhGpuCompose(WFC_CONTEXT* context)
         ga = (e->transparencyTypes & WFC_TRANSPARENCY_ELEMENT_GLOBAL_ALPHA) != 0;
         if (ga && e->globalAlpha == OWF_FULLY_TRANSPARENT)
             continue;
-        owfSymElementNotifications(context, e);
         src = e->source->lockedStream.image;
         PhGpu_Element(e->source->streamHandle, e->source->lockedStream.buffer, src->data, src->width, src->height,
                       src->stride, src->format.pixelFormat, src->format.premultiplied, e->srcRect, e->dstRect,
@@ -1242,6 +1241,17 @@ WFC_Context_PhGpuCompose(WFC_CONTEXT* context)
                       (e->transparencyTypes & WFC_TRANSPARENCY_SOURCE) != 0, ga ? e->globalAlpha : 1.0f);
     }
     PhGpu_End();
+    /* the notifications only once the GPU has sampled the sources: "composed" lets a client draw into a
+       single-buffered surface again, and a GPU job still queued would read its half-drawn next frame */
+    for (node = scene->elements; NULL != node; node = node->next)
+    {
+        WFC_ELEMENT* e = ELEMENT(node->data);
+        if (e->skipCompose || !WFC_Context_PhVisible(context, e))
+            continue;
+        if ((e->transparencyTypes & WFC_TRANSPARENCY_ELEMENT_GLOBAL_ALPHA) && e->globalAlpha == OWF_FULLY_TRANSPARENT)
+            continue;
+        owfSymElementNotifications(context, e);
+    }
     WFC_Context_UnlockTarget(context, (context->type == WFC_CONTEXT_TYPE_ON_SCREEN) ? OWF_TRUE : OWF_FALSE);
     return OWF_TRUE;
 }
