@@ -632,6 +632,8 @@ void glGetBooleanv(GLenum pname, GLboolean* params)
 	if (!f)
 		return;
 	f(pname, params);
+	if (params)
+		PhglTraceArgs("glGetBooleanv", pname, 0, params[0], 0);
 	}
 
 void glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params)
@@ -661,6 +663,8 @@ void glGetFloatv(GLenum pname, GLfloat* params)
 	if (!f)
 		return;
 	f(pname, params);
+	if (params)
+		PhglTraceArgs("glGetFloatv", pname, 0, (int)(params[0] * 1000), (int)(params[1] * 1000));
 	}
 
 void glGetFramebufferAttachmentParameteriv(GLenum target, GLenum attachment, GLenum pname, GLint* params)
@@ -681,6 +685,8 @@ void glGetIntegerv(GLenum pname, GLint* params)
 	if (!f)
 		return;
 	f(pname, params);
+	if (params)
+		PhglTraceArgs("glGetIntegerv", pname, 0, params[0], 0);
 	}
 
 void glGetProgramInfoLog(GLuint program, GLsizei bufsize, GLsizei* length, char* infolog)
