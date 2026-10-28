@@ -425,7 +425,7 @@ COMPONENTS = {
     # an ODE world; + the classic C library it is written against
     "estlib": dict(mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cstdlib/BMMP/ESTLIB.MMP", cdriver=True,
                    flags=["-fno-tree-loop-distribute-patterns", "-fno-builtin"],       # see libc
-                   x32_drop=["jmp_marm.cia"], x32_extra=["tools/phorepoc-x86/port/x64user/xu_setjmp.cpp"]),
+                   x32_drop=["jmp_marm.cia"], x32_extra=["toolchain/x32/x64user/xu_setjmp.cpp"]),
     # P.I.P.S. / Open C (openenvcore): the REAL libc family -- matrixmenu's libxml2 and all of
     # Track S4 (Qt) sit on it. EPOCALLOWDLLDATA throughout (ROM-DLL WSD). ewsd is emulator-only.
     # __SOFTFP: on ARM the compiler prefix (gcce.h) supplies it, not the stdapis headers
@@ -464,8 +464,8 @@ COMPONENTS = {
                  # setenv() dies EUSRNIMP: toolchain/shims/libc_findenv/getenv.c compiles it with `inline` defined away
                  drop=["getenv.c"], extra=["toolchain/shims/libc_findenv/getenv.c"],
                  x32_drop=["jmp_marm.cia", "vfscanf.c", "getenv.c"],
-                 x32_extra=["tools/phorepoc-x86/port/x64user/xu_setjmp.cpp",
-                            "tools/phorepoc-x86/port/x64user/libc_vfscanf_x32.c",
+                 x32_extra=["toolchain/x32/x64user/xu_setjmp.cpp",
+                            "toolchain/x32/x64user/libc_vfscanf_x32.c",
                             "toolchain/shims/libc_findenv/getenv.c"]),
     # the comms/time client DLLs backend + libc import (thin RSessionBase clients: their servers
     # are absent, so Connect() fails cleanly instead of hitting a loud unimpl stub)
