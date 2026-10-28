@@ -361,6 +361,45 @@ static bool PhRiScaledDraw(VGContext* c, Surface* s, Image* img, RIfloat a, RIfl
 	bnd.intersect(dr);
 	if (bnd.width <= 0 || bnd.height <= 0)
 		return true;
+	if (PhvgSurfaceGpu(s))
+		{
+		int rects[64][4];
+		const int nr = PhBandRects(clips, nclip, bnd, rects, 64);
+		if (nr == 0)
+			return true;
+		if (nr > 0)
+			{
+			float mul[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			if (multiply)
+				{
+				Color pc = paint->m_paintColor;
+				pc.clamp();
+				pc.convert(Color::sRGBA_PRE);
+				mul[0] = pc.r; mul[1] = pc.g; mul[2] = pc.b; mul[3] = pc.a;
+				}
+			const float M[6] = { a, 0.0f, tx, 0.0f, dd, ty };
+			const TUint hash = PhImageHash(img, w, h);
+			const int blendSrc = c->m_blendMode == VG_BLEND_SRC;
+			int r = PhvgDrawImage(s, img, w, h, hash, M, blendSrc, mul, &rects[0][0], nr, NULL);
+			if (r == -2)
+				{
+				TUint8* buf = (TUint8*)User::Alloc(w * h * 4);
+				r = 0;
+				if (buf)
+					{
+					PhImageToRgba(img, buf);
+					r = PhvgDrawImage(s, img, w, h, hash, M, blendSrc, mul, &rects[0][0], nr, buf);
+					User::Free(buf);
+					}
+				}
+			if (r == 1)
+				{
+				++gGpuImg;
+				return true;
+				}
+			}
+		++gGpuImgDecl;
+		}
 	PhvgCpuAccess(s, true);
 	TUint mr = 255, mg = 255, mb = 255, ma = 255;
 	if (multiply)
@@ -486,6 +525,12 @@ static bool PhRiFastDrawImageImpl(VGContext* c, Image* img, const Matrix3x3& m)
 	const TInt itx = PhRound(tx), ity = PhRound(ty);
 	if (PhAbs(tx - (RIfloat)itx) > 1e-3f || PhAbs(ty - (RIfloat)ity) > 1e-3f)
 		{
+		// a fractional position (an effect's last frames): the bilinear path samples it like the reference pipe
+		if (a > 0 && dd > 0 && PhRiScaledDraw(c, s, img, a, dd, tx, ty, multiply, paint))
+			{
+			++taken;
+			return true;
+			}
 		PhDeny(4);
 		++denied;
 		return false;
@@ -822,9 +867,14 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 		{
 		n++;
 		const Color::Descriptor& sd = img->m_desc;
-		RDebug::Printf("PH: alf: RI slow vgDrawImage %dx%d m %d %d %d / %d %d %d (x1000) persp %d, src fmt %x bpp %d a %d pre %d, mode %x blend %x mask %d ctf %d q %x",
-			img->m_width, img->m_height, (int)(m[0].x * 1000), (int)(m[0].y * 1000), (int)m[0].z, (int)(m[1].x * 1000), (int)(m[1].y * 1000), (int)m[1].z, (int)!m.isAffine(),
-			(unsigned)sd.internalFormat, sd.bitsPerPixel, sd.alphaBits, (int)sd.isPremultiplied(), (unsigned)c->m_imageMode, (unsigned)c->m_blendMode, (int)c->m_masking, (int)c->m_colorTransform, (unsigned)c->m_imageQuality);
+		Drawable* d = c->getCurrentDrawable();
+		Surface* s = d ? d->getColorBuffer() : NULL;
+		const Image* di = s ? s->m_image : NULL;
+		RDebug::Printf("PH: alf: RI slow vgDrawImage %dx%d m %d %d %d / %d %d %d (x1000000) persp %d, src fmt %x bpp %d a %d pre %d nl %d, dst fmt %x bpp %d a %d pre %d nl %d samples %d, mode %x blend %x mask %d ctf %d",
+			img->m_width, img->m_height, (int)(m[0].x * 1000000), (int)(m[0].y * 1000000), (int)(m[0].z * 1000), (int)(m[1].x * 1000000), (int)(m[1].y * 1000000), (int)(m[1].z * 1000), (int)!m.isAffine(),
+			(unsigned)sd.internalFormat, sd.bitsPerPixel, sd.alphaBits, (int)sd.isPremultiplied(), (int)sd.isNonlinear(),
+			di ? (unsigned)di->m_desc.internalFormat : 0, di ? di->m_desc.bitsPerPixel : 0, di ? di->m_desc.alphaBits : 0, di ? (int)di->m_desc.isPremultiplied() : 0, di ? (int)di->m_desc.isNonlinear() : 0,
+			s ? s->getNumSamples() : 0, (unsigned)c->m_imageMode, (unsigned)c->m_blendMode, (int)c->m_masking, (int)c->m_colorTransform);
 		}
 	return false;
 	}
