@@ -73,9 +73,9 @@ _ALFRC = os.environ.get("ALF_RC", "c")
 # at the alf server start, the alfredserver thread and the compositor stage construction. WSD: the per-site counters.
 _ALFTRACE = os.environ.get("ALF_TRACE") != "0"
 _AG = "toolchain/shims/alf_fix/gen/"
+_ALFT_FLAGS = ["-include", os.path.join(OS_ROOT, "toolchain/shims/alf_fix/ph_alflog.h")] if _ALFTRACE else []
 # the transition-effect chain with its __ALFFXLOGSTRING lines as "PH: alf:" (ALF_TRACE)
 _ALFFX = dict(flags=_ALFT_FLAGS, defs=["PH_ALFFXLOG"], allow_wsd=True) if _ALFTRACE else {}
-_ALFT_FLAGS = ["-include", os.path.join(OS_ROOT, "toolchain/shims/alf_fix/ph_alflog.h")] if _ALFTRACE else []
 # (audio U5) the messaging ringing-tone BIO control's Smart Messaging parser, compiled into the tone HW device
 _RINGBC = "baseline/symbian-2010/oss.FCL.sf.app.messaging/messagingappbase/smartmessaging/ringbc"
 # Q0 (ON by default): the userland mixer. mdasoundadapter is compiled with ph_mixsc.h force-included (RSoundSc ->
