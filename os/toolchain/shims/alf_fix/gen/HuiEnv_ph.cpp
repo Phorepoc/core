@@ -910,6 +910,8 @@ void CHuiEnv::AdvanceTime(TReal32 aElapsedTime)
         // Notify the effects engine to update animated effects
         if (iEffectsEngine)
             {
+            if (iEffectsEngine->HasActiveEffects())
+                RDebug::Printf("PH: alf: fx frame [%u ms] dt %d ms", User::NTickCount(), (TInt)(aElapsedTime * 1000));
             iEffectsEngine->AdvanceTime(aElapsedTime);
 
             // Notify the effects end observers
