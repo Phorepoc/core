@@ -759,8 +759,6 @@ void CWsClientWindow::CommandL(TInt aOpcode, const TAny *aCmdData)
 	{
 	if (aOpcode==EWsWinOpSetBackgroundColor || aOpcode==EWsWinOpSetNoBackgroundColor || aOpcode==EWsWinOpSetTransparencyAlphaChannel || aOpcode==EWsWinOpSetTransparentRegion || aOpcode==EWsWinOpSetTransparencyPolicy || aOpcode==EWsWinOpSetBackgroundSurface || aOpcode==EWsWinOpSetSurfaceTransparency || aOpcode==EWsWinOpSetOrdinalPosition)
 		RDebug::Printf("PH: winop %d on window %d,%d-%d,%d (bg=%d noBg=%d alphaCh=%d transReg=%d transPol=%d surf=%d surfTr=%d)", aOpcode, AbsRect().iTl.iX, AbsRect().iTl.iY, AbsRect().iBr.iX, AbsRect().iBr.iY, (TInt)EWsWinOpSetBackgroundColor, (TInt)EWsWinOpSetNoBackgroundColor, (TInt)EWsWinOpSetTransparencyAlphaChannel, (TInt)EWsWinOpSetTransparentRegion, (TInt)EWsWinOpSetTransparencyPolicy, (TInt)EWsWinOpSetBackgroundSurface, (TInt)EWsWinOpSetSurfaceTransparency);
-	if (aOpcode==EWsWinOpSetBackgroundColor)
-		RDebug::Printf("PH: winop bg colour %08x", static_cast<const TRgb*>(aCmdData)->Internal());
 #ifdef _DEBUG
 	// Save root window for performing CheckTree at the end of this func.
 	// When aOpcode is EWsWinOpFree, this object would've been destroyed
