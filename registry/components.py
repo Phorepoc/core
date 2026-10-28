@@ -835,7 +835,10 @@ COMPONENTS = {
     # NOT built: satserver (a shell over satengine.dll = the SIM toolkit, needs the modem stack), dmutilserver (the SyncML
     # DM stack), epos_omasupllistener (the SUPL stack), iaupdatebg (the IAD client), lbtserver (location triggering),
     "schexe": dict(mmp="oss.FCL.sf.os.ossrv/genericservices/taskscheduler/group/SCHEXE.MMP"),
+    # screensaverappui.cpp = OURS fix (toolchain/shims/screensaver_fix): a tap does not end the screensaver while the
+    # keys are locked (it lit the screen of the locked phone)
     "screensaver": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.screensaver/group/screensaver.mmp",
+                        drop=["screensaverappui.cpp"], extra=["toolchain/shims/screensaver_fix/screensaverappui.cpp"],
                         flags=["-I" + os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.adapt.stubs/power_save_display_mode_stub/inc")]),
     "keylockpolicyapi": dict(mmp="oss.FCL.sf.mw.securitysrv/securitydialogs/keylockpolicyapi/group/keylockpolicyapi.mmp"),
     "mediatorclient": dict(mmp="oss.FCL.sf.os.devicesrv/mediator/group/MediatorClient.mmp"),

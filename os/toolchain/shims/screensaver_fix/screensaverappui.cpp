@@ -1,0 +1,262 @@
+/*
+* Copyright (c) 2004 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of the Eclipse Public License v2.0, available at
+* https://www.eclipse.org/legal/epl-2.0/ (relicensed from v1.0 under
+* section 7 of the Eclipse Public License v1.0).
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* or later.
+*
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
+*
+* Contributors:
+* The Phorepoc Authors
+*
+* Description:   The AppUi file for screensaver application.
+*
+*/
+
+
+
+#include <eikenv.h>
+#include <apgwgnam.h>
+#include <aknkeylock.h>
+
+#include "screensavershareddatai.h"
+#include "screensaverappui.h"
+#include "screensaverengine.h"
+
+const TUid KAutolockUid = { 0x100059B5 };
+const TInt KGripCloseScanCode = EStdKeyDevice5;
+
+//
+// CScreensaverAppUi
+//
+// -----------------------------------------------------------------------------
+// CScreensaverAppUi::ConstructL
+// -----------------------------------------------------------------------------
+//
+void CScreensaverAppUi::ConstructL()
+    {
+    SCRLOGGER_WRITEF(_L("SCR:CScreensaverAppUi::ConstructL start") );
+    SCRLOGGER_CREATE;
+
+    // Choose orientation based on screensaverconfig
+#if defined(SS_ALWAYSPORTRAIT)
+    BaseConstructL(EAppOrientationPortrait);
+
+#elif defined(SS_ALWAYSLANDSCAPE)
+    BaseConstructL(EAppOrientationLandscape);
+
+#else
+
+    // Not specified - follows device setting
+    BaseConstructL();
+#endif
+
+    SetKeyEventFlags( CAknAppUiBase::EDisableSendKeyShort | CAknAppUiBase::EDisableSendKeyLong );
+    
+    iModel = CScreensaverEngine::NewL();
+
+    CreateViewL();
+    
+    iEikonEnv->SetSystem( ETrue );
+    HideApplicationFromFSW();
+    }
+
+// -----------------------------------------------------------------------------
+// CScreensaverAppUi::~CScreensaverAppUi
+// -----------------------------------------------------------------------------
+//
+CScreensaverAppUi::~CScreensaverAppUi()
+    {
+
+    delete iModel;
+    iModel = NULL;
+
+    SCRLOGGER_DELETE;
+    }
+
+// -----------------------------------------------------------------------------
+// CScreensaverAppUi::Model
+// -----------------------------------------------------------------------------
+//
+CScreensaverEngine& CScreensaverAppUi::Model() const
+    {
+    return *iModel;
+    }
+
+// -----------------------------------------------------------------------------
+// CScreensaverAppUi::HandleCommandL
+// -----------------------------------------------------------------------------
+// 
+void CScreensaverAppUi::HandleCommandL( TInt aCommand )
+    {
+    switch ( aCommand )
+        {
+        case EEikCmdExit:
+            Exit();
+            break;
+        default:
+            break;
+        }
+    }
+
+// -----------------------------------------------------------------------------
+// CScreensaverAppUi::GetView
+// -----------------------------------------------------------------------------
+//
+CScreensaverView* CScreensaverAppUi::ScreensaverView()
+    {
+    return iView;
+    }
+
+// -----------------------------------------------------------------------------
+// CScreensaverAppUi::CreateViewL
+// -----------------------------------------------------------------------------
+//
+void CScreensaverAppUi::CreateViewL()
+    {
+    SCRLOGGER_WRITEF(_L("SCR:CScreensaverAppUi::CreateViewL start") );
+    iView = CScreensaverView::NewL();
+
+    AddViewL( iView ); // transfer ownership to CAknViewAppUi
+
+    SetDefaultViewL( *iView );
+    }
+
+// -----------------------------------------------------------------------------
+// CScreensaverAppUi::HandleKeyEventL
+// -----------------------------------------------------------------------------
+//
+TKeyResponse CScreensaverAppUi::HandleKeyEventL( const TKeyEvent& aKeyEvent,
+    TEventCode aType )
+    {
+    SCRLOGGER_WRITEF(_L("SCR:CScreensaverAppUi::HandleKeyEventL start") );
+    // Stop on keyup instead of keydown, otherwise the underlying
+    // app might get orphaned key up events and soil its pants. EXCEPT
+    // in preview mode stop on keydown, because the keup from starting
+    // the preview might be received here, and preview stopped before
+    // it even properly started
+    TBool stop = EFalse;
+    if ( !iView )
+        {
+        return EKeyWasConsumed;
+        }
+    
+    if ( aType == EEventKeyUp )
+        {
+        // ignore cover closed key events
+        if (aKeyEvent.iScanCode != KGripCloseScanCode
+        && iModel->SharedDataInterface()->IsCoverOpen() )
+            {
+            RAknKeylock2 keylock;
+            TInt error( keylock.Connect() );
+            if ( error )
+                {
+                return EKeyWasConsumed;
+                }
+            
+            // if device lock is ON, unlock it
+            if( iModel->SharedDataInterface()->IsAutoLockOpen() )
+                {
+                TApaTaskList tasklist( iCoeEnv->WsSession() );
+                TApaTask autolockTask( tasklist.FindApp( KAutolockUid ) );
+                if ( autolockTask.Exists() )
+                    {
+                    keylock.DisableWithoutNote();//Unlocks the keys of the device
+                    // Send key event to autolock app to start device lock query.
+                    TKeyEvent keyEvent;
+                    keyEvent.iCode = EKeyBell;
+                    autolockTask.SendKey( keyEvent );
+                    }
+                }
+            
+            if( iModel->SharedDataInterface()->IsKeyguardOn() )
+                {
+                keylock.DisableWithoutNote();//Unlocks the keys of the device
+                }
+                
+        keylock.Close();
+        stop = ETrue;
+            }
+
+        }
+    else
+        {
+        if ( iModel->ScreenSaverIsPreviewing() )
+            {
+            if ( aType == EEventKeyDown )
+                {
+                stop = ETrue;
+                }
+            }
+        else
+            {
+            if ( aType == EEventKeyUp && 
+                 !iModel->SharedDataInterface()->IsKeyguardOn() )
+                {
+                stop = ETrue;
+                }
+            }
+        }
+
+    if ( stop )
+        {
+        iModel->StopScreenSaver();
+        }
+
+    return EKeyWasConsumed;
+    }
+
+// -----------------------------------------------------------------------------
+// CScreensaverAppUi::HandleScreenDeviceChangedL
+// Stops screensaver as soon as screen device changes. Resourcechange
+// about e.g. resulting layout change comes annoyingly late
+// -----------------------------------------------------------------------------
+//
+void CScreensaverAppUi::HandleScreenDeviceChangedL()
+    {
+#if defined(SS_FASTSTOPONSCREENDEVICECHANGE)
+    // Slightly faster stop when screendevice changes. Instead of
+    // letting the created user activity stop, do it here.
+    // NOTE that if forced orientation is not used and there is an
+    // application that changes screen orientation for itself (e.g.
+    // viewfinder), screensaver will die here when activated if fast
+    // stop is used.
+#if !defined(SS_ALWAYSPORTRAIT) && !defined(SS_ALWAYSLANDSCAPE)
+    // Do not stop, if forced orientation is used! 
+    // Screensaver may cause a screen device change when activated,
+    // and will promptly commit suicide here
+    iModel->StopScreenSaver();
+#endif
+#endif
+
+    CAknViewAppUi::HandleScreenDeviceChangedL();
+    }
+
+// -----------------------------------------------------------------------------
+// CScreensaverAppUi::HandleWsEventL
+// -----------------------------------------------------------------------------
+//
+void CScreensaverAppUi::HandleWsEventL( const TWsEvent& aEvent,
+    CCoeControl* aDestination )
+    {
+    SCRLOGGER_WRITEF(_L("SCR:CScreensaverAppUi::HandleWsEventL start") );
+    // First, let parent class handle the event
+    CAknViewAppUi::HandleWsEventL( aEvent, aDestination );
+
+    // In case of a pointer event, also stop screensaver
+    // Phorepoc: not while the keys are locked -- as a key (OfferKeyEventL) and user activity (the engine's
+    // HandleActiveEventL) do not: a tap on the locked phone lit the screen, which only the power key / unlock should
+    if ( aEvent.Type() == EEventPointer && !iModel->SharedDataInterface()->IsKeyguardOn() )
+        {
+        iModel->StopScreenSaver();
+        }
+    }
+
+//End of file
