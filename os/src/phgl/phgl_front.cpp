@@ -17,6 +17,22 @@ namespace
 	RLibrary gLib;
 	volatile TInt gState;		// 0 = not tried, 1 = loading, 2 = loaded, 3 = failed
 
+	// load aName into a handle every thread of the process may use: RLibrary::Load gives the LOADING thread's handle, and
+	// another thread's Lookup through it is KERN-EXEC 0 (Alfred's GPU mode resolves GL from a second thread)
+	TInt LoadProcessOwned(RLibrary& aLib, const TDesC& aName)
+		{
+		RLibrary lib;
+		const TInt r = lib.Load(aName);
+		if (r != KErrNone)
+			return r;
+		aLib = lib;
+		if (aLib.Duplicate(RThread(), EOwnerProcess) == KErrNone)
+			lib.Close();				// (the process-owned duplicate keeps the library loaded)
+		else
+			aLib = lib;					// (no duplicate: the loading thread's handle, as before)
+		return KErrNone;
+		}
+
 	TBool Load(TInt aOrdinal, const char* aName)
 		{
 		TUint32 expect = 0;
@@ -26,8 +42,8 @@ namespace
 				User::After(1000);		// another thread is loading
 			return gState == 2;
 			}
-		// the handle stays with the loading thread (the process's main / GL thread) for the life of the process
-		const TInt r = gLib.Load(KPhgl);
+		// a process-owned handle, kept for the life of the process
+		const TInt r = LoadProcessOwned(gLib, KPhgl);
 		if (r != KErrNone)
 			RDebug::Printf("[phgl] phgl.dll not loaded (r=%d): no OpenGL ES / EGL in this process", r);
 		else
@@ -62,7 +78,7 @@ TLibraryFunction PhglResolveEgl(TInt aOrdinal, const char* aName)
 	if (__e32_atomic_cas_ord32(&state, &expect, 1))
 		{
 		_LIT(KEgl, "libEGL.dll");
-		const TInt r = egl.Load(KEgl);
+		const TInt r = LoadProcessOwned(egl, KEgl);
 		if (r != KErrNone)
 			RDebug::Printf("[phgl] libEGL.dll not loaded (r=%d) for '%s'", r, aName ? aName : "");
 		__e32_atomic_store_ord32((TUint32*)&state, r == KErrNone ? 2 : 3);
