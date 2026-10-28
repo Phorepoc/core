@@ -49,14 +49,24 @@ inline void PhAlfLog(const char* aFmt, ...)
 
 // PH_ALFFXLOG (opt-in per component): the transition-effect chain's __ALFFXLOGSTRING* lines too
 #ifdef PH_ALFFXLOG
+// unthrottled: effect lines come per transition, not per frame (the per-site throttle hid the folder switch's)
+inline void PhAlfFxLog(const char* aFmt, ...)
+	{
+	TBuf8<200> b;
+	VA_LIST l;
+	VA_START(l, aFmt);
+	b.AppendFormatList(TPtrC8((const TUint8*)aFmt), l);
+	VA_END(l);
+	RDebug::Printf("PH: alf: %s", (const char*)b.PtrZ());
+	}
 #undef __ALFFXLOGSTRING
 #undef __ALFFXLOGSTRING1
 #undef __ALFFXLOGSTRING2
 #undef __ALFFXLOGSTRING3
 #undef __ALFFXLOGSTRING4
-#define __ALFFXLOGSTRING(C) PhAlfLog(C);
-#define __ALFFXLOGSTRING1(C, X) PhAlfLog(C, X);
-#define __ALFFXLOGSTRING2(C, X, Y) PhAlfLog(C, X, Y);
-#define __ALFFXLOGSTRING3(C, X, Y, Z) PhAlfLog(C, X, Y, Z);
-#define __ALFFXLOGSTRING4(C, X, Y, Z, W) PhAlfLog(C, X, Y, Z, W);
+#define __ALFFXLOGSTRING(C) PhAlfFxLog(C);
+#define __ALFFXLOGSTRING1(C, X) PhAlfFxLog(C, X);
+#define __ALFFXLOGSTRING2(C, X, Y) PhAlfFxLog(C, X, Y);
+#define __ALFFXLOGSTRING3(C, X, Y, Z) PhAlfFxLog(C, X, Y, Z);
+#define __ALFFXLOGSTRING4(C, X, Y, Z, W) PhAlfFxLog(C, X, Y, Z, W);
 #endif
