@@ -292,7 +292,7 @@ for _k, _c in COMPONENTS.items():
         _c["rsc_incs"] = list(_c.get("rsc_incs", [])) + ["baseline/symbian-rcl3/oss.FCL.sf.app.photos/photosgallery/gallery/loc"]
 
 # Photos is an Alf app: ARM only (x86 has the null Alf client), with its Alf widget stack (mmuifw).
-# Nothing outside Photos imports these (checked against the 701's sys\bin).
+# Nothing outside Photos imports these (checked against a shipping phone's sys\bin).
 for _k, _c in COMPONENTS.items():
     if ("oss.FCL.sf.app.photos/" in _c.get("mmp", "") or "oss.FCL.sf.mw.mmuifw/" in _c.get("mmp", "")):
         _c["arm_only"] = True
