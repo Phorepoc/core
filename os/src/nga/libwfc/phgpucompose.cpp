@@ -355,6 +355,8 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 	gComp++;
 	gFailed = EFalse;
 	gT0 = User::FastCounter();
+	if (gComp <= 3 || gComp % 300 == 0)
+		RDebug::Printf("PH: wfc gpu: comp %u target %dx%d stride %d fmt %x pixels %08x internal %dx%d rot %d", gComp, aW, aH, aStride, aFormat, (TUint)aPixels, aIw, aIh, aRot);
 	if (!MemFormat(aFormat) || (aStride & 7) || ((TUint)aPixels & 0xFFF))
 		return 0;
 	TEntry* t = Lookup(aStream, aBuffer, aPixels, aW, aH, aStride, aFormat, 1);
@@ -402,6 +404,10 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 		return 0;
 		}
 	gElems++;
+	if (gComp <= 3 || gComp % 300 == 0)
+		RDebug::Printf("PH: wfc gpu: comp %u element %ux%u stride %d fmt %x pixels %08x src %d,%d %dx%d dst %d,%d %dx%d flip %d rot %d srcA %d ga %d",
+			gComp, aW, aH, aStride, aFormat, (TUint)aPixels, (TInt)aSrcRect[0], (TInt)aSrcRect[1], (TInt)aSrcRect[2], (TInt)aSrcRect[3],
+			(TInt)aDstRect[0], (TInt)aDstRect[1], (TInt)aDstRect[2], (TInt)aDstRect[3], aFlip, aRot, aSourceAlpha, (TInt)(aGlobalAlpha * 100));
 	// source corners TL TR BR BL (source pixels), flipped vertically, then turned clockwise: each quarter turn moves
 	// the bottom-left corner to the top-left
 	const TReal32 sx = aSrcRect[0], sy = aSrcRect[1], sw = aSrcRect[2], sh = aSrcRect[3];
