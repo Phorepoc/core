@@ -474,7 +474,7 @@ static bool PhRiFastDrawImageImpl(VGContext* c, Image* img, const Matrix3x3& m)
 	const RIfloat a = m[0].x, b = m[0].y, tx = m[0].z, cc = m[1].x, dd = m[1].y, ty = m[1].z;
 	if (PhAbs(b) > 1e-3f || PhAbs(cc) > 1e-3f || PhAbs(PhAbs(a) - 1.0f) > 1e-3f || PhAbs(PhAbs(dd) - 1.0f) > 1e-3f)
 		{
-		if (0 && PhAbs(b) <= 1e-3f && PhAbs(cc) <= 1e-3f && PhRiScaledDraw(c, s, img, a, dd, tx, ty, multiply, paint))
+		if (PhAbs(b) <= 1e-3f && PhAbs(cc) <= 1e-3f && PhRiScaledDraw(c, s, img, a, dd, tx, ty, multiply, paint))
 			{
 			++taken;
 			return true;
