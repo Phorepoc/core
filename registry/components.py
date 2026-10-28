@@ -261,12 +261,7 @@ COMPONENTS = {
                        **{"def": f"{G}/opengles/openglesinterface/eabi/opengles11u.def"}),
     # never linked. ROM_TAIL=phgl while it is being worked on (the delta upload).
     "phgl": dict(mmp=os.path.join(OS_ROOT, "src/phgl/phgl.mmp"), nga=True, vfp=True, static_ctors=True, allow_wsd=True,
-                 **{"def": os.path.join(OS_ROOT, "src/phgl/gen/phgl.def")},
-                 arm_archives=[f".mesa-build/arm/{a}.a" for a in (
-                     "libegl_symbian", "libgles2_entry", "libgles1_entry", "libmesa", "libglapi", "libsoftpipe",
-                     "liblima", "libpanfrost_shared", "libgallium", "libgalliumvl_stub",
-                     "libglsl", "libglcpp", "libglsl_util", "libnir", "libcompiler", "libmesa_util",
-                     "libmesa_util_c11", "libblake3", "libws_null")]),
+                 **{"def": os.path.join(OS_ROOT, "src/phgl/gen/phgl.def")}),
     "directgdi": dict(mmp=f"{G}/graphicsdeviceinterface/directgdi/group/directgdi.mmp", nga=True),
     "directgdiadapter": dict(
         mmp=f"{G}/graphicsdeviceinterface/directgdiadaptation/group/directgdiadapter_sw.mmp", nga=True,
