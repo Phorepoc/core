@@ -57,7 +57,7 @@ inline void PhAlfFxLog(const char* aFmt, ...)
 	VA_START(l, aFmt);
 	b.AppendFormatList(TPtrC8((const TUint8*)aFmt), l);
 	VA_END(l);
-	RDebug::Printf("PH: alf: %s", (const char*)b.PtrZ());
+	RDebug::Printf("PH: alf: [%u ms] %s", User::NTickCount(), (const char*)b.PtrZ());
 	}
 #undef __ALFFXLOGSTRING
 #undef __ALFFXLOGSTRING1
