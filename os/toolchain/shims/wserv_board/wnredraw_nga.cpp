@@ -377,6 +377,7 @@ TInt CWsWindowRedraw::DrawBackgroundColor(const TRegion& aRegion, TBool	aDoFillC
 	CPlaybackGc* playback = CPlaybackGc::Instance();
 	MWsGraphicsContext* gc = static_cast<MWsGraphicsContext*>(playback->ResolveObjectInterface(KMWsGraphicsContext));
 	RDebug::Printf("PH: wnredraw   grp=%d", CliWin()->WinGroup() ? CliWin()->WinGroup()->Identifier() : -1);
+	RDebug::Printf("PH: wnredraw bg of win %08x", (TUint)CliWin());
 	RDebug::Printf("PH: wnredraw DrawBackgroundColor win=%d,%d-%d,%d fillwin=%d,%d-%d,%d hole=%d,%d-%d,%d back=%08x hasElem=%d doFill=%d", CliWin()->AbsRect().iTl.iX, CliWin()->AbsRect().iTl.iY, CliWin()->AbsRect().iBr.iX, CliWin()->AbsRect().iBr.iY, winAbs.iTl.iX, winAbs.iTl.iY, winAbs.iBr.iX, winAbs.iBr.iY, surfaceAbs.iTl.iX, surfaceAbs.iTl.iY, surfaceAbs.iBr.iX, surfaceAbs.iBr.iY, (TInt)BackColor().Internal(), (TInt)HasElement(), (TInt)aDoFillColor);
 	gc->SetClippingRegion(aRegion);
 	gc->SetBrushStyle(MWsGraphicsContext::ESolidBrush);
