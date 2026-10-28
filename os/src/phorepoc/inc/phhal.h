@@ -25,4 +25,16 @@ enum TPhHalPowerFunction
 	EPhHalPowerWlanMac = 0x574C
 	};
 
+
+// EHalGroupDisplay functions
+enum TPhHalDisplayFunction
+	{
+	// the part of the display that is on screen, for a board with a run-time resolution (the window server's screen then
+	// follows it, docs/phorepoc/dynamic-resolution.md): a1 = a TInt[3] = { active width, active height, generation (counts
+	// the changes) }; KErrNotSupported on a fixed-size display
+	EPhHalDisplayActive = 0x7101,
+	// ask for another display size: a1 = width, a2 = height (a board without a settable mode ignores or refuses it)
+	EPhHalDisplayRequest = 0x7102
+	};
+
 #endif

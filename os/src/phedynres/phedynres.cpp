@@ -23,8 +23,9 @@
 #include <w32std.h>
 #include <fbs.h>
 
-static const TInt KHalPhoreActive = 0x7101;
-static const TInt KHalPhoreRequest = 0x7102;
+#include <phhal.h>
+static const TInt KHalPhoreActive = EPhHalDisplayActive;
+static const TInt KHalPhoreRequest = EPhHalDisplayRequest;
 static const TInt KPollUs = 150000;
 
 struct SSizes { TInt iW, iH; };
@@ -86,9 +87,13 @@ static void DrawScene(CWindowGc& aGc, RWindow& aWin, CFont* aFont, TInt aChanges
 	aGc.Deactivate();
 	}
 
-// tell WSERV the display now has this size: the current screen mode takes it, then the mode is re-selected
+// tell WSERV the display now has this size: the desktop screen mode takes it (the LAST wsini mode when there are more than the
+// phone's two -- the S60 modes keep their phone sizes; else the current mode), then the mode is re-selected
 static void ApplySize(CWsScreenDevice& aScreen, TInt aW, TInt aH)
 	{
+	const TInt modes = aScreen.NumScreenModes();
+	if (modes >= 3)
+		aScreen.SetScreenMode(modes - 1);
 	TSizeMode m = aScreen.GetCurrentScreenModeAttributes();
 	m.iScreenSize = TSize(aW, aH);
 	m.iScreenTwipsSize = TSize(aW * 48 / 7, aH * 48 / 7);		// the HAL's pixel density (210 dpi)
@@ -138,12 +143,24 @@ static void MainL()
 	ws.EventReady(&eventSt);
 	timer.After(timerSt, KPollUs);
 	TInt keyPresses = 0;
+	// the self-test walk (a host window cannot be resized in QEMU and the keys need focus): after KWalkStartTicks polls the
+	// client asks for each size of KWalk in turn, KWalkStepTicks polls apart
+	static const SSizes KWalk[] = { {1280,720}, {1600,900}, {1024,768}, {640,360}, {360,640}, {1280,720} };
+	static const TInt KWalkStartTicks = 60, KWalkStepTicks = 50;
+	TInt ticks = 0, walked = 0;
 	for (;;)
 		{
 		User::WaitForAnyRequest();
 		if (timerSt != KRequestPending)
 			{
 			timer.After(timerSt, KPollUs);
+			++ticks;
+			if (walked < (TInt)(sizeof(KWalk) / sizeof(KWalk[0])) && ticks >= KWalkStartTicks + walked * KWalkStepTicks)
+				{
+				RDebug::Printf("[phedynres] walk: asking for %dx%d", KWalk[walked].iW, KWalk[walked].iH);
+				UserSvr::HalFunction(EHalGroupDisplay, KHalPhoreRequest, (TAny*)KWalk[walked].iW, (TAny*)KWalk[walked].iH);
+				++walked;
+				}
 			TInt w, h, g;
 			if (ReadActive(w, h, g) == KErrNone && g != gen && w > 0 && h > 0)
 				{

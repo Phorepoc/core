@@ -10,6 +10,8 @@ CAPABILITY		all -tcb
 
 OS_LAYER_SYSTEMINCLUDE_SYMBIAN
 
+USERINCLUDE		../phorepoc/inc
+
 SOURCEPATH		.
 SOURCE			phedynres.cpp
 
