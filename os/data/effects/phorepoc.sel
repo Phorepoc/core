@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright The Phorepoc Authors. SPDX-License-Identifier: Apache-2.0 -->
+<!-- Phorepoc transition selection: AknTransEffect contexts -> manifest.mf effect names. Installed as
+     z:\resource\skins\101f84b9\101f84b9.sel, the default-skin fallback the skin server reads for any skin. -->
+<sel xmlns="http://www.nokia.com/sel/2.0">
+	<fullscreentransitions>
+		<transition context="1" effect="phe_appear"></transition>
+		<transition context="3" effect="phe_appear"></transition>
+		<transition context="5" effect="phe_disappear"></transition>
+		<transition context="6" effect="phe_appear"></transition>
+		<transition context="7" effect="phe_appear"></transition>
+		<transition context="8" effect="phe_appear"></transition>
+		<transition context="1001" effect="phe_folder_open"></transition>
+		<transition context="1002" effect="phe_folder_close"></transition>
+	</fullscreentransitions>
+</sel>

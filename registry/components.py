@@ -1149,7 +1149,15 @@ COMPONENTS = {
     # GfxTransAdapterStub: matrixmenu/avkon BeginFullScreen covers view and app switches with it (without it a
     # folder switch showed its undrawn window). No server (Classic) = it reports no effects, as the stub did.
     "gfxtransadapter_alf": dict(mmp=_ALF + "plugins/alftranseffect/alfgfxtransadapter/group/gfxtransenginetfx.mmp", alf=3,
-                                rom="gfxtransadapter_alf.dll", rom_as="gfxtransadapter.dll"),
+                                rom="gfxtransadapter_alf.dll", rom_as="gfxtransadapter.dll",
+                                # our effect set (Apache-2.0; the release never shipped its .fxml files) + the default-skin selection
+                                rom_data=[
+                                          "resource\\effects\\manifest.mf=" + os.path.join(OS_ROOT, "data/effects/manifest.mf"),
+                                          "resource\\effects\\phe_appear.fxml=" + os.path.join(OS_ROOT, "data/effects/phe_appear.fxml"),
+                                          "resource\\effects\\phe_disappear.fxml=" + os.path.join(OS_ROOT, "data/effects/phe_disappear.fxml"),
+                                          "resource\\effects\\phe_folder_open.fxml=" + os.path.join(OS_ROOT, "data/effects/phe_folder_open.fxml"),
+                                          "resource\\effects\\phe_folder_close.fxml=" + os.path.join(OS_ROOT, "data/effects/phe_folder_close.fxml"),
+                                          "resource\\skins\\101f84b9\\101f84b9.sel=" + os.path.join(OS_ROOT, "data/effects/phorepoc.sel")]),
     "huirenderpluginvg": dict(mmp=_ALF + "coretoolkit/rendervg10/group/huirendervg10.mmp", alf=2, vfp=True, defs=["__SOFTFP="],
                           allow_wsd=True, libs=["surfacemanager.lib", "surfaceupdateclient.lib", "hal.lib"],   # phvgwindow.h (the alf window surface)
                           extra=["toolchain/shims/alf_fix/huitexturehandle_local.cpp"] + ([_AG + "HuiVg10RenderPlugin_ph.cpp", _AG + "HuiVg10RenderSurface_ph.cpp", _AG + "huivg10canvasrenderbuffer_ph.cpp"] if _ALFTRACE else []),

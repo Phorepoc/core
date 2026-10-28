@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright The Phorepoc Authors. SPDX-License-Identifier: Apache-2.0 -->
+<!-- Phorepoc transition effects: effect name -> fxml (read by the skin server, AknsSrv tfxconfigparser) -->
+<mf xmlns="http://www.nokia.com/mf/2.0">
+	<effectdefinitions path="z:\resource\effects\" max_transition_cache_size="1000000" max_cache_size="500000">
+		<effect name="phe_appear" file="phe_appear.fxml" min_sleep_time="10" wanted_frame_time="16"/>
+		<effect name="phe_disappear" file="phe_disappear.fxml" min_sleep_time="10" wanted_frame_time="16"/>
+		<effect name="phe_folder_open" file="phe_folder_open.fxml" min_sleep_time="10" wanted_frame_time="16"/>
+		<effect name="phe_folder_close" file="phe_folder_close.fxml" min_sleep_time="10" wanted_frame_time="16"/>
+	</effectdefinitions>
+</mf>
