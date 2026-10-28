@@ -1093,7 +1093,7 @@ COMPONENTS = {
                                    nosrc=True, extra=["toolchain/shims/alf_null/alfdecoderserverclient_null.cpp"]),
     # *_real twins are staged under their names (rom_as). The default image is unchanged.
     "ftokenclient": dict(mmp=_ALF + "TokenServer/ClientSrc/ftokenclient.mmp", alf=2),
-    "hitchcock": dict(mmp=_ALF + "coretoolkit/group/huitk_base.mmp", alf=2, libs=["estor.lib"],
+    "hitchcock": dict(mmp=_ALF + "coretoolkit/group/huitk_base.mmp", alf=2, libs=["estor.lib"], **_ALFFX,
                   **({"drop": ["huienv.cpp", "huidisplay.cpp", "huicanvaswspainter.cpp", "huirosterimpl.cpp"] + (["huivisual.cpp"] if _ALFRC in ("1", "v") else []) + (["huicanvasvisual.cpp"] if _ALFRC in ("1", "c") else []), "extra": [_AG + "HuiEnv_ph.cpp", _AG + "HuiDisplay_ph.cpp", _AG + "huicanvaswspainter_ph.cpp", _AG + "HuiRosterImpl_ph.cpp"] + ([_AG + "HuiVisual_ph.cpp"] if _ALFRC in ("1", "v") else []) + ([_AG + "HuiCanvasVisual_ph.cpp"] if _ALFRC in ("1", "c") else [])} if _ALFTRACE else {})),
     "alfclient_real": dict(mmp=_ALF + "Client/src/alfclient.mmp", alf=2, rom="alfclient_real.dll", rom_as="alfclient.dll"),
     "alfdecoderserverclient_real": dict(mmp=_ALF + "AlfDecoderServerClient/src/alfdecoderserverclient.mmp", alf=2, allow_wsd=_ALFTRACE, flags=_ALFT_FLAGS, **_ALFLOG,
