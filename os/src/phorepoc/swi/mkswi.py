@@ -5,7 +5,7 @@
 baseline for every file but installmachine.cpp) and installmachine.cpp with the Phorepoc DEVELOPER MODE.
 
 Developer mode (user decision 2026-10-12: a dev device, signing handling undecided -> verification OFF by default, like
-RomPatcher's install-server patch): `PhorepocDevMode = true` in Z:\\system\\data\\swipolicy.ini (tools/phorepoc-x86/board/swi/)
+RomPatcher's install-server patch): `PhorepocDevMode = true` in Z:\\system\\data\\swipolicy.ini (config/swi/)
 makes the install server treat every package as validated to a trust anchor (protected UIDs/SIDs/VIDs, protected dirs and
 eclipsing all follow the trust status) and grant every capability the package's binaries request. `false` = stock Symbian
 behaviour. The key is read by the install server itself (no change to the securitymanager DLL or its exports).

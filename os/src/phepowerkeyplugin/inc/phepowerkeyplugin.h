@@ -16,7 +16,7 @@ class CPhePowerKeyPluginContainer;
 // the ECOM implementation UID doubles as the view id (the parent folder is KGSGenPluginUid)
 const TUid KPhePowerKeyPluginUid = { 0xE70157B2 };
 
-// SysAp's power key repository (src/phorepoc-arm/board/cenrep/e70157b0.txt)
+// SysAp's power key repository (a board's board/cenrep/e70157b0.txt)
 const TUid  KPhePowerKeyCRUid = { 0xE70157B0 };
 const TUint32 KPhePowerKeyShort = 1;
 const TUint32 KPhePowerKeyLong  = 2;

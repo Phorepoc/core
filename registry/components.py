@@ -626,8 +626,8 @@ COMPONENTS = {
     "ssmcmdlists": dict(mmp="../symbian-rcl3/" + _SSM + "/ssmcmdlists/group/ssmcmdlists.mmp", rsc_only=True, ssm=True,
                         # its own tree's substate/SWP ids (master reaches them through its .epoc32 export)
                         rsc_incs=["baseline/symbian-rcl3/" + _SSM + "/ssmpolicyplugins/inc"],
-                        rss_delta={"noncriticalcmdlist_hw.rss": "tools/phorepoc-x86/board/ssm/noncriticalcmdlist_hw.rss",
-                                   "securitycheckcmdlist.rss": "tools/phorepoc-x86/board/ssm/securitycheckcmdlist.rss"}),
+                        rss_delta={"noncriticalcmdlist_hw.rss": "config/ssm/noncriticalcmdlist_hw.rss",
+                                   "securitycheckcmdlist.rss": "config/ssm/securitycheckcmdlist.rss"}),
     "ssmsystemcmds": dict(mmp=f"{_SSM}/ssmcustcmds/ssmsystemcmds/group/ssmsystemcmds.mmp", ssm=True),
     "ssmactivitycmd": dict(mmp=f"{_SSM}/ssmcustcmds/ssmactivitycmd/group/ssmactivitycmd.mmp", ssm=True),
     "ssmdiskreserver": dict(mmp=f"{_SSM}/ssmcustcmds/ssmdiskreserver/group/ssmdiskreserver.mmp", ssm=True),
@@ -681,7 +681,7 @@ COMPONENTS = {
     # + its init script (Z:\private\100059C9\ScriptInit.txt, run by SSM's rfscustcmd at every UI start; a product file
     # runs only the RFS plug-ins' parts (PLUGINS), as the release's own script0/script1 do
     "rfsserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appsupport/coreapplicationuis/Rfs/group/rfsMain.mmp", ssm=True,
-                      rom_data=["private\\100059C9\\ScriptInit.txt=tools/phorepoc-x86/board/rfs/ScriptInit.txt"]),
+                      rom_data=["private\\100059C9\\ScriptInit.txt=config/rfs/ScriptInit.txt"]),
     "mediatorpluginbase": dict(mmp="oss.FCL.sf.os.devicesrv/mediator/group/MediatorPluginBase.mmp", ssm=True),
     "mediatorserver": dict(mmp="oss.FCL.sf.os.devicesrv/mediator/group/MediatorServer.mmp", ssm=True),
     "rfscustcmd": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appsupport/coreapplicationuis/Rfs/Plugins/rfscustcmd/group/rfscustcmd.mmp", ssm=True),
@@ -2232,8 +2232,8 @@ COMPONENTS = {
     "upsobserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/source/upsswiobsplugin/group/upsobserver.mmp"),
     # authorise every send (service 0x2000BB6C); without it CSmsOutboxSend::StartL leaves and a message from the editor is never sent.
     "upsserver": dict(mmp="oss.FCL.sf.os.security/authorisation/userpromptservice/server/source/upsserver/upsserver.mmp",
-                      # OURS: the SMS service's policy (the product's is licensee data): silent accept -- tools/phorepoc-x86/board/ups/
-                      rom_data=[r"private\10283558\policies\ups_1000484b_2000bb6c.rsc=tools/phorepoc-x86/board/ups/ups_1000484b_2000bb6c.rsc"]),
+                      # OURS: the SMS service's policy (the product's is licensee data): silent accept -- config/ups/
+                      rom_data=[r"private\10283558\policies\ups_1000484b_2000bb6c.rsc=config/ups/ups_1000484b_2000bb6c.rsc"]),
     "upsdb": dict(mmp="oss.FCL.sf.os.security/authorisation/userpromptservice/database/group/upsdb.mmp"),
     "upspolicies": dict(mmp="oss.FCL.sf.os.security/authorisation/userpromptservice/policies/group/upspolicies.mmp"),
     "upsmanagement": dict(mmp="oss.FCL.sf.os.security/authorisation/userpromptservice/server/source/upsclient/upsmanagement.mmp"),

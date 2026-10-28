@@ -229,8 +229,8 @@ COMPONENTS = {
     # board deltas: the security-check list starts clockserver the S^3 way (fire-and-forget: it never rendezvous)
     "ssmcmdlists_s4": dict(mmp="oss.FCL.sf.os.devicesrv/sysstatemgmt/ssmcmdlists/group/ssmcmdlists.mmp", rsc_only=True,
                            ssm=True, rsc_out="rsc-s4",
-                           rss_delta={"securitycheckcmdlist.rss": "tools/phorepoc-x86/board/ssm/s4/securitycheckcmdlist.rss",
-                                      "noncriticalcmdlist_hw.rss": "tools/phorepoc-x86/board/ssm/s4/noncriticalcmdlist_hw.rss"}),
+                           rss_delta={"securitycheckcmdlist.rss": "config/ssm/s4/securitycheckcmdlist.rss",
+                                      "noncriticalcmdlist_hw.rss": "config/ssm/s4/noncriticalcmdlist_hw.rss"}),
     # what the S^4 boot starts as its idle app (master's security-check list): keeps the homescreen running
     "hsapplicationlauncher": _qx(HS, "homescreenapp/hsapplicationlauncher/group/hsapplicationlauncher.mmp"),
     # Orbit's device dialog server (notes, the indicator menu, the homescreen's dialogs)

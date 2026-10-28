@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // phepowerkeyplugin.mmp -- OURS: a Control Panel (GS) page "Power key" -- what a short / a long press of the power key does
-// (CenRep 0xE70157B0 keys 1 and 2, read by SysAp at every press: src/phorepoc-arm/board/cenrep/e70157b0.txt).
+// (CenRep 0xE70157B0 keys 1 and 2, read by SysAp at every press: a board's board/cenrep/e70157b0.txt).
 // Modelled on GSAutoKeyguardPlugin (same ECOM interface, same CGSBaseView / CGSBaseContainer frame).
 #include <platform_paths.hrh>
 #include <data_caging_paths.hrh>

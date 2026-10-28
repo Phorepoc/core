@@ -17,7 +17,7 @@
 #include <e32std.h>
 #include <e32base.h>
 
-const TUint32 KPhImRepository         = 0xE7015830;   // CenRep repository (tools/kernel/cenrep/E7015830.txt)
+const TUint32 KPhImRepository         = 0xE7015830;   // CenRep repository (config/cenrep/E7015830.txt)
 const TUint32 KPhImKeyActive          = 1;            // entry UID of the active keyboard (0 = none chosen: priority order)
 const TUint32 KPhImKeyKeyHeight       = 2;            // phkbd key-height scale, percent (60..140, default 100)
 const TUint32 KPhImKeyTheme           = 3;            // phkbd colour scheme (0 dark, 1 light, 2 blue)

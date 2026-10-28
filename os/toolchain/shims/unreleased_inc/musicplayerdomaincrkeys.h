@@ -10,7 +10,7 @@
 //    (KCRUIDMusicPlayerFeatures; a feature bitmask).
 //  - KRequireDRMInPlayback / KPlaybackRestrictedMimeTypes: the release does not give their numbers.
 //    OURS: 0x2 / 0x3; the board repository
-//    (tools/phorepoc-x86/board/cenrep/101ffcd0.txt) carries both, at "no DRM required, nothing blocked".
+//    (a board's board/cenrep/101ffcd0.txt) carries both, at "no DRM required, nothing blocked".
 #ifndef MUSICPLAYERDOMAINCRKEYS_H
 #define MUSICPLAYERDOMAINCRKEYS_H
 

@@ -89,7 +89,7 @@ RESOURCE SSM_COMMAND_LIST r_cmds
 #endif // FF_MOBILITY_MANAGEMENT_ERRORS
 	// prio 0x7E00 -- PHOREPOC test hook (2026-10-09)
 	,r_cmd_ssmtest
-	// prio 0x7E01 -- PHOREPOC debug link (PinePhone): the file-service helper behind the PhoneLab Project panel
+	// prio 0x7E01 -- PHOREPOC debug link: the file-service helper behind the PhoneLab Project panel
 	,r_cmd_phfs
 	// prio 0x7E02 -- PHOREPOC volume keys (audio-mixing-plan.md V0): media keys -> the mixer's master volume
 	,r_cmd_phvolume
@@ -161,8 +161,8 @@ RESOURCE SSM_START_PROCESS_INFO r_cmd_ssmtest
     }
 
 // ---------------------------------------------------------------------------
-// r_cmd_phfs -- PHOREPOC (PinePhone, 2026-10-11): src/phfs serves the debug link's file list/read/write requests
-// (kernel LDD PhFs.A64). Only ROMs that carry phfs.exe have it; elsewhere the start fails and, non-critical, is ignored.
+// r_cmd_phfs -- PHOREPOC (2026-10-11): src/phfs serves the debug link's file list/read/write requests
+// (the board's kernel LDD PhFs). Only ROMs that carry phfs.exe have it; elsewhere the start fails and, non-critical, is ignored.
 // ---------------------------------------------------------------------------
 //
 RESOURCE SSM_START_PROCESS_INFO r_cmd_phfs
