@@ -480,12 +480,12 @@ COMPONENTS = {
     "aknphysics": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/aknphysics/group/aknphysics.mmp"),
     "gfxtrans": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/lafagnosticuifoundation/graphicseffects/group/GfxTransEffect.mmp"),
     # the resolver's vibra player (ECom): touch feedback through HWRM vibra -> our vibra plug-in (src/hwrm)
-    "tactilevibraplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.hapticsservices/tactilefeedback/tactilefeedbackresolver/plugins/tactilevibraplugin/group/tactilevibraplugin.mmp", defs=["_DEBUG"]),
+    "tactilevibraplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.hapticsservices/tactilefeedback/tactilefeedbackresolver/plugins/tactilevibraplugin/group/tactilevibraplugin.mmp"),
     "tactilefeedbackresolver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.hapticsservices/tactilefeedback/tactilefeedbackresolver/group/tactilefeedbackresolver.mmp",
         # tree skew: the source uses KProEngSilenceMode but this snapshot's profiles-services
         # ProfileEngineInternalCRKeys.h predates it (later releases: 0x80000202, after
         # KProEngMasterVolume/Vibra). An absent key just reads KErrNotFound = "not silent".
-        defs=["KProEngSilenceMode=0x80000202u", "_DEBUG"]),
+        defs=["KProEngSilenceMode=0x80000202u"]),
     "touchfeedback": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.hapticsservices/tactilefeedback/tactilefeedbackclient/group/touchfeedback.mmp"),
     "aknlistloadertfx": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/AknListLoaderTfx/group/aknlistloadertfx.mmp"),
     "aknpictograph": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.uiresources/pictographs/AknPictograph/group/AknPictograph.mmp"),
