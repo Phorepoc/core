@@ -30,6 +30,7 @@
 #include "PluginTimer.h"
 #include <hwrmvibracommands.h>
 #include <e32svr.h>
+#include <u32std.h>
 #include "Trace.h" 
 
 const TInt KA64PowerHalVibra = 0x5056;
