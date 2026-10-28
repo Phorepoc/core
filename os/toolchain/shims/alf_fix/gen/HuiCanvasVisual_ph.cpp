@@ -606,9 +606,23 @@ void CHuiCanvasVisual::DrawSelf(CHuiGc& aGc, const TRect& aDisplayRect) const
         {
         RDebug::Print(_L("CHuiCanvasVisual::DrawSelf - tracked visual"));
         }
-#endif		
+#endif
     TBool alfEventWindow = (Display()->RosterImpl().AlfEventWindow() == this);
     TReal32 effectiveOpacity = EffectiveOpacity();
+    // (2026-10-28) which visuals draw over the screen's top-left strip (x < 8, y < 190: black under ALF)
+    if (aDisplayRect.iTl.iX < 8 && aDisplayRect.iTl.iY < 190)
+        {
+        static const CHuiCanvasVisual* seen[48]; static TInt nseen;
+        TInt k = 0;
+        while (k < nseen && seen[k] != this) k++;
+        if (k == nseen && nseen < 48)
+            {
+            seen[nseen++] = this;
+            RDebug::Printf("PH: alf: TL visual %x rect %d,%d-%d,%d flags %x opacity %d cmdbufs %d bgdraw %d bgcol %08x evwin %d",
+                (TUint)this, aDisplayRect.iTl.iX, aDisplayRect.iTl.iY, aDisplayRect.iBr.iX, aDisplayRect.iBr.iY, Flags(),
+                (TInt)(effectiveOpacity * 100), (TInt)HasCommandBuffers(ETrue), (TInt)IsBackgroundDrawingEnabled(), BackgroundColor().Internal(), (TInt)alfEventWindow);
+            }
+        }
     TBool hasStoredContent = (IsContentDrawingEnabled() && (IsDelayedEffectSource() || Freezed())) && (StoredRenderBuffer() || iCanvasVisualData->iStoredRenderBuffer);        
     if ((effectiveOpacity <= 0 || !HasCommandBuffers(ETrue)) && !alfEventWindow && !hasStoredContent)
         {
