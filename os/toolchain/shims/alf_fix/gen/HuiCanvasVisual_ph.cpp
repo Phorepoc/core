@@ -618,9 +618,9 @@ void CHuiCanvasVisual::DrawSelf(CHuiGc& aGc, const TRect& aDisplayRect) const
         if (k == nseen && nseen < 48)
             {
             seen[nseen++] = this;
-            RDebug::Printf("PH: alf: TL visual %x rect %d,%d-%d,%d flags %x opacity %d cmdbufs %d bgdraw %d bgcol %08x evwin %d",
+            RDebug::Printf("PH: alf: TL visual %x rect %d,%d-%d,%d flags %x opacity %d cmdbufs %d bgdraw %d evwin %d",
                 (TUint)this, aDisplayRect.iTl.iX, aDisplayRect.iTl.iY, aDisplayRect.iBr.iX, aDisplayRect.iBr.iY, Flags(),
-                (TInt)(effectiveOpacity * 100), (TInt)HasCommandBuffers(ETrue), (TInt)IsBackgroundDrawingEnabled(), BackgroundColor().Internal(), (TInt)alfEventWindow);
+                (TInt)(effectiveOpacity * 100), (TInt)HasCommandBuffers(ETrue), (TInt)IsBackgroundDrawingEnabled(), (TInt)alfEventWindow);
             }
         }
     TBool hasStoredContent = (IsContentDrawingEnabled() && (IsDelayedEffectSource() || Freezed())) && (StoredRenderBuffer() || iCanvasVisualData->iStoredRenderBuffer);        
