@@ -141,7 +141,7 @@ namespace
 		TRAPD(err, CRepository* rep = CRepository::NewL(TUid::Uid(0xE7015A01)); rep->Get(9, v); delete rep);
 		delete tc;
 		RDebug::Printf("PH: wfc gpu: GPU composition setting %d (repository %d)", v, err);
-		return 0; // TEMP A/B
+		return err == KErrNone || err == KErrNotFound ? v : 1;
 		}
 
 	GLuint Shader(GLenum aType, const char* aSrc)
