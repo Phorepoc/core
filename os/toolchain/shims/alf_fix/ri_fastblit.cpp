@@ -438,7 +438,7 @@ static bool PhRiScaledDraw(VGContext* c, Surface* s, Image* img, RIfloat a, RIfl
 	return true;
 	}
 
-bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
+static bool PhRiFastDrawImageImpl(VGContext* c, Image* img, const Matrix3x3& m)
 	{
 	static TUint calls, taken, denied;
 	++calls;
@@ -810,6 +810,23 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 	if (taken == 1 || (taken & 1023) == 0)
 		RDebug::Printf("PH: alf: RI fast vgDrawImage: taken %u, refused %u, calls %u (last: %dx%d at %d,%d flip %d%d, %d clip rects, %s)", taken, denied, calls, w, h, itx, ity, (int)flipX, (int)flipY, nclip, multiply ? "multiply" : "normal");
 	return true;
+	}
+
+bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
+	{
+	if (PhRiFastDrawImageImpl(c, img, m))
+		return true;
+	// (2026-10-28) which big draws still go to the reference pixel pipe
+	static TUint n;
+	if (img->m_width * img->m_height >= 16384 && n < 40)
+		{
+		n++;
+		const Color::Descriptor& sd = img->m_desc;
+		RDebug::Printf("PH: alf: RI slow vgDrawImage %dx%d m %d %d %d / %d %d %d (x1000) persp %d, src fmt %x bpp %d a %d pre %d, mode %x blend %x mask %d ctf %d q %x",
+			img->m_width, img->m_height, (int)(m[0].x * 1000), (int)(m[0].y * 1000), (int)m[0].z, (int)(m[1].x * 1000), (int)(m[1].y * 1000), (int)m[1].z, (int)!m.isAffine(),
+			(unsigned)sd.internalFormat, sd.bitsPerPixel, sd.alphaBits, (int)sd.isPremultiplied(), (unsigned)c->m_imageMode, (unsigned)c->m_blendMode, (int)c->m_masking, (int)c->m_colorTransform, (unsigned)c->m_imageQuality);
+		}
+	return false;
 	}
 
 // ---- vgDrawPath of an axis-aligned integer rectangle with a solid colour fill (Hitchcock's CHuiVg10Gc::DrawRect: the unit rect path under translate/scale)
