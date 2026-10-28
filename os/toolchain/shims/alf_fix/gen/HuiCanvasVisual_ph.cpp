@@ -609,7 +609,6 @@ void CHuiCanvasVisual::DrawSelf(CHuiGc& aGc, const TRect& aDisplayRect) const
 #endif
     TBool alfEventWindow = (Display()->RosterImpl().AlfEventWindow() == this);
     TReal32 effectiveOpacity = EffectiveOpacity();
-        }
     TBool hasStoredContent = (IsContentDrawingEnabled() && (IsDelayedEffectSource() || Freezed())) && (StoredRenderBuffer() || iCanvasVisualData->iStoredRenderBuffer);        
     if ((effectiveOpacity <= 0 || !HasCommandBuffers(ETrue)) && !alfEventWindow && !hasStoredContent)
         {
