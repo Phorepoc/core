@@ -1,270 +1,406 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// phestore.cpp -- OURS: the download app ("Catalogue"): the items of the indexes that fit this device in a two-line
-// list (name / summary, version, installed state); Install downloads, checks and installs the selected one, Details
-// shows its description and licence, Refresh reloads the indexes. The work is the engine's (../pheget/pheget.h, shared
-// with the pheget command line); its network calls run a nested scheduler, so a wait note keeps drawing meanwhile.
+// phestore.cpp -- OURS: the download app ("Catalogue"). A full-screen, custom-drawn list of the items of the indexes
+// that fit this device (pheui.cpp: header, 83 px rows, kinetic scrolling, details page; pheicons.cpp: lazy icons), over
+// the engine (../pheget/pheget.h, shared with the pheget command line). It starts fast: the first frame (header +
+// spinner) is drawn before anything else happens; the last index is read from its cache on C: and shown at once, a
+// few rows per idle slice; only then the network refreshes the cache (the list is rebuilt when the index changed).
+// The engine's network calls run a nested scheduler, so the list stays live and the spinner keeps turning.
 #include <e32debug.h>
 #include <eikstart.h>
 #include <aknapp.h>
 #include <akndoc.h>
 #include <aknappui.h>
-#include <aknlists.h>
-#include <aknnotewrappers.h>
-#include <aknmessagequerydialog.h>
-#include <aknwaitdialog.h>
-#include <coecntrl.h>
-#include <eikenv.h>
-#include <eiktxlbx.h>
-#include <eiktxlbm.h>
 #include <avkon.hrh>
-#include <aknsutils.h>
-#include <aknsdrawutils.h>
-#include <aknsbasicbackgroundcontrolcontext.h>
-#include <akntitle.h>
+#include <eikbtgpc.h>
 #include <eikspane.h>
+#include <eikenv.h>
 #include <utf.h>
+#include <avkon.rsg>
 #include <phestore.rsg>
 #include "phestore.hrh"
 #include "pheget.h"
 #include "phejson.h"
+#include "pheui.h"
+#include "pheicons.h"
+#include "pheworker.h"
 
 const TUid KPheStoreAppUid = { 0xE70157FA };
 
-static HBufC* FromUtf8LC(const TDesC8& aText)
+static TInt64 NowUs()
 	{
-	HBufC* b = CnvUtfConverter::ConvertToUnicodeFromUtf8L(aText);
-	CleanupStack::PushL(b);
-	return b;
+	TTime t;
+	t.UniversalTime();
+	return t.Int64();
 	}
+static TInt64 gStart;
+TInt PheStoreSince() { return TInt((NowUs() - gStart) / 1000); }   // ms since start (the timing log)
+static TInt Since() { return PheStoreSince(); }
 
-// the window-owning container: the skinned background + the list
-class CPheStoreView : public CCoeControl
-	{
-public:
-	~CPheStoreView() { delete iList; delete iBg; }
-	void ConstructL(const TRect& aRect)
-		{
-		CreateWindowL();
-		iBg = CAknsBasicBackgroundControlContext::NewL(KAknsIIDQsnBgAreaMain, aRect, EFalse);
-		iList = new (ELeave) CAknDoubleStyleListBox;
-		iList->SetContainerWindowL(*this);
-		iList->SetMopParent(this);
-		iList->ConstructL(this, EAknListBoxSelectionList);
-		iList->CreateScrollBarFrameL(ETrue);
-		iList->ScrollBarFrame()->SetScrollBarVisibilityL(CEikScrollBarFrame::EOff, CEikScrollBarFrame::EAuto);
-		iList->View()->SetListEmptyTextL(_L("No apps for this device"));
-		SetRect(aRect);
-		ActivateL();
-		}
-	CDesCArray& Items() { return *static_cast<CDesCArray*>(iList->Model()->ItemTextArray()); }
-	void ItemsChangedL()
-		{
-		iList->HandleItemAdditionL();
-		if (Items().Count())                 // (an empty list has no current item: -1 panics EIKON-LISTBOX 5)
-			iList->SetCurrentItemIndexAndDraw(0);
-		DrawDeferred();
-		}
-	TInt Current() const { return iList->CurrentItemIndex(); }
-private:
-	TInt CountComponentControls() const { return iList ? 1 : 0; }
-	CCoeControl* ComponentControl(TInt) const { return iList; }
-	void SizeChanged()
-		{
-		if (iBg) iBg->SetRect(Rect());
-		if (iList) iList->SetRect(Rect());
-		}
-	void Draw(const TRect& aRect) const
-		{
-		CWindowGc& gc = SystemGc();
-		if (!AknsDrawUtils::Background(AknsUtils::SkinInstance(), iBg, this, gc, aRect))
-			{
-			gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
-			gc.SetBrushColor(KRgbWhite);
-			gc.Clear(aRect);
-			}
-		}
-	TTypeUid::Ptr MopSupplyObject(TTypeUid aId)
-		{
-		if (aId.iUid == MAknsControlContext::ETypeId && iBg)
-			return MAknsControlContext::SupplyMopObject(aId, iBg);
-		return CCoeControl::MopSupplyObject(aId);
-		}
-	TKeyResponse OfferKeyEventL(const TKeyEvent& aKey, TEventCode aType)
-		{
-		return iList ? iList->OfferKeyEventL(aKey, aType) : EKeyWasNotConsumed;
-		}
-	CAknDoubleStyleListBox* iList;
-	CAknsBasicBackgroundControlContext* iBg;
-	};
-
-class CPheStoreAppUi : public CAknAppUi, public MPheGetObserver
+class CPheStoreAppUi : public CAknAppUi, public MPheGetObserver, public MPheCatalogueUi, public MPheJobObserver
 	{
 public:
 	void ConstructL()
 		{
+		gStart = NowUs();
 		BaseConstructL(EAknEnableSkin);
+		StatusPane()->MakeVisible(EFalse);             // our own header: the whole screen is the app's
 		iGet = CPheGet::NewL(*this);
-		iView = new (ELeave) CPheStoreView;
-		iView->ConstructL(ClientRect());
+		iView = CPheCatalogueView::NewL(ClientRect(), *this);
 		AddToStackL(iView);
-		iRefreshPending = CIdle::NewL(CActive::EPriorityIdle);
-		iRefreshPending->Start(TCallBack(StartRefresh, this));   // after the first draw
+		iLoader = CPheIconLoader::NewL(*iView);
+		iRefreshJob = CPheJob::NewL(*this);
+		iWork = CIdle::NewL(CActive::EPriorityIdle);
+		iPhase = EPhaseCache;
+		iView->SetLoad(CPheCatalogueView::ELoading, KNullDesC);
 		}
 	~CPheStoreAppUi()
 		{
-		delete iRefreshPending;
+		delete iWork;
+		delete iRefreshJob;
+		delete iLoader;
 		if (iView)
 			RemoveFromStack(iView);
 		delete iView;
 		iItems.Close();
 		delete iGet;
+		delete iDetailId;
 		}
 
 	// MPheGetObserver
 	void PheGetLog(const TDesC8& aLine) { RDebug::Printf("PH: [phestore] %S", &aLine); }
-	void PheGetProgress(TInt /*aDone*/, TInt /*aTotal*/) {}
-
-private:
-	static TInt StartRefresh(TAny* aSelf)
+	void PheGetProgress(TInt aDone, TInt aTotal)
 		{
-		TRAPD(err, static_cast<CPheStoreAppUi*>(aSelf)->RefreshL());
-		if (err != KErrNone)
-			RDebug::Printf("PH: [phestore] refresh left %d", err);
-		return EFalse;
-		}
-
-	void ShowWaitL()
-		{
-		iWait = new (ELeave) CAknWaitDialog(reinterpret_cast<CEikDialog**>(&iWait), ETrue);
-		iWait->ExecuteLD(R_PHESTORE_WAIT_NOTE);
-		}
-	void HideWait()
-		{
-		if (iWait)
-			TRAP_IGNORE(iWait->ProcessFinishedL());
-		}
-
-	void RefreshL()
-		{
-		iItems.Reset();
-		iView->Items().Reset();
-		iGet->ResetIndexes();
-		ShowWaitL();
-		TRAPD(err, iGet->LoadIndexesL(KNullDesC, EFalse));
-		HideWait();
-		if (err == KErrNone)
-			iGet->ItemsL(iItems, EFalse);
-		for (TInt i = 0; i < iItems.Count(); ++i)
-			AppendRowL(iItems[i]);
-		iView->ItemsChangedL();
-		CAknTitlePane* title = (CAknTitlePane*)StatusPane()->ControlL(TUid::Uid(EEikStatusPaneUidTitle));
-		TBuf<40> t;
-		t.Format(_L("Catalogue (%d)"), iItems.Count());
-		title->SetTextL(t);
-		if (err != KErrNone)
+		if (iView->Mode() == CPheCatalogueView::EDetails && aTotal > 0)
 			{
-			CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
-			TBuf<64> msg;
-			msg.Format(_L("Cannot load the app lists (%d)"), err);
-			note->ExecuteLD(msg);
+			TInt p = TInt(TInt64(aDone) * 1000 / aTotal);
+			if (p != iLastProgress)
+				{
+				iLastProgress = p;
+				_LIT(KDownloading, "Downloading");
+				iView->SetDetailsStatus(KDownloading, EFalse, p);
+				}
 			}
 		}
 
-	// "\t<name>\t<summary> -- <tag>[, installed <tag>]"
-	void AppendRowL(const TPheGetItem& aItem)
+	// MPheCatalogueUi
+	void UiFirstPaint()
+		{
+		RDebug::Printf("PH: [phestore] TIMING first paint %d ms", Since());
+		iWork->Start(TCallBack(WorkCb, this));         // after this frame
+		}
+	void UiIconWanted() { iLoader->Kick(); }
+	void UiRetry()
+		{
+		iPhase = EPhaseRefresh;
+		iView->SetLoad(CPheCatalogueView::ELoading, KNullDesC);
+		Schedule();
+		}
+	void UiOpen(TInt aRow) { TRAP_IGNORE(OpenDetailsL(aRow)); }
+	void UiBack()
+		{
+		iView->ShowList();
+		TRAP_IGNORE(Cba()->SetCommandSetL(R_AVKON_SOFTKEYS_OPTIONS_EXIT));
+		Cba()->DrawDeferred();
+		if (iRebuildPending)
+			{
+			iRebuildPending = EFalse;
+			Rebuild();
+			Schedule();
+			}
+		}
+	void UiAction(TInt /*aRow*/) { TRAP_IGNORE(InstallL()); }
+
+private:
+	enum TPhase { EPhaseIdle, EPhaseCache, EPhaseBuild, EPhaseRefresh };
+
+	static TInt WorkCb(TAny* aSelf)
+		{
+		return static_cast<CPheStoreAppUi*>(aSelf)->Work();
+		}
+	void Schedule() { if (!iWork->IsActive()) iWork->Start(TCallBack(WorkCb, this)); }
+
+	// one slice of the start-up / refresh state machine; ETrue = call again
+	TInt Work()
+		{
+		switch (iPhase)
+			{
+		case EPhaseCache:
+			{
+			iGet->ResetIndexes();
+			TRAPD(err, iGet->LoadIndexesL(KNullDesC, EFalse, ETrue));
+			if (err == KErrNone)
+				{
+				BeginBuild();
+				iNextAfterBuild = EPhaseRefresh;
+				iPhase = EPhaseBuild;
+				return ETrue;
+				}
+			iPhase = EPhaseRefresh;                    // nothing cached: the spinner shows until the network answers
+			return ETrue;
+			}
+		case EPhaseBuild:
+			if (BuildSlice())
+				return ETrue;
+			RDebug::Printf("PH: [phestore] TIMING list ready %d ms (%d items, %s)", Since(), iItems.Count(), iFresh ? "fresh" : "cached");
+			iPhase = iNextAfterBuild;
+			if (iPhase == EPhaseIdle)
+				iView->SetLoad(CPheCatalogueView::EReady, KNullDesC);
+			iLoader->Kick();
+			return iPhase != EPhaseIdle;
+		case EPhaseRefresh:
+			RefreshNow();
+			return EFalse;
+		default:
+			return EFalse;
+			}
+		}
+
+	// the network refresh runs on its own thread (pheworker.h): the UI stays live through the TLS handshake
+	void RefreshNow()
+		{
+		iPhase = EPhaseIdle;
+		if (iRefreshJob->Busy())
+			return;
+		TInt r = iRefreshJob->Start(1, CPheJob::ERefresh, KNullDesC, KNullDesC);
+		if (r != KErrNone)
+			JobDone(1, r);
+		}
+
+	// MPheJobObserver
+	void JobDone(TInt /*aId*/, TInt aResult)
+		{
+		TInt err = aResult < 0 ? aResult : KErrNone;
+		TBool changed = aResult == 1;
+		RDebug::Printf("PH: [phestore] TIMING refresh %s (%d) at %d ms", err == KErrNone ? (changed ? "changed" : "unchanged") : "failed", err, Since());
+		if (err == KErrNone)
+			iLoader->NetworkChanged();
+		if (err == KErrNone && (changed || iItems.Count() == 0))
+			{
+			iFresh = ETrue;
+			if (iView->Mode() == CPheCatalogueView::EDetails)
+				{
+				iRebuildPending = ETrue;               // the details page stays as it is until back
+				iView->SetLoad(CPheCatalogueView::EReady, KNullDesC);
+				return;
+				}
+			Rebuild();
+			Schedule();
+			return;
+			}
+		if (iItems.Count() == 0)
+			{
+			TBuf<64> msg;
+			msg.Format(_L("Cannot reach the catalogue (%d)"), err);
+			iView->SetLoad(CPheCatalogueView::EFailed, msg);
+			}
+		else
+			iView->SetLoad(CPheCatalogueView::EReady, KNullDesC);
+		}
+
+	// reload the indexes from their (fresh) caches and rebuild the rows, keeping the scroll position
+	void Rebuild()
+		{
+		iKeepOffset = iView->RowCount() > 0 ? iView->Offset() : 0;
+		iGet->ResetIndexes();
+		TRAPD(err, iGet->LoadIndexesL(KNullDesC, EFalse, ETrue));
+		if (err != KErrNone)
+			{
+			iItems.Reset();
+			iView->SetLoad(CPheCatalogueView::EFailed, _L("Cannot read the catalogue"));
+			return;
+			}
+		BeginBuild();
+		iNextAfterBuild = EPhaseIdle;
+		iPhase = EPhaseBuild;                          // (the caller runs Work again: a CIdle from inside its own RunL returns ETrue)
+		}
+
+	void BeginBuild()
+		{
+		iItems.Reset();
+		TRAPD(err, iGet->ItemsL(iItems, EFalse));
+		if (err != KErrNone)
+			iItems.Reset();
+		iView->ClearRows();
+		iBuilt = 0;
+		}
+
+	// a few rows per slice, so a touch is never starved
+	TBool BuildSlice()
+		{
+		TInt64 start = NowUs();
+		while (iBuilt < iItems.Count())
+			{
+			TRAPD(err, AddRowL(iItems[iBuilt]));
+			if (err != KErrNone)
+				{
+				iBuilt = iItems.Count();
+				break;
+				}
+			++iBuilt;
+			if (NowUs() - start > 8000)
+				break;
+			}
+		if (iBuilt == 1 || iBuilt >= iItems.Count() || iBuilt % 8 == 0)
+			iView->Redraw();
+		if (iBuilt >= iItems.Count())
+			{
+			if (iKeepOffset)
+				iView->SetOffset(iKeepOffset);
+			iKeepOffset = 0;
+			iView->Redraw();
+			return EFalse;
+			}
+		return ETrue;
+		}
+
+	void AddRowL(const TPheGetItem& aItem)
 		{
 		TBuf8<32> installed;
 		iGet->InstalledTagL(aItem.Id(), installed);
-		HBufC* name = FromUtf8LC(aItem.Name().Length() ? aItem.Name() : aItem.Id());
-		HBufC* summary = FromUtf8LC(aItem.Summary());
-		HBufC* tag = FromUtf8LC(aItem.Tag());
-		HBufC* inst = FromUtf8LC(installed);
-		HBufC* row = HBufC::NewLC(name->Length() + summary->Length() + tag->Length() + inst->Length() + 32);
-		TPtr r = row->Des();
-		r.Append('\t');
-		r.Append(*name);
-		r.Append('\t');
-		r.Append(*summary);
-		if (tag->Length())
+		TBuf<96> name;
+		TBuf<160> info;
+		TBuf<48> tag;
+		TPtrC8 n8 = aItem.Name().Length() ? aItem.Name() : aItem.Id();
+		CnvUtfConverter::ConvertToUnicodeFromUtf8(name, n8.Left(120));
+		TBuf<160> summary;
+		CnvUtfConverter::ConvertToUnicodeFromUtf8(summary, aItem.Summary().Left(150));
+		CnvUtfConverter::ConvertToUnicodeFromUtf8(info, aItem.Category().Left(40));
+		if (info.Length() && summary.Length())
+			info.Append(_L(" - "));
+		info.Append(summary.Left(info.MaxLength() - info.Length()));
+		CnvUtfConverter::ConvertToUnicodeFromUtf8(tag, aItem.Tag().Left(40));
+		TInt state = TPheRow::EFree;
+		if (installed.Length())
+			state = (installed == aItem.Tag()) ? TPheRow::EInstalled : TPheRow::EUpdate;
+		iView->AddRowL(name, info, tag, state, aItem.iItem->GetStr(_L8("icon_url")));
+		}
+
+	static void Fmt(TDes& aOut, TInt64 aBytes)
+		{
+		if (aBytes >= 1024 * 1024)
+			aOut.Format(_L("%d.%d MB"), TInt(aBytes / (1024 * 1024)), TInt((aBytes * 10 / (1024 * 1024)) % 10));
+		else
+			aOut.Format(_L("%d KB"), TInt((aBytes + 1023) / 1024));
+		}
+
+	void OpenDetailsL(TInt aRow)
+		{
+		if (aRow < 0 || aRow >= iItems.Count() || iBusy)
+			return;
+		const TPheGetItem& it = iItems[aRow];
+		const CPheJson& j = *it.iItem;
+		delete iDetailId;
+		iDetailId = NULL;
+		iDetailId = it.Id().AllocL();
+		TBuf<96> name;
+		CnvUtfConverter::ConvertToUnicodeFromUtf8(name, (it.Name().Length() ? it.Name() : it.Id()).Left(120));
+		TBuf<400> meta;
+		TBuf<64> tmp;
+		CnvUtfConverter::ConvertToUnicodeFromUtf8(tmp, it.Tag().Left(40));
+		if (tmp.Length())
+			meta.Append(tmp);
+		else
+			meta.Append(_L("No approved release"));
+		meta.Append('\n');
+		CnvUtfConverter::ConvertToUnicodeFromUtf8(tmp, it.Category().Left(40));
+		meta.Append(tmp);
+		const CPheJson* size = it.iRelease ? it.iRelease->Get(_L8("size")) : NULL;
+		if (size && size->Type() == CPheJson::ENumber && size->Int() > 0)
 			{
-			r.Append(_L(" -- "));
-			r.Append(*tag);
+			meta.Append('\n');
+			Fmt(tmp, size->Int());
+			meta.Append(tmp);
 			}
-		if (inst->Length() && *inst == *tag)
-			r.Append(_L(", installed"));
-		else if (inst->Length())
+		CnvUtfConverter::ConvertToUnicodeFromUtf8(tmp, j.GetStr(_L8("license")).Left(40));
+		if (tmp.Length())
 			{
-			r.Append(_L(", installed "));     // an older release: an update is available
-			r.Append(*inst);
+			meta.Append('\n');
+			meta.Append(tmp);
 			}
-		iView->Items().AppendL(r);
-		CleanupStack::PopAndDestroy(5, name);
+		TPtrC8 desc8 = j.GetStr(_L8("description"));
+		if (desc8.Length() == 0)
+			desc8.Set(it.Summary());
+		HBufC* desc = CnvUtfConverter::ConvertToUnicodeFromUtf8L(desc8);
+		CleanupStack::PushL(desc);
+		HBufC* home = CnvUtfConverter::ConvertToUnicodeFromUtf8L(j.GetStr(_L8("homepage")));
+		CleanupStack::PushL(home);
+		HBufC* body = HBufC::NewLC(desc->Length() + home->Length() + 4);
+		body->Des().Append(*desc);
+		if (home->Length())
+			{
+			body->Des().Append(_L("\n\n"));
+			body->Des().Append(*home);
+			}
+		TInt state = TPheRow::EFree;
+		TBuf8<32> installed;
+		iGet->InstalledTagL(it.Id(), installed);
+		if (installed.Length())
+			state = (installed == it.Tag()) ? TPheRow::EInstalled : TPheRow::EUpdate;
+		TPtrC button = _L("Install");
+		TBool on = ETrue;
+		if (!it.iRelease)
+			{
+			button.Set(_L("Not available"));
+			on = EFalse;
+			}
+		else if (state == TPheRow::EInstalled)
+			{
+			button.Set(_L("Installed"));
+			on = EFalse;
+			}
+		else if (state == TPheRow::EUpdate)
+			button.Set(_L("Update"));
+		iView->ShowDetailsL(aRow, name, meta, *body, button, on);
+		CleanupStack::PopAndDestroy(3, desc);
+		Cba()->SetCommandSetL(R_PHESTORE_CBA_DETAILS);
+		Cba()->DrawDeferred();
 		}
 
 	void InstallL()
 		{
-		TInt i = iView->Current();
-		if (i < 0 || i >= iItems.Count())
+		if (iBusy || iView->Mode() != CPheCatalogueView::EDetails || !iDetailId)
 			return;
-		ShowWaitL();
+		TPheGetItem item;
+		if (!iGet->FindL(*iDetailId, item))
+			return;
+		iLastProgress = -1;
+		_LIT(KStarting, "Starting");
+		iView->SetDetailsStatus(KStarting, EFalse, 0);
+		iView->SetDetailsButton(_L("Installing"), EFalse);
+		++iBusy;
 		TInt result = KErrGeneral;
-		TRAPD(err, result = iGet->InstallL(iItems[i], 'c'));
-		HideWait();
+		TRAPD(err, result = iGet->InstallL(item, 'c'));
+		--iBusy;
 		if (err != KErrNone)
 			result = err;
-		HBufC* name = FromUtf8LC(iItems[i].Name());
-		TBuf<128> msg;
+		if (iExitPending)
+			{
+			Exit();
+			return;
+			}
+		TInt row = iView->DetailsRow();
 		if (result == KErrNone)
 			{
-			msg.Format(_L("%S installed"), name);
-			CAknConfirmationNote* note = new (ELeave) CAknConfirmationNote(ETrue);
-			note->ExecuteLD(msg);
+			iView->SetDetailsStatus(_L("Installed"), EFalse, -1);
+			iView->SetDetailsButton(_L("Installed"), EFalse);
+			iView->UpdateRow(row, TPheRow::EInstalled);
 			}
 		else
 			{
-			msg.Format(_L("%S: install failed (%d)"), name, result);
-			CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
-			note->ExecuteLD(msg);
+			TBuf<64> msg;
+			msg.Format(_L("Install failed (%d)"), result);
+			iView->SetDetailsStatus(msg, ETrue, -1);
+			iView->SetDetailsButton(_L("Try again"), ETrue);
 			}
-		CleanupStack::PopAndDestroy(name);
-		// the installed state changed: rebuild the rows (the items stay valid: no index reload)
-		iView->Items().Reset();
-		for (TInt k = 0; k < iItems.Count(); ++k)
-			AppendRowL(iItems[k]);
-		iView->ItemsChangedL();
 		}
 
-	void DetailsL()
+	void HandleResourceChangeL(TInt aType)
 		{
-		TInt i = iView->Current();
-		if (i < 0 || i >= iItems.Count())
-			return;
-		const CPheJson& it = *iItems[i].iItem;
-		HBufC* name = FromUtf8LC(iItems[i].Name());
-		TPtrC8 desc8 = it.GetStr(_L8("description"));
-		HBufC* desc = FromUtf8LC(desc8.Length() ? desc8 : iItems[i].Summary());
-		HBufC* lic = FromUtf8LC(it.GetStr(_L8("license")));
-		HBufC* home = FromUtf8LC(it.GetStr(_L8("homepage")));
-		HBufC* tag = FromUtf8LC(iItems[i].Tag());
-		HBufC* text = HBufC::NewLC(desc->Length() + lic->Length() + home->Length() + tag->Length() + 64);
-		TPtr t = text->Des();
-		t.Append(*desc);
-		t.Append(_L("\n\nVersion: "));
-		t.Append(tag->Length() ? static_cast<const TDesC&>(*tag) : static_cast<const TDesC&>(_L("none approved")));
-		t.Append(_L("\nLicence: "));
-		t.Append(*lic);
-		if (home->Length())
-			{
-			t.Append(_L("\n"));
-			t.Append(*home);
-			}
-		CAknMessageQueryDialog* dlg = CAknMessageQueryDialog::NewL(*text);
-		dlg->PrepareLC(R_AVKON_MESSAGE_QUERY_DIALOG);
-		dlg->QueryHeading()->SetTextL(*name);
-		dlg->RunLD();
-		CleanupStack::PopAndDestroy(6, name);
+		CAknAppUi::HandleResourceChangeL(aType);
+		if (aType == KEikDynamicLayoutVariantSwitch && iView)
+			iView->SetRect(ClientRect());
 		}
 
 	void HandleCommandL(TInt aCommand)
@@ -272,26 +408,46 @@ private:
 		switch (aCommand)
 			{
 		case EPheStoreCmdInstall:
-			InstallL();
-			break;
-		case EPheStoreCmdDetails:
-			DetailsL();
+			UiAction(0);
 			break;
 		case EPheStoreCmdRefresh:
-			RefreshL();
+			if (!iBusy && iView->Mode() == CPheCatalogueView::EList)
+				{
+				iPhase = EPhaseRefresh;
+				iView->SetLoad(CPheCatalogueView::ELoading, KNullDesC);
+				Schedule();
+				}
+			break;
+		case EAknSoftkeyBack:
+			if (iView->Mode() == CPheCatalogueView::EDetails)
+				UiBack();
 			break;
 		case EAknSoftkeyExit:
 		case EEikCmdExit:
-			Exit();
+			if (iBusy)
+				iExitPending = ETrue;              // the nested wait is still running: leave when it returns
+			else
+				Exit();
 			break;
 			}
 		}
 
 	CPheGet* iGet;
-	CPheStoreView* iView;
+	CPheCatalogueView* iView;
+	CPheIconLoader* iLoader;
+	CIdle* iWork;
+	CPheJob* iRefreshJob;
 	RArray<TPheGetItem> iItems;
-	CAknWaitDialog* iWait;
-	CIdle* iRefreshPending;
+	TInt iPhase;
+	TInt iNextAfterBuild;
+	TInt iBuilt;
+	TInt iBusy;
+	TBool iExitPending;
+	TBool iFresh;
+	TBool iRebuildPending;
+	TInt iKeepOffset;
+	TInt iLastProgress;
+	HBufC8* iDetailId;
 	};
 
 class CPheStoreDocument : public CAknDocument

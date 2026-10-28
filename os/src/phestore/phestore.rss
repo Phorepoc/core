@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// phestore.rss -- OURS: the download app's UI (phestore.cpp)
+// phestore.rss -- OURS: the download app's resources (phestore.cpp)
 NAME PHST
 
 #include <eikon.rh>
@@ -38,6 +38,16 @@ RESOURCE TITLE_PANE r_phestore_title_pane
 	txt = "Catalogue";
 	}
 
+// the details page: Install on the left, Back on the right
+RESOURCE CBA r_phestore_cba_details
+	{
+	buttons =
+		{
+		CBA_BUTTON { id = EPheStoreCmdInstall; txt = "Install"; },
+		CBA_BUTTON { id = EAknSoftkeyBack; txt = "Back"; }
+		};
+	}
+
 RESOURCE MENU_BAR r_phestore_menubar
 	{
 	titles = { MENU_TITLE { menu_pane = r_phestore_menu; } };
@@ -47,8 +57,6 @@ RESOURCE MENU_PANE r_phestore_menu
 	{
 	items =
 		{
-		MENU_ITEM { command = EPheStoreCmdInstall; txt = "Install"; },
-		MENU_ITEM { command = EPheStoreCmdDetails; txt = "Details"; },
 		MENU_ITEM { command = EPheStoreCmdRefresh; txt = "Refresh"; },
 		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
 		};

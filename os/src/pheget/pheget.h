@@ -12,6 +12,7 @@
 #include <e32base.h>
 #include <f32file.h>
 #include <es_sock.h>
+#include <badesca.h>
 #include <http/rhttpsession.h>
 #include <http/mhttptransactioncallback.h>
 
@@ -54,7 +55,13 @@ public:
 
 	// Loads the default index (unless aNoDefault), the ones in c:\data\pheget\indexes.txt and aExtra (may be empty).
 	// An index that fails is logged and skipped; leaves only if none loaded.
-	void LoadIndexesL(const TDesC& aExtra, TBool aNoDefault);
+	// With aCachedOnly the URL indexes are read from their cache files (c:\data\pheget\index<n>.json) and nothing is
+	// downloaded: the instant start; RefreshIndexesL then updates the caches over the network.
+	void LoadIndexesL(const TDesC& aExtra, TBool aNoDefault, TBool aCachedOnly = EFalse);
+	// Downloads the URL indexes into their cache files; ETrue when one changed (reload then). Leaves when none could be fetched.
+	TBool RefreshIndexesL(const TDesC& aExtra, TBool aNoDefault);
+	// Fetches a file (URL or local path) into aFile, through a temporary name; returns the error (KErrNone = done).
+	TInt FetchFileL(const TDesC& aLocation, const TDesC& aFile);
 	void ResetIndexes() { iIndexes.ResetAndDestroy(); }    // (a refresh; invalidates every TPheGetItem)
 	// The items that fit this device (all items with aAll), first index first; an id seen earlier wins.
 	void ItemsL(RArray<TPheGetItem>& aItems, TBool aAll);
@@ -73,10 +80,13 @@ private:
 	CPheGet(MPheGetObserver& aObserver) : iObserver(aObserver) {}
 	void ConstructL();
 	void ReadDeviceL();
-	void LoadIndexL(const TDesC& aLocation);
+	CDesCArray* LocationsL(const TDesC& aExtra, TBool aNoDefault);
+	static void IndexCachePath(TDes& aFile, TInt aSlot);
+	void LoadIndexL(const TDesC& aLocation, TInt aSlot, TBool aCachedOnly);
 	void FetchL(const TDesC& aLocation, const TDesC& aFile);  // URL or local path -> aFile
 	void HttpGetL(const TDesC8& aUrl, const TDesC& aFile);
 	void OpenNetworkL();
+	TInt StartConnection();
 	TBool HashMatchesL(const TDesC& aFile, const TDesC8& aSha256Hex);
 	void RecordInstalledL(const TDesC8& aId, const TDesC8& aTag);
 	void Log(TRefByValue<const TDesC8> aFmt, ...);
@@ -86,6 +96,8 @@ private:
 	TBuf8<32> iBoard;
 	TBuf8<16> iArch;
 	RPointerArray<CPheJson> iIndexes;
+	HBufC8* iInstalledText;                    // installed.txt, read once (InstalledTagL)
+	TBool iInstalledLoaded;
 
 	// network (opened on the first HTTP fetch)
 	TBool iNetOpen;

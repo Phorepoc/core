@@ -50,6 +50,7 @@ void CPheGet::ConstructL()
 
 CPheGet::~CPheGet()
 	{
+	delete iInstalledText;
 	iIndexes.ResetAndDestroy();
 	if (iSessionOpen)
 		iSession.Close();
@@ -130,7 +131,7 @@ static TBool IsUrl(const TDesC& aLocation)
 	return aLocation.Left(7).CompareF(_L("http://")) == 0 || aLocation.Left(8).CompareF(_L("https://")) == 0;
 	}
 
-void CPheGet::LoadIndexesL(const TDesC& aExtra, TBool aNoDefault)
+CDesCArray* CPheGet::LocationsL(const TDesC& aExtra, TBool aNoDefault)
 	{
 	CDesCArrayFlat* locations = new (ELeave) CDesCArrayFlat(4);
 	CleanupStack::PushL(locations);
@@ -161,13 +162,21 @@ void CPheGet::LoadIndexesL(const TDesC& aExtra, TBool aNoDefault)
 			}
 		CleanupStack::PopAndDestroy(text);
 		}
+	CleanupStack::Pop(locations);
+	return locations;
+	}
+
+void CPheGet::LoadIndexesL(const TDesC& aExtra, TBool aNoDefault, TBool aCachedOnly)
+	{
+	CDesCArray* locations = LocationsL(aExtra, aNoDefault);
+	CleanupStack::PushL(locations);
 	for (TInt i = 0; i < locations->Count(); ++i)
 		{
-		TRAPD(r, LoadIndexL((*locations)[i]));
+		TRAPD(r, LoadIndexL((*locations)[i], i, aCachedOnly));
 		TBuf8<200> loc8;
 		loc8.Copy((*locations)[i].Left(200));
 		if (r != KErrNone)
-			Log(_L8("index %S: failed (%d)"), &loc8, r);
+			Log(_L8("index %S: %s (%d)"), &loc8, aCachedOnly ? "no cached copy" : "failed", r);
 		else
 			Log(_L8("index %S: %d items"), &loc8, iIndexes[iIndexes.Count() - 1]->Get(_L8("items"))->Count());
 		}
@@ -176,14 +185,70 @@ void CPheGet::LoadIndexesL(const TDesC& aExtra, TBool aNoDefault)
 		User::Leave(KErrNotFound);
 	}
 
-void CPheGet::LoadIndexL(const TDesC& aLocation)
+// Downloads every URL index into its cache file (c:\data\pheget\index<n>.json) without parsing it; ETrue when one
+// differs from the copy cached before (the caller then reloads). A download that fails leaves the cache as it was.
+TBool CPheGet::RefreshIndexesL(const TDesC& aExtra, TBool aNoDefault)
+	{
+	CDesCArray* locations = LocationsL(aExtra, aNoDefault);
+	CleanupStack::PushL(locations);
+	TBool changed = EFalse;
+	TInt fetched = 0;
+	for (TInt i = 0; i < locations->Count(); ++i)
+		{
+		if (!IsUrl((*locations)[i]))
+			continue;
+		TFileName file, tmp;
+		IndexCachePath(file, i);
+		tmp = file;
+		tmp.Append(_L(".tmp"));
+		TRAPD(r, FetchL((*locations)[i], tmp));
+		if (r != KErrNone)
+			{
+			iFs.Delete(tmp);
+			continue;
+			}
+		++fetched;
+		HBufC8* fresh = NULL;
+		HBufC8* old = NULL;
+		TRAPD(r1, fresh = ReadFileL(iFs, tmp));
+		TRAPD(r2, old = ReadFileL(iFs, file));
+		if (r1 == KErrNone && (r2 != KErrNone || *fresh != *old))
+			{
+			changed = ETrue;
+			iFs.Delete(file);
+			iFs.Rename(tmp, file);
+			}
+		else
+			iFs.Delete(tmp);
+		delete fresh;
+		delete old;
+		}
+	CleanupStack::PopAndDestroy(locations);
+	if (fetched == 0)
+		User::Leave(KErrCouldNotConnect);
+	return changed;
+	}
+
+void CPheGet::IndexCachePath(TDes& aFile, TInt aSlot)
+	{
+	aFile = KPheGetDir;
+	aFile.AppendFormat(_L("index%d.json"), aSlot);
+	}
+
+void CPheGet::LoadIndexL(const TDesC& aLocation, TInt aSlot, TBool aCachedOnly)
 	{
 	TFileName file;
 	if (IsUrl(aLocation))
 		{
-		file = KPheGetDir;
-		file.AppendFormat(_L("index%d.json"), iIndexes.Count());
-		FetchL(aLocation, file);
+		IndexCachePath(file, aSlot);
+		if (!aCachedOnly)
+			{
+			TFileName tmp(file);
+			tmp.Append(_L(".tmp"));
+			FetchL(aLocation, tmp);
+			iFs.Delete(file);
+			iFs.Rename(tmp, file);
+			}
 		}
 	else
 		{
@@ -202,6 +267,20 @@ void CPheGet::LoadIndexL(const TDesC& aLocation)
 		User::Leave(KErrCorrupt);
 	iIndexes.AppendL(root);
 	CleanupStack::Pop(root);
+	}
+
+TInt CPheGet::FetchFileL(const TDesC& aLocation, const TDesC& aFile)
+	{
+	TFileName tmp(aFile);
+	tmp.Append(_L(".tmp"));
+	TRAPD(r, FetchL(aLocation, tmp));
+	if (r != KErrNone)
+		{
+		iFs.Delete(tmp);
+		return r;
+		}
+	iFs.Delete(aFile);
+	return iFs.Rename(tmp, aFile);
 	}
 
 static const CPheJson* NewestRelease(const CPheJson& aItem)
@@ -295,6 +374,38 @@ void CPheGet::FetchL(const TDesC& aLocation, const TDesC& aFile)
 	CleanupStack::PopAndDestroy(url);
 	}
 
+// RConnection::Start() blocks the whole thread while the link comes up (many seconds); the asynchronous form with a
+// nested scheduler keeps a UI that called us alive meanwhile.
+class CPheConnStart : public CActive
+	{
+public:
+	CPheConnStart() : CActive(CActive::EPriorityStandard) { CActiveScheduler::Add(this); }
+	~CPheConnStart() { Cancel(); }
+	TInt Run(RConnection& aConnection)
+		{
+		iConnection = &aConnection;
+		aConnection.Start(iStatus);
+		SetActive();
+		iWait.Start();
+		return iStatus.Int();
+		}
+private:
+	void RunL() { iWait.AsyncStop(); }
+	void DoCancel() { iConnection->Close(); }   // (no StartCancel: closing the connection cancels it)
+	RConnection* iConnection;
+	CActiveSchedulerWait iWait;
+	};
+
+TInt CPheGet::StartConnection()
+	{
+	CPheConnStart* starter = new CPheConnStart;
+	if (!starter)
+		return iConnection.Start();
+	TInt r = starter->Run(iConnection);
+	delete starter;
+	return r;
+	}
+
 void CPheGet::OpenNetworkL()
 	{
 	if (iSessionOpen)
@@ -304,7 +415,7 @@ void CPheGet::OpenNetworkL()
 		User::LeaveIfError(iSockServ.Connect());
 		TInt r = iConnection.Open(iSockServ);
 		if (r == KErrNone)
-			r = iConnection.Start();       // the default connection (the "Internet" destination)
+			r = StartConnection();         // the default connection (the "Internet" destination)
 		if (r != KErrNone)
 			{
 			iConnection.Close();
@@ -509,13 +620,18 @@ TInt CPheGet::InstallL(const TPheGetItem& aItem, TChar aDrive)
 void CPheGet::InstalledTagL(const TDesC8& aId, TDes8& aTag)
 	{
 	aTag.Zero();
-	TFileName list(KPheGetDir);
-	list.Append(_L("installed.txt"));
-	HBufC8* text = NULL;
-	TRAPD(err, text = ReadFileL(iFs, list));
-	if (err != KErrNone)
+	if (!iInstalledLoaded)
+		{
+		TFileName list(KPheGetDir);
+		list.Append(_L("installed.txt"));
+		delete iInstalledText;
+		iInstalledText = NULL;
+		TRAP_IGNORE(iInstalledText = ReadFileL(iFs, list));
+		iInstalledLoaded = ETrue;
+		}
+	if (!iInstalledText)
 		return;
-	TLex8 lex(*text);
+	TLex8 lex(*iInstalledText);
 	while (!lex.Eos())
 		{
 		TPtrC8 id = lex.NextToken();
@@ -523,11 +639,11 @@ void CPheGet::InstalledTagL(const TDesC8& aId, TDes8& aTag)
 		if (id == aId)
 			aTag = tag.Left(aTag.MaxLength());
 		}
-	delete text;
 	}
 
 void CPheGet::RecordInstalledL(const TDesC8& aId, const TDesC8& aTag)
 	{
+	iInstalledLoaded = EFalse;                  // (InstalledTagL rereads)
 	TFileName list(KPheGetDir);
 	list.Append(_L("installed.txt"));
 	HBufC8* text = NULL;
