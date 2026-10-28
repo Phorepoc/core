@@ -1549,7 +1549,10 @@ COMPONENTS = {
     "descriptordatasource": dict(mmp="oss.FCL.sf.mw.mmmw/mmfenh/enhancedmediaclient/Plugins/DescriptorSource/group/DescriptorDataSource.mmp"),
     "filesource": dict(mmp="oss.FCL.sf.mw.mmmw/mmfenh/enhancedmediaclient/Plugins/FileSource/group/FileSource.mmp"),
     # the release ships FrameTable (seek tables) as a stub, installed under the real name
-    "frametable": dict(mmp="oss.FCL.sf.os.mmaudio/frametable_stub/group/frametable_stub.mmp", rom="frametable.dll"),
+    # the frame table = OURS (seeking + position events for the advanced audio controller): src/frametable, built
+    # under the release stub's mmp (its target, UIDs and .def)
+    "frametable": dict(mmp="oss.FCL.sf.os.mmaudio/frametable_stub/group/frametable_stub.mmp", rom="frametable.dll",
+                       drop=["frametable_stub.cpp"], extra=["src/frametable/frametable.cpp"]),
     "arimp3decmmfcodec": dict(mmp="oss.FCL.sf.adapt.codecs.aricent/mp3_dec/arimp3decmmfcodec/group/arimp3decmmfcodec.mmp"),
     "arimp3decwrapper": dict(mmp=os.path.join(OS_ROOT, "src/codecs/arimp3decwrapper/group/arimp3decwrapper.mmp")),   # OURS (minimp3)
     "mp3hwdevice": dict(mmp=os.path.join(OS_ROOT, "src/codecs/mp3hwdevice/group/mp3hwdevice.mmp")),   # OURS
@@ -2354,12 +2357,14 @@ COMPONENTS = {
     "apsettingshandlerui": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/apengine/apsettingshandlerui/group/Apsettingshandlerui.mmp"),   # <- imumutils
     "apengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/apengine/apeng/group/APEngine.MMP"),   # <- apsettingshandlerui
     "vpnapi": dict(mmp="oss.FCL.sf.mw.vpnclient/vpnapiimpl/group/vpnapi.mmp"),   # <- apengine
-    # the WLAN security settings UIs (RCL_3 mw.accesssec): no WLAN on this board, so Symbian's own stubs
-    # under the real names -- the package's .iby does the same when __PROTOCOL_WLAN is off
+    # the WLAN security settings UIs (RCL_3 mw.accesssec): the real WEP/WPA ones; WAPI's UI was never released (only
+    # its stub, which reports the mode unsupported -- no WAPI in our WLAN drivers either)
     "wepsecuritysettingsui": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.accesssec/wlansecuritysettings/wepsecuritysettingsui/group/WEPSecuritySettingsUI.mmp"),   # <- apengine
     "wpasecuritysettingsui": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.accesssec/wlansecuritysettings/wpasecuritysettingsui/group/WPASecuritySettingsUI.mmp"),   # <- apengine
     "wapisecuritysettingsui": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.accesssec/wlansecuritysettings/wapisecuritysettingsui/stub/group/wapisecuritysettingsstub.mmp"),
-    "wifiprotplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.accesssec/wlansecuritysettings/wifiprotectedsetup/group/wifiprotpluginstub.mmp"),
+    # Wi-Fi Protected Setup: the REAL client + notifier plug-in (WiFiProt.iby's __PROTOCOL_WLAN branch; was the stubs)
+    "wifiprotclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.accesssec/wlansecuritysettings/wifiprotectedsetup/group/wifiprotclient.mmp"),
+    "wifiprotplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.accesssec/wlansecuritysettings/wifiprotectedsetup/group/wifiprotplugin.mmp"),
     "cmpluginwlan": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/cmmanager/cmmgr/Plugins/cmpluginwlan/group/cmpluginwlan.mmp"),
     "wsfwlaninfo": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.wirelessacc/wlanutilities/wlansniffer/wlaninfo/group/wlaninfo.mmp"),
     # the blacklist DB is SECURE[2000cf30]: without its DBMS policy RDbNamedDatabase::Create leaves KErrArgument and
