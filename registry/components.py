@@ -1145,6 +1145,11 @@ COMPONENTS = {
                              rom_data=[r"private\10207218\goomconfig.xml=baseline/symbian-2010/oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/goommonitor/data/goomconfig.xml"]),
     "alftranseffectplugin": dict(mmp=_ALF + "plugins/alftranseffect/alftranseffectplugin/group/alftranseffectplugin.mmp", alf=3),
     "tfxsrvplugin": dict(mmp=_ALF + "plugins/alftranseffect/alftfxserverplugin/group/AlfTfxSrvPlugin.mmp", alf=3),
+    # the REAL transition-effects adapter (GfxTransEffect -> the alf tfx server plug-in) in place of classicui's
+    # GfxTransAdapterStub: matrixmenu/avkon BeginFullScreen covers view and app switches with it (without it a
+    # folder switch showed its undrawn window). No server (Classic) = it reports no effects, as the stub did.
+    "gfxtransadapter_alf": dict(mmp=_ALF + "plugins/alftranseffect/alfgfxtransadapter/group/gfxtransenginetfx.mmp", alf=3,
+                                rom="gfxtransadapter_alf.dll", rom_as="gfxtransadapter.dll"),
     "huirenderpluginvg": dict(mmp=_ALF + "coretoolkit/rendervg10/group/huirendervg10.mmp", alf=2, vfp=True, defs=["__SOFTFP="],
                           allow_wsd=True, libs=["surfacemanager.lib", "surfaceupdateclient.lib", "hal.lib"],   # phvgwindow.h (the alf window surface)
                           extra=["toolchain/shims/alf_fix/huitexturehandle_local.cpp"] + ([_AG + "HuiVg10RenderPlugin_ph.cpp", _AG + "HuiVg10RenderSurface_ph.cpp", _AG + "huivg10canvasrenderbuffer_ph.cpp"] if _ALFTRACE else []),
