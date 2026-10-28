@@ -480,7 +480,9 @@ COMPONENTS = {
     "aknphysics": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/aknphysics/group/aknphysics.mmp"),
     "gfxtrans": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/lafagnosticuifoundation/graphicseffects/group/GfxTransEffect.mmp"),
     # the resolver's vibra player (ECom): touch feedback through HWRM vibra -> our vibra plug-in (src/hwrm)
-    "tactilevibraplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.hapticsservices/tactilefeedback/tactilefeedbackresolver/plugins/tactilevibraplugin/group/tactilevibraplugin.mmp"),
+    "tactilevibraplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.hapticsservices/tactilefeedback/tactilefeedbackresolver/plugins/tactilevibraplugin/group/tactilevibraplugin.mmp",
+                               # + OURS: the 0-100 strength mapped onto its 0-3 levels (src/tactilevibra)
+                               drop=["tactilevibraplayer.cpp"], extra=["src/tactilevibra/tactilevibraplayer.cpp"]),
     "tactilefeedbackresolver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.hapticsservices/tactilefeedback/tactilefeedbackresolver/group/tactilefeedbackresolver.mmp",
         # tree skew: the source uses KProEngSilenceMode but this snapshot's profiles-services
         # ProfileEngineInternalCRKeys.h predates it (later releases: 0x80000202, after
