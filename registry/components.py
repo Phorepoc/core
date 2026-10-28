@@ -1100,7 +1100,8 @@ COMPONENTS = {
                                         libs=["centralrepository.lib"],   # GPU mode = developer menu key 8 (alfdecoderserverclient_ph.cpp)
                                         **({"drop": ["alfdecoderserverclient.cpp"], "extra": ["toolchain/shims/alf_fix/alfdecoderserverclient_ph.cpp"]} if _ALFTRACE else {}),
                                         rom="alfdecoderserverclient_real.dll", rom_as="alfdecoderserverclient.dll"),
-    "alfappservercore": dict(mmp=_ALF + "ServerCore/Src/alfappservercore.mmp", alf=2, allow_wsd=_ALFTRACE, flags=_ALFT_FLAGS, **_ALFLOG,
+    "alfappservercore": dict(mmp=_ALF + "ServerCore/Src/alfappservercore.mmp", alf=2, allow_wsd=_ALFTRACE, flags=_ALFT_FLAGS,
+                             defs=_ALFLOG.get("defs", []) + (["PH_ALFFXLOG"] if _ALFTRACE else []),
                              # alfstreamerbridge_ph: the bridge thread's RunL reads the message array + var-data buffer under
                              # the queue lock too (a writer's realloc tore them: data abort in HandleSetTransparencyAlphaChannelL)
                              drop=["alfstreamerserver.cpp", "alfstreamerbridge.cpp"] + (["alfappui.cpp", "alfbridge.cpp", "alfscreen.cpp"] if _ALFTRACE else []),
