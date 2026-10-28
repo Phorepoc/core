@@ -46,3 +46,17 @@ inline void PhAlfLog(const char* aFmt, ...)
 #define __ALFLOGSTRING2(C, X, Y) PhAlfLog(C, X, Y);
 #define __ALFLOGSTRING3(C, X, Y, Z) PhAlfLog(C, X, Y, Z);
 #define __ALFLOGSTRING4(C, X, Y, Z, W) PhAlfLog(C, X, Y, Z, W);
+
+// PH_ALFFXLOG (opt-in per component): the transition-effect chain's __ALFFXLOGSTRING* lines too
+#ifdef PH_ALFFXLOG
+#undef __ALFFXLOGSTRING
+#undef __ALFFXLOGSTRING1
+#undef __ALFFXLOGSTRING2
+#undef __ALFFXLOGSTRING3
+#undef __ALFFXLOGSTRING4
+#define __ALFFXLOGSTRING(C) PhAlfLog(C);
+#define __ALFFXLOGSTRING1(C, X) PhAlfLog(C, X);
+#define __ALFFXLOGSTRING2(C, X, Y) PhAlfLog(C, X, Y);
+#define __ALFFXLOGSTRING3(C, X, Y, Z) PhAlfLog(C, X, Y, Z);
+#define __ALFFXLOGSTRING4(C, X, Y, Z, W) PhAlfLog(C, X, Y, Z, W);
+#endif

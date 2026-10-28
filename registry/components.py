@@ -73,6 +73,8 @@ _ALFRC = os.environ.get("ALF_RC", "c")
 # at the alf server start, the alfredserver thread and the compositor stage construction. WSD: the per-site counters.
 _ALFTRACE = os.environ.get("ALF_TRACE") != "0"
 _AG = "toolchain/shims/alf_fix/gen/"
+# the transition-effect chain with its __ALFFXLOGSTRING lines as "PH: alf:" (ALF_TRACE)
+_ALFFX = dict(flags=_ALFT_FLAGS, defs=["PH_ALFFXLOG"], allow_wsd=True) if _ALFTRACE else {}
 _ALFT_FLAGS = ["-include", os.path.join(OS_ROOT, "toolchain/shims/alf_fix/ph_alflog.h")] if _ALFTRACE else []
 # (audio U5) the messaging ringing-tone BIO control's Smart Messaging parser, compiled into the tone HW device
 _RINGBC = "baseline/symbian-2010/oss.FCL.sf.app.messaging/messagingappbase/smartmessaging/ringbc"
@@ -1143,12 +1145,12 @@ COMPONENTS = {
                              allow_wsd=True, defs=["_GOOM_DEBUG"],
                              flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/goom_trace/tracedefs_ph.h")],
                              rom_data=[r"private\10207218\goomconfig.xml=baseline/symbian-2010/oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/goommonitor/data/goomconfig.xml"]),
-    "alftranseffectplugin": dict(mmp=_ALF + "plugins/alftranseffect/alftranseffectplugin/group/alftranseffectplugin.mmp", alf=3),
-    "tfxsrvplugin": dict(mmp=_ALF + "plugins/alftranseffect/alftfxserverplugin/group/AlfTfxSrvPlugin.mmp", alf=3),
+    "alftranseffectplugin": dict(mmp=_ALF + "plugins/alftranseffect/alftranseffectplugin/group/alftranseffectplugin.mmp", alf=3, **_ALFFX),
+    "tfxsrvplugin": dict(mmp=_ALF + "plugins/alftranseffect/alftfxserverplugin/group/AlfTfxSrvPlugin.mmp", alf=3, **_ALFFX),
     # the REAL transition-effects adapter (GfxTransEffect -> the alf tfx server plug-in) in place of classicui's
     # GfxTransAdapterStub: matrixmenu/avkon BeginFullScreen covers view and app switches with it (without it a
     # folder switch showed its undrawn window). No server (Classic) = it reports no effects, as the stub did.
-    "gfxtransadapter_alf": dict(mmp=_ALF + "plugins/alftranseffect/alfgfxtransadapter/group/gfxtransenginetfx.mmp", alf=3,
+    "gfxtransadapter_alf": dict(mmp=_ALF + "plugins/alftranseffect/alfgfxtransadapter/group/gfxtransenginetfx.mmp", alf=3, **_ALFFX,
                                 rom="gfxtransadapter_alf.dll", rom_as="gfxtransadapter.dll",
                                 # our effect set (Apache-2.0; the release never shipped its .fxml files) + the default-skin selection
                                 rom_data=[
