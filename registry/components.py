@@ -227,7 +227,7 @@ COMPONENTS = {
                    defs=["__SOFTFP=", "wfcSetContextAttribi=ph_real_wfcSetContextAttribi", "wfcSetElementAttribiv=ph_real_wfcSetElementAttribiv", "wfcSetElementAttribfv=ph_real_wfcSetElementAttribfv", "wfcInsertElement=ph_real_wfcInsertElement", "wfcRemoveElement=ph_real_wfcRemoveElement", "wfcSetElementAttribi=ph_real_wfcSetElementAttribi", "wfcSetElementAttribf=ph_real_wfcSetElementAttribf"],
                    vfp=True,
                    # OURS owfnotifications.cpp: a source update wakes the composer thread (the 2010 one polled every
-                   drop=["owfnotifications.cpp", "wfcscene.c", "wfccontext.c", "owfthread.c"], extra=["src/nga/libwfc/owfnotifications.cpp", "src/nga/libwfc/phtrace_wfc.cpp", "src/nga/libwfc/wfcscene.c",
+                   drop=["owfnotifications.cpp", "wfcscene.c", "wfccontext.c", "owfthread.c", "owfnativestreamstub.cpp"], extra=["src/nga/libwfc/owfnotifications.cpp", "src/nga/libwfc/owfnativestreamstub.cpp", "src/nga/libwfc/phtrace_wfc.cpp", "src/nga/libwfc/wfcscene.c",
                          # G8: the scene composed on the GPU (phgpucompose.cpp; our wfccontext.c tries it first)
                          "src/nga/libwfc/wfccontext.c", "src/nga/libwfc/phgpucompose.cpp", "src/nga/libwfc/owfthread.c"],
                    libs=["centralrepository.lib"],
