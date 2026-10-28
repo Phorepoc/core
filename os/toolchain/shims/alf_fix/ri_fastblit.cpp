@@ -41,6 +41,7 @@ int PhvgDrawImage(Surface* aS, const void* aKey, int aIw, int aIh, unsigned aHas
 
 static inline TInt PhRound(RIfloat v) { return (TInt)(v >= 0 ? v + 0.5f : v - 0.5f); }
 static inline RIfloat PhAbs(RIfloat v) { return v < 0 ? -v : v; }
+static inline TInt PhCeil(RIfloat v) { const TInt i = (TInt)v; return (RIfloat)i < v ? i + 1 : i; }
 
 // Union of the scissor rectangles on row y, clipped to [xa,xb): sorted, merged, non-overlapping spans (the scissor is the UNION of its rectangles).
 static const int KMaxClips = 128;
@@ -318,6 +319,125 @@ static void PhImageToRgba(Image* img, TUint8* out)
 		}
 	}
 
+// (2026-10-28) an axis-aligned scale of a 32-bit 8:8:8(:8) image, bilinear: transition effects scale whole layers every
+// frame, which the reference pixel pipe drew at ~700 ms a frame
+static TUint gScaledTaken;
+static bool PhRiScaledDraw(VGContext* c, Surface* s, Image* img, RIfloat a, RIfloat dd, RIfloat tx, RIfloat ty, bool multiply, Paint* paint)
+	{
+	Image* dst = s->m_image;
+	if (!dst || !dst->m_data || !img->m_data || a < 1e-3f || dd < 1e-3f)
+		return false;
+	const Color::Descriptor& sd = img->m_desc;
+	const Color::Descriptor& dsd = dst->m_desc;
+	if (dsd.bitsPerPixel != 32 || dsd.redBits != 8 || dsd.greenBits != 8 || dsd.blueBits != 8 || dsd.alphaBits != 8 || !dsd.isPremultiplied() || dsd.isLuminance() ||
+		sd.bitsPerPixel != 32 || sd.redBits != 8 || sd.greenBits != 8 || sd.blueBits != 8 || sd.isLuminance() ||
+		(sd.alphaBits && (sd.alphaBits != 8 || !sd.isPremultiplied())) || sd.isNonlinear() != dsd.isNonlinear())
+		return false;
+	const int sw = s->getWidth(), sh = s->getHeight();
+	Rectangle clips[KMaxClips];
+	int nclip = 0;
+	if (c->m_scissoring)
+		{
+		const int n = c->m_scissor.size();
+		if (n > KMaxClips)
+			return false;
+		for (int i = 0; i < n; i++)
+			if (c->m_scissor[i].width > 0 && c->m_scissor[i].height > 0)
+				clips[nclip++] = c->m_scissor[i];
+		}
+	else
+		{
+		clips[0].x = 0; clips[0].y = 0; clips[0].width = sw; clips[0].height = sh;
+		nclip = 1;
+		}
+	const TInt w = img->m_width, h = img->m_height;
+	if (w <= 0 || h <= 0)
+		return true;
+	// the pixels whose centres fall inside the transformed image
+	const TInt xa0 = PhCeil(tx - 0.5f), xb0 = PhCeil(tx + w * a - 0.5f);
+	const TInt ya0 = PhCeil(ty - 0.5f), yb0 = PhCeil(ty + h * dd - 0.5f);
+	Rectangle bnd; bnd.x = 0; bnd.y = 0; bnd.width = sw; bnd.height = sh;
+	Rectangle dr; dr.x = xa0; dr.y = ya0; dr.width = xb0 - xa0; dr.height = yb0 - ya0;
+	bnd.intersect(dr);
+	if (bnd.width <= 0 || bnd.height <= 0)
+		return true;
+	PhvgCpuAccess(s, true);
+	TUint mr = 255, mg = 255, mb = 255, ma = 255;
+	if (multiply)
+		{
+		Color pc = paint->m_paintColor;
+		pc.convert(Color::sRGBA_PRE);
+		mr = (TUint)(pc.r * 255.0f + 0.5f); mg = (TUint)(pc.g * 255.0f + 0.5f); mb = (TUint)(pc.b * 255.0f + 0.5f); ma = (TUint)(pc.a * 255.0f + 0.5f);
+		if (mr > 255) mr = 255;
+		if (mg > 255) mg = 255;
+		if (mb > 255) mb = 255;
+		if (ma > 255) ma = 255;
+		}
+	const bool srcAlpha = sd.alphaBits > 0, over = c->m_blendMode == VG_BLEND_SRC_OVER;
+	const TUint rs = sd.redShift, gs = sd.greenShift, bs = sd.blueShift, as = sd.alphaShift;
+	const TUint drs = dsd.redShift, dgs = dsd.greenShift, dbs = dsd.blueShift, das = dsd.alphaShift;
+	const TInt dstOffX = dst->m_storageOffsetX, dstOffY = dst->m_storageOffsetY;
+	const TInt srcOffX = img->m_storageOffsetX, srcOffY = img->m_storageOffsetY;
+	// source coordinates in 16.16 fixed point
+	const TInt stepX = (TInt)(65536.0f / a);
+	int sp[KMaxClips][2];
+	for (TInt y = bnd.y; y < bnd.y + bnd.height; y++)
+		{
+		const int ns = PhRowSpans(clips, nclip, y, bnd.x, bnd.x + bnd.width, sp);
+		if (!ns)
+			continue;
+		TInt fy = (TInt)((((RIfloat)y + 0.5f - ty) / dd - 0.5f) * 65536.0f);
+		if (fy < 0) fy = 0;
+		if (fy > (h - 1) << 16) fy = (h - 1) << 16;
+		const TInt j0 = fy >> 16, j1 = j0 + 1 < h ? j0 + 1 : j0;
+		const TUint wy = (TUint)(fy >> 8) & 255;
+		const RIuint32* r0 = (const RIuint32*)(img->m_data + (j0 + srcOffY) * img->m_stride) + srcOffX;
+		const RIuint32* r1 = (const RIuint32*)(img->m_data + (j1 + srcOffY) * img->m_stride) + srcOffX;
+		RIuint32* drow = (RIuint32*)(dst->m_data + (y + dstOffY) * dst->m_stride) + dstOffX;
+		for (int si = 0; si < ns; si++)
+			{
+			TInt fx = (TInt)((((RIfloat)sp[si][0] + 0.5f - tx) / a - 0.5f) * 65536.0f);
+			for (TInt x = sp[si][0]; x < sp[si][1]; x++, fx += stepX)
+				{
+				TInt cx = fx < 0 ? 0 : fx;
+				if (cx > (w - 1) << 16) cx = (w - 1) << 16;
+				const TInt i0 = cx >> 16, i1 = i0 + 1 < w ? i0 + 1 : i0;
+				const TUint wx = (TUint)(cx >> 8) & 255;
+				// two channels at a time: bytes 0 and 2, then 1 and 3
+				const RIuint32 p00 = r0[i0], p01 = r0[i1], p10 = r1[i0], p11 = r1[i1];
+				RIuint32 t0 = ((p00 & 0x00ff00ffu) * (256 - wx) + (p01 & 0x00ff00ffu) * wx) >> 8 & 0x00ff00ffu;
+				RIuint32 t1 = ((p10 & 0x00ff00ffu) * (256 - wx) + (p11 & 0x00ff00ffu) * wx) >> 8 & 0x00ff00ffu;
+				const RIuint32 lo = (t0 * (256 - wy) + t1 * wy) >> 8 & 0x00ff00ffu;
+				t0 = (((p00 >> 8) & 0x00ff00ffu) * (256 - wx) + ((p01 >> 8) & 0x00ff00ffu) * wx) >> 8 & 0x00ff00ffu;
+				t1 = (((p10 >> 8) & 0x00ff00ffu) * (256 - wx) + ((p11 >> 8) & 0x00ff00ffu) * wx) >> 8 & 0x00ff00ffu;
+				const RIuint32 v = lo | ((t0 * (256 - wy) + t1 * wy) >> 8 & 0x00ff00ffu) << 8;
+				TUint sr = (v >> rs) & 255, sg = (v >> gs) & 255, sb = (v >> bs) & 255, sa = srcAlpha ? (v >> as) & 255 : 255;
+				if (multiply)
+					{
+					sr = PhDiv255(sr * mr + 127); sg = PhDiv255(sg * mg + 127); sb = PhDiv255(sb * mb + 127); sa = PhDiv255(sa * ma + 127);
+					}
+				RIuint32& q = drow[x];
+				if (!over || sa == 255)
+					q = (sr << drs) | (sg << dgs) | (sb << dbs) | (sa << das);
+				else if (sa != 0)
+					{
+					const TUint ia = 255 - sa;
+					TUint orr = sr + PhDiv255(((q >> drs) & 255) * ia + 127), og = sg + PhDiv255(((q >> dgs) & 255) * ia + 127);
+					TUint ob = sb + PhDiv255(((q >> dbs) & 255) * ia + 127), oa = sa + PhDiv255(((q >> das) & 255) * ia + 127);
+					if (orr > 255) orr = 255;
+					if (og > 255) og = 255;
+					if (ob > 255) ob = 255;
+					if (oa > 255) oa = 255;
+					q = (orr << drs) | (og << dgs) | (ob << dbs) | (oa << das);
+					}
+				}
+			}
+		}
+	if (++gScaledTaken == 1 || (gScaledTaken & 255) == 0)
+		RDebug::Printf("PH: alf: RI scaled vgDrawImage: taken %u (last %dx%d scale %d/1000 x %d/1000)", gScaledTaken, w, h, (int)(a * 1000), (int)(dd * 1000));
+	return true;
+	}
+
 bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 	{
 	static TUint calls, taken, denied;
@@ -354,6 +474,11 @@ bool PhRiFastDrawImage(VGContext* c, Image* img, const Matrix3x3& m)
 	const RIfloat a = m[0].x, b = m[0].y, tx = m[0].z, cc = m[1].x, dd = m[1].y, ty = m[1].z;
 	if (PhAbs(b) > 1e-3f || PhAbs(cc) > 1e-3f || PhAbs(PhAbs(a) - 1.0f) > 1e-3f || PhAbs(PhAbs(dd) - 1.0f) > 1e-3f)
 		{
+		if (PhAbs(b) <= 1e-3f && PhAbs(cc) <= 1e-3f && PhRiScaledDraw(c, s, img, a, dd, tx, ty, multiply, paint))
+			{
+			++taken;
+			return true;
+			}
 		PhDeny(3);
 		++denied;
 		return false;

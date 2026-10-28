@@ -3,22 +3,22 @@
 	<comment>Copyright The Phorepoc Authors. SPDX-License-Identifier: Apache-2.0</comment>
 	<visual src="Item">
 		<param name="opacity" type="anim">
-			<duration>0.15</duration>
+			<duration>0.24</duration>
 			<style>inquad</style>
 			<keyframe at="0.0">1.0</keyframe>
 			<keyframe at="1.0">0.0</keyframe>
 		</param>
 		<param name="scale_x" type="anim">
-			<duration>0.15</duration>
+			<duration>0.24</duration>
 			<style>inquad</style>
 			<keyframe at="0.0">1.0</keyframe>
-			<keyframe at="1.0">0.96</keyframe>
+			<keyframe at="1.0">0.90</keyframe>
 		</param>
 		<param name="scale_y" type="anim">
-			<duration>0.15</duration>
+			<duration>0.24</duration>
 			<style>inquad</style>
 			<keyframe at="0.0">1.0</keyframe>
-			<keyframe at="1.0">0.96</keyframe>
+			<keyframe at="1.0">0.90</keyframe>
 		</param>
 		<param name="scale_origin_x" ref="visual.width">0.5</param>
 		<param name="scale_origin_y" ref="visual.height">0.5</param>
