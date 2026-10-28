@@ -87,5 +87,5 @@ RESOURCE DIALOG r_phestore_wait_note
 RESOURCE LOCALISABLE_APP_INFO r_phestore_localisable_app_info
 	{
 	short_caption = "Catalogue";
-	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Catalogue"; };
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Catalogue"; number_of_icons = 1; icon_file = "\\resource\\apps\\phestore_icon.mbm"; };
 	}
