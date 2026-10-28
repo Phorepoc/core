@@ -697,6 +697,28 @@ void Image::clear(const Color& clearColor, int x, int y, int w, int h)
 	col.clamp();
 	col.convert(m_desc.internalFormat);
 
+	if (m_desc.bitsPerPixel == 32 || m_desc.bitsPerPixel == 16)	//OURS (2026-10-28): the value packed once, rows filled (the effects clear a full-screen buffer every frame)
+	{
+		const unsigned int p = col.pack(m_desc);
+		for(int j=r.y;j<r.y + r.height;j++)
+		{
+			RIuint8* scanline = m_data + (j + m_storageOffsetY) * m_stride;
+			if (m_desc.bitsPerPixel == 32)
+			{
+				RIuint32* s = ((RIuint32*)scanline) + r.x + m_storageOffsetX;
+				for(int i=0;i<r.width;i++)
+					s[i] = (RIuint32)p;
+			}
+			else
+			{
+				RIuint16* s = ((RIuint16*)scanline) + r.x + m_storageOffsetX;
+				for(int i=0;i<r.width;i++)
+					s[i] = (RIuint16)p;
+			}
+		}
+		m_mipmapsValid = false;
+		return;
+	}
 	for(int j=r.y;j<r.y + r.height;j++)
 	{
 		for(int i=r.x;i<r.x + r.width;i++)
