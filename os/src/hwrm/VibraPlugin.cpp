@@ -31,6 +31,7 @@
 #include <hwrmvibracommands.h>
 #include <e32svr.h>
 #include <u32std.h>
+#include <e32debug.h>
 #include "Trace.h" 
 
 const TInt KA64PowerHalVibra = 0x5056;
@@ -69,7 +70,7 @@ void CVibraPlugin::ProcessCommandL( const TInt aCommandId,
                                       const TUint8 aTransId,
                                       TDesC8& aData )
     {
-    COMPONENT_TRACE((_L("HWRM VibraPlugin: Processing command: 0x%x, TransId: 0x%x"), aCommandId, aTransId));
+    RDebug::Printf("PH: vibra: command %d (trans %d, %d bytes)", aCommandId, aTransId, aData.Size());
 
     // any command ends a pulse still running
     delete iPulseEnd;
