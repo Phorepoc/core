@@ -71,13 +71,18 @@ char* strchr(const char* s, int c)
 // the presence of __pthread_key_create as "threads are on". The E32 image has no libpthread: these are the minimum they use.
 // A mutex is a zero-initialised word (PTHREAD_MUTEX_INITIALIZER), taken with a short spin: the critical sections are a
 // list walk. A condition wait may return spuriously, which its callers re-check.
+#if defined(__i386__) || defined(__x86_64__)
+static inline void SpinPause() { __builtin_ia32_pause(); }
+#else
+static inline void SpinPause() { __asm__ __volatile__("" ::: "memory"); }   // the image is x86's; ARM builds it unused
+#endif
 int __pthread_key_create(unsigned*, void (*)(void*)) { return 0; }
-int pthread_mutex_lock(volatile int* m) { while (__sync_lock_test_and_set(m, 1)) __builtin_ia32_pause(); return 0; }
+int pthread_mutex_lock(volatile int* m) { while (__sync_lock_test_and_set(m, 1)) SpinPause(); return 0; }
 int pthread_mutex_unlock(volatile int* m) { __sync_lock_release(m); return 0; }
 int pthread_once(volatile int* c, void (*fn)(void))
 	{
 	if (__sync_bool_compare_and_swap(c, 0, 1)) { fn(); __sync_synchronize(); *c = 2; }
-	else while (*c != 2) __builtin_ia32_pause();
+	else while (*c != 2) SpinPause();
 	return 0;
 	}
 int pthread_cond_wait(void*, void*) { return 0; }
