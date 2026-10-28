@@ -55,6 +55,7 @@ void CPheCatalogueView::ConstructL(const TRect& aRect)
 	iDProgress = -1;
 	iMode = EList;
 	iLoad = ELoading;
+	iBarDown = -1;
 	CreateWindowL();
 	Window().SetPointerGrab(ETrue);
 	EnableDragEvents();
@@ -110,6 +111,7 @@ void CPheCatalogueView::LayoutL()
 	if (iScale < 128)
 		iScale = 128;
 	iHeaderH = Sc(64);
+	iBarH = Sc(56);
 	iRowH = Sc(83);
 	iIconPx = Sc(66);
 	iMargin = Sc(12);
@@ -292,7 +294,7 @@ TInt CPheCatalogueView::ContentHeight() const
 
 TInt CPheCatalogueView::MaxOffset() const
 	{
-	TInt max = ContentHeight() - (Rect().Height() - iHeaderH);
+	TInt max = ContentHeight() - (ViewH() - iHeaderH);
 	return max > 0 ? max : 0;
 	}
 
@@ -309,7 +311,7 @@ void CPheCatalogueView::ScrollTo(TInt aOffset)
 
 TInt CPheCatalogueView::RowAt(TInt aY) const
 	{
-	if (iMode != EList || aY < iHeaderH || iRowH <= 0)
+	if (iMode != EList || iTab != 0 || aY < iHeaderH || aY >= ViewH() || iRowH <= 0)
 		return -1;
 	TInt r = (aY - iHeaderH + iOffset) / iRowH;
 	return (r >= 0 && r < iRows.Count()) ? r : -1;
@@ -318,7 +320,7 @@ TInt CPheCatalogueView::RowAt(TInt aY) const
 void CPheCatalogueView::EnsureVisible(TInt aRow)
 	{
 	TInt top = aRow * iRowH;
-	TInt viewH = Rect().Height() - iHeaderH;
+	TInt viewH = ViewH() - iHeaderH;
 	if (top < iOffset)
 		ScrollTo(top);
 	else if (top + iRowH > iOffset + viewH)
@@ -334,9 +336,9 @@ TBool CPheCatalogueView::Moving() const
 
 TInt CPheCatalogueView::PickIconRow() const
 	{
-	if (iMode != EList || iRows.Count() == 0 || iRowH <= 0)
+	if (iMode != EList || iTab != 0 || iRows.Count() == 0 || iRowH <= 0)
 		return -1;
-	TInt viewH = Rect().Height() - iHeaderH;
+	TInt viewH = ViewH() - iHeaderH;
 	TInt first = iOffset / iRowH;
 	TInt last = (iOffset + viewH) / iRowH;
 	TInt centre = (first + last) / 2;
@@ -369,7 +371,7 @@ void CPheCatalogueView::SetIcon(TInt aRow, CFbsBitmap* aIcon, CFbsBitmap* aMask)
 	r->iMask = aMask;
 	r->iIconState = TPheRow::EReady;
 	TInt y = iHeaderH + aRow * iRowH - iOffset;
-	if (iMode == EList && y + iRowH > iHeaderH && y < Rect().Height() && !Moving())
+	if (iMode == EList && y + iRowH > iHeaderH && y < ViewH() && !Moving())
 		Redraw();
 	}
 
@@ -383,7 +385,7 @@ void CPheCatalogueView::EvictFarIcons()
 	{
 	if (iRowH <= 0)
 		return;
-	TInt centre = (iOffset + (Rect().Height() - iHeaderH) / 2) / iRowH;
+	TInt centre = (iOffset + (ViewH() - iHeaderH) / 2) / iRowH;
 	for (TInt i = 0; i < iRows.Count(); ++i)
 		{
 		TPheRow* r = iRows[i];
@@ -514,8 +516,11 @@ void CPheCatalogueView::Render()
 	iFrameGc->SetBrushStyle(CGraphicsContext::ENullBrush);
 	if (iMode == EDetails)
 		RenderDetails();
+	else if (iTab != 0)
+		RenderSoon();
 	else
 		RenderList();
+	DrawBar();
 	}
 
 void CPheCatalogueView::DrawHeader(const TDesC& aTitle)
@@ -524,10 +529,8 @@ void CPheCatalogueView::DrawHeader(const TDesC& aTitle)
 	FillGradient(TRect(0, 0, w, iHeaderH - 1), TRgb(0xed, 0xed, 0xed), TRgb(0xe7, 0xe7, 0xe7));
 	iFrameGc->SetPenColor(TRgb(0xcf, 0xcf, 0xcf));
 	iFrameGc->DrawLine(TPoint(0, 0), TPoint(w, 0));
-	iFrameGc->SetPenColor(KWhite);
-	iFrameGc->DrawLine(TPoint(0, iHeaderH - 1), TPoint(w, iHeaderH - 1));
 	TInt rightReserve = iMargin;
-	if (iMode == EList)
+	if (iMode == EList && iTab == 0)
 		{
 		if (iLoad == ELoading && iRows.Count() > 0)
 			{
@@ -603,10 +606,198 @@ void CPheCatalogueView::DrawRow(TInt aRow, TInt aY, TBool aPressed)
 		Text(*row.iTag, *iFSmall, tx, aY + iRowH - Sc(9) - (iFSmall->HeightInPixels() - iAscSmall), aPressed ? KWhite : KTextLight);
 	}
 
+static const TRgb KBarTop(0x42, 0x42, 0x42);
+static const TRgb KBarBottom(0x1c, 0x1c, 0x1c);
+static const TRgb KBarIcon(0xd2, 0xd2, 0xd2);
+static const TRgb KBarActive(0x7c, 0xc2, 0xff);
+enum { EIconBack, EIconExit, EIconHome, EIconCategories, EIconSearch, EIconMyApps, EIconOptions };
+
+TInt CPheCatalogueView::BarCell(const TPoint& aPos) const
+	{
+	TInt w = Rect().Width();
+	if (aPos.iY < ViewH() || aPos.iY >= Rect().Height() || aPos.iX < 0 || aPos.iX >= w)
+		return -1;
+	return Min(5, aPos.iX * 6 / w);
+	}
+
+void CPheCatalogueView::SetTab(TInt aTab)
+	{
+	iFling = EFalse;
+	iTab = aTab;
+	iSelShown = EFalse;
+	Redraw();
+	if (aTab == 0)
+		iUi.UiIconWanted();
+	}
+
+void CPheCatalogueView::BarAction(TInt aCell)
+	{
+	if (aCell == 0)                                 // back on a details page / a tab, exit on the root
+		{
+		if (iMode == EDetails)
+			iUi.UiBack();
+		else if (iTab != 0)
+			SetTab(0);
+		else
+			iUi.UiExit();
+		return;
+		}
+	if (aCell == 5)                                 // the options menu
+		{
+		iUi.UiOptions();
+		return;
+		}
+	if (iMode == EDetails)
+		iUi.UiBack();
+	if (iTab == aCell - 1 && iTab == 0)
+		{
+		ScrollTo(0);
+		Redraw();
+		}
+	else
+		SetTab(aCell - 1);
+	}
+
+void CPheCatalogueView::DrawBarIcon(TInt aKind, const TPoint& aC, TRgb aColour)
+	{
+	TInt h = Sc(12);                                // half the glyph box
+	TInt pw = Max(2, Sc(3));
+	CFbsBitGc& gc = *iFrameGc;
+	gc.SetPenStyle(CGraphicsContext::ESolidPen);
+	gc.SetPenColor(aColour);
+	gc.SetPenSize(TSize(pw, pw));
+	gc.SetBrushStyle(CGraphicsContext::ENullBrush);
+	TInt x = aC.iX, y = aC.iY;
+	switch (aKind)
+		{
+	case EIconBack:
+		{
+		TInt q = h * 7 / 10;
+		gc.DrawLine(TPoint(x - h, y), TPoint(x + h, y));
+		gc.DrawLine(TPoint(x - h, y), TPoint(x - h + q, y - q));
+		gc.DrawLine(TPoint(x - h, y), TPoint(x - h + q, y + q));
+		break;
+		}
+	case EIconExit:
+		{
+		TInt q = h * 8 / 10;
+		gc.DrawLine(TPoint(x - q, y - q), TPoint(x + q, y + q));
+		gc.DrawLine(TPoint(x - q, y + q), TPoint(x + q, y - q));
+		break;
+		}
+	case EIconHome:
+		{
+		TInt hw = h * 7 / 10;
+		gc.DrawLine(TPoint(x - h - pw / 2, y), TPoint(x, y - h));
+		gc.DrawLine(TPoint(x, y - h), TPoint(x + h + pw / 2, y));
+		gc.DrawLine(TPoint(x - hw, y), TPoint(x - hw, y + h));
+		gc.DrawLine(TPoint(x + hw, y), TPoint(x + hw, y + h));
+		gc.DrawLine(TPoint(x - hw, y + h), TPoint(x + hw + 1, y + h));
+		break;
+		}
+	case EIconCategories:
+		{
+		gc.SetPenStyle(CGraphicsContext::ENullPen);
+		gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
+		gc.SetBrushColor(aColour);
+		TInt s = h - Sc(2);
+		TInt gap = Sc(4);
+		for (TInt i = 0; i < 4; ++i)
+			{
+			TInt cx = x + ((i & 1) ? gap / 2 : -gap / 2 - s);
+			TInt cy = y + ((i & 2) ? gap / 2 : -gap / 2 - s);
+			gc.DrawRoundRect(TRect(TPoint(cx, cy), TSize(s, s)), TSize(Sc(2), Sc(2)));
+			}
+		break;
+		}
+	case EIconSearch:
+		{
+		TInt r = h * 7 / 10;
+		TInt cx = x - h / 5, cy = y - h / 5;
+		gc.DrawEllipse(TRect(cx - r, cy - r, cx + r, cy + r));
+		gc.DrawLine(TPoint(cx + r * 7 / 10, cy + r * 7 / 10), TPoint(x + h, y + h));
+		break;
+		}
+	case EIconOptions:
+		{
+		gc.SetPenStyle(CGraphicsContext::ENullPen);
+		gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
+		gc.SetBrushColor(aColour);
+		TInt d = Max(3, Sc(5));
+		for (TInt i = -1; i <= 1; ++i)
+			gc.DrawRect(TRect(TPoint(x - d / 2, y + i * h * 7 / 10 - d / 2), TSize(d, d)));
+		break;
+		}
+	case EIconMyApps:
+		{
+		TInt step = h * 7 / 10;
+		for (TInt i = -1; i <= 1; ++i)
+			{
+			TInt ly = y + i * step;
+			gc.DrawLine(TPoint(x - h, ly), TPoint(x - h + pw, ly));
+			gc.DrawLine(TPoint(x - h / 3, ly), TPoint(x + h, ly));
+			}
+		break;
+		}
+		}
+	gc.SetPenSize(TSize(1, 1));
+	gc.SetPenStyle(CGraphicsContext::ESolidPen);
+	gc.SetBrushStyle(CGraphicsContext::ENullBrush);
+	}
+
+// the bottom toolbar: back/exit at the left, then the four tabs (the selected one lit, the pressed one blue)
+void CPheCatalogueView::DrawBar()
+	{
+	TInt w = Rect().Width();
+	TInt top = ViewH();
+	TInt bottom = Rect().Height();
+	FillGradient(TRect(0, top, w, bottom), KBarTop, KBarBottom);
+	iFrameGc->SetPenColor(TRgb(0x0c, 0x0c, 0x0c));
+	iFrameGc->DrawLine(TPoint(0, top), TPoint(w, top));
+	for (TInt i = 0; i < 6; ++i)
+		{
+		TInt x0 = i * w / 6, x1 = (i + 1) * w / 6;
+		TRect cell(x0, top + 2, x1, bottom);
+		TBool pressed = (iBarDown == i);
+		TBool active = (i > 0 && i < 5 && i - 1 == iTab);
+		if (pressed)
+			FillGradient(cell, TRgb(0x30, 0x91, 0xe2), TRgb(0x1a, 0x85, 0xde));
+		else if (active)
+			{
+			FillGradient(cell, TRgb(0x34, 0x34, 0x34), TRgb(0x12, 0x12, 0x12));
+			iFrameGc->SetPenColor(KBlue);
+			iFrameGc->SetPenSize(TSize(1, Sc(3)));
+			iFrameGc->DrawLine(TPoint(x0, top + 3), TPoint(x1, top + 3));
+			iFrameGc->SetPenSize(TSize(1, 1));
+			}
+		TInt kind = i == 0 ? ((iMode == EDetails || iTab != 0) ? EIconBack : EIconExit) : (i == 5 ? EIconOptions : EIconHome + (i - 1));
+		DrawBarIcon(kind, TPoint((x0 + x1) / 2, top + 2 + (bottom - top - 2) / 2),
+			pressed ? KWhite : (active ? KBarActive : KBarIcon));
+		}
+	// dividers: back/exit | tabs | options
+	iFrameGc->SetPenColor(TRgb(0x0c, 0x0c, 0x0c));
+	iFrameGc->DrawLine(TPoint(w / 6, top + 4), TPoint(w / 6, bottom));
+	iFrameGc->DrawLine(TPoint(5 * w / 6, top + 4), TPoint(5 * w / 6, bottom));
+	}
+
+void CPheCatalogueView::RenderSoon()
+	{
+	_LIT(KCat, "Categories");
+	_LIT(KSearch, "Search");
+	_LIT(KMine, "My apps");
+	_LIT(KSoon, "Coming soon");
+	iRetryRect = TRect();
+	TInt w = Rect().Width();
+	TInt cy = iHeaderH + (ViewH() - iHeaderH) / 2;
+	TInt tw = iFTitle->TextWidthInPixels(KSoon);
+	Text(KSoon, *iFTitle, (w - tw) / 2, cy + iAscTitle / 2, KText2);
+	DrawHeader(iTab == 1 ? static_cast<const TDesC&>(KCat) : iTab == 2 ? static_cast<const TDesC&>(KSearch) : static_cast<const TDesC&>(KMine));
+	}
+
 void CPheCatalogueView::DrawEmpty(const TDesC& aMessage, TBool aError, TBool aButton)
 	{
 	TInt w = Rect().Width();
-	TInt cy = iHeaderH + (Rect().Height() - iHeaderH) / 2;
+	TInt cy = iHeaderH + (ViewH() - iHeaderH) / 2;
 	TInt y = cy - Sc(40);
 	TInt tw = iFTitle->TextWidthInPixels(aMessage);
 	if (tw > w - 2 * iMargin)
@@ -624,7 +815,7 @@ void CPheCatalogueView::DrawEmpty(const TDesC& aMessage, TBool aError, TBool aBu
 void CPheCatalogueView::RenderList()
 	{
 	TInt w = Rect().Width();
-	TInt h = Rect().Height();
+	TInt h = ViewH();
 	TInt n = iRows.Count();
 	iRetryRect = TRect();
 	if (n > 0)
@@ -670,7 +861,7 @@ void CPheCatalogueView::RenderList()
 void CPheCatalogueView::RenderDetails()
 	{
 	TInt w = Rect().Width();
-	TInt h = Rect().Height();
+	TInt h = ViewH();
 	TInt y = iHeaderH - iOffset;
 	// item header block: icon + meta lines
 	TInt icon = Sc(96);
@@ -897,6 +1088,15 @@ void CPheCatalogueView::Tick()
 
 void CPheCatalogueView::PointerDown(const TPoint& aPos)
 	{
+	if (BarCell(aPos) >= 0)
+		{
+		iFling = EFalse;
+		iDown = EFalse;
+		iBarDown = BarCell(aPos);
+		Redraw();
+		return;
+		}
+	iBarDown = -1;
 	iDown = ETrue;
 	iDragging = EFalse;
 	iShowPressed = EFalse;
@@ -919,6 +1119,15 @@ void CPheCatalogueView::PointerDown(const TPoint& aPos)
 
 void CPheCatalogueView::PointerDrag(const TPoint& aPos)
 	{
+	if (iBarDown >= 0)
+		{
+		if (BarCell(aPos) != iBarDown)
+			{
+			iBarDown = -1;
+			Redraw();
+			}
+		return;
+		}
 	if (!iDown)
 		return;
 	TInt dy = aPos.iY - iDownPos.iY;
@@ -955,6 +1164,15 @@ void CPheCatalogueView::PointerDrag(const TPoint& aPos)
 
 void CPheCatalogueView::PointerUp(const TPoint& aPos)
 	{
+	if (iBarDown >= 0)
+		{
+		TInt cell = iBarDown;
+		iBarDown = -1;
+		Redraw();
+		if (BarCell(aPos) == cell)
+			BarAction(cell);
+		return;
+		}
 	if (!iDown)
 		return;
 	iDown = EFalse;
@@ -1052,6 +1270,21 @@ TKeyResponse CPheCatalogueView::OfferKeyEventL(const TKeyEvent& aKey, TEventCode
 	if (aType != EEventKey)
 		return EKeyWasNotConsumed;
 	TInt code = aKey.iCode;
+	switch (code)                                   // no softkey bar: the hardware keys do its work
+		{
+	case EKeyDevice0:                               // left softkey = Options
+		iUi.UiOptions();
+		return EKeyWasConsumed;
+	case EKeyDevice1:                               // right softkey / back
+	case EKeyBackspace:
+	case EKeyEscape:
+		BarAction(0);
+		return EKeyWasConsumed;
+	default:
+		break;
+		}
+	if (iMode != EDetails && iTab != 0)
+		return EKeyWasNotConsumed;
 	if (iMode == EDetails)
 		{
 		switch (code)
@@ -1085,7 +1318,7 @@ TKeyResponse CPheCatalogueView::OfferKeyEventL(const TKeyEvent& aKey, TEventCode
 			iSelShown = ETrue;
 			if (iSel < 0)
 				iSel = Min(n - 1, (iOffset + iRowH - 1) / iRowH);
-			else if (iSel * iRowH + iRowH <= iOffset || iSel * iRowH >= iOffset + Rect().Height() - iHeaderH)
+			else if (iSel * iRowH + iRowH <= iOffset || iSel * iRowH >= iOffset + ViewH() - iHeaderH)
 				iSel = Min(n - 1, (iOffset + iRowH - 1) / iRowH);
 			}
 		else

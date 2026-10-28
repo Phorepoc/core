@@ -41,14 +41,24 @@ static TInt Since() { return PheStoreSince(); }
 class CPheStoreAppUi : public CAknAppUi, public MPheGetObserver, public MPheCatalogueUi, public MPheJobObserver
 	{
 public:
+	// the view's area: the whole screen (no status pane, no softkey bar). ClientRect() still starts below the status
+	// pane until the hide takes effect, which left the system status pane showing where our header belongs
+	TRect FullRect() const { return ApplicationRect(); }
+	void HandleStatusPaneSizeChange()
+		{
+		CAknAppUi::HandleStatusPaneSizeChange();
+		if (iView)
+			iView->SetRect(FullRect());
+		}
 	void ConstructL()
 		{
 		gStart = NowUs();
 		BaseConstructL(EAknEnableSkin);
 		StatusPane()->MakeVisible(EFalse);             // our own header: the whole screen is the app's
 		iGet = CPheGet::NewL(*this);
-		iView = CPheCatalogueView::NewL(ClientRect(), *this);
+		iView = CPheCatalogueView::NewL(FullRect(), *this);
 		AddToStackL(iView);
+		iView->Window().SetOrdinalPosition(0);         // in front of the (empty) softkey bar: our own toolbar is drawn there, the system bar is never seen
 		iLoader = CPheIconLoader::NewL(*iView);
 		iRefreshJob = CPheJob::NewL(*this);
 		iWork = CIdle::NewL(CActive::EPriorityIdle);
@@ -57,6 +67,7 @@ public:
 		}
 	~CPheStoreAppUi()
 		{
+		delete iExitTimer;
 		delete iWork;
 		delete iRefreshJob;
 		delete iLoader;
@@ -88,6 +99,7 @@ public:
 	void UiFirstPaint()
 		{
 		RDebug::Printf("PH: [phestore] TIMING first paint %d ms", Since());
+		iView->DrawDeferred();                         // once more after the first frame: the area the status pane / softkey bar covered is repainted by then
 		iWork->Start(TCallBack(WorkCb, this));         // after this frame
 		}
 	void UiIconWanted() { iLoader->Kick(); }
@@ -101,8 +113,7 @@ public:
 	void UiBack()
 		{
 		iView->ShowList();
-		TRAP_IGNORE(Cba()->SetCommandSetL(R_AVKON_SOFTKEYS_OPTIONS_EXIT));
-		Cba()->DrawDeferred();
+		TRAP_IGNORE(Cba()->SetCommandSetL(R_AVKON_SOFTKEYS_OPTIONS_EXIT));   // (hidden behind the view: the framework's exit sequence wants a real softkey set)
 		if (iRebuildPending)
 			{
 			iRebuildPending = EFalse;
@@ -111,6 +122,28 @@ public:
 			}
 		}
 	void UiAction(TInt /*aRow*/) { TRAP_IGNORE(InstallL()); }
+	void UiExit()
+		{
+		// leave from a clean scheduler turn, a moment after the pointer event
+		if (!iExitTimer)
+			{
+			TRAPD(err, iExitTimer = CPeriodic::NewL(CActive::EPriorityStandard));
+			if (err != KErrNone)
+				return;
+			}
+		if (!iExitTimer->IsActive())
+			iExitTimer->Start(300000, 300000, TCallBack(ExitCb, this));
+		}
+	static TInt ExitCb(TAny* aSelf)
+		{
+		CPheStoreAppUi* self = static_cast<CPheStoreAppUi*>(aSelf);
+		self->iExitTimer->Cancel();
+		RDebug::Printf("PH: [phestore] exit (toolbar)");
+		// the framework's own answer to a user exit command (Options > Exit) is to hide the app in the background
+		self->HideInBackground();
+		return 0;
+		}
+	void UiOptions() { TRAP_IGNORE(ProcessCommandL(EAknSoftkeyOptions)); }
 
 private:
 	enum TPhase { EPhaseIdle, EPhaseCache, EPhaseBuild, EPhaseRefresh };
@@ -355,7 +388,6 @@ private:
 		iView->ShowDetailsL(aRow, name, meta, *body, button, on);
 		CleanupStack::PopAndDestroy(3, desc);
 		Cba()->SetCommandSetL(R_PHESTORE_CBA_DETAILS);
-		Cba()->DrawDeferred();
 		}
 
 	void InstallL()
@@ -400,7 +432,7 @@ private:
 		{
 		CAknAppUi::HandleResourceChangeL(aType);
 		if (aType == KEikDynamicLayoutVariantSwitch && iView)
-			iView->SetRect(ClientRect());
+			iView->SetRect(FullRect());
 		}
 
 	void HandleCommandL(TInt aCommand)
@@ -436,6 +468,7 @@ private:
 	CPheCatalogueView* iView;
 	CPheIconLoader* iLoader;
 	CIdle* iWork;
+	CPeriodic* iExitTimer;
 	CPheJob* iRefreshJob;
 	RArray<TPheGetItem> iItems;
 	TInt iPhase;

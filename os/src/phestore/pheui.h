@@ -25,6 +25,8 @@ public:
 	virtual void UiRetry() = 0;                  // "Try again" after a failed load
 	virtual void UiFirstPaint() = 0;             // the first real frame is on the screen
 	virtual void UiIconWanted() = 0;             // an icon may be loaded now (the list stopped, rows were added)
+	virtual void UiExit() = 0;                   // the toolbar's exit button / right softkey on the root page
+	virtual void UiOptions() = 0;                // the toolbar's options button / left softkey: the Options menu
 	};
 
 class TPheRow
@@ -68,6 +70,7 @@ public:
 	void SetDetailsButton(const TDesC& aButton, TBool aEnabled);
 	void ShowList();
 	TMode Mode() const { return iMode; }
+	TInt Tab() const { return iTab; }
 	TInt DetailsRow() const { return iDetailRow; }
 
 	// ---- icons (the loader's side)
@@ -94,6 +97,7 @@ private:
 	TInt ContentHeight() const;
 	TInt MaxOffset() const;
 	TInt ListTop() const { return iHeaderH; }
+	TInt ViewH() const { return Rect().Height() - iBarH; }   // the content area: above the toolbar
 	TInt RowAt(TInt aY) const;                      // the row under a view y, or -1
 	void ScrollTo(TInt aOffset);
 	void EnsureVisible(TInt aRow);
@@ -103,6 +107,12 @@ private:
 	void RenderList();
 	void RenderDetails();
 	void DrawHeader(const TDesC& aTitle);
+	void RenderSoon();
+	void DrawBar();
+	void DrawBarIcon(TInt aKind, const TPoint& aCentre, TRgb aColour);
+	TInt BarCell(const TPoint& aPos) const;         // 0 = back/exit, 1..4 = the tabs, 5 = options, -1 = not on the bar
+	void BarAction(TInt aCell);
+	void SetTab(TInt aTab);
 	void DrawRow(TInt aRow, TInt aY, TBool aPressed);
 	void DrawSpinner(const TPoint& aCentre, TInt aRadius);
 	void DrawButton(const TRect& aRect, const TDesC& aLabel, TBool aEnabled);
@@ -133,6 +143,9 @@ private:
 
 	// geometry (pixels)
 	TInt iScale;                // x256
+	TInt iBarH;                 // the toolbar's height
+	TInt iTab;                  // 0 Home, 1 Categories, 2 Search, 3 My apps
+	TInt iBarDown;              // the toolbar cell under the finger, or -1
 	TInt iHeaderH, iRowH, iIconPx, iMargin, iDividerCount;
 	CFont* iFTitle;             // 22
 	CFont* iFInfo;              // 18
