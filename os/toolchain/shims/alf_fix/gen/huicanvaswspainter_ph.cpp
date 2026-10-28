@@ -815,7 +815,6 @@ void CHuiCanvasWsPainter::DoHandleBufferStringL(TInt aIndex, TRect& /*aDisplayRe
     do
         {
         command = readerStream.ReadUint8L();
-        if (iCanvasVisual->DisplayRect().Round().iTl.iY == 577) RDebug::Printf("PH: alf: cmd577 %d", (int)command);
         { static TUint phops[256]; static TUint64 phtm[256]; static TUint phprev = 0, phprevT = 0, phtot = 0; static TInt phf2; if (!phf2) HAL::Get(HAL::EFastCounterFrequency, phf2); const TUint phnow = User::FastCounter(); if (phprevT) phtm[phprev & 255] += (TUint)(phnow - phprevT); phprev = command; phprevT = phnow; if ((++phtot & 4095) == 0) { TInt b1 = 0, b2 = 0, b3 = 0; for (TInt q = 0; q < 256; q++) { if (phtm[q] > phtm[b1]) b1 = q; } for (TInt q = 0; q < 256; q++) { if (q != b1 && phtm[q] > phtm[b2]) b2 = q; } for (TInt q = 0; q < 256; q++) { if (q != b1 && q != b2 && phtm[q] > phtm[b3]) b3 = q; } RDebug::Printf("PH: alf: canvas time after %u cmds: op %d %u ms (x%u), op %d %u ms (x%u), op %d %u ms (x%u)", phtot, b1, (TUint)(phtm[b1] * 1000 / (phf2 ? phf2 : 1)), phops[b1], b2, (TUint)(phtm[b2] * 1000 / (phf2 ? phf2 : 1)), phops[b2], b3, (TUint)(phtm[b3] * 1000 / (phf2 ? phf2 : 1)), phops[b3]); } TUint& phc = phops[command & 255]; ++phc; if (phc == 1 || (phc & 255) == 0) RDebug::Printf("PH: alf: canvas op %d x%u gc=%s", (int)command, phc, iCanvasWsGc == iCanvasWsHwGc ? "HW(VG)" : iCanvasWsGc == iCanvasWsSwGc ? "SW" : iCanvasWsGc == iCanvasWsBitGc ? "BIT(CFbsBitGc)" : "?"); }
 #ifdef HUI_DEBUG_TRACK_DRAWING
         TTlsData::CommandDebugger()->SetDescription( command );
