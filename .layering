@@ -1,0 +1,15 @@
+# What core must not name (pdk tools/ci/layering.sh, docs/layering.md): boards, chips, devices, the repositories above it
+pine ?phone
+pine64
+\ba64\b
+allwinner
+sun50i
+virtualbox
+\bvbox
+adaptation-[a-z0-9]
+\b701\b([^,]|$)
+\bmali\b
+\bbelle\b
+open4all
+mesa-symbian
+\blima\b

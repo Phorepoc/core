@@ -10,31 +10,30 @@ with its `ph` command.
 
 ## Devices
 
-Anything specific to a piece of hardware lives in an adaptation repository, which gets built together with core:
+Core knows no devices. It builds for an architecture (`x32`, `arm`), and holds the interfaces hardware plugs into: the
+Phorepoc HAL functions (`os/src/phorepoc/inc/phhal.h`), the GPU channel (`os/src/symgl/symgpu.h`), the video plane, and
+null drivers for all of them. Default settings are in `os/config/`.
 
-- [adaptation-x86-64](https://github.com/Phorepoc/adaptation-x86-64) is the kernel port to 64-bit PCs.
-- [adaptation-pc](https://github.com/Phorepoc/adaptation-pc) covers QEMU, VirtualBox and real PCs.
-- [adaptation-a64](https://github.com/Phorepoc/adaptation-a64) has the drivers for the Allwinner A64 chip.
-- [adaptation-pinephone](https://github.com/Phorepoc/adaptation-pinephone) is the PinePhone itself.
-
-A few larger pieces have repositories of their own. [tls](https://github.com/Phorepoc/tls) replaces Symbian's TLS with
-mbedTLS, and [mesa-symbian](https://github.com/Phorepoc/mesa-symbian) provides OpenGL ES. Video codecs come from
-[codecpack](https://github.com/Phorepoc/codecpack), which is never built into an image. You install it from Get Apps.
+A device is a board repository on top of core: it names a SoC repository with the kernel port and drivers, the
+optional layers it ships, and how its images are made. How the layers fit together, and how to write your own board,
+is in the pdk's [docs/layering.md](https://github.com/Phorepoc/pdk/blob/main/docs/layering.md).
 
 ## Building
 
-You'll need Docker and a checkout of the pdk next to this one. To build the PC image:
+You'll need Docker and a checkout of the pdk next to this one, plus the repositories of the board you build for
+(`ph board list` shows the boards it finds). For a board called `myboard`:
 
 ```sh
 ph source fetch                        # download the Symbian source into core/symbian/
 ph source export -a                    # put together the include tree
 ph source mbg -a                       # generate the icon headers
-ph component resources -A -b pc        # compile the resource files
-ph component build -A -b pc            # build every component
-ph image rom -b pc                     # and put them into a ROM
+ph component resources -A -b myboard        # compile the resource files
+ph component build -A -b myboard            # build every component
+ph image rom -b myboard                     # and put them into a ROM
 ```
 
-`-b pc` tells `ph` which device to build for, and `ph board list` shows the others. Everything runs inside the
+`-b` tells `ph` which board to build for. Without it, `ph` builds core alone for an architecture (`--arch x32` or
+`--arch arm`). Everything runs inside the
 toolchain container, so you don't need any Symbian tools installed. Builds are reproducible: the same source gives the
 same bytes, and `ph image compare` checks one build against another.
 
@@ -47,7 +46,9 @@ os/src/                  components we wrote (pheshell, phetty, phgl, phvg and m
 os/toolchain/shims/      our replacement copies of Symbian source files, one folder per change
 os/toolchain/            other headers and runtime pieces every image is built with
 os/shim/                 stand-in headers for interfaces the 2010 release left out
-os/tools/                settings files the ROM is made from, and build recipes for third-party code
+os/config/               the default settings every device starts from
+os/toolchain/x32/        the x32 user-side runtime (startup, C++ runtime glue, setjmp)
+os/tools/                build recipes for third-party code
 registry/components.py   one entry for each component, saying how it's built from its .mmp
 registry/rom_heap.tsv    heap and stack sizes for the programs in the ROM
 sources.lock, fetch.sh   which Symbian source we build, and the script that downloads it
