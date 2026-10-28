@@ -11,7 +11,7 @@ VENDORID		0
 
 OS_LAYER_SYSTEMINCLUDE_SYMBIAN
 OS_LAYER_LIBC_SYSTEMINCLUDE
-USERINCLUDE		. ../phorepoc-arm/a64/display
+USERINCLUDE		. ../phorepoc/inc
 SOURCEPATH		.
 SOURCE			phevidctl.cpp mp4demux.cpp
 

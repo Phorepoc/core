@@ -30,7 +30,7 @@
 
 #include "phevidctl.h"
 #include "mp4demux.h"
-#include "rphedeov.h"		// the DE2 video plane (src/phorepoc-arm/a64/display; de2-overlay-plan.md): used when the kernel has it
+#include "rphedeov.h"		// the display's video plane (src/phorepoc/inc): used when the board's kernel has one
 
 _LIT8(KMimeH264, "video/H264");
 _LIT8(KMimeMp4v, "video/mp4v-es");		// MPEG-4 Part 2 (game intro clips): decoded in software (phevdecsw)
