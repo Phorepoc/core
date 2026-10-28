@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // glestri.mmp -- OURS: the first OpenGL ES 2.0 program (glestri.cpp), an ordinary client of libEGL.dll +
-// libGLESv2.dll (the frozen 2010 ABIs; behind them phgl.dll = Mesa on the Mali-400).
+// libGLESv2.dll (the frozen 2010 ABIs; behind them phgl.dll, the GL backend).
 TARGET			glestri.exe
 TARGETTYPE		exe
 UID				0x1000007a 0xE7015770

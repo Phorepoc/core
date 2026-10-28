@@ -582,7 +582,7 @@ void COpenWfcWrapper::RemoveElementFromSceneList(CElementWrapper* aElement)
 // on a scene rotation (CDisplayRenderStage::SetSceneRotation: the inverted-aspect 640x360 twin of the 360x640 target),
 // but CScreen::CreateUiElementL set the element's rectangles once ("initial guess... updated by PositionUiElements",
 // a function the 2010 source does not have): the old 360x640 source rectangle lies outside the 640x360 surface, the
-// element is never composed and the screen is the black background (PinePhone boot 499).
+// element is never composed and the screen is the black background (ARM boot 499).
 static void PhFollowUiSurface(CElementWrapper* aElement, const TSize& aOldSize, const TSize& aNewSize)
 	{
 	if (!aElement || aNewSize.iWidth <= 0 || aNewSize.iHeight <= 0)

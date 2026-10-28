@@ -5,7 +5,7 @@
 // device driver that is BUILT INTO the kernel. On a phone every LDD/PDD is a file in Z:\sys\bin, so
 // User::LoadLogicalDevice("display0.ldd") returns KErrNone (first load) or KErrAlreadyExists -- and that is all its
 // callers accept (openwfc_ri_displaychannel.cpp ConstructL, sgdriver.cpp RSgDriver::Open). Our kernels link their
-// drivers into ekern (the display LDD, the surface manager, the sg device, the Mali driver ...), so there is no file:
+// drivers into ekern (the display LDD, the surface manager, the sg device, the GPU driver ...), so there is no file:
 // the real loader returns KErrNotFound and NGA cannot start. Linked with --wrap=_ZN8E32Image11LoadCodeSegERK7RLdrReq
 // (emitter/build_efile_exe.py): for a device-driver load that found no file, a logical (physical) device already
 // installed under the file's root name (or its alias below) means "already loaded" = KErrAlreadyExists. Everything

@@ -6,7 +6,7 @@
 // the engine shape decision is in telephony-plan.md section 15). Compiled only with PHELTSY=1 (-DPHE_LTSY on
 // licenseetsy); the default build is the plain fake modem.
 //
-// CPheAt owns the modem's serial channel (RBusDevComm unit 3 = the "Comm.A64" UART3 PDD of the MODEM=1 kernel:
+// CPheAt owns the modem's serial channel (RBusDevComm unit 3 = the modem UART's PDD:
 // opening it powers the EG25-G) and runs a polled AT loop on the fake modem's 100 ms ticker:
 //   init (after "RDY"): ATE0, AT+CMEE=2, AT+CREG=2, AT+CGSN (IMEI)
 //   every 5 s: AT+CPIN?, AT+CREG?, AT+COPS=3,2 + AT+COPS? (MCC/MNC), AT+COPS=3,0 + AT+COPS? (long name), AT+CSQ,
@@ -132,7 +132,7 @@ public:
 		}
 	const TDesC& Smsc() const { return iSmsc; }
 	TBool AudioReady() const { return iAudioReady; }
-	// M5: the call audio route (MODEM=1 kernel: Comm.A64 unit 3 DTR -> a64sound.cpp VoiceRoute, EG25-G PCM <-> earpiece/MIC1)
+	// M5: the call audio route (the board's sound driver routes the modem's PCM to the earpiece and microphone)
 	void VoiceRoute(TBool aOn)
 		{
 		if (!iOpen)

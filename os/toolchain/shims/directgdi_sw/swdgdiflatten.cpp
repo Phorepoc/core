@@ -7,7 +7,7 @@
 // The 2010 software adapter (directgdiadaptation/swsrc) refuses extended bitmaps -- "KErrNotSupported // Not
 // supported for extended bitmaps" -- while S60's icon server makes every NVG icon (and skin graphic) one
 // (uiresources AknIcon AknNvgFormatHandler.cpp CreateExtendedBitmap). The non-NGA window server drew them through
-// BitGdi, which rasterizes extended bitmaps itself (CFbsRasterizer, fbsrasterizer.dll). So on the PinePhone's first
+// BitGdi, which rasterizes extended bitmaps itself (CFbsRasterizer, fbsrasterizer.dll). So on the first ARM board's first
 // NGA S60 boot every icon and skin frame was missing while text and the JPEG wallpaper drew (wsblit's 16 ordinary
 // cases all correct). The hardware (OpenVG) adapter handles them; the software one is made to here: an extended
 // bitmap is flattened by BitGdi into an ordinary bitmap of the same size + display mode (alpha kept: write-alpha),

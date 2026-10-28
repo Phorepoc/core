@@ -8,7 +8,7 @@
 // waiting for: over the REAL stack (RConnection on CommsDat's preferred IAP, RHostResolver -> dnd,
 // a UDP RSocket), ask an NTP server for the time, compute the clock offset from the four timestamps,
 // and when it is 1 s or more, User::SetUTCTime -- which also writes the hardware RTC, so the kernel's
-// own resync (xk_timesync.cpp: CMOS on a PC / QEMU, VMMDev host time on VirtualBox) agrees with it.
+// own resync (the kernel port's own time sync, where it has one) agrees with it.
 //
 // Command line: [server [interval-seconds]], default pool.ntp.org 1800. Retries a failed sync after
 // 60 s. Every step logs to the debug port; every wait is bounded.
@@ -159,7 +159,7 @@ static void RunL()
 		server.Set(_L("pool.ntp.org"));
 	TInt interval = 1800;
 	TLex(lex.NextToken()).Val(interval);
-	TUint iap = 0;							// 3rd argument: this IAP (the PinePhone's WLAN), else the preferred one
+	TUint iap = 0;							// 3rd argument: this IAP (e.g. the WLAN), else the preferred one
 	TLex(lex.NextToken()).Val(iap, EDecimal);
 	TBuf8<64> s8;
 	s8.Copy(server.Left(64));

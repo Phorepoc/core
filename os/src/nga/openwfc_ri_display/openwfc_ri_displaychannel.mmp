@@ -4,7 +4,7 @@
 // openwfc_ri_displaychannel.mmp -- OURS (2026-10-09): the 2010 OpenWF-C "RI display" adapter over RDisplayChannel
 // (oss.FCL.sf.os.graphics/graphicscomposition/openwfc_ri_displaychannel) with pipelined posts: UpdateDisplay() waits
 // for the PREVIOUS post before posting the next, so libWFC composes the next frame while a post waits for its vblank
-// (needs 3 composition buffers: src/phorepoc-arm/a64/display/lddinc/display.h). Same UIDs, exports and capabilities
+// (needs 3 composition buffers from the display LDD). Same UIDs, exports and capabilities
 // as the 2010 build (emitter/components.py "openwfc_ri_display" carries the def).
 TARGET			openwfc_ri_displaychannel.dll
 TARGETTYPE		dll

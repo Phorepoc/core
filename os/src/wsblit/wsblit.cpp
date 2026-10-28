@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // wsblit.cpp -- OURS (2026-10-09, GPU plan G1c): a bitmap-drawing test grid for the window server. The first NGA
-// boot of the S60 UI on the PinePhone drew text and the wallpaper but no icons and no skin frames (the masked /
+// boot of the S60 UI on the first ARM board drew text and the wallpaper but no icons and no skin frames (the masked /
 // alpha bitmap paths). Each numbered cell below is one CWindowGc bitmap call (source display mode, mask mode,
 // compressed or not); a cell that stays grey (or shows garbage) names the broken path. Grey window, red/green
 // sources (a green square in the top-left quarter), masks = a white disc on black.

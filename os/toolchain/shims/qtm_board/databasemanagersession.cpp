@@ -609,7 +609,7 @@ void CDatabaseManagerServerSession::initDbPath()
     QFileInfo dbFileInfo(dbFile);
     // PHOREPOC board delta (2026-10-18): a C: copy made from an OLDER ROM (another image flashed since, or an empty file a
     // misnamed ROM db left behind) shadowed the new ROM database for good -- no command handlers, app launches failed
-    // KErrNotFound (PinePhone boots 1032-1056, VirtualBox). When the ROM db is newer than the C: copy, take the ROM one again
+    // KErrNotFound (ARM and x32). When the ROM db is newer than the C: copy, take the ROM one again
     // (services a running system added at run time are re-added by their owners: the cahandler loader at every start).
     {
         QFileInfo romInfo(QLatin1String("z:\\private\\2002ac7f\\") + dbFileInfo.fileName());

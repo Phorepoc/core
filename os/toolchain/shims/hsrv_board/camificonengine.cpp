@@ -85,7 +85,7 @@ void CaMifIconEngine::cacheBitmapL()
 void CaMifIconEngine::getPixmapFromBitmap(const QSize &size, QPixmap& pixmap)
 {
     // PHOREPOC board delta (2026-10-18): Hb asks for icons from its icon-loader QThread; FBS needs an RFbsSession per
-    // thread, CFbsBitmap in a thread without one = KERN-EXEC 0 (hsapplication, PinePhone boot 1059). Connect one for this
+    // thread, CFbsBitmap in a thread without one = KERN-EXEC 0 (hsapplication). Connect one for this
     // thread when it has none (it lives as long as the thread).
     if (!RFbsSession::GetSession()) {
         RFbsSession::Connect();

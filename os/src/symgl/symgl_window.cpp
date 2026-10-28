@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // symgl_window.cpp -- OURS (2026-10-09, GPU plan G2/G5): the Symbian side of Mesa's EGL window surfaces
-// (symgl_native.h is the seam; mesa-symbian's egl_symbian.c + sym_frontend.c call it).
+// (symgl_native.h is the seam the GL implementation calls).
 //
 // NGA path (the window server composes surfaces): the window gets a SurfaceManager surface of SYMGL_NBUF buffers as
 // its BACKGROUND SURFACE (the recipe of adapt.SimulatorGraphics guestegl.cpp eglCreateWindowSurface/eglSwapBuffers).
@@ -191,21 +191,21 @@ namespace
 		a.iSize = aSize;
 		a.iBuffers = KNbuf;
 		a.iPixelFormat = EUidPixelFormatXRGB_8888;
-		// rows cover a 16-pixel-aligned width: the Mali renders 16x16 tiles, and Mesa's lima refuses an imported
+		// rows cover a 16-pixel-aligned width: tiled GPUs render 16x16 tiles, and their drivers refuse an imported
 		// linear buffer whose stride is below that (360 -> 368 pixels = 1472 bytes)
 		a.iStride = 4 * ((aSize.iWidth + 15) & ~15);
 		a.iOffsetToFirstBuffer = 0;
 		a.iAlignment = RSurfaceManager::EPageAligned;
 		a.iHintCount = 0;
 		a.iSurfaceHints = NULL;
-		// each buffer holds a 16-row-aligned height too: the Mali writes WHOLE 16x16 tiles, so a 360-row landscape surface
+		// each buffer holds a 16-row-aligned height too: a tiled GPU writes WHOLE 16x16 tiles, so a 360-row landscape surface
 		// gets rows up to 368 -- past a tightly packed buffer into an unmapped page (MMU write faults on both PPs, the
 		// unrendered tiles = King Oddball's black band, blocks and flicker, 2026-10-12)
 		a.iOffsetBetweenBuffers = a.iStride * ((aSize.iHeight + 15) & ~15);
 		a.iContiguous = ETrue;
 		// CACHED: the reader (libWFC composing on another core) is a CPU; uncached made its per-pixel source read the
 		// hottest code on the phone (OWF_Image_SourceFormatConversion, 46% of the CPU). softpipe writes with the CPU
-		// too; the Mali's writes get CPU cache maintenance from the kernel driver (RMaliChannel::CacheSync)
+		// too; the GPU's writes get CPU cache maintenance from its kernel driver
 		a.iCacheAttrib = RSurfaceManager::ECached;
 		a.iMappable = ETrue;
 		if ((r = aSt.iSm.CreateSurface(buf, aSt.iSurfaceId)) != KErrNone)
@@ -329,7 +329,7 @@ extern "C" int symgl_window_surface(void* aNative, unsigned aWidth, unsigned aHe
 
 // Submit k goes into buffer k % N; the app may render into a buffer once the presenter has seen the submit after the one
 // that last held it displayed (iFree: KNbuf - 1 buffers ahead). Plus a swap interval: presents are at most 60/s
-// (unpaced, the Mali drew 343 triangles/s of which the display showed 60).
+// (unpaced, the GPU drew 343 triangles/s of which the display showed 60).
 const TInt KSwapIntervalUs = 16667;
 extern "C" int symgl_window_acquire(void* aNative)
 	{
@@ -407,7 +407,7 @@ extern "C" unsigned symgl_chunk_size(int aChunkHandle)
 // sgdevice LDD + the sgextension kernel extension). Every RSgImage is one shared chunk made by SgExtension::CreateResource
 // (TChunkCreateInfo::ESharedKernelMultiple, own pages, cached when the image is CPU-accessed) and mapped into the process;
 // the provider publishes only its CPU address, through the adapter interface MSgImage_Sw (sgimage_sw.h, UID 0x102858F0:
-// DataAddress / DataStride; "supported if the image is or can be stored in system memory"). The Mali's MMU needs no
+// DataAddress / DataStride; "supported if the image is or can be stored in system memory"). A GPU MMU needs no
 // contiguous memory -- the kernel driver maps the chunk's pages (RMaliChannel::ImportAddress finds the chunk from that
 // address, Kern::OpenSharedChunk(thread, address)) -- so this bridge IS the adapter: handle -> (address, stride, format).
 // The chunk keeps its CPU cache attribute; the callers do the RMaliChannel::CacheSync around GPU work.

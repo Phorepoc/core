@@ -89,7 +89,7 @@ static TInt PhAlfWatchMain(TAny* aId)
 	return 0;
 	}
 
-// GPU mode: switch the OpenVG facade of this process to the GPU engine (phvg.dll: fills / gradients / strokes on the Mali; images and masked
+// GPU mode: switch the OpenVG facade of this process to the GPU engine (phvg.dll: fills / gradients / strokes on the GPU; images and masked
 // blits stay on the CPU = the RI fast blit). The developer menu's "UI GPU acceleration" (repository 0xE7015A01 key 8, src/phedevmenu/phedevmenu.h;
 // 0 = off, the default) decides at every start -- a runtime setting, not a build switch (an env-only build switch used to stay on silently in
 // partial builds). The engine reads an int property KPhvgModeKey in the process's own category (its SID; src/phvg/phvg.h, riPhvg.cpp ReadMode).

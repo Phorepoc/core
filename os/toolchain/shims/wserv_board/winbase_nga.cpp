@@ -531,7 +531,7 @@ TBool CWsWindowBase::CommandL(TInt aOpcode, TWsWinCmdUnion &aCmd)
 		// Remove as a workaround for Bug 3802
 		// PHOREPOC board copy (2026-10-18): back as the accepting no-op it was. Qt 4.8 (qwidget_s60.cpp s60UpdateIsOpaque, Hb's
 		// translucent main window) calls RWindow::SetSurfaceTransparency; without the case the client was panicked
-		// EWservPanicOpcode (S^4 hsapplication, PinePhone boot 1035). The surface just stays opaque.
+		// EWservPanicOpcode (S^4 hsapplication). The surface just stays opaque.
 		case EWsWinOpSetSurfaceTransparency:
 			break;
 		default:

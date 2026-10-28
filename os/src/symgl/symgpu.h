@@ -24,7 +24,7 @@ typedef struct {
    void *arena_base;           /* CPU address of arena offset 0 (uncached, write-combining) */
 } symgpu_info_t;
 
-symgpu_t *symgpu_open(void);                       /* NULL: no Mali driver in this kernel */
+symgpu_t *symgpu_open(void);                       /* NULL: no GPU driver in this kernel */
 void symgpu_close(symgpu_t *m);
 void symgpu_info(symgpu_t *m, symgpu_info_t *out);
 int symgpu_commit(symgpu_t *m, uint32_t offset, uint32_t size);
@@ -33,7 +33,7 @@ int symgpu_import_addr(symgpu_t *m, const void *addr, uint32_t size, uint32_t *v
 int symgpu_unimport(symgpu_t *m, uint32_t va);
 int symgpu_cache_sync(symgpu_t *m, uint32_t va, uint32_t size, int op);
 
-/* one job per pipe in flight: submit (frame = the lima register image, 6 words for GP, 68 for PP), then wait.
+/* one job per pipe in flight: submit (frame = the GPU's register image for that pipe, e.g. 6 words / 68), then wait.
  * wait: poll = 0 blocks until the job is done and returns its result; poll = 1 returns 1 while it still runs */
 #define SYMGPU_PIPE_GP 0
 #define SYMGPU_PIPE_PP 1

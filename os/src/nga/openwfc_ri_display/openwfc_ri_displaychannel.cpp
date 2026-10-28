@@ -466,7 +466,7 @@ TInt COpenWFC_RI_DisplayChannel::UpdateDisplay()
     SymbianStreamAcquireReadBuffer(iCurrentSceneStream, &frontBuffer);
     void* pixelDataPtr = NULL;
     SymbianStreamGetBufferPointer(iCurrentSceneStream, frontBuffer,&pixelDataPtr);
-    // The scene stream is packed (rows of width * 4 bytes); the display's rows may be padded (a64: 1472 B for 360 px,
+    // The scene stream is packed (rows of width * 4 bytes); the display's rows may be padded (e.g. 1472 B for 360 px,
     // svpfb_patch.py), so copy row by row when the strides differ. (OURS, 2026-10-22)
     {
     const TBool normal = (iNewRotation == EScreenRotate0 || iNewRotation == EScreenRotate180);
@@ -527,7 +527,7 @@ TInt COpenWFC_RI_DisplayChannel::UpdateDisplay()
 
     // OURS (2026-10-09): the post is NOT waited for. The 2010 code posted and waited for the post ("throttle
     // composition more than necessary"): compose + copy + a whole vblank wait on the compose thread, during which
-    // libWFC (one compose in flight) dropped every submit that arrived -- 34 posts/s on the PinePhone. Our display
+    // libWFC (one compose in flight) dropped every submit that arrived -- 34 posts/s on a phone. Our display
     // PDD (a64dispchan.cpp) queues a post behind an armed flip and replaces a queued one with a newer (a mailbox),
     // and with four composition buffers GetCompositionBuffer above always finds a free one: the compose thread
     // never blocks, the display shows the newest composition at every vblank.

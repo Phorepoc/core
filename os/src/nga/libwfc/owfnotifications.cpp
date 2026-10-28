@@ -26,7 +26,7 @@
 // Platform/Graphics/symbian/owfnotifications.cpp with ONE change: a source update (a SurfaceUpdateSession submit)
 // WAKES the composer thread. The 2010 code only counted it (sourceUpdateCount) and the composer thread noticed at
 // its next AUTO_COMPOSE_DELAY (15 ms) poll -- a compose cycle was 15 ms of waiting + the compose, 34 frames/s on
-// the PinePhone whatever the GPU did. emitter/components.py "libwfc" drops the 2010 file and compiles this one.
+// the device whatever the GPU did. emitter/components.py "libwfc" drops the 2010 file and compiles this one.
 //
 #include "WF/wfc.h"
 #include "wfcstructs.h"

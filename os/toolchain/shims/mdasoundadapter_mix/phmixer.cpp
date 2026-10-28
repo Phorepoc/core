@@ -9,7 +9,7 @@
 // gain, sum, clip) is phmixer_core.h, unit-tested on the host (tests/user/audiomix).
 //
 //   client thread:  PlayData  -> push {ptr,len,status} on the channel ring, wake the mixer
-//   mixer thread:   per 10 ms quantum (480 frames = one A64 PDD period) mix every unpaused channel, write the quantum
+//   mixer thread:   per 10 ms quantum (480 frames = one sound driver period) mix every unpaused channel, write the quantum
 //                   into a free slot of the real sink's shared chunk, RSoundSc::PlayData; keep up to 3 slots queued.
 //                   A request completes (KErrNone) when its last frame has been consumed.
 //   sink lifecycle: opened when the first channel has data, closed 250 ms after the last data (the PDD powers down).
@@ -36,7 +36,7 @@
 namespace
 {
 const TInt KQuantum = 480;						// output frames per mix cycle (10 ms @ 48 kHz)
-const TInt KSinkBytes = KQuantum * 4;			// 1920 B = one stereo S16 quantum = one A64 PDD period
+const TInt KSinkBytes = KQuantum * 4;			// 1920 B = one stereo S16 quantum = one sound driver period
 const TInt KSinkBuffers = 4;					// buffers in the real sink's shared chunk
 const TInt KSinkSlots = 3;						// quanta queued on the real sink at once (<= KSinkBuffers)
 const TInt KMaxChannels = 8;					// concurrent virtual TX channels

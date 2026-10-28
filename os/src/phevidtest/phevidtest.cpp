@@ -3,7 +3,7 @@
 
 // phevidtest.cpp -- OURS (VDU rung V4): plays an MP4 file through the REAL Symbian MMF video player
 // stack -- CVideoPlayerUtility (mediaclientvideo) -> the MMF controller framework -> phevidctl (the MP4 controller, found by
-// the file's extension + 'ftyp' header) -> CMMFDevVideoPlay -> phevdec (A64 Video Engine) -> NV12 -> the screen through
+// the file's extension + 'ftyp' header) -> CMMFDevVideoPlay -> phevdec (a SoC's video engine) -> NV12 -> the screen through
 // the client's direct-screen-access region -- and reports frames and fps.
 //
 //   phevidtest                   plays z:\resource\phevde\vmain.mp4 (100 frames, B-frames, + an AAC track played through DevSound) and vbase.mp4

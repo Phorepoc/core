@@ -135,7 +135,7 @@
 #   include <config/stl_epoc.h>
 #   include <config/_gcc.h>
 #   include <config/stl_gcce.h>
-/* PHOREPOC board delta (ARM, 2026-10-18: the S^4 system tone service on the PinePhone): our ARM build has no C++ exceptions
+/* PHOREPOC board delta (ARM, 2026-10-18: the S^4 system tone service): our ARM build has no C++ exceptions
    (-fno-exceptions, setjmp TRAPs) -> STLport's exception-free mode, as the x32 branch below */
 #   if !defined(__EXCEPTIONS)
 #     undef _STLP_USE_EXCEPTIONS

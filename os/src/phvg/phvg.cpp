@@ -5,7 +5,7 @@
 //
 // What it is: a small GPU back end for the Khronos reference implementation. The RI keeps the whole OpenVG API, the
 // state machine and the path geometry (flattening, transform); for what phvg implements it hands over the already
-// flattened, transformed edge list instead of rasterising it on the CPU. phvg draws it with GLES 2.0 (our Mesa/lima
+// flattened, transformed edge list instead of rasterising it on the CPU. phvg draws it with GLES 2.0 (the GL implementation
 // through the frozen libEGL + libGLESv2 fronts) into a GPU "shadow" of the VG surface, and gives the pixels back when
 // the CPU side needs them. Implemented: vgClear (no scissor) and solid-colour fills (non-zero and even-odd, SRC_OVER
 // and SRC). Everything else stays in the reference implementation (see riPhvg.cpp for how the two compose).
@@ -20,7 +20,7 @@
 // the edge left or right of q" for every q inside the surface).
 //
 // Antialiasing: the shadow is rendered at S x S the surface resolution (S = 4 up to 256x256, else 2) and box
-// filtered down by GPU bilinear halving passes on readback. (Mali-400: fragment shaders are FP16 -- the colour here is
+// filtered down by GPU bilinear halving passes on readback. (mobile GPUs: fragment shaders may be FP16 -- the colour here is
 // a uniform, nothing is computed per fragment; the only per-fragment work is the stencil test. 8-bit stencil, wrap ops.)
 //
 // Threading: GLES lives in ONE worker thread of the process with its own context. The front keeps a per-thread
@@ -55,7 +55,7 @@ namespace
 		GLuint	iTex0, iFbo0, iRbDs;		// S x S colour + stencil
 		GLuint	iTexM, iFboM;				// S/2 (only S == 4)
 		GLuint	iTexR, iFboR;				// 1x resolve + upload staging
-		GLuint	iRbRd, iFboRd;				// 1x RENDERBUFFER the resolve passes write and glReadPixels reads (a texture is tiled by lima; a renderbuffer is linear = direct rows)
+		GLuint	iRbRd, iFboRd;				// 1x RENDERBUFFER the resolve passes write and glReadPixels reads (a texture may be tiled by the GPU; a renderbuffer is linear = direct rows)
 		};
 
 	TShadow			gSh[KMaxShadows];
@@ -117,7 +117,7 @@ namespace
 		"void main() { gl_FragColor = texture2D(u_tex, v_uv); }\n";
 
 	// O4b: image draw. The vertex shader maps image-space corners through the affine image->surface matrix (fp32 on the
-	// Mali-400 geometry processor) and passes the texel position straight to the texture fetch.
+	// vertex stage) and passes the texel position straight to the texture fetch.
 	const char* const KVsImg =
 		"attribute vec2 a_pos;\n"
 		"uniform vec2 u_scale;\n"
@@ -136,7 +136,7 @@ namespace
 		"void main() { gl_FragColor = texture2D(u_tex, v_uv) * u_mul; }\n";
 
 	// O4 gradients. The gradient coordinate is an AFFINE function of the surface position, so the vertex shader (fp32 on
-	// the Mali-400 geometry processor) evaluates it exactly and the rasteriser interpolates it; the fragment shader (fp16)
+	// the vertex stage) evaluates it exactly and the rasteriser interpolates it; the fragment shader (fp16)
 	// only samples the ramp. Linear: the interpolated coordinate goes straight into the texture fetch (full-precision
 	// path), the spread mode is the texture wrap mode (pad = clamp, repeat = repeat, reflect = mirrored repeat) so there is
 	// no fragment arithmetic on g at all. Radial: the paint-space point is relative to the centre in units of the radius

@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// phgpucompose.cpp -- OURS (GPU plan G8): libWFC's scene composed by the GPU (GLES2 on the Mali through Mesa) instead of
+// phgpucompose.cpp -- OURS (GPU plan G8): libWFC's scene composed by the GPU (GLES2 through phgl) instead of
 // the 2010 per-pixel float pipeline (~15 ms per full-screen element at 360x640, ~37 ms with a rotated game on top).
 //
 // wfccontext.c (our copy) calls WFC_Context_PhGpuCompose first for every full composition; it asks PhGpu_Want and
@@ -15,7 +15,7 @@
 // -> clockwise source rotation -> scale to the destination rectangle (nearest, or bilinear for FASTER/BETTER) -> blend
 // (none = opaque; SOURCE = per-pixel alpha, premultiplied or not; ELEMENT_GLOBAL_ALPHA = times the global alpha),
 // src-over in premultiplied space over the background colour; then the context rotation (clockwise) into the target.
-// Declined (the CPU composes): masks, linear-light / luminance sources, a scene the GPU cannot import, x86 (no Mali:
+// Declined (the CPU composes): masks, linear-light / luminance sources, a scene the GPU cannot import, a board without a GPU channel (
 // EGL does not come up), the developer menu switch off (repository 0xE7015A01 key 9).
 #include <e32base.h>
 #include <e32debug.h>
@@ -344,7 +344,7 @@ int PhGpu_Want(void)
 
 int PhGpu_SourceOk(const void* aData, int aFormat, int aLinear, int aW, int aH, int aStride)
 	{
-	// the Mali import maps whole pages: a buffer that does not start on one (Classic's streams: header + 0x60) stays
+	// the GPU import maps whole pages: a buffer that does not start on one (Classic's streams: header + 0x60) stays
 	// on the CPU
 	return ((TUint)aData & 0xFFF) == 0 && MemFormat(aFormat) != 0 && !aLinear && aW > 0 && aH > 0 && aW <= 4096 && aH <= 4096 && (aStride & 7) == 0;
 	}

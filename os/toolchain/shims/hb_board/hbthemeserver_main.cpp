@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     // PHOREPOC board delta (2026-10-18): HbThemeServerLocker above already holds the Symbian single-instance lock (an
     // exclusive RFile). QtSingleApplication's own check (QtLockedFile, an Open C fcntl F_SETLK lock in QDir::tempPath())
     // fails on our Open C and reports "already running": the first theme server exited 0 right after its rendezvous
-    // (PinePhone boots 1013-1032, x86 VirtualBox), every Orbit client then found no shared cache (HbSharedCache NULL).
+    // (ARM and x32), every Orbit client then found no shared cache (HbSharedCache NULL).
     // isRunning() is still called for its side effect (the peer's local server for messages), its answer is not trusted.
     (void)app.isRunning();
 #endif

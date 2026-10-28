@@ -773,7 +773,7 @@ bool PhvgStrokePiece(const Rasterizer& aR)
 			}
 	// the piece's own left bound: its trapezoids start at its minimum x (minus one), not at the surface's left edge. A closed
 	// piece is balanced for every sample left of it, so nothing is lost -- and the triangles stay inside the piece's bounding
-	// box instead of each spanning the whole surface width (a 6000-edge stroke overflowed the Mali tile/PLBU heap)
+	// box instead of each spanning the whole surface width (a 6000-edge stroke overflowed the GPU's tile heap)
 	TReal32 minx = 1.0e9f;
 	for (int i = 0; i < n; i++)
 		{

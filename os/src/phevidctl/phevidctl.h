@@ -9,7 +9,7 @@
 // baseline/.../mmfwplugins/src/Plugin/Controller/Video/AviPlayController): data source = CMMFFile, custom commands =
 // MMMFVideoPlayController / MMMFVideoController / MMMFVideoSetInitScreen, video through CMMFDevVideoPlay.
 //   file -> mp4demux (moov sample tables) -> H.264 access units (Annex B, SPS/PPS before every sync sample, PTS = composition
-//   time) -> CMMFDevVideoPlay::WriteCodedDataL -> the phevdec hardware decoder (A64 Video Engine) -> NV12 pictures in
+//   time) -> CMMFDevVideoPlay::WriteCodedDataL -> the phevdec hardware decoder (a SoC's video engine) -> NV12 pictures in
 //   display order -> this controller times them against the PTS, converts NV12 -> the screen format and draws them into the
 //   client's direct-screen-access region (CDirectScreenBitmap, vsync paced, like the V2 player in phevdetest).
 // Audio: the AAC track (mp4a/esds) is decoded by pheffmpeg.dll (LGPL FFmpeg, a separate replaceable DLL loaded with RLibrary;

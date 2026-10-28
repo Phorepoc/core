@@ -166,7 +166,7 @@
 #include <DevEncProtectedPSKey.h>
 
 // ---- PHOREPOC delta (2026-10-15): POWER KEY OPTIONS (user) --------------------------------------------------------------
-// The PinePhone has no lock switch: the short and the long press of the power key each run a configurable action, read
+// Phones today have no lock switch: the short and the long press of the power key each run a configurable action, read
 // from the board repository 0xE70157B0 at every press (a change applies at once): key 1 = SHORT, key 2 = LONG;
 // 0 = the power menu (the stock short press), 1 = lock / unlock (keylock toggle), 2 = switch off (the stock long press).
 // Defaults: short = lock/unlock, long = the power menu. A short action other than the menu runs at KEY-UP (a long press

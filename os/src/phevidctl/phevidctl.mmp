@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // phevidctl.mmp -- OURS (VDU rung V4): the MMF video play controller for MP4 / 3GP (ECOM
-// plug-in, interface 0x101F4F47) -> CMMFDevVideoPlay -> the phevdec A64 Video Engine decoder. Contract: phevidctl.h.
+// plug-in, interface 0x101F4F47) -> CMMFDevVideoPlay -> a phevdec hardware decoder. Contract: phevidctl.h.
 TARGET			phevidctl.dll
 TARGETTYPE		PLUGIN
 UID				0x10009D8D 0xE70157D0

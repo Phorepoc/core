@@ -808,7 +808,7 @@ public: // GCC doesn't compile Linkage, if this is private! -- msa
 
 // This ungainly manoevure is forced on us because the offset is not evaluated early enough by GCC3.4 to be
 // passed as a template parameter
-#if 0 // OURS (2026-10-10, PinePhone N0): GCC 14 evaluates _FOFF as a constant -- the GCCE 3.4 hard-coded offsets (104/696/...) do not match its layout
+#if 0 // OURS (2026-10-10, ARM N0): GCC 14 evaluates _FOFF as a constant -- the GCCE 3.4 hard-coded offsets (104/696/...) do not match its layout
 #define KIp6ManagerTimeoutOffset 104
 __ASSERT_COMPILE(KIp6ManagerTimeoutOffset == _FOFF(CIp6Manager, iTimeout));
 #else
@@ -1883,7 +1883,7 @@ public: // GCC doesn't compile CIp6InterfaceLinkage, if this is private! -- msa
 
 // This ungainly manoevure is forced on us because the offset is not evaluated early enough by GCC3.4 to be
 // passed as a template parameter
-#if 0 // OURS (2026-10-10, PinePhone N0): GCC 14 evaluates _FOFF as a constant -- the GCCE 3.4 hard-coded offsets (104/696/...) do not match its layout
+#if 0 // OURS (2026-10-10, ARM N0): GCC 14 evaluates _FOFF as a constant -- the GCCE 3.4 hard-coded offsets (104/696/...) do not match its layout
 #define KIp6InterfaceTimeoutOffset 696
 __ASSERT_COMPILE(KIp6InterfaceTimeoutOffset == _FOFF(CIp6Interface, iTimeout));
 #else
@@ -2091,7 +2091,7 @@ private:
 
 // This ungainly manoevure is forced on us because the offset is not evaluated early enough by GCC3.4 to be
 // passed as a template parameter
-#if 0 // OURS (2026-10-10, PinePhone N0): GCC 14 evaluates _FOFF as a constant -- the GCCE 3.4 hard-coded offsets (104/696/...) do not match its layout
+#if 0 // OURS (2026-10-10, ARM N0): GCC 14 evaluates _FOFF as a constant -- the GCCE 3.4 hard-coded offsets (104/696/...) do not match its layout
 #define KIp6RouteTimeoutOffset 44
 __ASSERT_COMPILE(KIp6RouteTimeoutOffset == _FOFF(CIp6Route, iTimeout));
 #else

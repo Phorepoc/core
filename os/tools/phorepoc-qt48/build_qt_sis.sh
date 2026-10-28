@@ -2,14 +2,14 @@
 # Copyright The Phorepoc Authors
 # SPDX-License-Identifier: Apache-2.0
 
-# build_qt_sis.sh -- Qt 4.8.7 for the PinePhone as an INSTALLABLE SIS, from the public Qt source. Qt is LGPL, so it is never in the
+# build_qt_sis.sh -- Qt 4.8.7 for ARM as an INSTALLABLE SIS, from the public Qt source. Qt is LGPL, so it is never in the
 # ROM image: it is built and packaged separately (package 0x2001E61C "Qt" 4.8.7, which is also what a Qt app's SIS depends on).
 #
 # Runs INSIDE the toolchain image with the pdk, core and the adaptations mounted as `ph` mounts them (PHOREPOC_PDK, PHOREPOC_CORE,
 # PHOREPOC_OS_ROOT, PHOREPOC_SYMBIAN, PHOREPOC_ADAPTATIONS, PHOREPOC_BUILD) and the include tree exported (`ph source export -a`).
 #
 #   docker run --rm -v <pdk>:/pdk -v <core>:/core -v <core>/os:/os:ro -v <symbian>:/symbian:ro -v <build>:/build \
-#       -v <adaptation-a64>:/adapt/0:ro -v <adaptation-pinephone>:/adapt/1:ro -w /pdk \
+#       -v <soc>:/adapt/0:ro -v <board>:/adapt/1:ro -w /pdk \
 #       -e PHOREPOC_PDK=/pdk -e PHOREPOC_CORE=/core -e PHOREPOC_OS_ROOT=/os -e PHOREPOC_SYMBIAN=/symbian -e PHOREPOC_BUILD=/build \
 #       -e PHOREPOC_ADAPTATIONS=/adapt/0:/adapt/1 ghcr.io/phorepoc/web bash /os/tools/phorepoc-qt48/build_qt_sis.sh [stage ...]
 #

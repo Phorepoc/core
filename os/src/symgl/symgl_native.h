@@ -1,12 +1,12 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: MIT -- the seam headers mesa-symbian (MIT) compiles against */
+ * SPDX-License-Identifier: MIT -- the seam headers a GL implementation compiles against */
 
 /* symgl_native.h -- OURS: the seam between Mesa's C side (egl_symbian.c, sym_frontend.c, sym_winsys.c) and the
  * Symbian C++ window glue (src/symgl/symgl_window.cpp). An EGLNativeWindowType on Symbian is an RWindow*
  * (RWindowBase*); Mesa never looks inside it, only these functions do.
  *
  * Presentation (NGA): the window gets a SurfaceManager surface of SYMGL_NBUF buffers as its background surface; GL
- * renders straight into those buffers (softpipe through a display target over the memory, the Mali through an
+ * renders straight into those buffers (softpipe through a display target over the memory, a GPU through an
  * import of the chunk), acquire/present rotate them with the compositor's "displayed" notifications. */
 #ifndef SYMGL_NATIVE_H
 #define SYMGL_NATIVE_H
@@ -55,7 +55,7 @@ unsigned symgl_chunk_size(int chunk_handle);
 
 /* G6b: an RSgImage* (the 2010 graphics resource) seen as memory the GPU can map: its pixel data is a shared chunk
  * (the sgresource kernel extension's DChunk, mapped into this process), reached by its CPU address -- the chunk
- * handle stays private to the sgdevice channel; the Mali driver finds the chunk from the address
+ * handle stays private to the sgdevice channel; the GPU driver finds the chunk from the address
  * (RMaliChannel::ImportAddress). 1 = ok; 0 = not an RSgImage with pixel data in system memory, or a format we do not
  * import. */
 #define SYMGL_SGFMT_ARGB8888 1   /* BGRA bytes (EColor16MA / ESgPixelFormatARGB_8888[_PRE]) */

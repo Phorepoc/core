@@ -86,7 +86,7 @@ static HBufC8* ReadFileL(RFs& aFs, const TDesC& aName)
 	return buf;
 	}
 
-// The device's identity: the adaptation ships z:\resource\phorepoc\device.txt ("board=pinephone", "arch=arm");
+// The device's identity: the adaptation ships z:\resource\phorepoc\device.txt ("board=<name>", "arch=arm");
 // without it the architecture is the one this program was built for and the board is unknown (= any).
 void CPheGet::ReadDeviceL()
 	{

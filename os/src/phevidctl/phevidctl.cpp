@@ -48,7 +48,7 @@ typedef TInt (*TAacDecode)(void* aH, const TUint8* aPkt, TInt aLen, TInt16* aPcm
 typedef void (*TAacClose)(void* aH);
 typedef TInt (*TAacSetOut)(void* aH, TInt aRate, TInt aCh);	// ordinal 5: convert the output (swresample) to aRate / aCh
 const TInt KPcmMaxFrames = 8192;			// per access unit (AAC 1024, HE-AAC 2048; x48000/8000 when resampled up)
-const TInt KOutRate = 48000;				// DevSound is always 48 kHz stereo: the only config proven on the A64 sound path (tonetest)
+const TInt KOutRate = 48000;				// DevSound is always 48 kHz stereo: the one config every sound driver must take
 const TInt KOutCh = 2;
 const TInt64 KAudioStartWaitUs = 3000000;	// wait this long for the audio clock to start before pacing by the wall clock
 
@@ -1633,7 +1633,7 @@ const TDesC8& CPheVidCtl::VideoMime() const
 	return iMovie.iNalLenSize ? (const TDesC8&)KMimeH264 : (const TDesC8&)KMimeMp4v;
 	}
 
-// The first Draw used to pay for creating the DSA double-buffer bitmap (a chunk) and the scratch rows while the clock already ran: measured on VirtualBox (stage
+// The first Draw used to pay for creating the DSA double-buffer bitmap (a chunk) and the scratch rows while the clock already ran: measured on x32 (stage
 // timing, 2026-10-16) about 0.7e9 ticks of "region/setup" = the first frames 300-800 ms late. Done here, before the clock starts, with the movie's own size.
 void CPheVidCtl::PrimeBitmap()
 	{

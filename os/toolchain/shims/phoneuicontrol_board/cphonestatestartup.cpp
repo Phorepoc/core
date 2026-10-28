@@ -166,7 +166,7 @@ EXPORT_C void CPhoneStateStartup::HandleKeyMessageL(
 
     // PHOREPOC delta (2026-10-15, INTERIM until the phone engine starts -- telephony-plan.md T1, a modem behind ETel):
     // the stock code showed its DEBUG note "qtn_debug_pe_failed_at_startup" for EVERY key while the phone engine is not
-    // constructed -- on the PinePhone (no modem) that is forever, so the red key only ever showed that note. Instead the
+    // constructed -- on a device without a modem that is forever, so the red key only ever showed that note. Instead the
     // red key does what CPhoneStateIdle::HandleEndKeyPressL does without a call: the apps the red key closes are closed
     // and the home screen comes to the front (not while the keys or the device are locked). Other keys: nothing.
     if ( iPhoneReady && !iPEReady && aCode == EKeyNo && !IsAutoLockOn() && !IsKeyLockOn() )

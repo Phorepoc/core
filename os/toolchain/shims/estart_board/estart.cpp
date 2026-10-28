@@ -663,7 +663,7 @@ TInt TFSStartup::FormatDrive(TInt aDrive)
 	RFormat format;
 	TInt count;
 	// PHOREPOC delta (2026-10-15): a QUICK format (boot sector, FATs, root directory). The 2010 full format steps
-	// through the whole medium -- the PinePhone's E: (the rest of a 256 GB card) took hours (boot 510)
+	// through the whole medium -- a 256 GB card's E: took hours (boot 510)
 	TInt d = format.Open(iFs, driveName, EHighDensity | EQuickFormat, count);
 	DEBUGPRINT2("FormatOpen %S -> %d", &driveName, d);
 	if(d!=KErrNone)

@@ -99,7 +99,7 @@ static TSurfaceId createSurface(RSurfaceManager& surface_manager, khronos_int32_
             {
             b.iStride = bytesPerPixel * width;  // number of bytes between start of one line and start of next
             // PH (2026-10-28): rows padded to the format's rowPadding (the 2010 code used it only as the buffer
-            // alignment). The on-screen target asks for 64 bytes: the Mali writes whole 16-pixel tiles, and with
+            // alignment). The on-screen target asks for 64 bytes: tiled GPUs write whole 16-pixel tiles, and with
             // 360-pixel rows the last tile column landed on the first 8 pixels of the next row.
             if (format->rowPadding > 4)
                 {

@@ -234,7 +234,7 @@ COMPONENTS = {
                    **{"def": f"{G}/graphicscomposition/openwfcinterface/eabi/libWFCu.def"}),
     # (the mmp's ARM TARGET is openwfc_ri_displaychannel.dll; libWFC links it as openwfc_ri_display.lib)
     # for the PREVIOUS one, not itself, so the next compose overlaps the vblank wait (3 composition buffers in the
-    # kernel, src/phorepoc-arm/a64/display/lddinc/display.h). The 2010 mmp is {G}/graphicscomposition/
+    # display LDD). The 2010 mmp is {G}/graphicscomposition/
     # openwfc_ri_displaychannel/group/openwfc_ri_displaychannel.mmp.
     "openwfc_ri_display": dict(
         mmp=os.path.join(OS_ROOT, "src/nga/openwfc_ri_display/openwfc_ri_displaychannel.mmp"), nga=True,
@@ -242,7 +242,7 @@ COMPONENTS = {
         **{"def": f"{G}/graphicscomposition/openwfcompositionengine/eabi/openwfc_ri_displayu.def"}),
     "eglsynchelper": dict(mmp=f"{G}/graphicscomposition/openwfsupport/group/eglsynchelper.mmp", nga=True, cdriver=True),
     # libEGL.dll (the name every client links; the window server's eglsynchelper too): OUR frozen-ABI front over
-    # phgl.dll, the Mesa backend (GPU plan G2/G4: EGL + GLES 2.0/1.1 on the Mali-400 through lima, or softpipe).
+    # phgl.dll, the Mesa backend (EGL + GLES 2.0/1.1 from the GL implementation a layer links in).
     "libegl": dict(mmp=os.path.join(OS_ROOT, "src/phgl/libegl.mmp"), nga=True, rom="libEGL.dll", defs=["__declspec(x)="],
                    **{"def": f"{G}/egl/eglinterface/eabi/libegl14U.def"}),
     # the 2010 reference implementation it replaced (reusable syncs only), kept buildable for comparison; never
@@ -2652,7 +2652,7 @@ COMPONENTS.update(_DEVMENU.COMPONENTS)
 # registry/components_<name>.py adds the board's own components. A key may not be defined twice.
 # Its optional EXTEND table adds the board's hardware to a core component without redefining it:
 # {key: dict(drop=[source basenames], extra=[OS paths], ...)} -- list values are appended, others set
-# (phgl: adaptation-a64 swaps the null GPU channel for the Mali one).
+# (phgl: a SoC swaps the null GPU channel for its own).
 import importlib as _il  # noqa: E402
 import paths as _P  # noqa: E402
 _EXTEND = []

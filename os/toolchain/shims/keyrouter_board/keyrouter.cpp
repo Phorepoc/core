@@ -29,7 +29,7 @@
 #include "keyrouterimpl.h"
 #include "keyaliases.h"
 
-// PHOREPOC delta (2026-10-15): COMBINED_POWER_END_KEY is OFF -- the PinePhone has a separate power key.
+// PHOREPOC delta (2026-10-15): COMBINED_POWER_END_KEY is OFF -- phones today have a separate power key.
 // With it, every power press outside the S^4 HomeScreen (0x20022f35; ours is the S^3 Active Idle) was routed as the
 // End key: the Phone app (startup state, no modem) showed qtn_debug_pe_failed_at_startup and SysAp never saw the
 // power key, so no power menu (boots 459-464). -DPH_COMBINED_POWER_END_KEY restores it for a combined-key device.

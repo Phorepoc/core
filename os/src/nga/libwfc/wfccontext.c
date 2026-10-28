@@ -45,7 +45,7 @@
 #include "owfnotifications.h"
 
 /* OURS (G8): the scene composed by the GPU (phgpucompose.cpp); every function declines (0) when the GPU path is off,
- * unavailable (no Mali: x86) or cannot do what the scene asks, and the 2010 CPU pipeline composes instead. */
+ * unavailable (no GPU channel) or cannot do what the scene asks, and the 2010 CPU pipeline composes instead. */
 extern int PhGpu_Want(void);
 extern int PhGpu_SourceOk(const void* aData, int aFormat, int aLinear, int aW, int aH, int aStride);
 extern int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int aStride, int aFormat,
@@ -426,7 +426,7 @@ WFC_Context_Initialize(WFC_CONTEXT* context,
        imageFormat.premultiplied   = OWF_SURFACE_PREMULTIPLIED;
        imageFormat.linear          = OWF_SURFACE_LINEAR;
        imageFormat.rowPadding      = OWF_SURFACE_ROWPADDING;
-       /* PH (G8): rows padded to 64 bytes = 16 pixels -- the Mali (lima) renders only into buffers whose stride covers a
+       /* PH (G8): rows padded to 64 bytes = 16 pixels -- a tiled GPU renders only into buffers whose stride covers a
           16-pixel aligned width (360 -> 1472 bytes); the CPU pipeline and the display adapter honour any stride. Not
           with display rotation, where the target is also seen with swapped dimensions and no stride. */
        if (!OWF_Screen_Rotation_Supported(context->displayContext))

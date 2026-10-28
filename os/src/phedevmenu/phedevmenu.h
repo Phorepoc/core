@@ -42,11 +42,11 @@ const TInt KPheShellsS4 = 2;
 // default), 1 = Fast (8), 2 = Off (1). Read once by the renderer (sfopenvg_board riRasterizer.cpp) when the compositor starts
 const TUint32 KPheDevKeyAntialias = 7;
 const TInt KPheAntialiasBest = 0;
-// key 8: UI GPU acceleration of the Alfred renderer (phvg: fills, gradients, strokes on the Mali): 0 = off (the default), 1 = on.
+// key 8: UI GPU acceleration of the Alfred renderer (phvg: fills, gradients, strokes on the GPU): 0 = off (the default), 1 = on.
 // Read by the Alfred server when it starts (alf_fix alfdecoderserverclient_ph.cpp), so after a reboot
 const TUint32 KPheDevKeyGpu = 8;
 const TInt KPheGpuOff = 0;
-// key 9: GPU composition (libWFC composes the screen's layers on the Mali, phgpucompose.cpp): 1 = on (the default),
+// key 9: GPU composition (libWFC composes the screen's layers on the GPU, phgpucompose.cpp): 1 = on (the default),
 // 0 = the CPU composes. Read when the compositor starts, so after a reboot; without a usable GPU the CPU composes anyway
 const TUint32 KPheDevKeyCompose = 9;
 const TInt KPheComposeOn = 1;
