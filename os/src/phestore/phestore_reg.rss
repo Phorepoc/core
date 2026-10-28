@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// phestore_reg.rss -- OURS: the download app's registration (shown in the launcher as "Get apps")
+// phestore_reg.rss -- OURS: the download app's registration (shown in the launcher as "Catalogue")
 #include <appinfo.rh>
 #include <phestore.rsg>
 

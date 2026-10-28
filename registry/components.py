@@ -967,7 +967,7 @@ COMPONENTS = {
     # OURS: the download app (engine + command line): indexes -> download -> SHA-256 -> silent install. The board
     # adaptation adds z:\resource\phorepoc\device.txt (board + arch) through EXTEND.
     "pheget": dict(mmp=os.path.join(OS_ROOT, "src/pheget/pheget.mmp")),
-    # ... and its UI ("Get apps" in the launcher): the same engine
+    # ... and its UI ("Catalogue" in the launcher): the same engine
     "phestore": dict(mmp=os.path.join(OS_ROOT, "src/phestore/phestore.mmp")),
     # start an app through apparc like the launcher does (tests): phestart <uid-hex | exe name>
     "phestart": dict(mmp=os.path.join(OS_ROOT, "src/phestart/phestart.mmp")),

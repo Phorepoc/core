@@ -35,7 +35,7 @@ RESOURCE STATUS_PANE_APP_MODEL r_phestore_status_pane
 
 RESOURCE TITLE_PANE r_phestore_title_pane
 	{
-	txt = "Get apps";
+	txt = "Catalogue";
 	}
 
 RESOURCE MENU_BAR r_phestore_menubar
@@ -78,6 +78,6 @@ RESOURCE DIALOG r_phestore_wait_note
 
 RESOURCE LOCALISABLE_APP_INFO r_phestore_localisable_app_info
 	{
-	short_caption = "Get apps";
-	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Get apps"; };
+	short_caption = "Catalogue";
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Catalogue"; };
 	}

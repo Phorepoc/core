@@ -1,7 +1,7 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// phestore.cpp -- OURS: the download app ("Get apps"): the items of the indexes that fit this device in a two-line
+// phestore.cpp -- OURS: the download app ("Catalogue"): the items of the indexes that fit this device in a two-line
 // list (name / summary, version, installed state); Install downloads, checks and installs the selected one, Details
 // shows its description and licence, Refresh reloads the indexes. The work is the engine's (../pheget/pheget.h, shared
 // with the pheget command line); its network calls run a nested scheduler, so a wait note keeps drawing meanwhile.
@@ -161,7 +161,7 @@ private:
 		iView->ItemsChangedL();
 		CAknTitlePane* title = (CAknTitlePane*)StatusPane()->ControlL(TUid::Uid(EEikStatusPaneUidTitle));
 		TBuf<40> t;
-		t.Format(_L("Get apps (%d)"), iItems.Count());
+		t.Format(_L("Catalogue (%d)"), iItems.Count());
 		title->SetTextL(t);
 		if (err != KErrNone)
 			{
