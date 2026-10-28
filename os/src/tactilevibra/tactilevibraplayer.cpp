@@ -174,7 +174,6 @@ TInt CTactileVibraPlayer::PlayFeedback( TTouchLogicalFeedback aFeedback )
             TRAP( ret, DoPlayFeedbackL( 
                 iVibraParams[effectIndex].iTime, 
                 iVibraParams[effectIndex].iIntensity ) ); 
-            RDebug::Printf("PH: tactile: pulse %d ms, intensity %d -> %d", iVibraParams[effectIndex].iTime, iVibraParams[effectIndex].iIntensity, ret);
 
             if (!ret)    
                 {
