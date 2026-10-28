@@ -1,0 +1,18 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// phedynres.mmp -- OURS: dynamic-resolution test client (see phedynres.cpp)
+TARGET			phedynres.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015710
+
+CAPABILITY		all -tcb
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			phedynres.cpp
+
+LIBRARY			euser.lib ws32.lib gdi.lib fbscli.lib
+
+VENDORID		0
