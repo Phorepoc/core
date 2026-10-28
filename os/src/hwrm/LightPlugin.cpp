@@ -1,4 +1,4 @@
-// OURS (PinePhone, display driver step 2, 2026-10-08): Symbian's stub light plug-in (sf.adapt.stubs
+// OURS (2026-10-08): Symbian's stub light plug-in (sf.adapt.stubs
 // hwrmstubplugins/src/LightPlugin.cpp) + the PRIMARY DISPLAY target driven through the display HAL: lights
 // on/off = HAL EDisplayState (the framebuffer driver blanks the backlight), intensity = HAL EDisplayBrightness
 // (backlight PWM %). SysAp's screen timeout, the power key and the brightness setting reach the panel this way.

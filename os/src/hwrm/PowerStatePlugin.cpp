@@ -1,23 +1,21 @@
 // Copyright The Phorepoc Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// OURS (PinePhone track, 2026-10-08): HWRM's power-state plug-in for the PinePhone, in place of the adapt.stubs one
+// OURS (2026-10-08): HWRM's power-state plug-in, in place of the adapt.stubs one
 // (systemswstubs/hwrmstubplugins/src/PowerStatePlugin.cpp: never notifies, so Avkon's battery pane stayed empty).
 // Same class and header (proxy.cpp creates it). Every 10 s it reads the battery from the board's power HAL
-// (a64_glue.cpp DA64PowerHal, function 0x5048: fuel gauge %, charging, mV, external power) and reports what changed
+// (phhal.h EPhHalPowerBattery: fuel gauge %, charging, mV, external power) and reports what changed
 // through MHWRMPowerStatePluginCallback -> HWRMServer publishes KPSUidHWRMPowerState -> SysAp's UpdateBatteryBarsL
-// -> CAknBatteryNotify (the status pane). A board without that HAL function (x86, virt) answers KErrNotSupported:
-// nothing is reported, as with the stub.
+// -> CAknBatteryNotify (the status pane). A board without a battery answers KErrNotSupported: nothing is reported,
+// as with the stub.
 #include <e32svr.h>
 #include <e32debug.h>
 #include <u32std.h>
 #include <hwrmpowerstatesdkpskeys.h>
 #include <centralrepository.h>
 #include "PowerStatePlugin.h"
+#include "../phorepoc/inc/phhal.h"
 
-const TInt KA64PowerHalBattery = 0x5048;
-const TInt KA64PowerHalGuardPing = 0x5047;
-const TInt KA64PowerHalGuardTimeout = 0x5049;   // a1 = the boot-guard timeout in seconds (a64_glue.cpp UiBootGuardS)
 const TInt KPollUs = 10000000;
 
 // the developer menu's "Boot guard timeout" (CenRep 0xE7015A01 key 3, src/phedevmenu/phedevmenu.h) -> the kernel's boot guard.
@@ -31,7 +29,7 @@ static void SendGuardTimeout()
     TInt secs = 0;
     if ( repo->Get( 3, secs ) == KErrNone )
         {
-        const TInt r = UserSvr::HalFunction( EHalGroupPower, KA64PowerHalGuardTimeout, (TAny*) secs, 0 );
+        const TInt r = UserSvr::HalFunction( EHalGroupPower, EPhHalPowerGuardTimeout, (TAny*) secs, 0 );
         if ( r != KErrNotSupported )
             RDebug::Printf( "PH: boot guard timeout %d s (developer menu key 3) -> %d", secs, r );
         }
@@ -95,7 +93,7 @@ static void Report( MHWRMPowerStatePluginCallback* aCb, TUint32 aKey, TInt aValu
 TInt CPowerStatePlugin::Callback( TAny* aPtr )
     {
     CPowerStatePlugin* self = (CPowerStatePlugin*) aPtr;
-    // the kernel's hang guard (a64_glue.cpp UiGuardTripped, slot B only): "UI up + alive" = WSERV and the homescreen both
+    // the kernel's hang guard (phhal.h EPhHalPowerGuardPing: a board that has one): "UI up + alive" = WSERV and the homescreen both
     // exist and this server's scheduler still runs (this callback). No ping within 180 s of boot, or none for 60 s later
     // = the watchdog is left to fire -> golden slot A.
     // (the repository may not be up yet in the first seconds: ask again for the first 5 minutes, i.e. every boot's whole guard window)
@@ -103,12 +101,12 @@ TInt CPowerStatePlugin::Callback( TAny* aPtr )
         SendGuardTimeout();
     const TBool ws = ProcessExists( _L( "\\ewsrv.exe" ) ), hs = ProcessExists( _L( "\\homescreen.exe" ) );
     if ( ws && hs )
-        UserSvr::HalFunction( EHalGroupPower, KA64PowerHalGuardPing, 0, 0 );
+        UserSvr::HalFunction( EHalGroupPower, EPhHalPowerGuardPing, 0, 0 );
     if ( ++self->iKey <= 20 )
         RDebug::Printf( "PH: guard ping check wserv=%d homescreen=%d", ws, hs );
     TInt b[4] = { -1, 0, 0, 0 };
     TPckg<TInt[4]> pk( b );
-    const TInt r = UserSvr::HalFunction( EHalGroupPower, KA64PowerHalBattery, &pk, 0 );
+    const TInt r = UserSvr::HalFunction( EHalGroupPower, EPhHalPowerBattery, &pk, 0 );
     if ( r == KErrNotSupported )
         self->iPeriodic->Cancel();          // no such board function: stay silent, as the stub
     if ( r != KErrNone )

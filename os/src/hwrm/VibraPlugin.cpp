@@ -1,6 +1,6 @@
-// OURS (PinePhone, 2026-10-28): Symbian's stub vibra plug-in (sf.adapt.stubs hwrmstubplugins/src/VibraPlugin.cpp,
-// which acknowledged every command and moved nothing) driving the motor through the board's power HAL function
-// 0x5056 (a1 = on/off; adaptation-a64 a64_glue.cpp A64Vibra, PD2). Start = on until HWRM's own duration timer sends
+// OURS (2026-10-28): Symbian's stub vibra plug-in (sf.adapt.stubs hwrmstubplugins/src/VibraPlugin.cpp,
+// which acknowledged every command and moved nothing) driving the motor through the board's power HAL
+// (phhal.h EPhHalPowerVibra, a1 = on/off). Start = on until HWRM's own duration timer sends
 // Stop; Pulse = on for TVibraData::iDuration ms. Silent (KErrNotSupported, ignored) on boards without a motor.
 /*
 * Copyright (c) 2002-2005 Nokia Corporation and/or its subsidiary(-ies). 
@@ -33,13 +33,13 @@
 #include <u32std.h>
 #include <e32debug.h>
 #include "Trace.h" 
+#include "../phorepoc/inc/phhal.h"
 
-const TInt KA64PowerHalVibra = 0x5056;
 const TInt KPulseEndCmdId = -1;		// an internal timer: the end of a pulse (no response is sent for it)
 
 static void Motor(TBool aOn)
     {
-    UserSvr::HalFunction(EHalGroupPower, KA64PowerHalVibra, (TAny*)(TInt)aOn, 0);
+    UserSvr::HalFunction(EHalGroupPower, EPhHalPowerVibra, (TAny*)(TInt)aOn, 0);
     }
 
 CVibraPlugin* CVibraPlugin::NewL()

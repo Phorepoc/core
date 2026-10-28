@@ -20,7 +20,7 @@ const TInt KPheShellS4 = 1;
 // key 2: 1 = Control Panel lists a "Developer menu" entry
 const TUint32 KPheDevKeyCpShortcut = 2;
 // key 3: boot guard timeout, seconds (the kernel falls back to the golden image after this long without the UI-up ping;
-// read by the HWRM power-state plug-in, which hands it to the kernel: power HAL function 0x5049)
+// read by the HWRM power-state plug-in, which hands it to the kernel: power HAL EPhHalPowerGuardTimeout, src/phorepoc/inc/phhal.h)
 const TUint32 KPheDevKeyGuardTimeout = 3;
 // key 4: UI renderer: 0 = Classic (the non-Alfred WSERV path, default), 1 = Alfred/Hitchcock (GPU, uiacceltk); read at boot
 const TUint32 KPheDevKeyRenderer = 4;
