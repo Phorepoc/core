@@ -1543,7 +1543,6 @@ void CHuiCanvasWsPainter::WsResetClippingRegionL()
     
 void CHuiCanvasWsPainter::WsClearL()
     {
-    { const TRect r = iCanvasVisual->DisplayRect().Round(); if (r.iTl.iY >= 570) RDebug::Printf("PH: alf: clear visual %08x %d,%d-%d,%d brush %08x", (TUint)iCanvasVisual, r.iTl.iX, r.iTl.iY, r.iBr.iX, r.iBr.iY, iBrushColor.Internal()); }
    	iCanvasWsGc->WsClearL();
     }
 
@@ -1966,7 +1965,6 @@ void CHuiCanvasWsPainter::WsSetDrawModeL()
     TInt drawMode = 0;    
     iWsCommandBufferReader->ReadInt32L( drawMode );
 	iCanvasWsGc->WsSetDrawModeL(drawMode);
-    { const TRect r = iCanvasVisual->DisplayRect().Round(); if (r.iTl.iY >= 570) RDebug::Printf("PH: alf: drawmode %d visual %08x %d,%d-%d,%d", drawMode, (TUint)iCanvasVisual, r.iTl.iX, r.iTl.iY, r.iBr.iX, r.iBr.iY); }
     }
 
 void CHuiCanvasWsPainter::WsSetOriginL()
