@@ -310,8 +310,12 @@ static inline EGLBoolean PhVgSwapBuffers(EGLDisplay aDpy, EGLSurface aSurf, EGLC
 			if (gap > worst)
 				worst = gap;
 			}
-		if (PhVgUs(t2 - t0) >= 30000 || (gap >= 60000 && gap < 1000000))		// a slow swap or a long gap between frames: say which
-			RDebug::Printf("PH: alf: vgwin SLOW frame #%u: gap %u us since the last swap, swap %u us (read %u, submit %u), %d px",
+		// a slow swap, or a stall INSIDE a run of frames (the previous gap was a frame's: an idle pause before a frame is not one)
+		static TUint prevGap;
+		const TBool stall = gap >= 60000 && gap < 250000 && prevGap && prevGap < 40000;
+		prevGap = gap;
+		if (PhVgUs(t2 - t0) >= 30000 || stall)
+			RDebug::Printf("PH: alf: vgwin SLOW frame #%u: gap %u us since the last frame, swap %u us (read %u, submit %u), %d px",
 				nfast + 1, gap, PhVgUs(t2 - t0), PhVgUs(t1 - t0), PhVgUs(t2 - t1), pixels);
 		if (++nfast <= 6 || (nfast & 15) == 0)
 			{
