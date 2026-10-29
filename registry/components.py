@@ -260,7 +260,11 @@ COMPONENTS = {
                        defs=["__declspec(x)="],
                        **{"def": f"{G}/opengles/openglesinterface/eabi/opengles11u.def"}),
     # never linked. ROM_TAIL=phgl while it is being worked on (the delta upload).
+    # link_wrap: every allocation of the GL implementation on one process-wide heap (src/symgl/symgl_heap.cpp: the GL
+    # threads of one process may run on different heaps)
     "phgl": dict(mmp=os.path.join(OS_ROOT, "src/phgl/phgl.mmp"), nga=True, vfp=True, static_ctors=True, allow_wsd=True,
+                 link_wrap=["malloc", "calloc", "realloc", "free", "strdup", "strndup", "asprintf", "vasprintf",
+                            "_Znwj", "_Znaj", "_ZdlPv", "_ZdaPv", "_ZdlPvj"],
                  **{"def": os.path.join(OS_ROOT, "src/phgl/gen/phgl.def")}),
     "directgdi": dict(mmp=f"{G}/graphicsdeviceinterface/directgdi/group/directgdi.mmp", nga=True),
     "directgdiadapter": dict(

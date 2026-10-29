@@ -22,7 +22,7 @@ USERINCLUDE		../symgl
 
 SOURCEPATH		../symgl
 // a board with a GPU swaps symgpu_null.cpp for its own channel (its registry's EXTEND table)
-SOURCE			symgl_window.cpp symgl_tls.cpp symgpu_null.cpp
+SOURCE			symgl_window.cpp symgl_tls.cpp symgl_heap.cpp symgpu_null.cpp
 
 LIBRARY			libc.lib libm.lib libpthread.lib
 LIBRARY			euser.lib ws32.lib gdi.lib fbscli.lib bitgdi.lib
