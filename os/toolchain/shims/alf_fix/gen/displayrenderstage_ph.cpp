@@ -306,7 +306,19 @@ MWsElement* CDisplayRenderStage::CreateSceneElementL()
     }
 
 void CDisplayRenderStage::DestroySceneElement(MWsElement* aElement)
-    { 
+    {
+    //OURS (2026-10-29): forget the element everywhere this stage keeps it. iElementArray (filled since 2026-10-27, see
+    //ElementAdded), the client composition targets and the current target held it after the wrapper deleted it: the next
+    //window's element (a second game's video) found the stale entry and CreateTargetL's dynamic_cast read the freed
+    //object -- KERN-EXEC 3 in the window server, the phone reset.
+    for (TInt i = iElementArray.Count() - 1; i >= 0; --i)
+        if (iElementArray[i].iElement == aElement)
+            iElementArray.Remove(i);
+    for (TInt i = iElementTargets.Count() - 1; i >= 0; --i)
+        if (static_cast<MWsElement*>(iElementTargets[i].iElement) == aElement)
+            iElementTargets.Remove(i);
+    if (iTargetElement && static_cast<MWsElement*>(iTargetElement) == aElement)
+        iTargetElement = NULL;			// (no flush: the element is going)
     iOpenWfcWrapper->DestroyElement(aElement);
     }
 
@@ -1205,10 +1217,14 @@ RDebug::Printf("PH: alf: CDisplayRenderStage::ElementAdded L1146 TInt index = KE
 RDebug::Printf("PH: alf: CDisplayRenderStage::ElementAdded L1147 TUint32 nodeId = (TUint32)&aWindowTreeNode;");
     TUint32 nodeId = (TUint32)&aWindowTreeNode;
 RDebug::Printf("PH: alf: CDisplayRenderStage::ElementAdded L1148 for(TInt i = 0; i < iElementArray.Count(); ++i)");
+    //OURS (2026-10-29): the entry of THIS element -- a null surface id (a DSA window's element) matched every other
+    //DSA element's entry, and the new element took over another one's (since freed) element pointer
     for(TInt i = 0; i < iElementArray.Count(); ++i)
         {
-        if(iElementArray[i].iSurfaceId == aElement.ConnectedSurface())
+        if(iElementArray[i].iElement == (MWsElement*)&aElement
+            || (!aElement.ConnectedSurface().IsNull() && iElementArray[i].iSurfaceId == aElement.ConnectedSurface()))
             {
+            iElementArray[i].iElement = (MWsElement*)&aElement;
             iElementArray[i].iWindowGrpId = windowGroupId;
             iElementArray[i].iWindowHandle = windowId;
             iElementArray[i].iWindowTreeNodeId = nodeId;
