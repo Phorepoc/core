@@ -937,6 +937,8 @@ void CWsRedrawMsgWindow::DrawCommandsL()
 				pos += sizeof(TWsCmdHeaderBase);
 				if (HasElement() && header.iOpcode == EWsStoreAllGcAttributes && header.iCmdLength >= 2) { TUint8 tail[2]; drawCmdBuffer->Read(pos + header.iCmdLength - 2, tail, 2); RDebug::Printf("PH: redraw gc store len=%d tail(alpha brush,pen)=%02x %02x", (TInt)header.iCmdLength, tail[0], tail[1]); }
 				if (HasElement() && header.iOpcode == EWsStoreAllGcAttributes) { TUint8 b[12]; drawCmdBuffer->Read(pos, b, 12); RDebug::Printf("PH: redraw gc attrs: drawMode=%d brushStyle=%d penStyle=%d penColor=%02x%02x%02x%02x brushColor=%02x%02x%02x%02x", b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10]); }
+				// (the status pane cells under Classic: every stored op with its first data word -- draw mode, brush colour)
+				if (CliWin()->AbsRect().iBr.iY <= 90) { static TInt phSp = 0; if (phSp++ < 400) { TUint32 v = 0; if (header.iCmdLength >= 4) drawCmdBuffer->Read(pos, &v, 4); const TRect r(CliWin()->AbsRect()); RDebug::Printf("PH: sp op %d len %d v=%08x win=%d,%d-%d,%d grp=%d alpha=%d", (TInt)header.iOpcode, (TInt)header.iCmdLength, v, r.iTl.iX, r.iTl.iY, r.iBr.iX, r.iBr.iY, CliWin()->WinGroup() ? CliWin()->WinGroup()->Identifier() : -1, (TInt)CliWin()->HasAlpha()); } }
 				if (HasElement()) { static TInt n = 0; if (n++ < 200) RDebug::Printf("PH: redraw op %d len %d (Clear=%d DrawRect=%d SetBrushColor=%d SetDrawMode=%d DrawBitmap=%d)", (TInt)header.iOpcode, (TInt)header.iCmdLength, (TInt)EWsGcOpClear, (TInt)EWsGcOpDrawRect, (TInt)EWsGcOpSetBrushColor, (TInt)EWsGcOpSetDrawMode, (TInt)EWsGcOpDrawBitmap); }
 
 				switch(header.iOpcode)
