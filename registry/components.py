@@ -752,7 +752,10 @@ COMPONENTS = {
     "lockclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.securitysrv/securitydialogs/lockclient/group/lockclient.mmp"),
     # the keyguard/devicelock server SSM starts at boot; it defines + sets KCoreAppUIsAutolockStatus = EAutolockOff.
     # Without it the key stays 0 ("uninitialized" = locked to ConnectionDialogsNotifBase::AutolockOn) and every
-    "lockapp": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.securitysrv/securitydialogs/lockapp/group/lockapp.mmp"),
+    # lockappappui.cpp = OURS fix (toolchain/shims/lockapp_fix): Autolock started in the background, not to the front
+    # (its undrawn white window was composed at boot)
+    "lockapp": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.securitysrv/securitydialogs/lockapp/group/lockapp.mmp",
+                    drop=["lockappappui.cpp"], extra=["toolchain/shims/lockapp_fix/lockappappui.cpp"]),
     "autolock": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.securitysrv/securitydialogs/Autolock/group/Autolock.mmp"),
     # wave 1 NOT built: the EAP family (eapauthserver/eapgeneric/eapgeneralsettings: the 2010 EAP framework is newer than
     # the exported headers; eaptools/eaptrace not built) -- one task with the WPA work; cmpluginvpn (abstract class vs our
