@@ -16,6 +16,7 @@
 // realloc of a pointer outside that chunk go to the original allocator: CBase objects come from User::AllocZ inline
 // in e32base.inl and may be deleted through the global delete here.
 #include <e32std.h>
+#include <e32atomics.h>
 #include <e32debug.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -31,13 +32,14 @@ namespace
 	RHeap* gHeap;
 	TLinAddr gBase, gEnd;		// the chunk's reserved range
 
+	// (euser's atomics: GCC's __atomic builtins are library calls for this target, which the ROM does not provide)
 	RHeap* Heap()
 		{
-		RHeap* h = __atomic_load_n(&gHeap, __ATOMIC_ACQUIRE);
+		RHeap* h = (RHeap*)__e32_atomic_load_acq_ptr(&gHeap);
 		if (h)
 			return h;
-		static TInt lock;		// creation by the first caller (another thread waits for it)
-		while (__atomic_exchange_n(&lock, 1, __ATOMIC_ACQUIRE))
+		static TUint32 lock;		// creation by the first caller (another thread waits for it)
+		while (__e32_atomic_swp_ord32(&lock, 1))
 			User::AfterHighRes(100);
 		h = gHeap;
 		for (TUint i = 0; !h && i < sizeof(KMaxSizes) / sizeof(KMaxSizes[0]); i++)
@@ -59,14 +61,15 @@ namespace
 			RDebug::Printf("PH: phgl heap: no chunk heap, the calling thread's heap is used");
 			h = &User::Heap();
 			}
-		__atomic_store_n(&gHeap, h, __ATOMIC_RELEASE);
-		__atomic_store_n(&lock, 0, __ATOMIC_RELEASE);
+		__e32_atomic_store_rel_ptr(&gHeap, h);		// (after gBase/gEnd)
+		__e32_atomic_store_rel32(&lock, 0);
 		return h;
 		}
 
+	// a cell of the shared heap (a thread that never allocated may free one: the acquire load orders gBase/gEnd)
 	inline TBool Ours(const TAny* aPtr)
 		{
-		return aPtr && (TLinAddr)aPtr >= gBase && (TLinAddr)aPtr < gEnd;
+		return aPtr && __e32_atomic_load_acq_ptr(&gHeap) && (TLinAddr)aPtr >= gBase && (TLinAddr)aPtr < gEnd;
 		}
 
 	TAny* Alloc(size_t aSize)
