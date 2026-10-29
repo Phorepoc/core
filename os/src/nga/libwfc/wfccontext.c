@@ -1234,11 +1234,14 @@ WFC_Context_PhGpuCompose(WFC_CONTEXT* context)
         if (ga && e->globalAlpha == OWF_FULLY_TRANSPARENT)
             continue;
         src = e->source->lockedStream.image;
+        /* the element's global alpha is kept in [0, OWF_ALPHA_MAX_VALUE] (wfcelement.c: 255 for 8-bit pixels), the
+           GPU blend wants [0, 1] -- passed raw, a half-faded element (an effect's fade, ALF's layer opacity) went fully
+           opaque (2026-10-29) */
         PhGpu_Element(e->source->streamHandle, e->source->lockedStream.buffer, src->data, src->width, src->height,
                       src->stride, src->format.pixelFormat, src->format.premultiplied, e->srcRect, e->dstRect,
                       e->sourceFlip ? 1 : 0, WFC_Context_PhRot(e->sourceRotation),
                       e->sourceScaleFilter != WFC_SCALE_FILTER_NONE,
-                      (e->transparencyTypes & WFC_TRANSPARENCY_SOURCE) != 0, ga ? e->globalAlpha : 1.0f);
+                      (e->transparencyTypes & WFC_TRANSPARENCY_SOURCE) != 0, ga ? (float)e->globalAlpha / (float)OWF_ALPHA_MAX_VALUE : 1.0f);
     }
     PhGpu_End();
     /* the notifications only once the GPU has sampled the sources: "composed" lets a client draw into a
