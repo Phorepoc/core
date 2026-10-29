@@ -1069,7 +1069,13 @@ namespace
 		{
 		TShadow* s = Find(c.iCookie);
 		if (!s || s->iState == 0 || !s->iFbo0 || s->iW != c.iW || s->iH != c.iH)
+			{
+			static TInt nd;
+			if (nd++ < 6)
+				RDebug::Printf("PH: vg2 phvg present declined: shadow %d state %d fbo %d size %dx%d (asked %dx%d)", s != NULL,
+					s ? s->iState : -1, s ? (TInt)s->iFbo0 : 0, s ? s->iW : 0, s ? s->iH : 0, c.iW, c.iH);
 			return 0;
+			}
 		const TUint t0 = User::FastCounter();
 		TTarget* t = TargetGet(c.iOut, c.iX, c.iW, c.iH);
 		if (!t)

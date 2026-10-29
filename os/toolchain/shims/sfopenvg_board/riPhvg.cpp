@@ -480,13 +480,31 @@ bool PhvgTryBlitOut(const Surface* aS, Image* aDst, int aSx, int aSy, int aDx, i
 	// PRESENT: the whole surface into a top-down 32-bit premultiplied BGRA destination (a window's surface buffer read
 	// with a negative stride: row 0 = the bottom at the highest address) -- the GPU writes the destination itself, no
 	// readback and no repack. The engine declines memory it cannot render into; then the readback below.
+	{	// (the first calls: why a present is not even tried)
+		static TInt nwhy;
+		if (nwhy < 4 && aW * aH >= 100000)
+			{
+			++nwhy;
+			RDebug::Printf("PH: vg2 phvg present? fn %d src %d,%d dst %d,%d %dx%d surface %dx%d stride %d off %d,%d bpp %d pre %d bits %d%d%d%d shifts %d %d %d %d",
+				gT.Present != NULL, aSx, aSy, aDx, aDy, aW, aH, aS->getWidth(), aS->getHeight(), (int)aDst->m_stride,
+				(int)aDst->m_storageOffsetX, (int)aDst->m_storageOffsetY, d.bitsPerPixel, (int)d.isPremultiplied(), d.redBits,
+				d.greenBits, d.blueBits, d.alphaBits, d.redShift, d.greenShift, d.blueShift, d.alphaShift);
+			}
+	}
 	if (gT.Present && aSx == 0 && aSy == 0 && aDx == 0 && aDy == 0 && aW == aS->getWidth() && aH == aS->getHeight() &&
 	    aDst->m_stride < 0 && !aDst->m_storageOffsetX && !aDst->m_storageOffsetY && d.bitsPerPixel == 32 && d.isPremultiplied() &&
 	    d.alphaBits == 8 && d.redBits == 8 && d.greenBits == 8 && d.blueBits == 8 &&
 	    d.blueShift == 0 && d.greenShift == 8 && d.redShift == 16 && d.alphaShift == 24)
 		{
 		TUint8* top = (TUint8*)aDst->m_data + (aH - 1) * aDst->m_stride;		// the lowest address: the surface's top row
-		if (gT.Present((TAny*)aS, top, -aDst->m_stride, aW, aH) == 1)
+		const TInt pr = gT.Present((TAny*)aS, top, -aDst->m_stride, aW, aH);
+		static TInt npr;
+		if (npr < 4 || (pr != 1 && npr < 12))
+			{
+			++npr;
+			RDebug::Printf("PH: vg2 phvg present -> %d (surface %08x %dx%d into %08x stride %d)", pr, (TUint)aS, aW, aH, (TUint)top, -aDst->m_stride);
+			}
+		if (pr == 1)
 			{
 			aDst->m_mipmapsValid = false;
 			return true;
