@@ -1087,6 +1087,12 @@ void CHuiEnv::AdvanceTime(TReal32 aElapsedTime)
     if (continueRefresh)
         {
         TUint refreshTime = CHuiStatic::MilliSecondsSinceUpdateTime();
+        {	// PH: the frame pacing (sampled): the adaptive CPU cap stretches a frame to refreshTime * 100 / cap
+        static TUint nrf;
+        if ((++nrf & 63) == 1)
+            RDebug::Printf("PH: alf: refresh pacing #%u: render %u ms, cap %u%% (set %u%%, idle monitor %d), target %d ms",
+                nrf, refreshTime, usedMaxCPUUtilization, iMaxCPUUtilization, iIdleCPUValueMonitored, iRefreshIntervalTarget);
+        }
         // Refresh rate adjustment
         if (usedMaxCPUUtilization)
             {
