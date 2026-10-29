@@ -102,7 +102,7 @@ namespace
 	TBool			gPacked;
 	// 4x MSAA shadows (EXT_multisampled_render_to_texture): the samples live in the GPU's tile memory and are resolved
 	// into the 1x texture as each tile is written out -- the same edge quality as 2 x 2 supersampling at a quarter of
-	// the fill and memory traffic (Mali-400 resolves 4x for free). NULL = supersampled shadows.
+	// the fill and memory traffic (a tiled GPU resolves 4x on the way out, nearly for free). NULL = supersampled shadows.
 	void			(*gFbTexMs)(GLenum, GLenum, GLenum, GLuint, GLint, GLsizei);
 	void			(*gRbStorageMs)(GLenum, GLsizei, GLenum, GLsizei, GLsizei);
 	const TInt		KMsaaSamples = 4;
