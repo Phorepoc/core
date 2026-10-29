@@ -20,6 +20,7 @@
 #include <e32debug.h>
 #include <w32std.h>
 #include <hal.h>
+#include <e32property.h>
 #include <fbs.h>
 #include <graphics/surface.h>
 #include <graphics/surfacemanager.h>
@@ -66,6 +67,25 @@ static inline TUint PhVgUs(TUint aTicks)
 		RDebug::Printf("PH: alf: fast counter frequency %d Hz (the swap timings below are in microseconds)", freq);
 		}
 	return freq ? (TUint)((TUint64)aTicks * 1000000 / freq) : 0;
+	}
+
+// The OpenVG GPU engine's switch (src/phvg/phvg.h KPhvgModeKey, in this process's category; set at the alf server's start
+// from the developer setting): 1 = the window surface is drawn on the GPU. Re-read once a second.
+static inline TBool PhVgGpuMode()
+	{
+	static TInt mode;
+	static TUint tick;
+	static TBool read;
+	const TUint now = User::NTickCount();
+	if (!read || now - tick > 1000)
+		{
+		TInt v = 0;
+		const TUint key = 0x50564731;			// 'PVG1' (phvg.h KPhvgModeKey)
+		mode = RProperty::Get(TUid::Uid((TInt)RProcess().SecureId().iId), key, v) == KErrNone && v == 1;
+		tick = now;
+		read = ETrue;
+		}
+	return mode;
 	}
 
 static inline TPhVgWin* PhVgFind(EGLSurface aSurf)
@@ -254,14 +274,27 @@ static inline EGLBoolean PhVgSwapBuffers(EGLDisplay aDpy, EGLSurface aSurf, EGLC
 		const TUint t0 = User::FastCounter();
 		TInt pixels = 0;
 		TRegionFix<KPhDirtyMax> reg;
-		for (TInt i = 0; i < nr; i++)
+		if (PhVgGpuMode())
 			{
-			const TRect& r = rects[i];
-			TUint8* p = w0->iChunk.Base() + (r.iBr.iY - 1) * w0->iStride + r.iTl.iX * 4;
-			vgReadPixels(p, -w0->iStride, VG_sARGB_8888_PRE, r.iTl.iX, ht0 - r.iBr.iY, r.Width(), r.Height());
-			reg.AddRect(r);
-			pixels += r.Width() * r.Height();
+			// GPU mode: ONE read of the whole surface -- the RI hands a GPU-ahead surface to the engine, which resolves it
+			// straight into this buffer on the GPU (riPhvg.cpp PhvgTryBlitOut -> PhvgPresent): no readback. Only the dirty
+			// rectangles are submitted.
+			vgReadPixels(w0->iChunk.Base() + (ht0 - 1) * w0->iStride, -w0->iStride, VG_sARGB_8888_PRE, 0, 0, wd0, ht0);
+			for (TInt i = 0; i < nr; i++)
+				{
+				reg.AddRect(rects[i]);
+				pixels += rects[i].Width() * rects[i].Height();
+				}
 			}
+		else
+			for (TInt i = 0; i < nr; i++)
+				{
+				const TRect& r = rects[i];
+				TUint8* p = w0->iChunk.Base() + (r.iBr.iY - 1) * w0->iStride + r.iTl.iX * 4;
+				vgReadPixels(p, -w0->iStride, VG_sARGB_8888_PRE, r.iTl.iX, ht0 - r.iBr.iY, r.Width(), r.Height());
+				reg.AddRect(r);
+				pixels += r.Width() * r.Height();
+				}
 		const TUint t1 = User::FastCounter();
 		const TInt rc = w0->iSus.SubmitUpdate(w0->iScreen, w0->iSid, 0, &reg);
 		const TUint t2 = User::FastCounter();

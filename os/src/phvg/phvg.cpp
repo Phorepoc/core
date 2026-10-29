@@ -38,6 +38,10 @@
 #ifndef GL_DEPTH24_STENCIL8_OES
 #define GL_DEPTH24_STENCIL8_OES 0x88F0
 #endif
+#define EGL_SYMBIAN_MEMORY_IMAGE_PH 0x3FF1		// Mesa egl_symbian.c: the client buffer is a symgl_sgimage (TMemImage below)
+#ifndef EGL_KHR_image
+typedef void* EGLImageKHR;
+#endif
 
 namespace
 	{
@@ -65,7 +69,7 @@ namespace
 	TInt			gUp = 0;				// 0 not started, 1 up, -1 failed
 
 	// ---- the worker thread ---------------------------------------------------------------------------------------
-	enum { EOpInit, EOpUpload, EOpFill, EOpClear, EOpReadback, EOpForget, EOpReadDirect, EOpImage, EOpNop };
+	enum { EOpInit, EOpUpload, EOpFill, EOpClear, EOpReadback, EOpForget, EOpReadDirect, EOpImage, EOpNop, EOpPresent };
 	struct TCmd
 		{
 		TInt			iOp;
@@ -88,6 +92,8 @@ namespace
 	GLuint			gProgFlat, gProgTex, gProgLin, gProgRad, gProgImg;
 	GLint			gImgScale, gImgM0, gImgM1, gImgInv, gImgMul, gImgSampler;	// O4b
 	GLint			gFlatScale, gFlatColor, gTexScale, gTexInv, gTexSampler;
+	GLuint			gProgFlip;											// the present pass: a texture copied upside down
+	GLint			gFlipSampler;
 	GLint			gLinScale, gLinG, gLinRamp;							// O4: linear gradient program
 	GLint			gRadScale, gRadM0, gRadM1, gRadFocal, gRadD, gRadRamp;	// O4: radial gradient program
 	GLuint			gRampTex;											// KPhvgRamp x 1 colour ramp
@@ -115,6 +121,12 @@ namespace
 		"uniform sampler2D u_tex;\n"
 		"varying vec2 v_uv;\n"
 		"void main() { gl_FragColor = texture2D(u_tex, v_uv); }\n";
+	// the present pass: a unit quad over the whole target, the texture sampled upside down (memory row 0 of the target is
+	// the surface's TOP row; GL's y = 0 is memory row 0 of a render target, the shadow's y = 0 is the surface's bottom)
+	const char* const KVsFlip =
+		"attribute vec2 a_pos;\n"
+		"varying vec2 v_uv;\n"
+		"void main() { gl_Position = vec4(a_pos * 2.0 - vec2(1.0, 1.0), 0.0, 1.0); v_uv = vec2(a_pos.x, 1.0 - a_pos.y); }\n";
 
 	// O4b: image draw. The vertex shader maps image-space corners through the affine image->surface matrix (fp32 on the
 	// vertex stage) and passes the texel position straight to the texture fetch.
@@ -292,6 +304,9 @@ namespace
 		gProgTex = Link(KVsTex, KFsTex);
 		if (!gProgFlat || !gProgTex)
 			return EFalse;
+		gProgFlip = Link(KVsFlip, KFsTex);		// optional: without it a present is declined (the readback path)
+		if (gProgFlip)
+			gFlipSampler = glGetUniformLocation(gProgFlip, "u_tex");
 		// the gradient programs are optional: a machine that cannot compile them just declines gradient fills
 		gProgLin = Link(KVsLin, KFsLin);
 		gProgRad = Link(KVsRad, KFsRad);
@@ -949,6 +964,153 @@ namespace
 		return 1;
 		}
 
+	// ---- PRESENT: the shadow resolved by the GPU straight into a window's surface buffer -------------------------------
+	// The buffer is imported once as a render target (Mesa's EGL_SYMBIAN_MEMORY_IMAGE_PH over its memory, usage 1 = the GPU
+	// writes it: the GPU job does the cache maintenance) and kept while its layout stays; the last resolve pass of the
+	// shadow writes it, flipped. The CPU never touches the pixels: what was 60-80 ms of glReadPixels + repack per frame is
+	// one GPU pass.
+	struct TMemImage					// symgl_native.h's symgl_sgimage
+		{
+		void* iBase;
+		unsigned iStride, iWidth, iHeight, iFormat;	// 1 = ARGB8888 (BGRA bytes)
+		unsigned iUsage;			// 1 = a render target
+		};
+	struct TTarget
+		{
+		TUint8*		iBase;
+		TInt		iStride, iW, iH;
+		EGLImageKHR	iImg;
+		GLuint		iTex, iFbo;
+		TUint		iUsed;
+		};
+	const TInt KTargets = 4;
+	TTarget			gTgt[KTargets];
+	TUint			gTgtClock;
+	EGLImageKHR		(*gCreateImage)(EGLDisplay, EGLContext, EGLenum, EGLClientBuffer, const EGLint*);
+	EGLBoolean		(*gDestroyImage)(EGLDisplay, EGLImageKHR);
+	void			(*gImageTarget)(GLenum, GLeglImageOES);
+	TInt			gPresentUp;			// 0 not tried, 1 ready, -1 unavailable
+
+	void TargetFree(TTarget& aT)
+		{
+		if (aT.iFbo)
+			glDeleteFramebuffers(1, &aT.iFbo);
+		if (aT.iTex)
+			glDeleteTextures(1, &aT.iTex);
+		if (aT.iImg)
+			gDestroyImage(gDpy, aT.iImg);
+		Mem::FillZ(&aT, sizeof(aT));
+		}
+
+	TTarget* TargetGet(TUint8* aBase, TInt aStride, TInt aW, TInt aH)
+		{
+		if (!gPresentUp)
+			{
+			gCreateImage = (EGLImageKHR (*)(EGLDisplay, EGLContext, EGLenum, EGLClientBuffer, const EGLint*))eglGetProcAddress("eglCreateImageKHR");
+			gDestroyImage = (EGLBoolean (*)(EGLDisplay, EGLImageKHR))eglGetProcAddress("eglDestroyImageKHR");
+			gImageTarget = (void (*)(GLenum, GLeglImageOES))eglGetProcAddress("glEGLImageTargetTexture2DOES");
+			gPresentUp = (gCreateImage && gDestroyImage && gImageTarget && gProgFlip) ? 1 : -1;
+			if (gPresentUp < 0)
+				RDebug::Printf("PH: vg2 phvg present: no EGLImage entry points or flip program, reading back instead");
+			}
+		if (gPresentUp < 0)
+			return NULL;
+		TTarget* lru = &gTgt[0];
+		for (TInt i = 0; i < KTargets; i++)
+			{
+			TTarget& t = gTgt[i];
+			if (t.iImg && t.iBase == aBase && t.iStride == aStride && t.iW == aW && t.iH == aH)
+				{
+				t.iUsed = ++gTgtClock;
+				return &t;
+				}
+			// the slot to fill: an empty one, else the least recently used
+			if (lru->iImg && (!t.iImg || t.iUsed < lru->iUsed))
+				lru = &t;
+			}
+		TargetFree(*lru);
+		TMemImage m;
+		m.iBase = aBase;
+		m.iStride = aStride;
+		m.iWidth = aW;
+		m.iHeight = aH;
+		m.iFormat = 1;
+		m.iUsage = 1;
+		EGLImageKHR img = gCreateImage(gDpy, EGL_NO_CONTEXT, EGL_SYMBIAN_MEMORY_IMAGE_PH, (EGLClientBuffer)&m, NULL);
+		if (!img)
+			{
+			RDebug::Printf("PH: vg2 phvg present: no EGLImage over %08x %dx%d stride %d (%x)", (TUint)aBase, aW, aH, aStride, eglGetError());
+			return NULL;
+			}
+		TTarget& t = *lru;
+		t.iImg = img;
+		glGenTextures(1, &t.iTex);
+		glBindTexture(GL_TEXTURE_2D, t.iTex);
+		gImageTarget(GL_TEXTURE_2D, img);
+		glGenFramebuffers(1, &t.iFbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, t.iFbo);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t.iTex, 0);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE || glGetError() != GL_NO_ERROR)
+			{
+			RDebug::Printf("PH: vg2 phvg present: %08x %dx%d stride %d is not a render target", (TUint)aBase, aW, aH, aStride);
+			TargetFree(t);
+			return NULL;
+			}
+		t.iBase = aBase;
+		t.iStride = aStride;
+		t.iW = aW;
+		t.iH = aH;
+		t.iUsed = ++gTgtClock;
+		RDebug::Printf("PH: vg2 phvg present: window buffer %08x %dx%d stride %d imported as a render target", (TUint)aBase, aW, aH, aStride);
+		return &t;
+		}
+
+	TInt DoPresent(const TCmd& c)
+		{
+		TShadow* s = Find(c.iCookie);
+		if (!s || s->iState == 0 || !s->iFbo0 || s->iW != c.iW || s->iH != c.iH)
+			return 0;
+		const TUint t0 = User::FastCounter();
+		TTarget* t = TargetGet(c.iOut, c.iX, c.iW, c.iH);
+		if (!t)
+			return 0;
+		SetNoTests();
+		GLuint src = s->iTex0;
+		if (s->iS == 4)
+			{
+			glBindFramebuffer(GL_FRAMEBUFFER, s->iFboM);		// S x S -> 2 x 2 (the same first halving as Resolve)
+			BlitTex(s->iTex0, s->iW * 2, s->iH * 2, GL_LINEAR);
+			src = s->iTexM;
+			}
+		glBindFramebuffer(GL_FRAMEBUFFER, t->iFbo);
+		glViewport(0, 0, s->iW, s->iH);
+		glUseProgram(gProgFlip);
+		glUniform1i(gFlipSampler, 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, src);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		TReal32 v[12];
+		QuadVerts(v, 0, 0, 1, 1);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glFinish();						// the buffer is complete (and out of the GPU's way) before the compositor is told
+		const TInt err = glGetError();
+		const TUint t1 = User::FastCounter();
+		static TUint np;
+		if (++np <= 6 || (np & 63) == 0)
+			RDebug::Printf("PH: vg2 phvg present #%u: %dx%d (S %d) into %08x: %u us, GL error %x",
+				np, s->iW, s->iH, s->iS, (TUint)c.iOut, (t1 - t0) / 24, err);
+		if (err != GL_NO_ERROR)
+			{
+			gStat[6]++;
+			TargetFree(*t);
+			return 0;
+			}
+		gStat[8]++;
+		return 1;
+		}
+
 	// ---- O4b: source image textures and ASYNCHRONOUS image draws ---------------------------------------------------------
 	// Image draws do not wait for the GL worker: the caller (the one VG rendering thread, under gLockH) appends an entry to an ordered ring and goes on; the
 	// worker drains the ring in order before it runs any synchronous command (Call), so every other operation (fills, clears, uploads, readbacks, forget, and
@@ -1133,6 +1295,7 @@ namespace
 				case EOpReadback:	gCmd.iResult = DoReadback(gCmd); break;
 				case EOpForget:		gCmd.iResult = DoForget(gCmd); break;
 				case EOpReadDirect:	gCmd.iResult = DoReadDirect(gCmd); break;
+				case EOpPresent:	gCmd.iResult = DoPresent(gCmd); break;
 				case EOpNop:		gCmd.iResult = 1; break;
 				default:			gCmd.iResult = 0; break;
 				}
@@ -1386,6 +1549,16 @@ extern "C"
 		TCmd c;
 		Mem::FillZ(&c, sizeof(c));
 		c.iOp = EOpReadDirect; c.iCookie = aCookie; c.iRect = aRect; c.iOut = aOut;
+		return Call(c);
+		}
+
+	EXPORT_C TInt PhvgPresent(TAny* aCookie, TUint8* aBase, TInt aStride, TInt aW, TInt aH)
+		{
+		if (gUp != 1 || !aBase || aStride <= 0 || aW <= 0 || aH <= 0)
+			return 0;
+		TCmd c;
+		Mem::FillZ(&c, sizeof(c));
+		c.iOp = EOpPresent; c.iCookie = aCookie; c.iOut = aBase; c.iX = aStride; c.iW = aW; c.iH = aH;
 		return Call(c);
 		}
 

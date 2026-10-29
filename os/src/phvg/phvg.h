@@ -69,7 +69,10 @@ enum TPhvgOrdinal
 	EPhvgForget,			// void (cookie): the surface is gone
 	EPhvgStats,			// void (TInt out[12]): fills, clears, uploads, readbacks, declines, edges, glErrors, shadows, directReads, gradientFills, strokeFills, 0
 	EPhvgReadDirect,		// TInt (cookie, const TInt* rect, TUint8* out): shadow -> out, the shadow STAYS ahead (O3 residency)
-	EPhvgDrawImage			// TInt (const TPhvgImage*): 1 done, 0 declined, -2 texture not cached and no pixels given (O4b)
+	EPhvgDrawImage,			// TInt (const TPhvgImage*): 1 done, 0 declined, -2 texture not cached and no pixels given (O4b)
+	EPhvgPresent			// TInt (cookie, TUint8* base, TInt stride, w, h): the whole shadow resolved by the GPU STRAIGHT INTO memory
+							// (a 32-bit premultiplied BGRA buffer the GPU can import -- a window's surface buffer -- rows from the
+							// surface's TOP (VG y = h-1) at base, stride > 0); no readback, the shadow stays ahead. 1 done, 0 declined
 	};
 
 // the process switch (RProperty, TInt): 1 = GPU engine, 0 / undefined = the reference implementation. Read in the

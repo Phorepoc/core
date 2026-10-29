@@ -72,6 +72,7 @@ namespace
 		void (*Stats)(TInt*);
 		TInt (*ReadDirect)(TAny*, const TInt*, TUint8*);
 		TInt (*DrawImage)(const TPhvgImage*);
+		TInt (*Present)(TAny*, TUint8*, TInt, TInt, TInt);	// optional (an older engine has none: the readback path)
 		};
 	TTable	gT;
 	TInt	gLoad = 0;					// 0 not tried, 1 engine up, -1 unavailable
@@ -103,6 +104,7 @@ namespace
 		gT.Stats = (void (*)(TInt*))lib.Lookup(EPhvgStats);
 		gT.ReadDirect = (TInt (*)(TAny*, const TInt*, TUint8*))lib.Lookup(EPhvgReadDirect);
 		gT.DrawImage = (TInt (*)(const TPhvgImage*))lib.Lookup(EPhvgDrawImage);
+		gT.Present = (TInt (*)(TAny*, TUint8*, TInt, TInt, TInt))lib.Lookup(EPhvgPresent);
 		if (!gT.Init || !gT.LivePtr || !gT.State || !gT.Upload || !gT.Fill || !gT.Clear || !gT.Dirty || !gT.Readback ||
 		    !gT.Invalidate || !gT.Forget)
 			{
@@ -475,6 +477,21 @@ bool PhvgTryBlitOut(const Surface* aS, Image* aDst, int aSx, int aSy, int aDx, i
 	TInt dirty[4];
 	if (!gT.Dirty((TAny*)aS, dirty) || !gT.ReadDirect)			// only a GPU-ahead surface; else the RI is current
 		return false;
+	// PRESENT: the whole surface into a top-down 32-bit premultiplied BGRA destination (a window's surface buffer read
+	// with a negative stride: row 0 = the bottom at the highest address) -- the GPU writes the destination itself, no
+	// readback and no repack. The engine declines memory it cannot render into; then the readback below.
+	if (gT.Present && aSx == 0 && aSy == 0 && aDx == 0 && aDy == 0 && aW == aS->getWidth() && aH == aS->getHeight() &&
+	    aDst->m_stride < 0 && !aDst->m_storageOffsetX && !aDst->m_storageOffsetY && d.bitsPerPixel == 32 && d.isPremultiplied() &&
+	    d.alphaBits == 8 && d.redBits == 8 && d.greenBits == 8 && d.blueBits == 8 &&
+	    d.blueShift == 0 && d.greenShift == 8 && d.redShift == 16 && d.alphaShift == 24)
+		{
+		TUint8* top = (TUint8*)aDst->m_data + (aH - 1) * aDst->m_stride;		// the lowest address: the surface's top row
+		if (gT.Present((TAny*)aS, top, -aDst->m_stride, aW, aH) == 1)
+			{
+			aDst->m_mipmapsValid = false;
+			return true;
+			}
+		}
 	TUint8* buf = (TUint8*)User::Alloc(aW * aH * 4);
 	if (!buf)
 		return false;
