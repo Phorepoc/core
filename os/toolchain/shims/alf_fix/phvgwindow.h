@@ -315,8 +315,8 @@ static inline EGLBoolean PhVgSwapBuffers(EGLDisplay aDpy, EGLSurface aSurf, EGLC
 		const TBool stall = gap >= 60000 && gap < 250000 && prevGap && prevGap < 40000;
 		prevGap = gap;
 		if (PhVgUs(t2 - t0) >= 30000 || stall)
-			RDebug::Printf("PH: alf: vgwin SLOW frame #%u: gap %u us since the last frame, swap %u us (read %u, submit %u), %d px",
-				nfast + 1, gap, PhVgUs(t2 - t0), PhVgUs(t1 - t0), PhVgUs(t2 - t1), pixels);
+			RDebug::Printf("PH: alf: [%u ms] vgwin SLOW frame #%u: gap %u us since the last frame, swap %u us (read %u, submit %u), %d px",
+				User::NTickCount(), nfast + 1, gap, PhVgUs(t2 - t0), PhVgUs(t1 - t0), PhVgUs(t2 - t1), pixels);
 		if (++nfast <= 6 || (nfast & 15) == 0)
 			{
 			RDebug::Printf("PH: alf: vgwin FAST swap #%u: %d rects, %d px (first %d,%d-%d,%d): vgReadPixels %u us, SubmitUpdate %u us (rc %d); frame interval mean %u us worst %u us over %u",
