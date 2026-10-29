@@ -57,6 +57,9 @@ void CPheCatalogueView::ConstructL(const TRect& aRect)
 	iLoad = ELoading;
 	iBarDown = -1;
 	CreateWindowL();
+	// no background: Draw covers every pixel from iFrame. WSERV's default white clear ran before each DrawNow (the
+	// 33 ms loading spinner, drags) and a busy start showed it -- white flashes while scrolling during the refresh
+	Window().SetBackgroundColor();
 	Window().SetPointerGrab(ETrue);
 	EnableDragEvents();
 	iTimer = CPeriodic::NewL(CActive::EPriorityStandard);
