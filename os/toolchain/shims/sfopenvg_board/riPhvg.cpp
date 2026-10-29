@@ -52,7 +52,12 @@
 namespace OpenVGRI
 {
 
-volatile unsigned gPhvgImgEpoch = 0;	// see riImage.cpp
+// The write generation of each Image, by a 64-way hash of its address (riImage.cpp bumps the Image written; a CPU write into
+// or a read-back into a surface bumps its colour buffer's): the GPU texture cache (ri_fastblit.cpp) re-hashes a source image
+// only when ITS slot moved -- a global count made every draw into the window invalidate every cached hash.
+static unsigned gPhvgImgGen[64];
+static inline unsigned PhvgImgSlot(const void* aImg) { return ((TUint)aImg >> 4) & 63; }
+void PhvgImgWritten(const void* aImg) { ++gPhvgImgGen[PhvgImgSlot(aImg)]; }
 volatile TInt* gPhvgLive = NULL;		// the engine's count of valid shadows; NULL until the engine is loaded
 
 namespace
@@ -435,7 +440,7 @@ namespace
 void PhvgCpuAccess(const Surface* aS, bool aWrite)
 	{
 	if (aWrite)
-		++gPhvgImgEpoch;			// a CPU write into a surface may be a write into a VGImage (pbuffer from client buffer)
+		PhvgImgWritten(aS->m_image);		// a CPU write into a surface may be a write into a VGImage (pbuffer from client buffer)
 	if (!gPhvgLive || !*gPhvgLive)
 		return;
 	TInt rect[4];
@@ -447,7 +452,10 @@ void PhvgCpuAccess(const Surface* aS, bool aWrite)
 			{
 			const TUint t0 = User::FastCounter();
 			if (gT.Readback((TAny*)aS, rect, buf) == 1)
+				{
 				WriteSurface((Surface*)aS, rect, buf);
+				PhvgImgWritten(aS->m_image);		// the GPU's pixels are now in its memory
+				}
 			User::Free(buf);
 			gPerf[2]++; gPerf[3] += User::FastCounter() - t0;
 			}
@@ -1006,7 +1014,7 @@ int PhvgDrawImage(Surface* aS, const void* aKey, int aIw, int aIh, unsigned aHas
 	}
 
 const unsigned* PhvgPerf() { return gPerf; }
-unsigned PhvgImgEpoch() { return gPhvgImgEpoch; }
+unsigned PhvgImgGen(const void* aImg) { return gPhvgImgGen[PhvgImgSlot(aImg)]; }
 
 // Scissored Surface::clear on the GPU: SRC "image" draws of one white texel scaled over each (region x scissor) rectangle, tinted
 // with the premultiplied clear colour. A clear writes the same value wherever scissor rectangles overlap, so no union is needed.

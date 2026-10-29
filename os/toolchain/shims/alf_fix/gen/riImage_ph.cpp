@@ -51,7 +51,7 @@ namespace OpenVGRI
 
 // OURS (O2): the GPU engine hooks, riPhvg.cpp (contract at its head)
 void PhvgCpuAccess(const Surface* aS, bool aWrite);
-extern volatile unsigned gPhvgImgEpoch;		//OURS (ALF): bumped by every write into an Image (riPhvg.cpp); the GPU texture cache trusts a content hash until it changes
+void PhvgImgWritten(const void* aImg);		//OURS (ALF): every write into an Image bumps ITS write generation (riPhvg.cpp); the GPU texture cache trusts a content hash until it changes
 void PhvgForget(const Surface* aS);
 bool PhvgTryClear(Surface* aS, const Color& aColor, int aX, int aY, int aW, int aH);
 bool PhvgTryClearRects(Surface* aS, const Color& aColor, int aX, int aY, int aW, int aH, const Array<Rectangle>& aScissors);
@@ -683,7 +683,7 @@ bool Image::overlaps(const Image* src) const
 
 void Image::clear(const Color& clearColor, int x, int y, int w, int h)
 {
-	++gPhvgImgEpoch;	//OURS
+	PhvgImgWritten(this);	//OURS
 	RI_ASSERT(m_data);
 	RI_ASSERT(m_referenceCount > 0);
 
@@ -812,7 +812,7 @@ static void computeBlitRegion(int& sx, int& sy, int& dx, int& dy, int& w, int& h
 
 void Image::blit(const Image& src, int sx, int sy, int dx, int dy, int w, int h, bool dither)
 {
-	++gPhvgImgEpoch;	//OURS
+	PhvgImgWritten(this);	//OURS
 	//img=>img: vgCopyImage
 	//img=>user: vgGetImageSubData
 	//user=>img: vgImageSubData
@@ -884,7 +884,7 @@ void Image::blit(const Image& src, int sx, int sy, int dx, int dy, int w, int h,
 
 void Image::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, int h)
 {
-	++gPhvgImgEpoch;	//OURS
+	PhvgImgWritten(this);	//OURS
 	//fb=>img: vgGetPixels
 	//fb=>user: vgReadPixels
 	RI_ASSERT(!src->isInUse(this));
@@ -1120,7 +1120,7 @@ Color Image::readPixel(int x, int y) const
 
 void Image::writePixel(int x, int y, const Color& c)
 {
-	++gPhvgImgEpoch;	//OURS
+	PhvgImgWritten(this);	//OURS
 	RI_ASSERT(m_data);
 	RI_ASSERT(x >= 0 && x < m_width);
 	RI_ASSERT(y >= 0 && y < m_height);
@@ -1187,7 +1187,7 @@ void Image::writePixel(int x, int y, const Color& c)
 
 void Image::writeFilteredPixel(int i, int j, const Color& color, VGbitfield channelMask)
 {
-	++gPhvgImgEpoch;	//OURS
+	PhvgImgWritten(this);	//OURS
 	//section 3.4.4: before color space conversion, premultiplied colors are
 	//clamped to alpha, and the color is converted to nonpremultiplied format
 	//section 11.2: how to deal with channel mask
@@ -1260,7 +1260,7 @@ RIfloat Image::readMaskPixel(int x, int y) const
 
 void Image::writeMaskPixel(int x, int y, RIfloat m)
 {
-	++gPhvgImgEpoch;	//OURS
+	PhvgImgWritten(this);	//OURS
 	RI_ASSERT(m_data);
 	RI_ASSERT(x >= 0 && x < m_width);
 	RI_ASSERT(y >= 0 && y < m_height);

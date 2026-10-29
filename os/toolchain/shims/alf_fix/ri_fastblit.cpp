@@ -33,7 +33,7 @@ namespace OpenVGRI
 {
 void PhvgCpuAccess(const Surface* aS, bool aWrite);	// riPhvg.cpp
 bool PhvgSurfaceGpu(const Surface* aS);			// riPhvg.cpp (O4b)
-unsigned PhvgImgEpoch();					// riPhvg.cpp: write generation of all Images
+unsigned PhvgImgGen(const void* aImg);		// riPhvg.cpp: write generation of an Image (its 64-way slot)
 const unsigned* PhvgPerf();				// riPhvg.cpp: 0 surface uploads, 1 ticks, 2 readbacks, 3 ticks, 4 DrawImage calls, 5 round-trip ticks, 6 misses
 const unsigned* PhvgFillStats();			// riPhvg.cpp: path fills 0 GPU, 1 coverage, 2 scissor, 3 surface, 4 paint, 5 GPU failed
 int PhvgDrawImage(Surface* aS, const void* aKey, int aIw, int aIh, unsigned aHash, const float* aM, int aBlendSrc,
@@ -137,14 +137,14 @@ static TUint PhHashWords(const RIuint8* base, int rows, int rowBytes, int stride
 	return h1 ^ (h2 * 31u);
 	}
 
-// content hash of a source image, validated by the write generation: an image the RI owns can only change through the RI (every Image / Surface write bumps the
-// epoch), so while the epoch is the one the hash was taken at, the stored hash is still right. Images over client memory (m_ownsData false) are hashed every time.
+// content hash of a source image, validated by its write generation: an image the RI owns can only change through the RI (every Image / Surface write bumps
+// the generation of the Image written), so while its generation is the one the hash was taken at, the stored hash is still right. Images over client memory (m_ownsData false) are hashed every time.
 struct PhHashRec { const Image* iImg; TInt iW, iH, iFmt; TUint iHash; TUint iEpoch; };
 static PhHashRec gHashRec[64];
 static TUint gHashSkips, gHashFull;
 static TUint PhImageHash(Image* img, int w, int h)
 	{
-	const TUint ep = PhvgImgEpoch();
+	const TUint ep = PhvgImgGen(img);
 	const int fmt = (int)img->m_desc.internalFormat;
 	PhHashRec& r = gHashRec[((TUint)img >> 4) & 63];
 	if (img->m_ownsData && r.iImg == img && r.iW == w && r.iH == h && r.iFmt == fmt && r.iEpoch == ep)
