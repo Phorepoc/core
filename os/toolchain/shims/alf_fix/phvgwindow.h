@@ -299,10 +299,24 @@ static inline EGLBoolean PhVgSwapBuffers(EGLDisplay aDpy, EGLSurface aSurf, EGLC
 		const TInt rc = w0->iSus.SubmitUpdate(w0->iScreen, w0->iSid, 0, &reg);
 		const TUint t2 = User::FastCounter();
 		++w0->iSwaps;
-		static TUint nfast;
+		static TUint nfast, last, worst, sum, n;
+		// the frame interval while frames come back to back (an effect): the mean and worst of the last 16
+		const TUint gap = last ? PhVgUs(t0 - last) : 0;
+		last = t0;
+		if (gap && gap < 250000)
+			{
+			sum += gap;
+			n++;
+			if (gap > worst)
+				worst = gap;
+			}
 		if (++nfast <= 6 || (nfast & 15) == 0)
-			RDebug::Printf("PH: alf: vgwin FAST swap #%u: %d rects, %d px (first %d,%d-%d,%d): vgReadPixels %u us, SubmitUpdate %u us (rc %d)",
-				nfast, nr, pixels, rects[0].iTl.iX, rects[0].iTl.iY, rects[0].iBr.iX, rects[0].iBr.iY, PhVgUs(t1 - t0), PhVgUs(t2 - t1), rc);
+			{
+			RDebug::Printf("PH: alf: vgwin FAST swap #%u: %d rects, %d px (first %d,%d-%d,%d): vgReadPixels %u us, SubmitUpdate %u us (rc %d); frame interval mean %u us worst %u us over %u",
+				nfast, nr, pixels, rects[0].iTl.iX, rects[0].iTl.iY, rects[0].iBr.iX, rects[0].iBr.iY, PhVgUs(t1 - t0), PhVgUs(t2 - t1), rc,
+				n ? sum / n : 0, worst, n);
+			sum = n = worst = 0;
+			}
 		return EGL_TRUE;
 		}
 	dirty.iN = 0;
