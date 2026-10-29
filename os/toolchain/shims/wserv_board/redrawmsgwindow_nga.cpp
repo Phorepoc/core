@@ -995,7 +995,8 @@ void CWsRedrawMsgWindow::DrawCommandsL()
 							phWriteAlpha = (*reinterpret_cast<const TUint*>(buf.Ptr()) == CGraphicsContext::EDrawModeWriteAlpha);
 						else if (opcode == EWsGcOpSetBrushColor)
 							phBrushClear = (reinterpret_cast<const TRgb*>(buf.Ptr())->Alpha() == 0);
-						else if (phWriteAlpha && phBrushClear && CliWin()->HasAlpha() &&
+						else if (phWriteAlpha && phBrushClear && !HasElement() &&	// (not HasAlpha(): Classic's status pane windows have no alpha channel; a surface hole is the one real transparent clear)
+								 
 								 (opcode == EWsGcOpClear || opcode == EWsGcOpClearRect || opcode == EWsGcOpDrawRect))
 							{
 							{ static TInt phTc = 0; if (phTc++ < 10) RDebug::Printf("PH: redraw skip transparent clear op %d", opcode); }
