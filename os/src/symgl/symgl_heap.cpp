@@ -25,9 +25,14 @@
 
 namespace
 	{
-	// the heap's maximum, largest first; its disconnected chunk reserves twice that (the hybrid heap's page and slab
-	// areas: what UserHeap::ChunkHeap(TChunkHeapCreateInfo) reserves) and the heap may use all of it
-	const TInt KMaxSizes[] = { 256 << 20, 128 << 20, 64 << 20 };
+	// The heap's maximum: what the GL implementation had before it got a heap of its own -- the heaps of the threads
+	// calling it, at most two of them (the window server's GPU composer + the Alfred server thread) -- so twice the
+	// first caller's heap maximum, at least KMinMax. Its disconnected chunk reserves twice the maximum (the hybrid
+	// heap's page and slab areas) in the PROCESS'S address space, which the application shares: a fixed 256 MB
+	// maximum reserved 512 MB and left Let's Golf 2 5 MB below KUserLocalDataEnd, too little to map its window
+	// surface (KErrNoMemory, then a panic; 2026-10-29). Halved while the reservation fails, down to KMinMax / 4.
+	const TInt KMinMax = 32 << 20;
+	const TInt KMaxMax = 256 << 20;
 
 	RHeap* gHeap;
 	TLinAddr gBase, gEnd;		// the chunk's reserved range
@@ -42,17 +47,20 @@ namespace
 		while (__e32_atomic_swp_ord32(&lock, 1))
 			User::AfterHighRes(100);
 		h = gHeap;
-		for (TUint i = 0; !h && i < sizeof(KMaxSizes) / sizeof(KMaxSizes[0]); i++)
+		TInt max = User::Heap().MaxLength();
+		max = max > KMaxMax / 2 ? KMaxMax : max < KMinMax / 2 ? KMinMax : 2 * max;
+		for (; !h && max >= KMinMax / 4; max /= 2)
 			{
 			RChunk chunk;
-			if (chunk.CreateDisconnectedLocal(0, 0, 2 * KMaxSizes[i], EOwnerProcess) != KErrNone)
+			if (chunk.CreateDisconnectedLocal(0, 0, 2 * max, EOwnerProcess) != KErrNone)
 				continue;
 			h = UserHeap::ChunkHeap(chunk, 0x10000, 0x10000, 0, 0, EFalse, UserHeap::EChunkHeapDuplicate);
 			if (h)
 				{
 				gBase = (TLinAddr)chunk.Base();
 				gEnd = gBase + chunk.MaxSize();
-				RDebug::Printf("PH: phgl heap: %d MB at %08x (one heap for every GL thread)", KMaxSizes[i] >> 20, gBase);
+				RDebug::Printf("PH: phgl heap: %d MB at %08x (one heap for every GL thread; the first caller's heap max %d KB)",
+					max >> 20, gBase, User::Heap().MaxLength() >> 10);
 				}
 			chunk.Close();
 			}
