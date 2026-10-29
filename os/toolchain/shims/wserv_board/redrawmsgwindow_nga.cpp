@@ -36,6 +36,23 @@
 #include <graphics/WSGRAPHICDRAWERINTERFACE.H>
 #include <graphics/surface.h>
 #include "windowelementset.h"
+#include <e32property.h>
+#include "ph_renderer.h"
+
+// OURS: ETrue when the Classic render stages draw (inifile_board.cpp publishes the choice before any render stage exists):
+// every window is composed into one UI buffer. Under Alfred the playback feeds each visual's own buffer.
+static TBool PhClassicUi()
+	{
+	static TInt classic = -1;
+	if (classic < 0)
+		{
+		TInt v = -1;
+		if (RProperty::Get(TUid::Uid(PH_RENDERER_PS_CATEGORY), PH_RENDERER_PS_KEY, v) != KErrNone)
+			return EFalse;
+		classic = (v == 0);
+		}
+	return classic;
+	}
 
 #include "drawresource.h"
 #include "../debuglog/DEBUGLOG.H"
@@ -919,6 +936,8 @@ void CWsRedrawMsgWindow::DrawCommandsL()
 			LOG_REDRAW_SEGMENT_REGION(localDrawRegion)
 			
 			TWsCmdHeaderBase header;
+			TBool phWriteAlpha = EFalse;	// OURS: the transparent-clear skip below
+			TBool phBrushClear = EFalse;
 			TInt pos = 0; // Set to first command position in buffer
 			CBufSeg* drawCmdBuffer = segment->iDrawCommands;
 
@@ -937,8 +956,17 @@ void CWsRedrawMsgWindow::DrawCommandsL()
 				pos += sizeof(TWsCmdHeaderBase);
 				if (HasElement() && header.iOpcode == EWsStoreAllGcAttributes && header.iCmdLength >= 2) { TUint8 tail[2]; drawCmdBuffer->Read(pos + header.iCmdLength - 2, tail, 2); RDebug::Printf("PH: redraw gc store len=%d tail(alpha brush,pen)=%02x %02x", (TInt)header.iCmdLength, tail[0], tail[1]); }
 				if (HasElement() && header.iOpcode == EWsStoreAllGcAttributes) { TUint8 b[12]; drawCmdBuffer->Read(pos, b, 12); RDebug::Printf("PH: redraw gc attrs: drawMode=%d brushStyle=%d penStyle=%d penColor=%02x%02x%02x%02x brushColor=%02x%02x%02x%02x", b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10]); }
-				// (the status pane cells under Classic: every stored op with its first data word -- draw mode, brush colour)
-				if (CliWin()->AbsRect().iBr.iY <= 90) { static TInt phSp = 0; if (phSp++ < 400) { TUint32 v = 0; if (header.iCmdLength >= 4) drawCmdBuffer->Read(pos, &v, 4); const TRect r(CliWin()->AbsRect()); RDebug::Printf("PH: sp op %d len %d v=%08x win=%d,%d-%d,%d grp=%d alpha=%d", (TInt)header.iOpcode, (TInt)header.iCmdLength, v, r.iTl.iX, r.iTl.iY, r.iBr.iX, r.iBr.iY, CliWin()->WinGroup() ? CliWin()->WinGroup()->Identifier() : -1, (TInt)CliWin()->HasAlpha()); } }
+				// OURS: the draw mode and brush alpha in force, for the transparent-clear skip below. Avkon's transparent controls
+				// (the home screen's status pane cells: akntitle, the clock) carry WriteAlpha + an alpha-0 brush in the stored gc
+				// attributes (EWsStoreAllGcAttributes: byte 0 = draw mode, the last two = brush and pen alpha), not as ops.
+				if (header.iOpcode == EWsStoreAllGcAttributes && header.iCmdLength >= 2)
+					{
+					TUint8 mode = 0, tail[2];
+					drawCmdBuffer->Read(pos, &mode, 1);
+					drawCmdBuffer->Read(pos + header.iCmdLength - 2, tail, 2);
+					phWriteAlpha = (mode == CGraphicsContext::EDrawModeWriteAlpha);
+					phBrushClear = (tail[0] == 0);
+					}
 				if (HasElement()) { static TInt n = 0; if (n++ < 200) RDebug::Printf("PH: redraw op %d len %d (Clear=%d DrawRect=%d SetBrushColor=%d SetDrawMode=%d DrawBitmap=%d)", (TInt)header.iOpcode, (TInt)header.iCmdLength, (TInt)EWsGcOpClear, (TInt)EWsGcOpDrawRect, (TInt)EWsGcOpSetBrushColor, (TInt)EWsGcOpSetDrawMode, (TInt)EWsGcOpDrawBitmap); }
 
 				switch(header.iOpcode)
@@ -983,6 +1011,20 @@ void CWsRedrawMsgWindow::DrawCommandsL()
 						if (HasElement() && (opcode == EWsGcOpClear || opcode == EWsGcOpClearRect))
 							{
 							{ static TInt phSk = 0; if (phSk++ < 10) RDebug::Printf("PH: redraw skip op %d on a window with a background surface", opcode); }
+							opcode = -1;
+							}
+						// OURS: a window with an alpha channel clears its area to alpha 0 in WriteAlpha mode so the windows behind show
+						// through. On the device every window is its own composited layer; here (Classic: WSERV composes every window
+						// into ONE UI buffer, back to front) that clear erased what the windows behind had just drawn into the region
+						// = the black home-screen status pane. In one buffer "transparent" means "keep the pixels below": skip it.
+						if (opcode == EWsGcOpSetDrawMode)
+							phWriteAlpha = (*reinterpret_cast<const TUint*>(buf.Ptr()) == CGraphicsContext::EDrawModeWriteAlpha);
+						else if (opcode == EWsGcOpSetBrushColor)
+							phBrushClear = (reinterpret_cast<const TRgb*>(buf.Ptr())->Alpha() == 0);
+						else if (phWriteAlpha && phBrushClear && CliWin()->HasAlpha() && !HasElement() && PhClassicUi() &&
+								 (opcode == EWsGcOpClear || opcode == EWsGcOpClearRect || opcode == EWsGcOpDrawRect))
+							{
+							{ static TInt phTc = 0; if (phTc++ < 10) RDebug::Printf("PH: redraw skip transparent clear op %d", opcode); }
 							opcode = -1;
 							}
 						if (opcode > -1)
