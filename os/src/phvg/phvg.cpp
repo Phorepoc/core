@@ -100,6 +100,12 @@ namespace
 	TUint8			gRampCache[KPhvgRamp * 4];
 	TBool			gRampValid;
 	TBool			gPacked;
+	// 4x MSAA shadows (EXT_multisampled_render_to_texture): the samples live in the GPU's tile memory and are resolved
+	// into the 1x texture as each tile is written out -- the same edge quality as 2 x 2 supersampling at a quarter of
+	// the fill and memory traffic (Mali-400 resolves 4x for free). NULL = supersampled shadows.
+	void			(*gFbTexMs)(GLenum, GLenum, GLenum, GLuint, GLint, GLsizei);
+	void			(*gRbStorageMs)(GLenum, GLsizei, GLenum, GLsizei, GLsizei);
+	const TInt		KMsaaSamples = 4;
 	TReal32*		gVtx;					// KBatchPieces * 12 floats
 
 	const char* const KVsFlat =
@@ -300,6 +306,14 @@ namespace
 			return EFalse;
 			}
 		gPacked = HasExt("GL_OES_packed_depth_stencil");
+		if (HasExt("GL_EXT_multisampled_render_to_texture"))
+			{
+			gFbTexMs = (void (*)(GLenum, GLenum, GLenum, GLuint, GLint, GLsizei))eglGetProcAddress("glFramebufferTexture2DMultisampleEXT");
+			gRbStorageMs = (void (*)(GLenum, GLsizei, GLenum, GLsizei, GLsizei))eglGetProcAddress("glRenderbufferStorageMultisampleEXT");
+			if (!gFbTexMs || !gRbStorageMs)
+				gFbTexMs = NULL, gRbStorageMs = NULL;
+			}
+		Log("shadow anti-aliasing: 1 = 4x MSAA in tile memory, 0 = supersampled", gFbTexMs != NULL);
 		gProgFlat = Link(KVsFlat, KFsFlat);
 		gProgTex = Link(KVsTex, KFsTex);
 		if (!gProgFlat || !gProgTex)
@@ -400,7 +414,9 @@ namespace
 		{
 		if (aW < 1 || aH < 1 || aW > KMaxSide || aH > KMaxSide)
 			return 0;
-		return (aW <= 256 && aH <= 256) ? 4 : 2;
+		if (aW <= 256 && aH <= 256)
+			return 4;
+		return gFbTexMs ? 1 : 2;		// 1 = a 1x shadow with 4x MSAA (EnsureGl falls back to 2 if it cannot be made)
 		}
 
 	GLuint MakeTex(TInt aW, TInt aH, GLint aFilter)
@@ -430,29 +446,50 @@ namespace
 		{
 		if (aS.iFbo0)
 			return ETrue;
-		const TInt w = aS.iW * aS.iS, h = aS.iH * aS.iS;
-		aS.iTex0 = MakeTex(w, h, GL_LINEAR);
-		aS.iFbo0 = MakeFbo(aS.iTex0);
-		glGenRenderbuffers(1, &aS.iRbDs);
-		glBindRenderbuffer(GL_RENDERBUFFER, aS.iRbDs);
 		TBool complete = EFalse;
-		if (gPacked)
+		for (;;)
 			{
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, w, h);
-			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, aS.iRbDs);
-			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, aS.iRbDs);
-			complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+			const TInt w = aS.iW * aS.iS, h = aS.iH * aS.iS;
+			const TBool ms = aS.iS == 1;		// a 1x shadow is multisampled (ChooseScale)
+			aS.iTex0 = MakeTex(w, h, GL_LINEAR);
+			glGenFramebuffers(1, &aS.iFbo0);
+			glBindFramebuffer(GL_FRAMEBUFFER, aS.iFbo0);
+			if (ms)
+				gFbTexMs(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, aS.iTex0, 0, KMsaaSamples);
+			else
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, aS.iTex0, 0);
+			glGenRenderbuffers(1, &aS.iRbDs);
+			glBindRenderbuffer(GL_RENDERBUFFER, aS.iRbDs);
+			if (gPacked)
+				{
+				if (ms)
+					gRbStorageMs(GL_RENDERBUFFER, KMsaaSamples, GL_DEPTH24_STENCIL8_OES, w, h);
+				else
+					glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, w, h);
+				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, aS.iRbDs);
+				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, aS.iRbDs);
+				complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+				}
+			if (!complete)
+				{
+				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, 0);
+				if (ms)
+					gRbStorageMs(GL_RENDERBUFFER, KMsaaSamples, GL_STENCIL_INDEX8, w, h);
+				else
+					glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, w, h);
+				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, aS.iRbDs);
+				complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+				}
+			complete = complete && glGetError() == GL_NO_ERROR;
+			if (complete || !ms)
+				break;
+			Log("4x MSAA shadow framebuffer incomplete, supersampling instead", w, h);
+			FreeGl(aS);
+			aS.iS = 2;
 			}
 		if (!complete)
 			{
-			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, 0);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, w, h);
-			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, aS.iRbDs);
-			complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
-			}
-		if (!complete)
-			{
-			Log("shadow framebuffer incomplete", w, h);
+			Log("shadow framebuffer incomplete", aS.iW * aS.iS, aS.iH * aS.iS);
 			FreeGl(aS);
 			return EFalse;
 			}
