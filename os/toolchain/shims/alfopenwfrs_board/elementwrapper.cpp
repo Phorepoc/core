@@ -970,8 +970,11 @@ TBool CElementWrapper::FlushSceneChanges()
         return EFalse;
         }
 
+    // OURS (2026-10-29): the element below is found for EVERY flush, not only an insert's. The 2010 source re-inserts every
+    // committed element below (at the end of this function) with WFC_INVALID_HANDLE otherwise -- "at the bottom" -- while
+    // the wrapper flushes its list bottom to top: the scene became the list REVERSED, the alf UI layer under the windows'
+    // surfaces and an older (background) game's surface above the foreground app's (King Oddball over SkyForce).
     WFCElement elementBelow=WFC_INVALID_HANDLE;
-    if ((updateFlags&(EUpdate_Insert|EUpdate_AttributesIllegal)))
         {
         if (CElementWrapper* elementWrapperBelow=iElementBelow)
             {
