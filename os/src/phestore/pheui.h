@@ -158,6 +158,12 @@ private:
 	CFbsBitmap* iFrame;
 	CFbsBitmapDevice* iFrameDev;
 	CFbsBitGc* iFrameGc;
+	// what Draw shows: a finished copy of iFrame. WSERV replays Draw's BitBlt whenever another window over ours redraws
+	// (the WLAN 'connecting' note over the header), reading the bitmap AS IT IS THEN -- a half-rendered iFrame showed
+	// the page colour where the header and toolbar belong (flashes while flinging during the start-up refresh)
+	CFbsBitmap* iShown;
+	CFbsBitmapDevice* iShownDev;
+	CFbsBitGc* iShownGc;
 	TBool iPainted;
 
 	// scrolling

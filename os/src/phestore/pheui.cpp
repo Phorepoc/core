@@ -81,6 +81,9 @@ CPheCatalogueView::~CPheCatalogueView()
 	delete iFrameGc;
 	delete iFrameDev;
 	delete iFrame;
+	delete iShownGc;
+	delete iShownDev;
+	delete iShown;
 	CWsScreenDevice* dev = CEikonEnv::Static()->ScreenDevice();
 	CFont* fonts[5] = { iFTitle, iFInfo, iFSmall, iFHeader, iFButton };
 	for (TInt i = 0; i < 5; ++i)
@@ -150,6 +153,16 @@ void CPheCatalogueView::LayoutL()
 		User::LeaveIfError(iFrame->Create(size, CEikonEnv::Static()->ScreenDevice()->DisplayMode()));
 		iFrameDev = CFbsBitmapDevice::NewL(iFrame);
 		User::LeaveIfError(iFrameDev->CreateContext(iFrameGc));
+		delete iShownGc;
+		iShownGc = NULL;
+		delete iShownDev;
+		iShownDev = NULL;
+		delete iShown;
+		iShown = NULL;
+		iShown = new (ELeave) CFbsBitmap;
+		User::LeaveIfError(iShown->Create(size, CEikonEnv::Static()->ScreenDevice()->DisplayMode()));
+		iShownDev = CFbsBitmapDevice::NewL(iShown);
+		User::LeaveIfError(iShownDev->CreateContext(iShownGc));
 		}
 	if (iMode == EDetails)
 		{
@@ -524,6 +537,8 @@ void CPheCatalogueView::Render()
 	else
 		RenderList();
 	DrawBar();
+	if (iShownGc)
+		iShownGc->BitBlt(TPoint(0, 0), iFrame);		// only finished frames reach the screen (iShown)
 	}
 
 void CPheCatalogueView::DrawHeader(const TDesC& aTitle)
@@ -970,9 +985,9 @@ void CPheCatalogueView::RenderDetails()
 void CPheCatalogueView::Draw(const TRect& aRect) const
 	{
 	CWindowGc& gc = SystemGc();
-	if (iFrame)
+	if (iShown)
 		{
-		gc.BitBlt(TPoint(0, 0), iFrame, aRect);
+		gc.BitBlt(TPoint(0, 0), iShown, aRect);
 		if (!iPainted)
 			{
 			const_cast<CPheCatalogueView*>(this)->iPainted = ETrue;
