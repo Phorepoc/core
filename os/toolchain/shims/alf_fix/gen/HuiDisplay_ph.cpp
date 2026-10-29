@@ -67,6 +67,42 @@ const TUid KHuiInternalFbsBitmapBufferGcUid = {0x2000e5a3};
 
 //#define HUI_DEBUG_PRINT_PERFORMANCE_INTERVAL
 
+// OURS (2026-10-29): a dirty rectangle in the render SURFACE's coordinates (pixels, rows top down) -- what the swap copies and
+// submits (ph_dirty.h). Refresh's rectangles are the display's logical ones: under a rotated orientation (a landscape app on
+// the portrait panel) the display area is the surface turned, and CHuiVg10Gc::LoadIdentity rotates every drawing into the
+// surface. The same mapping here: unmapped, a 640x360 refresh copied only the surface's top 360x360 (the hole of a landscape
+// game's window) and the rest kept the previous orientation's picture.
+static TRect PhSurfaceDirtyRect(CHuiGc* aGc, const TRect& aRect)
+    {
+    if (!aGc || aRect.iTl.iX == KPhDirtyBegin || aRect.iTl.iX == KPhDirtyEnd)
+        {
+        return aRect;
+        }
+    const TRect area = aGc->DisplayArea();
+    switch (aGc->Orientation())
+        {
+        case CHuiGc::EOrientationCCW90:
+            {
+            // logical (x, y) -> surface (w - y, x); w = the surface width = the display area's height
+            const TInt w = area.Height();
+            return TRect(w - aRect.iBr.iY, aRect.iTl.iX, w - aRect.iTl.iY, aRect.iBr.iX);
+            }
+        case CHuiGc::EOrientationCW90:
+            {
+            // logical (x, y) -> surface (y, h - x); h = the surface height = the display area's width
+            const TInt h = area.Width();
+            return TRect(aRect.iTl.iY, h - aRect.iBr.iX, aRect.iBr.iY, h - aRect.iTl.iX);
+            }
+        case CHuiGc::EOrientation180:
+            {
+            const TInt w = area.Width(), h = area.Height();
+            return TRect(w - aRect.iBr.iX, h - aRect.iBr.iY, w - aRect.iTl.iX, h - aRect.iTl.iY);
+            }
+        default:
+            return aRect;
+        }
+    }
+
 
 // *** Class CHuiFbsBitmapBufferGc
 
@@ -859,7 +895,7 @@ TBool CHuiDisplay::Refresh()
 	    if (iTempDirtyRegions.Count() == 1)
 		    {
             ClipDirtyRect(mergedDirtyRect, VisibleAreaClippingRect());
-            iRenderSurface->SetDirtyRect(mergedDirtyRect);
+            iRenderSurface->SetDirtyRect(PhSurfaceDirtyRect(iGc, mergedDirtyRect));
 		    }
 		else if (iTempDirtyRegions.Count() > 1) 
 		    {
@@ -887,7 +923,7 @@ TBool CHuiDisplay::Refresh()
 				}
 				
             ClipDirtyRect(mergedDirtyRect, VisibleAreaClippingRect());
-            iRenderSurface->SetDirtyRect(mergedDirtyRect);
+            iRenderSurface->SetDirtyRect(PhSurfaceDirtyRect(iGc, mergedDirtyRect));
 		    }
         else
             {
@@ -898,7 +934,7 @@ TBool CHuiDisplay::Refresh()
 	        {
             // This will disable the clipping of the frame buffer when 
             // blitting on the screen.
-	        iRenderSurface->SetDirtyRect(displayArea);
+	        iRenderSurface->SetDirtyRect(PhSurfaceDirtyRect(iGc, displayArea));
             }
 	    }	   
 
@@ -917,7 +953,7 @@ TBool CHuiDisplay::Refresh()
             mergedDirtyRect.iBr.iY);  
 #endif	
 	
-    if (useDirtyRects) { iRenderSurface->SetDirtyRect(TRect(-7777, 0, 0, 0)); for (TInt phi = 0; phi < iTempDirtyRegions.Count(); ++phi) iRenderSurface->SetDirtyRect(iTempDirtyRegions[phi]); iRenderSurface->SetDirtyRect(TRect(-7778, 0, 0, 0)); }   // OURS: the list for the swap (ph_dirty.h)
+    if (useDirtyRects) { iRenderSurface->SetDirtyRect(TRect(-7777, 0, 0, 0)); for (TInt phi = 0; phi < iTempDirtyRegions.Count(); ++phi) iRenderSurface->SetDirtyRect(PhSurfaceDirtyRect(iGc, iTempDirtyRegions[phi])); iRenderSurface->SetDirtyRect(TRect(-7778, 0, 0, 0)); }   // OURS: the list for the swap (ph_dirty.h)
     // Usually there is only one dirty region (if any).
     iCurrentDirtyIndx = 0;
     for(; iCurrentDirtyIndx < iTempDirtyRegions.Count(); ++iCurrentDirtyIndx)
