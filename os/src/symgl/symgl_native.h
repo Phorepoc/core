@@ -70,6 +70,19 @@ typedef struct {
 } symgl_sgimage;
 int symgl_sgimage_info(void *rsgimage, symgl_sgimage *out);
 
+/* Mesa's thread-locals (glapi's current dispatch + context, EGL's thread state, qsort_r's comparator, call_once's
+ * argument): the calling thread's slot aId, aSize zeroed bytes made on its first use (Dll::Tls; symgl_tls.cpp). A
+ * process has several GL threads -- WSERV's GPU composer, the OpenVG renderer and its worker in the same process --
+ * so these cannot be per-process globals. NULL only when out of memory. */
+#define SYMGL_SLOT_GLAPI 0
+#define SYMGL_SLOT_EGL 1
+#define SYMGL_SLOT_QSORT 2
+#define SYMGL_SLOT_CALL_ONCE 3
+#define SYMGL_SLOTS 4
+void *symgl_thread_slot(int id, unsigned size);
+/* the calling thread's slots freed (eglReleaseThread: it holds no current context any more) */
+void symgl_thread_release(void);
+
 #ifdef __cplusplus
 }
 #endif
