@@ -12,9 +12,16 @@
 // buffer and shader caches) were allocated on one heap and freed or grown on the other: heap corruption, KERN-EXEC 3
 // in RHybridHeap::DlMalloc under lima_get_compiled_fs (2026-10-29, GPU mode).
 //
-// The heap lives in a disconnected chunk the process owns, with its own lock (aSingleThread = EFalse). free/delete/
-// realloc of a pointer outside that chunk go to the original allocator: CBase objects come from User::AllocZ inline
-// in e32base.inl and may be deleted through the global delete here.
+// The heap is the FIRST GL caller's own heap, shared the way EKA2 shares a heap between threads (RThread::Create with
+// an allocator: RAllocator::Open, then use it from any thread): a thread heap is created thread-safe (CreateThreadHeap,
+// aSingleThread = EFalse) and its chunk and lock handles are made process-relative, so with the access count held
+// open here it outlives the thread that made it. It costs no address space: a heap of its own -- a fixed 256 MB
+// maximum, its disconnected chunk reserving 512 MB of the process -- left Let's Golf 2 5 MB below KUserLocalDataEnd,
+// too little to map its window surface (KErrNoMemory, then a panic; 2026-10-29). A chunk heap of its own remains the
+// fallback for a first caller whose allocator is not a heap in a chunk.
+//
+// free/delete/realloc of a pointer outside the shared heap's chunk go to the original allocator: CBase objects come
+// from User::AllocZ inline in e32base.inl and may be deleted through the global delete here.
 #include <e32std.h>
 #include <e32atomics.h>
 #include <e32debug.h>
@@ -25,49 +32,76 @@
 
 namespace
 	{
-	// The heap's maximum: what the GL implementation had before it got a heap of its own -- the heaps of the threads
-	// calling it, at most two of them (the window server's GPU composer + the Alfred server thread) -- so twice the
-	// first caller's heap maximum, at least KMinMax. Its disconnected chunk reserves twice the maximum (the hybrid
-	// heap's page and slab areas) in the PROCESS'S address space, which the application shares: a fixed 256 MB
-	// maximum reserved 512 MB and left Let's Golf 2 5 MB below KUserLocalDataEnd, too little to map its window
-	// surface (KErrNoMemory, then a panic; 2026-10-29). Halved while the reservation fails, down to KMinMax / 4.
-	const TInt KMinMax = 32 << 20;
-	const TInt KMaxMax = 256 << 20;
+	const TInt KFallbackMax = 64 << 20;		// the fallback chunk heap's maximum (its chunk reserves twice that)
 
-	RHeap* gHeap;
-	TLinAddr gBase, gEnd;		// the chunk's reserved range
+	RAllocator* gHeap;
+	TLinAddr gBase, gEnd;		// the shared heap's chunk: its reserved range
+
+	// the chunk handle of a THREAD-SAFE chunk heap (RAllocator keeps it protected): such a heap holds two process-
+	// relative handles, the chunk's then the lock's (heap_hybrid.cpp: iHandles = &iChunkHandle, iHandleCount = 2); a
+	// single-threaded heap holds one, and a fixed heap in no chunk holds only its lock
+	class TPeek : public RAllocator
+		{
+	public:
+		static TInt ChunkHandle(const RAllocator& aA)
+			{
+			const TPeek& p = static_cast<const TPeek&>(aA);
+			return p.iHandleCount == 2 && p.iHandles ? p.iHandles[0] : 0;
+			}
+		};
+
+	// share the calling thread's heap if it is a heap in a chunk that holds it; sets gBase/gEnd
+	RAllocator* ShareCallersHeap()
+		{
+		RAllocator& a = User::Allocator();
+		const TInt handle = TPeek::ChunkHandle(a);
+		if (!handle)
+			return NULL;
+		RChunk c;
+		c.SetHandle(handle);
+		const TLinAddr base = (TLinAddr)c.Base(), end = base + c.MaxSize();
+		if ((TLinAddr)&a < base || (TLinAddr)&a >= end || a.Open() != KErrNone)
+			return NULL;
+		gBase = base;
+		gEnd = end;
+		RDebug::Printf("PH: phgl heap: the first GL thread's heap, shared (chunk %08x-%08x)", base, end);
+		return &a;
+		}
+
+	RAllocator* OwnChunkHeap()
+		{
+		RChunk chunk;
+		if (chunk.CreateDisconnectedLocal(0, 0, 2 * KFallbackMax, EOwnerProcess) != KErrNone)
+			return NULL;
+		RHeap* h = UserHeap::ChunkHeap(chunk, 0x10000, 0x10000, 0, 0, EFalse, UserHeap::EChunkHeapDuplicate);
+		if (h)
+			{
+			gBase = (TLinAddr)chunk.Base();
+			gEnd = gBase + chunk.MaxSize();
+			RDebug::Printf("PH: phgl heap: %d MB chunk heap of its own at %08x", KFallbackMax >> 20, gBase);
+			}
+		chunk.Close();
+		return h;
+		}
 
 	// (euser's atomics: GCC's __atomic builtins are library calls for this target, which the ROM does not provide)
-	RHeap* Heap()
+	RAllocator* Heap()
 		{
-		RHeap* h = (RHeap*)__e32_atomic_load_acq_ptr(&gHeap);
+		RAllocator* h = (RAllocator*)__e32_atomic_load_acq_ptr(&gHeap);
 		if (h)
 			return h;
 		static TUint32 lock;		// creation by the first caller (another thread waits for it)
 		while (__e32_atomic_swp_ord32(&lock, 1))
 			User::AfterHighRes(100);
 		h = gHeap;
-		TInt max = User::Heap().MaxLength();
-		max = max > KMaxMax / 2 ? KMaxMax : max < KMinMax / 2 ? KMinMax : 2 * max;
-		for (; !h && max >= KMinMax / 4; max /= 2)
-			{
-			RChunk chunk;
-			if (chunk.CreateDisconnectedLocal(0, 0, 2 * max, EOwnerProcess) != KErrNone)
-				continue;
-			h = UserHeap::ChunkHeap(chunk, 0x10000, 0x10000, 0, 0, EFalse, UserHeap::EChunkHeapDuplicate);
-			if (h)
-				{
-				gBase = (TLinAddr)chunk.Base();
-				gEnd = gBase + chunk.MaxSize();
-				RDebug::Printf("PH: phgl heap: %d MB at %08x (one heap for every GL thread; the first caller's heap max %d KB)",
-					max >> 20, gBase, User::Heap().MaxLength() >> 10);
-				}
-			chunk.Close();
-			}
+		if (!h)
+			h = ShareCallersHeap();
+		if (!h)
+			h = OwnChunkHeap();
 		if (!h)
 			{
-			RDebug::Printf("PH: phgl heap: no chunk heap, the calling thread's heap is used");
-			h = &User::Heap();
+			RDebug::Printf("PH: phgl heap: none shared, the calling thread's heap is used");
+			h = &User::Allocator();
 			}
 		__e32_atomic_store_rel_ptr(&gHeap, h);		// (after gBase/gEnd)
 		__e32_atomic_store_rel32(&lock, 0);
