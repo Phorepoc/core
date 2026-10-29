@@ -26,6 +26,8 @@ static void PhAlfSample(RThread& aT, TInt aRound, const TDesC& aName)
 	Mem::FillZ(&regs, sizeof(regs));
 	TPckg<TPhArmRegs> pk(regs);
 	aT.Suspend();
+	if (aT.ExitType() != EExitPending)		// it ended between the caller's check and the suspend
+		return;
 	aT.Context(pk);
 	aT.Resume();
 	const TUint id = (TUint)aT.Id();
@@ -110,8 +112,13 @@ static void PhAlfPhvgOn()
 	RDebug::Printf("PH: alf: GPU acceleration setting %d (repository %d) -> phvg mode property %d: %d", v, err, v ? 1 : 0, r);
 	}
 
+// The watchdog is a debugging aid, built in only on request (ALF_WATCH=1, registry/components.py): it suspends every thread of the
+// window server (the compositor and the alf server included) every 3 s and forces the display lights on for good.
 static void PhAlfStartWatch()
 	{
+#ifndef PH_ALF_WATCH
+	return;
+#endif
 	RThread w;
 	const TInt r = w.Create(_L("alfwatch"), PhAlfWatchMain, 0x4000, NULL, (TAny*)RThread().Id().Id());
 	RDebug::Printf("PH: alf: starting the watchdog thread -> %d", r);

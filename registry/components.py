@@ -1111,9 +1111,11 @@ COMPONENTS = {
                   drop=["HuiFxEffectParser.cpp"] + (["huienv.cpp", "huidisplay.cpp", "huicanvaswspainter.cpp", "huirosterimpl.cpp"] + (["huivisual.cpp"] if _ALFRC in ("1", "v") else []) + (["huicanvasvisual.cpp"] if _ALFRC in ("1", "c") else []) if _ALFTRACE else []),
                   extra=["toolchain/shims/alf_fix/HuiFxEffectParser_ph.cpp"] + ([_AG + "HuiEnv_ph.cpp", _AG + "HuiDisplay_ph.cpp", _AG + "huicanvaswspainter_ph.cpp", _AG + "HuiRosterImpl_ph.cpp"] + ([_AG + "HuiVisual_ph.cpp"] if _ALFRC in ("1", "v") else []) + ([_AG + "HuiCanvasVisual_ph.cpp"] if _ALFRC in ("1", "c") else []) if _ALFTRACE else [])),
     "alfclient_real": dict(mmp=_ALF + "Client/src/alfclient.mmp", alf=2, rom="alfclient_real.dll", rom_as="alfclient.dll"),
-    "alfdecoderserverclient_real": dict(mmp=_ALF + "AlfDecoderServerClient/src/alfdecoderserverclient.mmp", alf=2, allow_wsd=_ALFTRACE, flags=_ALFT_FLAGS, **_ALFLOG,
+    "alfdecoderserverclient_real": dict(mmp=_ALF + "AlfDecoderServerClient/src/alfdecoderserverclient.mmp", alf=2, allow_wsd=_ALFTRACE, flags=_ALFT_FLAGS,
                                         libs=["centralrepository.lib"],   # GPU mode = developer menu key 8 (alfdecoderserverclient_ph.cpp)
                                         **({"drop": ["alfdecoderserverclient.cpp"], "extra": ["toolchain/shims/alf_fix/alfdecoderserverclient_ph.cpp"]} if _ALFTRACE else {}),
+                                        # ALF_WATCH=1: the sampling watchdog thread (alfdecoderserverclient_ph.cpp), debugging only
+                                        defs=_ALFLOG.get("defs", []) + (["PH_ALF_WATCH"] if os.environ.get("ALF_WATCH") == "1" else []),
                                         rom="alfdecoderserverclient_real.dll", rom_as="alfdecoderserverclient.dll"),
     "alfappservercore": dict(mmp=_ALF + "ServerCore/Src/alfappservercore.mmp", alf=2, allow_wsd=_ALFTRACE, flags=_ALFT_FLAGS,
                              defs=_ALFLOG.get("defs", []) + (["PH_ALFFXLOG"] if _ALFTRACE else []),
