@@ -53,13 +53,23 @@ static TInt Run()
 	// already running with a document (URL) to open: apparc does not start a second instance and the running one never
 	// sees our command line -- hand the document over as the apparc "open file" message (CEikAppUi::OpenFileL)
 	TBool delivered = EFalse;
-	if (r == KErrNone && doc.Length())
+	if (r == KErrNone)
 		{
 		RWsSession ws0;
 		if (ws0.Connect() == KErrNone)
 			{
 			TApaTaskList tl(ws0);
 			TApaTask task = tl.FindApp(uid);
+			// already running, no document: what the launcher does -- its task to the foreground, no second instance
+			// (a second Let's Golf 2 process made the running one panic, KERN-EXEC 0, 2026-10-29)
+			if (task.Exists() && !doc.Length())
+				{
+				task.BringToForeground();
+				RDebug::Printf("PH: [phestart] running: brought to the foreground");
+				ws0.Close();
+				ls.Close();
+				return KErrNone;
+				}
 			if (task.Exists())
 				{
 				TPtrC8 bytes(reinterpret_cast<const TUint8*>(doc.Ptr()), doc.Length() * sizeof(TText));
