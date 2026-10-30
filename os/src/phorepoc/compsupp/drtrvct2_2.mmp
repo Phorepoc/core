@@ -1,0 +1,26 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// drtrvct2_2.mmp -- OURS: the RVCT 2.2 runtime DLL (the release's kernel/eka/compsupp/rvct/drtrvct.mmp, ARMCC_2_2), built
+// with GCC: the release's Symbian sources unmodified + drtrvct2_2.cpp for what RVCT's C library supplied there
+target          drtrvct2_2.dll
+targettype      dll
+
+SOURCEPATH      ../../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/kernel/eka/compsupp/rvct
+source          rtabort.cpp
+source          rtdiv0.cpp
+source          rtexit.cpp
+source          sftfpini.cpp
+SOURCEPATH      ../../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/kernel/eka/compsupp/symcpp
+source          rtopnew.cpp rtopdel.cpp
+SOURCEPATH      .
+source          drtrvct2_2.cpp
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+LIBRARY         euser.lib
+
+capability      all
+vendorid        0x70000001
+UNPAGED
+SMPSAFE

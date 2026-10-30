@@ -2165,6 +2165,10 @@ COMPONENTS = {
                      **{"def": KHS + "eabi/drtaeabiu.def"}),
     # dfpaeabi: the release's mmp is no_extras.cpp + RVCT's f_t_p.l; the soft-float helpers here are libgcc's
     "dfpaeabi": dict(mmp=KHS + "rvct/dfpaeabi.mmp", gcc_exports=True, rtti=False, **{"def": KHS + "eabi/dfpaeabiu.def"}),
+    # drtrvct2_2: the RVCT 2.2 runtime applications built with RVCT 2.2 import (src/phorepoc/compsupp/drtrvct2_2.cpp)
+    "drtrvct2_2": dict(arm_only=True, mmp=os.path.join(OS_ROOT, "src/phorepoc/compsupp/drtrvct2_2.mmp"), own_newdel=True, rtti=False,
+                       flags=["-include", os.path.join(SYMBIAN, "symbian-2010", KHS, "symcpp/symcpp.h")],
+                       **{"def": KHS + "eabi/drtrvct2_2u.def"}),
     "simatktsy": dict(mmp="oss.FCL.sf.os.cellularsrv/telephonyserverplugins/licenseetsystub/simatk_tsy_stub/group/simatktsy.mmp", rom="simatktsy.dll",
                       **{"def": "oss.FCL.sf.os.cellularsrv/telephonyserverplugins/licenseetsystub/simatk_tsy_stub/eabi/SIMATKTSYu.def"}),
     # sysutil's setup process: publishes the device-type attributes (+ version texts) as P&S the first
