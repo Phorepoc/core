@@ -20,9 +20,9 @@ Q="$B/qt48"
 SRC="$Q/qtm12-src"
 SYM="$Q/qt-symbian"
 TAG="${QTM_TAG:-v1.2.0}"
-# module DLLs first (link order), then the plug-ins. Not built yet: qtmessaging (needs the email API headers), qtsensors_sym,
-# qtcontacts_symbian, qtlandmarks_symbian (host moc: "Undefined interface" on Q_INTERFACES), qtmultimediakit (+ecam/mmf/m3u engines).
-KEYS="${QTM_KEYS:-qtsensors qtbearer qtserviceframework qtpublishsubscribe qtsysteminfo qtlocation qtcontacts qtversit qtorganizer qtversitorganizer qtfeedback qtgallery qtsensors_generic qtfeedback_mmk qtfeedback_symbian qtgeoservices_nokia qtorganizer_symbian qtcontacts_serviceactionmanager qtversit_backuphandler qtversit_vcardpreserver}"
+# module DLLs first (link order), then the plug-ins. Not built yet: qtmessaging (needs the email API headers),
+# (fixed: the public headers incl. subdirectories must sit beside the syncheaders forwarders for the host moc).
+KEYS="${QTM_KEYS:-qtsensors qtbearer qtserviceframework qtpublishsubscribe qtsysteminfo qtlocation qtcontacts qtversit qtorganizer qtversitorganizer qtfeedback qtgallery qtsensors_generic qtfeedback_mmk qtfeedback_symbian qtgeoservices_nokia qtorganizer_symbian qtcontacts_serviceactionmanager qtversit_backuphandler qtversit_vcardpreserver qtsensors_sym qtcontacts_symbian qtlandmarks_symbian declarative_sensors declarative_systeminfo declarative_publishsubscribe declarative_serviceframework declarative_location declarative_contacts declarative_organizer declarative_feedback declarative_gallery}"
 
 stage_fetch() {
   [ -d "$Q/qtm12-git/src" ] && return 0
@@ -39,9 +39,15 @@ stage_configure() {
   "$SYM/bin/qmake" -cache "$SRC/.qmake.cache" -spec "$SYM/mkspecs/symbian-sbsv2" -r "$SRC/qtmobility.pro" > qmake.log 2>&1 \
     || { tail -40 qmake.log; exit 1; }
   # module header dirs (<QtSensors/...>, <qsensorplugin.h>): the package's own syncheaders, as the MCL build does
-  for m in $(ls src | grep -v -E "^(3rdparty|global|s60installs|harmattaninstalls|meegoinstalls|mobilitysimulator)$"); do
-    perl bin/syncheaders "include/Qt$m" "src/$m" > /dev/null 2>&1 || true
+  qtn() { case "$1" in publishsubscribe) echo QtPublishSubscribe;; serviceframework) echo QtServiceFramework;; systeminfo) echo QtSystemInfo;; versitorganizer) echo QtVersitOrganizer;; *) echo "Qt$(echo ${1:0:1} | tr a-z A-Z)${1:1}";; esac; }
+  for m in $(ls src | grep -v -E "^(3rdparty|global|s60installs|harmattaninstalls|meegoinstalls|mobilitysimulator|Makefile|bld.inf|src.pro)$"); do
+    n=$(qtn $m); perl bin/syncheaders "include/$n" "src/$m" > /dev/null 2>&1 || true
+    mkdir -p "include/$n"   # the forwarders only name the classes: the public headers (any subdirectory: contacts/details, location/landmarks ...) go beside them
+    find "src/$m" -name "*.h" ! -name "*_p.h" -exec cp -f {} "include/$n/" \;
   done
+  # plain-C math use that the 2010 code got through other includes
+  sed -i '0,/#include/s//#include <math.h>
+  #include/' plugins/landmarks/symbian_landmarks/src/qlandmarkmanagerengine_symbian_p.cpp 2>/dev/null || true
   mkdir -p include/QtMobility; cp -f src/global/*.h include/QtMobility/ 2>/dev/null || true
   # <cmath>/<cstdlib> would reach the host toolchain's newlib headers: the C headers (the ROM's stdapis) instead
   grep -rl --include=*.cpp --include=*.h -E '#include <c(math|stdlib|stdio|string|time|assert)>' src plugins 2>/dev/null | while read -r f; do
@@ -74,13 +80,34 @@ stage_build() {
 stage_sis() {
   export PHOREPOC_QT48=1
   cd "$PDK"
-  # the LGPL text, its exception and a source offer travel inside; plug-in stubs (\resource\qt\plugins\<type>\<name>.qtplugin) are added
-  # per plug-in by the --file list below (TODO verify the stub format against a real package before the first catalogue release)
+  # the LGPL text, its exception and a source offer travel inside
   local extra="--file $HERE/QT-SOURCE-OFFER.txt=!:/resource/QtMobility/SOURCE-OFFER.txt --file $SRC/LICENSE.LGPL=!:/resource/QtMobility/LICENSE.LGPL"
   [ -f "$SRC/LGPL_EXCEPTION.txt" ] && extra="$extra --file $SRC/LGPL_EXCEPTION.txt=!:/resource/QtMobility/LGPL_EXCEPTION.txt"
+  # Qt plug-ins are found by their stub: esource\qt\plugins\<type>\<name>.qtplugin (type = the .pro's PLUGIN_TYPE; QML imports:
+  # esource\qt\imports\QtMobility\<n>\declarative_<n>.qtplugin + qmldir). The stub is a text file ("This file is a Qt plugin stub file.
+  # The real Qt plugin is located in /sys/bin.") exactly as qmake's deployment writes it; the loader maps it to \sysin\<name>.dll.
+  local stubs="$Q/qtm12-stubs"; mkdir -p "$stubs"
+  stub() {   # stub <target dir under !:/resource/qt> <name>
+    printf 'This file is a Qt plugin stub file. The real Qt plugin is located in /sys/bin.
+' > "$stubs/$2.qtplugin"
+    extra="$extra --file $stubs/$2.qtplugin=!:/resource/qt/$1/$2.qtplugin"
+  }
+  for k in $KEYS; do
+    case "$k" in
+      qtsensors_*)                         stub plugins/sensors "$k" ;;
+      qtfeedback_*)                        stub plugins/feedback "$k" ;;
+      qtgeoservices_*)                     stub plugins/geoservices "$k" ;;
+      qtversit_*)                          stub plugins/versit "$k" ;;
+      qtcontacts_*)                        stub plugins/contacts "$k" ;;
+      qtorganizer_*)                       stub plugins/organizer "$k" ;;
+      qtlandmarks_*)                       stub plugins/landmarks "$k" ;;
+      declarative_*)  n="${k#declarative_}"; stub "imports/QtMobility/$n" "$k"
+                      extra="$extra --file $SRC/plugins/declarative/$n/qmldir=!:/resource/qt/imports/QtMobility/$n/qmldir" ;;
+    esac
+  done
   # package identity = what Qt Mobility apps declare: (0x2002AC89), 1, 2, 0, {"QtMobility"}; 1.2.1 satisfies a >= 1.2.0 dependency
   python3 tools/make_sis.py $KEYS --arm --unsigned --uid 0x2002AC89 --name QtMobility --version 1.2.1 \
-    --vendor "The Qt Project (packaged by Phorepoc)" --type "${QT_SIS_TYPE:-sa}" $extra --out "$Q/qtmobility-1.2.1.sis"
+    --depends 0x2001E61C,4.7.3,Qt --vendor "The Qt Project (packaged by Phorepoc)" --type "${QT_SIS_TYPE:-sa}" $extra --out "$Q/qtmobility-1.2.1.sis"
 }
 
 STAGES="${*:-fetch configure build sis}"
