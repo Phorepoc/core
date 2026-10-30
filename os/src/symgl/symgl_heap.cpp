@@ -114,6 +114,28 @@ namespace
 		return aPtr && __e32_atomic_load_acq_ptr(&gHeap) && (TLinAddr)aPtr >= gBase && (TLinAddr)aPtr < gEnd;
 		}
 
+	// what the GL implementation holds in the shared heap -- with the first GL thread's own heap shared, GL memory counts
+	// against the application's heap maximum: logged at each new 4 MB high-water mark, and every failed allocation
+	TInt gHeld, gHighWater;
+
+	void Held(TInt aDelta)
+		{
+		const TInt held = (TInt)__e32_atomic_add_ord32(&gHeld, aDelta) + aDelta;
+		const TInt mark = held & ~((4 << 20) - 1);
+		TInt hw = (TInt)__e32_atomic_load_acq32(&gHighWater);
+		if (mark > hw && __e32_atomic_cas_ord32(&gHighWater, (TUint32*)&hw, mark))
+			{
+			RDebug::Printf("PH: phgl heap: GL holds %d KB (heap size %d KB, reserved %d KB)", held >> 10, gHeap->Size() >> 10,
+				(TInt)(gEnd - gBase) >> 10);
+			}
+		}
+
+	void Failed(size_t aSize)
+		{
+		RDebug::Printf("PH: phgl heap: allocation of %u bytes FAILED (GL holds %d KB, heap size %d KB, reserved %d KB)",
+			(unsigned)aSize, (TInt)__e32_atomic_load_acq32(&gHeld) >> 10, gHeap->Size() >> 10, (TInt)(gEnd - gBase) >> 10);
+		}
+
 	TAny* Alloc(size_t aSize)
 		{
 		if (aSize >= (size_t)(KMaxTInt / 2))
@@ -123,8 +145,19 @@ namespace
 			}
 		TAny* p = Heap()->Alloc(aSize);
 		if (!p)
+			{
+			Failed(aSize);
 			errno = ENOMEM;
+			}
+		else
+			Held(gHeap->AllocLen(p));
 		return p;
+		}
+
+	void Free(TAny* aPtr)
+		{
+		Held(-gHeap->AllocLen(aPtr));
+		gHeap->Free(aPtr);
 		}
 	}
 
@@ -156,7 +189,7 @@ void* __wrap_calloc(size_t aCount, size_t aSize)
 void __wrap_free(void* aPtr)
 	{
 	if (Ours(aPtr))
-		gHeap->Free(aPtr);
+		Free(aPtr);
 	else if (aPtr)
 		__real_free(aPtr);
 	}
@@ -169,7 +202,7 @@ void* __wrap_realloc(void* aPtr, size_t aSize)
 		return Alloc(aSize);
 	if (!aSize)
 		{
-		gHeap->Free(aPtr);
+		Free(aPtr);
 		return NULL;
 		}
 	if (aSize >= (size_t)(KMaxTInt / 2))
@@ -177,9 +210,15 @@ void* __wrap_realloc(void* aPtr, size_t aSize)
 		errno = ENOMEM;
 		return NULL;
 		}
+	const TInt before = gHeap->AllocLen(aPtr);
 	TAny* p = gHeap->ReAlloc(aPtr, aSize);
 	if (!p)
+		{
+		Failed(aSize);
 		errno = ENOMEM;
+		}
+	else
+		Held(gHeap->AllocLen(p) - before);
 	return p;
 	}
 
@@ -246,7 +285,7 @@ void* __wrap__Znaj(unsigned aSize)
 void __wrap__ZdlPv(void* aPtr)
 	{
 	if (Ours(aPtr))
-		gHeap->Free(aPtr);
+		Free(aPtr);
 	else if (aPtr)
 		__real__ZdlPv(aPtr);
 	}
@@ -254,7 +293,7 @@ void __wrap__ZdlPv(void* aPtr)
 void __wrap__ZdaPv(void* aPtr)
 	{
 	if (Ours(aPtr))
-		gHeap->Free(aPtr);
+		Free(aPtr);
 	else if (aPtr)
 		__real__ZdaPv(aPtr);
 	}
