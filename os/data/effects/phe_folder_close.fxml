@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <layers>
 	<comment>Copyright The Phorepoc Authors. SPDX-License-Identifier: Apache-2.0</comment>
+	<comment>The view being left (input1, stored at BeginFullScreen) shrinks and fades out over the view returned to.</comment>
 	<visual src="Item">
+	</visual>
+	<visual src="input1" opaque="true">
 		<param name="opacity" type="anim">
 			<duration>0.24</duration>
 			<style>inquad</style>

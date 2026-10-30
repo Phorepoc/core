@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <layers>
 	<comment>Copyright The Phorepoc Authors. SPDX-License-Identifier: Apache-2.0</comment>
+	<comment>input1 = the view as it was at BeginFullScreen, stored by the bridge, which then freezes the layout while the
+	application rebuilds its grid; the new view zooms in over it.</comment>
+	<visual src="input1" opaque="true">
+		<param name="opacity" type="anim">
+			<duration>0.28</duration>
+			<style>outquad</style>
+			<keyframe at="0.0">1.0</keyframe>
+			<keyframe at="1.0">0.0</keyframe>
+		</param>
+	</visual>
 	<visual src="Item">
 		<param name="opacity" type="anim">
 			<duration>0.28</duration>
