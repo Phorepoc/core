@@ -15,10 +15,24 @@
 
 static TInt Run()
 	{
-	TBuf<256> cmd;
+	TBuf<512> cmd;
 	User::CommandLine(cmd);
 	TLex lex(cmd);
-	TPtrC file = lex.NextToken();
+	// a path with spaces comes quoted: "e:\data\some package.sis" e
+	lex.SkipSpace();
+	TPtrC file;
+	if (lex.Peek() == '"')
+		{
+		lex.Inc();
+		lex.Mark();
+		while (!lex.Eos() && lex.Peek() != '"')
+			lex.Inc();
+		file.Set(lex.MarkedToken());
+		if (!lex.Eos())
+			lex.Inc();
+		}
+	else
+		file.Set(lex.NextToken());
 	TPtrC drv = lex.NextToken();
 	if (file.Length() == 0)
 		{
@@ -70,7 +84,7 @@ static TInt Run()
 	SwiUI::RSWInstSilentLauncher launcher;
 	TInt err = launcher.Connect();
 	TBuf8<128> f8;
-	f8.Copy(file.Left(128));
+	f8.Copy(file.Right(128));
 	RDebug::Printf("PH: [sisinst] %S: connect %d", &f8, err);
 	if (err == KErrNone)
 		{
