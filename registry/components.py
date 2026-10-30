@@ -1576,9 +1576,12 @@ COMPONENTS = {
     "frametable": dict(mmp="oss.FCL.sf.os.mmaudio/frametable_stub/group/frametable_stub.mmp", rom="frametable.dll",
                        drop=["frametable_stub.cpp"], extra=["src/frametable/frametable.cpp"]),
     # the release mmp's MACRO LOGLEVEL_LOW prints two lines per decoded buffer; each print takes the kernel's debug-output
-    # path, and an app waiting on its MP3 controller thread missed a view switch (ViewSrv 14): built without logging
+    # path, and an app waiting on its MP3 controller thread missed a view switch (ViewSrv 14): built without logging.
+    # src/phorepoc/mp3codec = the release codec + the controller's software-codec frame-table protocol (the release one
+    # ignored its configuration, so no seek forward ever completed: the app's SetPosition call never returned)
     "arimp3decmmfcodec": dict(mmp="oss.FCL.sf.adapt.codecs.aricent/mp3_dec/arimp3decmmfcodec/group/arimp3decmmfcodec.mmp",
-                              flags=["-ULOGLEVEL_LOW", "-DLOGLEVEL_NONE"]),
+                              drop=["arimp3decmmfcodec.cpp"], extra=["src/phorepoc/mp3codec/arimp3decmmfcodec.cpp"],
+                              libs=["frametable.lib"], flags=["-ULOGLEVEL_LOW", "-DLOGLEVEL_NONE"]),
     "arimp3decwrapper": dict(mmp=os.path.join(OS_ROOT, "src/codecs/arimp3decwrapper/group/arimp3decwrapper.mmp")),   # OURS (minimp3)
     "mp3hwdevice": dict(mmp=os.path.join(OS_ROOT, "src/codecs/mp3hwdevice/group/mp3hwdevice.mmp")),   # OURS
     "starterclient": dict(mmp="oss.FCL.sf.os.devicesrv/sysstatemgmt/systemstatereferenceplugins/clayer/group/starterclient.mmp"),   # <- clkdatetimeview
