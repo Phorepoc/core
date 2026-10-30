@@ -1,0 +1,18 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// pheadm.mmp -- OURS: ADM.exe, the installer a Smart Installer wrapper's bootstrap starts (pheadm.cpp). The name and the
+// SID are the ones the bootstrap launches and the import folder \private\2002CCCE\ belongs to.
+TARGET			ADM.exe
+TARGETTYPE		exe
+UID				0x1000007a 0x2002CCCE
+SECUREID		0x2002CCCE
+CAPABILITY		TrustedUI   // RSWInstSilentLauncher
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+APP_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			pheadm.cpp
+LIBRARY			euser.lib efsrv.lib swinstcli.lib aknnotify.lib

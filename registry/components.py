@@ -973,6 +973,9 @@ COMPONENTS = {
     "cmsetup": dict(mmp=os.path.join(OS_ROOT, "src/cmsetup/cmsetup.mmp"), flags=["-I", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/dbcreator/inc"), "-I", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/cmmanager/cmmgr/database/inc")]),
     "ntpsync": dict(mmp=os.path.join(OS_ROOT, "src/ntpsync/ntpsync.mmp")),
     "sisinst": dict(mmp=os.path.join(OS_ROOT, "src/sisinst/sisinst.mmp")),
+    # OURS: ADM.exe, installs the application a Smart Installer wrapper leaves in \private\2002CCCE\import\ (the
+    # wrapper's bootstrap starts it once package 0x2002CCCE is registered: make_phorepoc_rom.sh adm_stub.sis)
+    "pheadm": dict(mmp=os.path.join(OS_ROOT, "src/pheadm/pheadm.mmp")),
     # OURS: the download app (engine + command line): indexes -> download -> SHA-256 -> silent install. The board
     # adaptation adds z:\resource\phorepoc\device.txt (board + arch) through EXTEND.
     "pheget": dict(mmp=os.path.join(OS_ROOT, "src/pheget/pheget.mmp")),
