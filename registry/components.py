@@ -1065,6 +1065,9 @@ COMPONENTS = {
     "xmlengineutils": dict(mmp="oss.FCL.sf.os.xmlsrv/xml/libxml2libs/group/xmlengineutils.mmp", defs=["__SOFTFP=", "__declspec(x)="]),
     "xmlenginedom": dict(mmp="oss.FCL.sf.os.xmlsrv/xml/xmldomandxpath/group/xmlenginedom.mmp", defs=["__SOFTFP=", "__declspec(x)="]),
     "flogger": dict(mmp="oss.FCL.sf.os.persistentdata/loggingservices/filelogger/group/FLOGGER.MMP"),
+    # <- flogger (RFileLogger::Connect starts it; without it Connect fails and the CreateLog that apps call next, ignoring
+    # that, is a SendReceive on a null session = KERN-EXEC 0; the platform flogger.iby ships it)
+    "flogsvr": dict(mmp="oss.FCL.sf.os.persistentdata/loggingservices/filelogger/group/FLOGSVR.MMP"),
     "inetprotutil": dict(mmp="oss.FCL.sf.os.ossrv/genericservices/httputils/group/InetProtUtil.mmp"),
     "aknswallpaperutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.uiresources/skins/AknSkins/group/AknsWallpaperUtils.mmp"),
     "senxml": dict(mmp="oss.FCL.sf.mw.websrv/webservices/wsxml/group/senxml.mmp", flags=[_KEEPNULL]),
