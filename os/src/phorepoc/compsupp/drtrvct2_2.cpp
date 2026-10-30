@@ -15,7 +15,7 @@
 // Their registers are the AAPCS ones. The comparisons return their result in the flags: __ARM_ll_cmpge, _cmple and
 // _cmpu set N, Z, C and V as a 64-bit CMP would, so every signed and unsigned condition after them holds, and they
 // preserve r0-r3. __ARM_switch8 is the Thumb switch dispatcher: the case-offset table follows the call (count byte at
-// lr-1, then count+1 halfword offsets as bytes, the last the default), index in r0.
+// lr-1, then count+1 halfword offsets as bytes, the last the default), index in r3.
 //
 // The functions of the def whose behaviour is RVCT-internal (its decimal conversion _btod_* / _e2*, the division
 // helpers _ll_*div* / __rt_*div*, the __rt_mem* and _memset* variants, signal raising) panic "DRTRVCT2_2" with their
@@ -90,8 +90,10 @@ extern "C"
 // the flag-returning comparisons and the switch dispatcher (ARM state; return with bx lr to either state)
 // __ARM_ll_cmp*: the flags of the 64-bit compare r0:r1 - r2:r3 -- N (V clear) when less as signed, Z when equal, C when
 // higher-or-same as unsigned; r0-r3 preserved.
-// __ARM_switch8: index r0; the table follows the (Thumb) call: lr-1 = the case count n, then n+1 byte entries (the last
-// the default), each the halfword offset from lr to the case; r0 preserved.
+// __ARM_switch8: index r3; the table follows the (Thumb) call: lr-1 = the case count n, then n+1 byte entries (the last
+// the default), each the halfword offset from lr to the case; r0-r3 preserved (the cases use them: RVCT 2.2 code loads
+// r0-r2 before the call -- an index in r0 sent every switch to its default, Tetris's text width 0 and its word wrap
+// spinning until the view server's activation timeout, ViewSrv 11).
 asm(
 	".text\n"
 	".syntax unified\n"
@@ -120,13 +122,11 @@ asm(
 	".global __ARM_switch8\n"
 	".type __ARM_switch8, %function\n"
 	"__ARM_switch8:\n"
-	"	push {r1}\n"
-	"	ldrb r1, [lr, #-1]\n"
-	"	cmp r0, r1\n"
-	"	ldrblo r1, [lr, r0]\n"
-	"	ldrbhs r1, [lr, r1]\n"
-	"	add ip, lr, r1, lsl #1\n"
-	"	pop {r1}\n"
+	"	ldrb ip, [lr, #-1]\n"
+	"	cmp r3, ip\n"
+	"	ldrblo ip, [lr, r3]\n"
+	"	ldrbhs ip, [lr, ip]\n"
+	"	add ip, lr, ip, lsl #1\n"
 	"	bx ip\n"
 	);
 
