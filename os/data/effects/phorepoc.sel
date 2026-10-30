@@ -10,7 +10,9 @@
 		<transition context="6" effect="phe_appear"></transition>
 		<transition context="7" effect="phe_appear"></transition>
 		<transition context="8" effect="phe_appear"></transition>
-		<transition context="1001" effect="phe_folder_open"></transition>
-		<transition context="1002" effect="phe_folder_close"></transition>
+		<!-- 1001/1002 are application-specific: the menu's folder open/close here, but the screensaver uses the same
+		     numbers for its deactivate/activate -- unscoped, its wake played the folder effect over its black screen -->
+		<transition context="1001" effect="phe_folder_open" uid="0x101F4CD2"></transition>
+		<transition context="1002" effect="phe_folder_close" uid="0x101F4CD2"></transition>
 	</fullscreentransitions>
 </sel>
