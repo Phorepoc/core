@@ -94,6 +94,7 @@ extern "C"
 // the default), each the halfword offset from lr to the case; r0 preserved.
 asm(
 	".text\n"
+	".syntax unified\n"
 	".arm\n"
 	".balign 4\n"
 	".global __ARM_ll_cmpge, __ARM_ll_cmple, __ARM_ll_cmpu\n"
@@ -130,7 +131,7 @@ asm(
 	);
 
 #define DRT_UNIMPLEMENTED(name, ordinal) \
-	asm(".text\n.arm\n.balign 4\n.global " #name "\n.type " #name ", %function\n" #name ":\n" \
+	asm(".text\n.syntax unified\n.arm\n.balign 4\n.global " #name "\n.type " #name ", %function\n" #name ":\n" \
 		"\tmov r0, #" #ordinal "\n\tldr ip, =DrtRvctUnimplemented\n\tbx ip\n\t.ltorg\n");
 
 DRT_UNIMPLEMENTED(__btod_div_common, 11)
