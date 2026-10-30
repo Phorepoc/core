@@ -975,7 +975,7 @@ COMPONENTS = {
     "sisinst": dict(mmp=os.path.join(OS_ROOT, "src/sisinst/sisinst.mmp")),
     # OURS: ADM.exe, installs the application a Smart Installer wrapper leaves in \private\2002CCCE\import\ (the
     # wrapper's bootstrap starts it once package 0x2002CCCE is registered: make_phorepoc_rom.sh adm_stub.sis)
-    "pheadm": dict(mmp=os.path.join(OS_ROOT, "src/pheadm/pheadm.mmp")),
+    "pheadm": dict(mmp=os.path.join(OS_ROOT, "src/pheadm/pheadm.mmp"), rom_as="ADM.exe"),
     # OURS: the download app (engine + command line): indexes -> download -> SHA-256 -> silent install. The board
     # adaptation adds z:\resource\phorepoc\device.txt (board + arch) through EXTEND.
     "pheget": dict(mmp=os.path.join(OS_ROOT, "src/pheget/pheget.mmp")),
