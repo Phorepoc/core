@@ -7,7 +7,7 @@ TARGET			ADM.exe
 TARGETTYPE		exe
 UID				0x1000007a 0x2002CCCE
 SECUREID		0x2002CCCE
-CAPABILITY		TrustedUI   // RSWInstSilentLauncher
+CAPABILITY		TrustedUI AllFiles   // RSWInstSilentLauncher; AllFiles: SWInstSession requires it of a silent install that allows untrusted packages
 VENDORID		0
 
 OS_LAYER_SYSTEMINCLUDE
