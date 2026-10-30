@@ -141,7 +141,7 @@ namespace
 			TRequestStatus bound;
 			timer.After(bound, KDisplayedWaitUs);
 			User::WaitForRequest(disp, bound);
-			if (disp == KRequestPending)
+			if (disp == KRequestPending)				// (the timer's signal was the one consumed)
 				{
 				sus.CancelAllUpdateNotifications();		// completes it (KErrCancel)
 				User::WaitForRequest(disp);
@@ -151,8 +151,8 @@ namespace
 				{
 				CountDisplayed(disp.Int());
 				timer.Cancel();
+				User::WaitForRequest(bound);			// (its completion or cancel: no stray signal)
 				}
-			User::WaitForRequest(bound);				// (consumed here either way: no stray signal)
 			st.iFree.Signal();
 			}
 		timer.Close();
