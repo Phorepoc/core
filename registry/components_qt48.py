@@ -88,3 +88,61 @@ COMPONENTS["qt48_multimediakit"] = dict(
 COMPONENTS["qt48_qmlhello"] = dict(mmp=os.path.join(OS_ROOT, "src", "qt48", "qmlhello", "qmlhello.mmp"), rom="qmlhello.exe", defs=_QTDEFS, rtti=True,
                                    cdriver=True, vfp=True,
                                    flags=_MKSPECS + ["-I" + QTINC] + ["-I" + os.path.join(QTINC, m) for m in ("QtCore", "QtGui", "QtDeclarative", "QtScript", "QtNetwork")])
+
+
+# ---- Qt Mobility 1.2.0 (upstream tag v1.2.0, LGPL; tools/phorepoc-qt48/build_qtmobility_sis.sh) --------------------------------
+# The mmps are the ones qmake generated from features/config.pri.symbian3 (one per DLL the real firmware carries: the module DLLs
+# and the plug-ins). Keys are the lower-cased lib stems so an mmp's `LIBRARY QtSensors.lib` resolves to the component of that name;
+# the four modules components_s4.py already registers (1.0.3 sources, S4 line) keep their S4 keys when PHOREPOC_S4=1.
+QTM = os.path.join(QB, "qtm12-src")
+_QTMINC = ["-I" + os.path.join(QTM, "src", "global"), "-I" + os.path.join(QTM, "include")] + \
+          ["-I" + os.path.join(QTM, "include", "Qt" + m) for m in (
+              "Bearer", "Contacts", "Feedback", "Gallery", "Location", "Messaging", "Organizer", "PublishSubscribe", "Sensors",
+              "ServiceFramework", "SystemInfo", "Versit", "VersitOrganizer", "Mobility")]
+_QTQINC = ["-I" + os.path.join(QT, "include")] + ["-I" + os.path.join(QT, "include", m) for m in (
+    "QtCore", "QtGui", "QtNetwork", "QtXml", "QtSql", "QtSvg", "QtDeclarative", "QtScript")]
+
+
+def _qtm(rel, deffile=None, **kw):
+    d = dict(mmp=os.path.join(QTM, rel), flags=_MKSPECS + _QTQINC + _QTMINC, defs=_QTDEFS, vfp=True, allow_wsd=True,
+             cdriver=True, rtti=True, x32_flags=_X32CXX)
+    if deffile:
+        d["def"] = os.path.join(QTM, "src", "s60installs", "eabi", deffile)
+    d.update(kw)
+    return d
+
+
+_QTM12 = {   # key: (mmp, .def or None for a plug-in, ROM/installed file name)
+    "qtbearer": ("src/bearer/QtBearer_dll.mmp", "QtBeareru.def", "QtBearer.dll"),
+    "qtsensors": ("src/sensors/QtSensors_dll.mmp", "QtSensorsu.def", "QtSensors.dll"),
+    "qtlocation": ("src/location/QtLocation_dll.mmp", "QtLocationu.def", "QtLocation.dll"),
+    "qtversit": ("src/versit/QtVersit_dll.mmp", "QtVersitu.def", "QtVersit.dll"),
+    "qtcontacts": ("src/contacts/QtContacts_dll.mmp", "QtContactsu.def", "QtContacts.dll"),
+    "qtorganizer": ("src/organizer/QtOrganizer_dll.mmp", "QtOrganizeru.def", "QtOrganizer.dll"),
+    "qtversitorganizer": ("src/versitorganizer/QtVersitOrganizer_dll.mmp", "QtVersitOrganizeru.def", "QtVersitOrganizer.dll"),
+    "qtfeedback": ("src/feedback/QtFeedback_dll.mmp", "QtFeedbacku.def", "QtFeedback.dll"),
+    "qtgallery": ("src/gallery/QtGallery_dll.mmp", "QtGalleryu.def", "QtGallery.dll"),
+    "qtmessaging": ("src/messaging/QtMessaging_dll.mmp", "QtMessagingu.def", "QtMessaging.dll"),
+    # plug-ins (no .def: nothing links against them)
+    "qtsensors_generic": ("plugins/sensors/generic/qtsensors_generic_dll.mmp", None, "qtsensors_generic.dll"),
+    "qtsensors_sym": ("plugins/sensors/symbian/qtsensors_sym_dll.mmp", None, "qtsensors_sym.dll"),
+    "qtfeedback_symbian": ("plugins/feedback/symbian/qtfeedback_symbian_dll.mmp", None, "qtfeedback_symbian.dll"),
+    "qtfeedback_mmk": ("plugins/feedback/mmk/qtfeedback_mmk_dll.mmp", None, "qtfeedback_mmk.dll"),
+    "qtcontacts_symbian": ("plugins/contacts/symbian/plugin/qtcontacts_symbian_dll.mmp", None, "qtcontacts_symbian.dll"),
+    "qtcontacts_serviceactionmanager": ("plugins/contacts/serviceactionmanager/qtcontacts_serviceactionmanager_dll.mmp", None,
+                                        "qtcontacts_serviceactionmanager.dll"),
+    "qtorganizer_symbian": ("plugins/organizer/symbian/qtorganizer_symbian_dll.mmp", None, "qtorganizer_symbian.dll"),
+    "qtlandmarks_symbian": ("plugins/landmarks/symbian_landmarks/qtlandmarks_symbian_dll.mmp", None, "qtlandmarks_symbian.dll"),
+    "qtgeoservices_nokia": ("plugins/geoservices/nokia/qtgeoservices_nokia_dll.mmp", None, "qtgeoservices_nokia.dll"),
+    "qtversit_backuphandler": ("plugins/versit/backuphandler/qtversit_backuphandler_dll.mmp", None, "qtversit_backuphandler.dll"),
+    "qtversit_vcardpreserver": ("plugins/versit/vcardpreserver/qtversit_vcardpreserver_dll.mmp", None, "qtversit_vcardpreserver.dll"),
+}
+_QTM12_S4 = {   # the S4 line's 1.0.3 entries have these keys; the 1.2 ones are only added without it
+    "qtserviceframework": ("src/serviceframework/QtServiceFramework_dll.mmp", "QtServiceFrameworku.def", "QtServiceFramework.dll"),
+    "qtpublishsubscribe": ("src/publishsubscribe/QtPublishSubscribe_dll.mmp", "QtPublishSubscribeu.def", "QtPublishSubscribe.dll"),
+    "qtsysteminfo": ("src/systeminfo/QtSystemInfo_dll.mmp", "QtSystemInfou.def", "QtSystemInfo.dll"),
+}
+if os.environ.get("PHOREPOC_S4") != "1":
+    _QTM12.update(_QTM12_S4)
+for _k, (_m, _d, _r) in _QTM12.items():
+    COMPONENTS[_k] = _qtm(_m, _d, rom=_r, sis=True)
