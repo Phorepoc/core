@@ -146,3 +146,9 @@ if os.environ.get("PHOREPOC_S4") != "1":
     _QTM12.update(_QTM12_S4)
 for _k, (_m, _d, _r) in _QTM12.items():
     COMPONENTS[_k] = _qtm(_m, _d, rom=_r, sis=True)
+
+# the QML import plug-ins (plugins/declarative; the firmware's declarative_*.dll). messaging/multimedia ride on qtmessaging / the 1.2 QtMultimediaKit.
+for _n in ("contacts", "feedback", "gallery", "location", "organizer", "publishsubscribe", "sensors", "serviceframework", "systeminfo"):
+    COMPONENTS["declarative_" + _n] = _qtm("plugins/declarative/%s/declarative_%s_dll.mmp" % (_n, _n), None,
+                                           rom="declarative_%s.dll" % _n, sis=True,
+                                           flags=_MKSPECS + _QTQINC + _QTMINC + ["-I" + os.path.join(QT, "include", "QtDeclarative")])
