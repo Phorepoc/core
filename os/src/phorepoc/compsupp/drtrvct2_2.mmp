@@ -7,7 +7,6 @@ target          drtrvct2_2.dll
 targettype      dll
 
 SOURCEPATH      ../../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/kernel/eka/compsupp/rvct
-source          rtabort.cpp
 source          rtdiv0.cpp
 source          rtexit.cpp
 source          sftfpini.cpp

@@ -3,7 +3,7 @@
 
 // drtrvct2_2.cpp -- OURS (2026-10-30): the RVCT 2.2 runtime DLL that applications built with ARM's RVCT 2.2 import
 // (drtrvct2_2.dll, the release's kernel/eka/compsupp/rvct/drtrvct.mmp). The release builds it from a few Symbian sources
-// (rtabort, rtdiv0, rtexit, sftfpini, rtopnew, rtopdel: built here unmodified, see drtrvct2_2.mmp) plus RVCT's
+// (rtdiv0, rtexit, sftfpini, rtopnew, rtopdel: built here unmodified, see drtrvct2_2.mmp; rtabort below) plus RVCT's
 // proprietary C library (c_t__un.l / h_t__un.l), which supplies the rest of drtrvct2_2u.def. This file is that rest.
 //
 // Why: 19 of 65 binaries of a set of S^3-era games import it (Cut the Rope, Worms, Tetris, The Sims 3, PES 2011...);
@@ -21,6 +21,19 @@
 // helpers _ll_*div* / __rt_*div*, the __rt_mem* and _memset* variants, signal raising) panic "DRTRVCT2_2" with their
 // ordinal: no application here imports them, and their register interfaces are not derivable from their names.
 #include <e32std.h>
+
+// the release's rtabort.cpp, here because GCC wants std::terminate declared before it is defined
+namespace std { void terminate(); }
+
+extern "C" EXPORT_C void __rt_abort()		// never returns
+	{
+	RThread().Kill(KErrAbort);
+	}
+
+EXPORT_C void std::terminate()
+	{
+	__rt_abort();
+	}
 
 extern "C"
 	{
@@ -75,47 +88,46 @@ extern "C"
 	}
 
 // the flag-returning comparisons and the switch dispatcher (ARM state; return with bx lr to either state)
-asm(R"(
-	.text
-	.arm
-	.balign 4
-	.global __ARM_ll_cmpge, __ARM_ll_cmple, __ARM_ll_cmpu
-	.type __ARM_ll_cmpge, %function
-	.type __ARM_ll_cmple, %function
-	.type __ARM_ll_cmpu, %function
-@ flags of the 64-bit compare r0:r1 - r2:r3: N (V clear) when less as signed, Z when equal, C when higher-or-same as
-@ unsigned; r0-r3 preserved
-__ARM_ll_cmpge:
-__ARM_ll_cmple:
-__ARM_ll_cmpu:
-	cmp r1, r3
-	bne 1f
-	cmp r0, r2
-	moveq ip, #0x60000000		@ equal: Z C
-	movhi ip, #0x20000000		@ high words equal: the low words decide signed and unsigned alike
-	movlo ip, #0x80000000
-	msr cpsr_f, ip
-	bx lr
-1:	mov ip, #0
-	orrlt ip, ip, #0x80000000	@ signed less (from the high words)
-	orrhs ip, ip, #0x20000000	@ unsigned higher or same
-	msr cpsr_f, ip
-	bx lr
-
-	.global __ARM_switch8
-	.type __ARM_switch8, %function
-@ index r0; table after the (Thumb) call: lr-1 = the case count n, then n+1 byte entries (the last the default), each the
-@ halfword offset from lr to the case; r0 preserved
-__ARM_switch8:
-	push {r1}
-	ldrb r1, [lr, #-1]
-	cmp r0, r1
-	ldrblo r1, [lr, r0]
-	ldrbhs r1, [lr, r1]
-	add ip, lr, r1, lsl #1
-	pop {r1}
-	bx ip
-)");
+// __ARM_ll_cmp*: the flags of the 64-bit compare r0:r1 - r2:r3 -- N (V clear) when less as signed, Z when equal, C when
+// higher-or-same as unsigned; r0-r3 preserved.
+// __ARM_switch8: index r0; the table follows the (Thumb) call: lr-1 = the case count n, then n+1 byte entries (the last
+// the default), each the halfword offset from lr to the case; r0 preserved.
+asm(
+	".text\n"
+	".arm\n"
+	".balign 4\n"
+	".global __ARM_ll_cmpge, __ARM_ll_cmple, __ARM_ll_cmpu\n"
+	".type __ARM_ll_cmpge, %function\n"
+	".type __ARM_ll_cmple, %function\n"
+	".type __ARM_ll_cmpu, %function\n"
+	"__ARM_ll_cmpge:\n"
+	"__ARM_ll_cmple:\n"
+	"__ARM_ll_cmpu:\n"
+	"	cmp r1, r3\n"
+	"	bne 1f\n"
+	"	cmp r0, r2\n"
+	"	moveq ip, #0x60000000\n"		// equal: Z C
+	"	movhi ip, #0x20000000\n"		// high words equal: the low words decide signed and unsigned alike
+	"	movlo ip, #0x80000000\n"
+	"	msr cpsr_f, ip\n"
+	"	bx lr\n"
+	"1:	mov ip, #0\n"
+	"	orrlt ip, ip, #0x80000000\n"	// signed less (from the high words)
+	"	orrhs ip, ip, #0x20000000\n"	// unsigned higher or same
+	"	msr cpsr_f, ip\n"
+	"	bx lr\n"
+	".global __ARM_switch8\n"
+	".type __ARM_switch8, %function\n"
+	"__ARM_switch8:\n"
+	"	push {r1}\n"
+	"	ldrb r1, [lr, #-1]\n"
+	"	cmp r0, r1\n"
+	"	ldrblo r1, [lr, r0]\n"
+	"	ldrbhs r1, [lr, r1]\n"
+	"	add ip, lr, r1, lsl #1\n"
+	"	pop {r1}\n"
+	"	bx ip\n"
+	);
 
 #define DRT_UNIMPLEMENTED(name, ordinal) \
 	asm(".text\n.arm\n.balign 4\n.global " #name "\n.type " #name ", %function\n" #name ":\n" \

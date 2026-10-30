@@ -11,13 +11,30 @@
 #include <apgtask.h>
 #include <w32std.h>
 
+// the next token, or the text between double quotes
+static TPtrC Token(TLex& aLex)
+	{
+	aLex.SkipSpace();
+	if (aLex.Peek() != '"')
+		return aLex.NextToken();
+	aLex.Inc();
+	aLex.Mark();
+	while (!aLex.Eos() && aLex.Peek() != '"')
+		aLex.Inc();
+	TPtrC t = aLex.MarkedToken();
+	if (!aLex.Eos())
+		aLex.Inc();
+	return t;
+	}
+
 static TInt Run()
 	{
-	TBuf<128> cmdline;
+	TBuf<256> cmdline;
 	User::CommandLine(cmdline);
 	TLex lex(cmdline);
-	TPtrC what = lex.NextToken();
-	TPtrC doc = lex.NextToken();
+	// a name or document with spaces comes quoted: phestart "Cut the rope.exe"
+	TPtrC what = Token(lex);
+	TPtrC doc = Token(lex);
 	if (!what.Length())
 		{
 		RDebug::Printf("PH: [phestart] usage: phestart <uid-hex | exe name> [document]");
