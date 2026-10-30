@@ -4433,7 +4433,9 @@ void CEikCba::DoColorChange()
     _AKNTRACE_FUNC_ENTER;
     iBrushAndPenContext->SetBrushColor(iEikonEnv->ControlColor(EColorToolbarBackground, *this));
     iBrushAndPenContext->SetPenColor(iEikonEnv->ControlColor(EColorToolbarText, *this));
-    if ( !iFlags.IsSet( ECbaEmbedded ) )	// Phorepoc: an embedded CBA's window stays transparent (ConstructL)
+    // Phorepoc: an embedded CBA's window stays transparent (ConstructL), and so does a transparent one's
+    // (SetButtonGroupFlags: the keylock's screen-sized CBA) -- the opaque toolbar colour made it a white screen
+    if ( !iFlags.IsSet( ECbaEmbedded ) && !( iCbaFlags & EEikCbaFlagTransparent ) )
         {
         Window().SetBackgroundColor(iEikonEnv->ControlColor(EColorToolbarBackground, *this));
         }
