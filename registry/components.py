@@ -2243,7 +2243,9 @@ COMPONENTS = {
     "devinfosupport": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/devinfosupport.mmp"),
     "backuprestore": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/backuprestore.mmp"),
     "pkgremover": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/pkgremover.mmp"),
-    "recsisx": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/sisxrecognizer.mmp"),
+    # KSisxRecognizerConst at the value a phone ROM patches in (certain of .sisx too; src/phorepoc/swi/sisxrecognizer)
+    "recsisx": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/sisxrecognizer.mmp",
+                    drop=["patchdata.cpp"], extra=["src/phorepoc/swi/sisxrecognizer/patchdata.cpp"]),
     "swisidchecker": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/swisidchecker.mmp"),
     "swiobserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/source/swiobserver/group/swiobserver.mmp"),
     "swiobserverclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/source/swiobserver/group/swiobserverclient.mmp"),

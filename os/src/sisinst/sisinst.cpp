@@ -12,6 +12,9 @@
 #include <e32debug.h>
 #include <swinstapi.h>
 #include <swinstdefs.h>
+#include <apgcli.h>
+#include <apmrec.h>
+#include <f32file.h>
 
 static TInt Run()
 	{
@@ -81,10 +84,34 @@ static TInt Run()
 	opts.iUpgradeData = SwiUI::EPolicyAllowed;
 	SwiUI::TInstallOptionsPckg pckg(opts);
 
-	SwiUI::RSWInstSilentLauncher launcher;
-	TInt err = launcher.Connect();
 	TBuf8<128> f8;
 	f8.Copy(file.Right(128));
+	// the installer picks its plug-in by the MIME type apparc's recognizers give the file: print it (a third-party
+	// recognizer that claims the file makes the install fail with KSWInstErrPackageNotSupported, -30474)
+	TBuf8<256> head;
+	RFs fs;
+	if (fs.Connect() == KErrNone)
+		{
+		RFile f;
+		if (f.Open(fs, file, EFileRead | EFileShareReadersOnly) == KErrNone)
+			{
+			f.Read(head);
+			f.Close();
+			}
+		fs.Close();
+		}
+	RApaLsSession ls;
+	if (ls.Connect() == KErrNone)
+		{
+		TDataRecognitionResult rec;
+		TInt rerr = ls.RecognizeData(file, head, rec);
+		TPtrC8 mime = rec.iDataType.Des8();
+		RDebug::Printf("PH: [sisinst] %S: recognized %d '%S' confidence %d", &f8, rerr, &mime, rec.iConfidence);
+		ls.Close();
+		}
+
+	SwiUI::RSWInstSilentLauncher launcher;
+	TInt err = launcher.Connect();
 	RDebug::Printf("PH: [sisinst] %S: connect %d", &f8, err);
 	if (err == KErrNone)
 		{
