@@ -12,13 +12,15 @@
 // buffer and shader caches) were allocated on one heap and freed or grown on the other: heap corruption, KERN-EXEC 3
 // in RHybridHeap::DlMalloc under lima_get_compiled_fs (2026-10-29, GPU mode).
 //
-// The heap is the FIRST GL caller's own heap, shared the way EKA2 shares a heap between threads (RThread::Create with
-// an allocator: RAllocator::Open, then use it from any thread): a thread heap is created thread-safe (CreateThreadHeap,
-// aSingleThread = EFalse) and its chunk and lock handles are made process-relative, so with the access count held
-// open here it outlives the thread that made it. It costs no address space: a heap of its own -- a fixed 256 MB
-// maximum, its disconnected chunk reserving 512 MB of the process -- left Let's Golf 2 5 MB below KUserLocalDataEnd,
-// too little to map its window surface (KErrNoMemory, then a panic; 2026-10-29). A chunk heap of its own remains the
-// fallback for a first caller whose allocator is not a heap in a chunk.
+// The heap is a chunk heap of the GL implementation's own: a disconnected local chunk of 128 MB (the hybrid heap's rule:
+// UserHeap::ChunkHeap reserves twice a heap's maximum), owned by the process, its handles process-relative, thread-safe.
+// Not the application's heap: a driver's memory never counts against an application's heap maximum on a phone, and
+// Mesa's peaks are large -- lima stages every tiled texture upload in a malloc'ed copy (0.8 MB each), 45 MB at once
+// while Dungeon Hunter 2 loads a level; sharing the game's own 80 MB heap left the game's next `new` NULL (KERN-EXEC 3
+// in a constructor, 2026-10-30). Not too big either: a fixed 256 MB maximum (512 MB reserved) left Let's Golf 2 5 MB
+// below KUserLocalDataEnd, too little to map its window surface (KErrNoMemory, then a panic; 2026-10-29).
+// The first GL caller's own heap, shared the way EKA2 shares a heap between threads (RAllocator::Open; a thread heap is
+// created thread-safe with process-relative chunk and lock handles), is the fallback when the chunk cannot be made.
 //
 // free/delete/realloc of a pointer outside the shared heap's chunk go to the original allocator: CBase objects come
 // from User::AllocZ inline in e32base.inl and may be deleted through the global delete here.
@@ -32,7 +34,7 @@
 
 namespace
 	{
-	const TInt KFallbackMax = 64 << 20;		// the fallback chunk heap's maximum (its chunk reserves twice that)
+	const TInt KOwnHeapReserve = 128 << 20;		// the GL heap's chunk (reserved address space; the heap may fill it)
 
 	RAllocator* gHeap;
 	TLinAddr gBase, gEnd;		// the shared heap's chunk: its reserved range
@@ -50,7 +52,7 @@ namespace
 			}
 		};
 
-	// share the calling thread's heap if it is a heap in a chunk that holds it; sets gBase/gEnd
+	// (fallback) share the calling thread's heap if it is a heap in a chunk that holds it; sets gBase/gEnd
 	RAllocator* ShareCallersHeap()
 		{
 		RAllocator& a = User::Allocator();
@@ -71,14 +73,14 @@ namespace
 	RAllocator* OwnChunkHeap()
 		{
 		RChunk chunk;
-		if (chunk.CreateDisconnectedLocal(0, 0, 2 * KFallbackMax, EOwnerProcess) != KErrNone)
+		if (chunk.CreateDisconnectedLocal(0, 0, KOwnHeapReserve, EOwnerProcess) != KErrNone)
 			return NULL;
 		RHeap* h = UserHeap::ChunkHeap(chunk, 0x10000, 0x10000, 0, 0, EFalse, UserHeap::EChunkHeapDuplicate);
 		if (h)
 			{
 			gBase = (TLinAddr)chunk.Base();
 			gEnd = gBase + chunk.MaxSize();
-			RDebug::Printf("PH: phgl heap: %d MB chunk heap of its own at %08x", KFallbackMax >> 20, gBase);
+			RDebug::Printf("PH: phgl heap: a chunk heap of its own, %d MB at %08x", KOwnHeapReserve >> 20, gBase);
 			}
 		chunk.Close();
 		return h;
@@ -95,9 +97,9 @@ namespace
 			User::AfterHighRes(100);
 		h = gHeap;
 		if (!h)
-			h = ShareCallersHeap();
-		if (!h)
 			h = OwnChunkHeap();
+		if (!h)
+			h = ShareCallersHeap();
 		if (!h)
 			{
 			RDebug::Printf("PH: phgl heap: none shared, the calling thread's heap is used");
@@ -114,8 +116,7 @@ namespace
 		return aPtr && __e32_atomic_load_acq_ptr(&gHeap) && (TLinAddr)aPtr >= gBase && (TLinAddr)aPtr < gEnd;
 		}
 
-	// what the GL implementation holds in the shared heap -- with the first GL thread's own heap shared, GL memory counts
-	// against the application's heap maximum: logged at each new 4 MB high-water mark, and every failed allocation
+	// what the GL implementation holds in its heap: logged at each new 4 MB high-water mark, and every failed allocation
 	TInt gHeld, gHighWater;
 
 	void Held(TInt aDelta)
