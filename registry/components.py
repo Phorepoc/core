@@ -1203,6 +1203,10 @@ COMPONENTS = {
     "wapmsgcli": dict(mmp="oss.FCL.sf.os.cellularsrv/wapstack/wapmessageapi/group/wapmsgcli.mmp"),
     "watcher": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/watcherfw/group/watcher.mmp"),   # debugging the watchers: add drop=["watcherlog.cpp"], extra=["toolchain/shims/watcher_dbg/watcherlog.cpp"] (their log -> the serial log, "[wlog]")
     "wappushutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/wappushfw/pushutils/group/pushutils.mmp"),
+    # Send As (the client + its server): imported by applications that offer "share by message" -- 10 games of one set
+    # refuse to load without sendas2.dll (apparc StartApp -1)
+    "sendas2": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/sendas/client/group/sendas2.mmp"),
+    "sendasserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/sendas/server/group/sendasserver.mmp"),
     "pushmsgentry": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/wappushfw/PushMsgEntry/group/Pushmsgentry.mmp"),
     "sislpushmsgutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/wappushfw/SISLPushMsgUtils/group/SISLPushMsgUtils.mmp"),
     "pushwatcher": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/wappushfw/pushwatcher/group/pushwatcher.mmp"),
