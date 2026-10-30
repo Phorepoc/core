@@ -15,7 +15,7 @@
 // The heap is a chunk heap of the GL implementation's own: a disconnected local chunk of 128 MB (the hybrid heap's rule:
 // UserHeap::ChunkHeap reserves twice a heap's maximum), owned by the process, its handles process-relative, thread-safe.
 // Not the application's heap: a driver's memory never counts against an application's heap maximum on a phone, and
-// Mesa's peaks are large -- lima stages every tiled texture upload in a malloc'ed copy (0.8 MB each), 45 MB at once
+// Mesa's peaks are large -- a GPU driver may stage every texture upload in a malloc'ed copy (0.8 MB each), 45 MB at once
 // while Dungeon Hunter 2 loads a level; sharing the game's own 80 MB heap left the game's next `new` NULL (KERN-EXEC 3
 // in a constructor, 2026-10-30). Not too big either: a fixed 256 MB maximum (512 MB reserved) left Let's Golf 2 5 MB
 // below KUserLocalDataEnd, too little to map its window surface (KErrNoMemory, then a panic; 2026-10-29).
