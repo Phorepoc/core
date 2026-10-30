@@ -13,7 +13,7 @@
 // operands: l = long long (two registers), s = signed int, u = unsigned int, so __ARM_ll_addls(long long, int) is a
 // long long plus a sign-extended int and __ARM_ll_rsb* is the reverse subtraction (second operand minus the first).
 // Their registers are the AAPCS ones. The comparisons return their result in the flags: __ARM_ll_cmpge, _cmple and
-// _cmpu set N, Z, C and V as a 64-bit CMP would, so every signed and unsigned condition after them holds, and they
+// _cmpu set N, Z, C and V as a 64-bit CMP would (_cmple of the operands swapped: its callers test GE for a <= b), and they
 // preserve r0-r3. __ARM_switch8 is the Thumb switch dispatcher: the case-offset table follows the call (count byte at
 // lr-1, then count+1 halfword offsets as bytes, the last the default), index in r3.
 //
@@ -88,8 +88,9 @@ extern "C"
 	}
 
 // the flag-returning comparisons and the switch dispatcher (ARM state; return with bx lr to either state)
-// __ARM_ll_cmp*: the flags of the 64-bit compare r0:r1 - r2:r3 -- N (V clear) when less as signed, Z when equal, C when
-// higher-or-same as unsigned; r0-r3 preserved.
+// __ARM_ll_cmpge / _cmpu: the flags of the 64-bit compare r0:r1 - r2:r3 -- N (V clear) when less as signed, Z when equal,
+// C when higher-or-same as unsigned; __ARM_ll_cmple the same for the operands swapped, r2:r3 - r0:r1 (its callers test
+// GE for a <= b); r0-r3 preserved.
 // __ARM_switch8: index r3; the table follows the (Thumb) call: lr-1 = the case count n, then n+1 byte entries (the last
 // the default), each the halfword offset from lr to the case; r0-r3 preserved (the cases use them: RVCT 2.2 code loads
 // r0-r2 before the call -- an index in r0 sent every switch to its default, Tetris's text width 0 and its word wrap
@@ -103,8 +104,21 @@ asm(
 	".type __ARM_ll_cmpge, %function\n"
 	".type __ARM_ll_cmple, %function\n"
 	".type __ARM_ll_cmpu, %function\n"
-	"__ARM_ll_cmpge:\n"
 	"__ARM_ll_cmple:\n"
+	"	cmp r3, r1\n"
+	"	bne 2f\n"
+	"	cmp r2, r0\n"
+	"	moveq ip, #0x60000000\n"
+	"	movhi ip, #0x20000000\n"
+	"	movlo ip, #0x80000000\n"
+	"	msr cpsr_f, ip\n"
+	"	bx lr\n"
+	"2:	mov ip, #0\n"
+	"	orrlt ip, ip, #0x80000000\n"
+	"	orrhs ip, ip, #0x20000000\n"
+	"	msr cpsr_f, ip\n"
+	"	bx lr\n"
+	"__ARM_ll_cmpge:\n"
 	"__ARM_ll_cmpu:\n"
 	"	cmp r1, r3\n"
 	"	bne 1f\n"
