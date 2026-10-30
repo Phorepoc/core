@@ -90,8 +90,9 @@ namespace
 		return freeSlot;
 		}
 
-	// the completion codes seen (diagnosis: "[symgl] displayed: ok N overflow N notvisible N other N" every 120 submits)
-	TUint gDispOk, gDispOverflow, gDispNotVisible, gDispOther;
+	// the completion codes seen (diagnosis: "[symgl] displayed: ok N overflow N notvisible N uncomposed N other N" every
+	// 120 submits)
+	TUint gDispOk, gDispOverflow, gDispNotVisible, gDispUncomposed, gDispOther;
 	TInt gDispOtherCode;
 
 	void CountDisplayed(TInt r)
@@ -102,15 +103,30 @@ namespace
 		else { ++gDispOther; gDispOtherCode = r; }
 		}
 
+	// A submit's "displayed" notification is completed by a composition (displayed, or not visible when the surface is
+	// not in the scene); while no composition runs -- the screen off, or nothing on screen changing while this window is
+	// in the background -- it stays pending. Waited for without a bound, it held the app's next eglSwapBuffers, and so its
+	// main thread, until the view server panicked the app for not answering a view switch (ViewSrv 11/14: a game
+	// started or sent to the background as the lights went off). Nothing composing the surface means nothing reads its
+	// buffers: after this long (a composition takes 10-40 ms) the notification is cancelled and the buffer recycled, as
+	// a not-visible completion would have.
+	const TInt KDisplayedWaitUs = 250000;
+
 	// the presenter: submit each queued buffer and wait until it is displayed (then the buffer before it is free again)
 	TInt PresenterMain(TAny* aState)
 		{
 		TWinState& st = *static_cast<TWinState*>(aState);
 		RSurfaceUpdateSession sus;
-		const TInt cr = sus.Connect();
+		RTimer timer;
+		TInt cr = sus.Connect();
+		if (cr == KErrNone)
+			cr = timer.CreateLocal();
 		RThread::Rendezvous(cr);
 		if (cr != KErrNone)
+			{
+			sus.Close();
 			return cr;
+			}
 		for (;;)
 			{
 			st.iWork.Wait();
@@ -122,10 +138,24 @@ namespace
 			sus.NotifyWhenDisplayed(disp, st.iWhen);
 			if (sus.SubmitUpdate(st.iScreen, st.iSurfaceId, buf) != KErrNone)
 				sus.CancelAllUpdateNotifications();
-			User::WaitForRequest(disp);
-			CountDisplayed(disp.Int());
+			TRequestStatus bound;
+			timer.After(bound, KDisplayedWaitUs);
+			User::WaitForRequest(disp, bound);
+			if (disp == KRequestPending)
+				{
+				sus.CancelAllUpdateNotifications();		// completes it (KErrCancel)
+				User::WaitForRequest(disp);
+				++gDispUncomposed;
+				}
+			else
+				{
+				CountDisplayed(disp.Int());
+				timer.Cancel();
+				}
+			User::WaitForRequest(bound);				// (consumed here either way: no stray signal)
 			st.iFree.Signal();
 			}
+		timer.Close();
 		sus.Close();
 		return KErrNone;
 		}
@@ -353,8 +383,8 @@ extern "C" void symgl_window_present(void* aNative, int aBuf)
 	st->iWork.Signal();
 	++st->iSubmitNo;
 	if (st->iSubmitNo % 120 == 0)
-		RDebug::Printf("[symgl] displayed: ok %u overflow %u notvisible %u other %u (last other code %d; submits %u)",
-			gDispOk, gDispOverflow, gDispNotVisible, gDispOther, gDispOtherCode, st->iSubmitNo);
+		RDebug::Printf("[symgl] displayed: ok %u overflow %u notvisible %u uncomposed %u other %u (last other code %d; submits %u)",
+			gDispOk, gDispOverflow, gDispNotVisible, gDispUncomposed, gDispOther, gDispOtherCode, st->iSubmitNo);
 	// the swap interval runs from this present, or from the previous deadline when we are keeping up (no drift)
 	const TInt64 now = (TInt64)User::NTickCount() * 1000;
 	st->iNextPresentUs = (st->iNextPresentUs + KSwapIntervalUs > now ? st->iNextPresentUs : now) + KSwapIntervalUs;
