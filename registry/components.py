@@ -73,6 +73,7 @@ _ALFRC = os.environ.get("ALF_RC", "c")
 # at the alf server start, the alfredserver thread and the compositor stage construction. WSD: the per-site counters.
 _ALFTRACE = os.environ.get("ALF_TRACE") != "0"
 _AG = "toolchain/shims/alf_fix/gen/"
+_SWISEC = dict(drop=["securityinfo.cpp"], extra=["src/phorepoc/swi/oss.FCL.sf.mw.appinstall-group/securityinfo.cpp"])   # a VFPv3 CPU takes VFPv2 executables (mkswi.py)
 _ALFT_FLAGS = ["-include", os.path.join(OS_ROOT, "toolchain/shims/alf_fix/ph_alflog.h")] if _ALFTRACE else []
 # the transition-effect chain with its __ALFFXLOGSTRING lines as "PH: alf:" (ALF_TRACE)
 _ALFFX = dict(flags=_ALFT_FLAGS, defs=["PH_ALFFXLOG"], allow_wsd=True) if _ALFTRACE else {}
@@ -2194,7 +2195,7 @@ COMPONENTS = {
     "calencommonutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.organizer/calendarui/commonutils/group/commonutils.mmp"),   # <- calenglobaldata; ALSO: oss.FCL.sf.app.organizer/calendarui/commonutils/group/commonutils.mmp
     "mnclientlib": dict(mmp="oss.FCL.sf.mw.locationsrv/locationmapnavfw/library/group/mnclientlib.mmp"),   # <- calencommonutils
     "eposlandmarks": dict(mmp="oss.FCL.sf.mw.locationsrv/landmarks/locationlandmarks/clientlib/group/EPos_LandmarksClientLibrary.mmp"),   # <- mnclientlib
-    "sisregistryclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/sisregistryclient.mmp"),   # <- mnclientlib
+    "sisregistryclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/sisregistryclient.mmp", **_SWISEC),   # <- mnclientlib
     "siscontroller": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/siscontroller.mmp"),   # <- sisregistryclient
     "securitymanager": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/securitymanager.mmp"),   # <- siscontroller
     "ocsp": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.securitysrv/pkiutilities/ocsp/group/ocsp.mmp"),   # <- securitymanager; ALSO: oss.FCL.sf.mw.securitysrv/pkiutilities/ocsp/group/ocsp.mmp
@@ -2205,7 +2206,7 @@ COMPONENTS = {
     "uissclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/uissclient.mmp"),   # <- securitymanager
     "devinfosupportclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/devinfosupportclient.mmp"),   # <- securitymanager
     "devinfosupportcommon": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/devinfosupportcommon.mmp"),   # <- devinfosupportclient
-    "plan": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/plan.mmp"),   # <- sisregistryclient
+    "plan": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/plan.mmp", **_SWISEC),   # <- sisregistryclient
     "integrityservices": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/integrityservices.mmp"),   # <- sisregistryclient
     "swidataprovider": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/swidataprovider.mmp"),   # <- sisregistryclient
     # Without the SIS registry server, RSisRegistrySession::Connect fails (-1) -> Calendar's Day view (map-provider

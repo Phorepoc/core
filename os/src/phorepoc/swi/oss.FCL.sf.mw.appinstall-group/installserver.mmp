@@ -84,7 +84,7 @@ SOURCE fileextractor.cpp
 
 SOURCE securitycheckutil.cpp
 SOURCE sidcache.cpp
-SOURCE securityinfo.cpp
+// SOURCE securityinfo.cpp  -- OURS copy below (VFPv3 runs VFPv2 code)
 SOURCE packageremover.cpp
 SOURCE adornedutilities.cpp
 
@@ -151,3 +151,4 @@ SMPSAFE
 // Phorepoc (src/phorepoc/swi/mkswi.py): the install machine with the developer mode
 SOURCEPATH .
 SOURCE installmachine.cpp
+SOURCE securityinfo.cpp
