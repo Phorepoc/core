@@ -3,12 +3,12 @@
 
 // pheadm.cpp -- OURS: the application installer a Smart Installer wrapper hands its payload to.
 //
-// A Qt application of the S^3/Belle era often ships wrapped: the wrapper package (0x2002CCCF) installs a bootstrap
+// A Qt application of the Symbian^3 era often ships wrapped: the wrapper package (0x2002CCCF) installs a bootstrap
 // (0x2002CCCD) and puts the real application SIS in \private\2002CCCE\import\. The bootstrap checks that package
 // 0x2002CCCE (the installer that was downloaded from a server which no longer exists) is installed and starts its
 // ADM.exe. This is that executable: it installs every SIS waiting in the import folder through the platform installer,
-// whose own dependency check names any Qt package still missing, and removes each one installed. The bootstrap's
-// command line (control flags, IAP, the SIS name) is not needed: the folder is the queue.
+// whose own dependency check names any Qt package still missing, and removes each one installed. Of the bootstrap's
+// command line only the last argument, the SIS, is used; started without one, it installs the whole folder.
 #include <e32base.h>
 #include <e32debug.h>
 #include <f32file.h>
@@ -84,6 +84,25 @@ static TInt Run()
 	User::LeaveIfError(fs.ShareProtected());
 	TInt installed = 0;
 	TInt failed = 0;
+
+	// the bootstrap names the package it was installed with last: "<flags> <iap> <wrapper uid> <0> <ctrl> <path>".
+	// Install just that one; a package that failed earlier (a missing Qt component) waits for its own wrapper again.
+	TBuf<512> cmd;
+	User::CommandLine(cmd);
+	cmd.TrimRight();
+	TInt space = cmd.LocateReverse(' ');
+	TPtrC last(space >= 0 ? cmd.Mid(space + 1) : TPtrC(cmd));
+	TParsePtrC lastParse(last);
+	if (lastParse.Ext().CompareF(_L(".sis")) == 0 || lastParse.Ext().CompareF(_L(".sisx")) == 0)
+		{
+		TFileName path(last);
+		TInt err = InstallOne(fs, path, lastParse.NameAndExt());
+		RDebug::Printf("PH: [pheadm] done (%d)", err);
+		CleanupStack::PopAndDestroy(&fs);
+		return err;
+		}
+
+	// started without one: everything waiting in the import folders
 	TDriveList drives;
 	User::LeaveIfError(fs.DriveList(drives));
 	for (TInt d = EDriveA; d <= EDriveZ; d++)
