@@ -177,7 +177,10 @@ extern "C" void __real__ZN4User5LeaveEi(TInt aReason);
 extern "C" void __wrap__ZN4User5LeaveEi(TInt aReason)
 	{
 	TTrap* t = Exec::PopTrapFrame();
-	// bring-up trace: the first 300 leaves of each thread (count kept as the TLS value itself)
+#ifdef PH_LEAVE_TRACE
+	// bring-up trace (build with PH_LEAVE_TRACE): the first 300 leaves of each thread (count kept as the TLS value
+	// itself). Off by default: printed synchronously, it stalled threads that leave as they work -- an MP3 controller
+	// thread decoding while its app waited on it (the app then missed a view switch: ViewSrv 14).
 	TInt n = (TInt)UserSvr::DllTls(KTlsHandle + 1, KDllUid_Special);
 	if (n < 300)
 		{
@@ -194,6 +197,7 @@ extern "C" void __wrap__ZN4User5LeaveEi(TInt aReason)
 		RDebug::Printf("PH: LEAVE %d lr=%08x top=%s st=%08x %08x %08x %08x", aReason, (TUint)__builtin_return_address(0),
 			!t ? "NONE" : (t->iResult == (TInt*)KMarkTag ? "marker" : "setjmp"), ra[0], ra[1], ra[2], ra[3]);
 		}
+#endif
 	if (t)
 		{
 		if (t->iResult == (TInt*)KMarkTag)
