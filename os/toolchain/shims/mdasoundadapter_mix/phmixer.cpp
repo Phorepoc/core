@@ -204,6 +204,7 @@ TInt CPhMixer::AddChannel(TChannel*& aCh)
 	if (!ch)
 		{
 		iLock.Signal();
+		RDebug::Printf("PH: [phmixer] all %d channels in use: an Open is refused", KMaxChannels);
 		return KErrInUse;
 		}
 	RThread me;
