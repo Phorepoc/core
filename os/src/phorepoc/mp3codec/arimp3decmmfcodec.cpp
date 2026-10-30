@@ -91,11 +91,19 @@ CAriMp3DecMmfCodec::~CAriMp3DecMmfCodec()
 	// Phorepoc: the advanced audio controller's software-codec protocol (MP3AudioPlayControllerSwDecoder.cpp) -- aParam is
 	// an RArray<TInt> passed as a descriptor reference: [6] = its CFrameTable, with [5] = the sample rate and [8] = the
 	// samples per frame; [7] = 1 render on / 2 render off (a forward seek scans frames without decoding them); [9] play
-	// end and [10] enable / disable need nothing here. Without a table entry per frame no seek forward ever reached its
+	// end needs nothing here; [10] = 1 enable / 2 disable. Without a table entry per frame no seek forward ever reached its
 	// position: the controller waited for it inside the app's SetPosition call, for good.
 	const RArray<TInt>& config = reinterpret_cast<const RArray<TInt>&>( aParam );
 	if ( config.Count() > 10 )
 		{
+		if ( config[10] == 1 )
+			{
+			iDisabled = EFalse;
+			}
+		else if ( config[10] == 2 )
+			{
+			iDisabled = ETrue;
+			}
 		if ( config[7] == 1 )
 			{
 			iRenderDisabled = EFalse;
@@ -385,6 +393,13 @@ TCodecProcessResult CAriMp3DecMmfCodec::ProcessL( const CMMFBuffer& aSrc,
 			if ( KErrNone == error && iFrameTable )
 				{
 				iFrameTable->SubmitTableEntry( framePos );
+				// the entry can complete a seek, and the controller handle it at once -- pausing stops the output,
+				// which disables this codec: its buffers are no longer valid (CAdvancedAudioDecoder::HandleFillBufferL)
+				if ( iDisabled )
+					{
+					return Result( TCodecProcessResult::EProcessComplete,
+							totalSrcBytesCopied, totalDstBytesAdded );
+					}
 				}
 
 			if ( KErrNone != error )
@@ -509,7 +524,7 @@ CAriMp3DecMmfCodec::CAriMp3DecMmfCodec():
 iCodec( NULL ), iInternalInputBufferResidueLen( 0 ),
 iInternalOutputBufferResidueLen( 0 ), iOutFrameSize( 0 ),
 iInternalInputBuffer( NULL ), iInternalOutputBuffer( NULL ),
-iInternalOutputBufferPos( 0 ), iFrameTable( NULL ), iRenderDisabled( EFalse ),
+iInternalOutputBufferPos( 0 ), iFrameTable( NULL ), iRenderDisabled( EFalse ), iDisabled( EFalse ),
 iSrcTotal( 0 )
 	{
 	PRINT_ENTRY;

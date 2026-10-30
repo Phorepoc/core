@@ -198,6 +198,8 @@ private: //Data
 	// off while the controller seeks), and the source bytes taken since the last ResetL (a frame's table position)
 	CFrameTable*		iFrameTable;
 	TBool				iRenderDisabled;
+	// ConfigureL [10]: disabled by the controller (its output buffers are no longer valid)
+	TBool				iDisabled;
 	TInt				iSrcTotal;
 
 	};
