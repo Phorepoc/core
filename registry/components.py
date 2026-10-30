@@ -478,7 +478,8 @@ COMPONENTS = {
     "sqlite": dict(mmp=f"{PDATA}/persistentstorage/sql/GROUP/sqlite.mmp", cdriver=True),
     "sqlsrv": dict(mmp=f"{PDATA}/persistentstorage/sql/GROUP/SqlSrv.mmp"),
     "sqldb": dict(mmp=f"{PDATA}/persistentstorage/sql/GROUP/SqlDb.mmp"),
-    "tzserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appsupport/tzservices/tzserver/group/TimeZoneServer.mmp"),
+    "tzserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appsupport/tzservices/tzserver/group/TimeZoneServer.mmp",
+                     drop=["timezoneconfig.cpp"], extra=["src/phorepoc/tz/timezoneconfig.cpp"]),   # a cut-short time-stamps file is rewritten (it restart-looped the boot)
     "ode": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/ode/group/ode.mmp", allow_wsd=True),   # odeStaticData + joint vtables
     "aknphysics": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/aknphysics/group/aknphysics.mmp"),
     "gfxtrans": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/lafagnosticuifoundation/graphicseffects/group/GfxTransEffect.mmp"),
