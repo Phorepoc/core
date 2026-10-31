@@ -20,9 +20,9 @@ Q="$B/qt48"
 SRC="$Q/qtm12-src"
 SYM="$Q/qt-symbian"
 TAG="${QTM_TAG:-v1.2.0}"
-# module DLLs first (link order), then the plug-ins. Not built yet: qtmessaging (needs the email API headers),
+# module DLLs first (link order), then the plug-ins. qtmessaging needs the commonemail client API headers (email_plat inc dirs),
 # (fixed: the public headers incl. subdirectories must sit beside the syncheaders forwarders for the host moc).
-KEYS="${QTM_KEYS:-qtsensors qtbearer qtserviceframework qtpublishsubscribe qtsysteminfo qtlocation qtcontacts qtversit qtorganizer qtversitorganizer qtfeedback qtgallery qtsensors_generic qtfeedback_mmk qtfeedback_symbian qtgeoservices_nokia qtorganizer_symbian qtcontacts_serviceactionmanager qtversit_backuphandler qtversit_vcardpreserver qtsensors_sym qtcontacts_symbian qtlandmarks_symbian declarative_sensors declarative_systeminfo declarative_publishsubscribe declarative_serviceframework declarative_location declarative_contacts declarative_organizer declarative_feedback declarative_gallery}"
+KEYS="${QTM_KEYS:-qt48_multimediakit qtmessaging qtsensors qtbearer qtserviceframework qtpublishsubscribe qtsysteminfo qtlocation qtcontacts qtversit qtorganizer qtversitorganizer qtfeedback qtgallery qtsensors_generic qtfeedback_mmk qtfeedback_symbian qtgeoservices_nokia qtorganizer_symbian qtcontacts_serviceactionmanager qtversit_backuphandler qtversit_vcardpreserver qtsensors_sym qtcontacts_symbian qtlandmarks_symbian qtmultimediakit_ecamengine qtmultimediakit_mmfengine qtmultimediakit_m3u declarative_multimedia declarative_messaging declarative_sensors declarative_systeminfo declarative_publishsubscribe declarative_serviceframework declarative_location declarative_contacts declarative_organizer declarative_feedback declarative_gallery}"
 
 stage_fetch() {
   [ -d "$Q/qtm12-git/src" ] && return 0
@@ -59,6 +59,7 @@ stage_configure() {
     local d; d=$(dirname "$mk"); ls "$d"/*.mmp >/dev/null 2>&1 || continue
     sed -i -e "s#/epocroot//*epoc32//*bin/#$SYM/bin/#g" -e "s#/epocroot/epoc32/include/Qt#$SYM/include/Qt#g" \
            -e "s#/epocroot/epoc32/mkspecs/#$Q/qt-src/mkspecs/#g" -e "s#^INCPATH	 =#INCPATH	 = $minc#" "$mk"
+    touch "$mk"   # else make regenerates the Makefile through qmake and the include/tool paths above are lost
     ( cd "$d" && make -s -f "$(basename "$mk")" mocables compiler_rcc_make_all > "mocables-$(basename "$mk").log" 2>&1 ) \
       || echo "$d: mocables FAILED (that DLL is not built)"
   done
@@ -69,6 +70,7 @@ stage_configure() {
       sed -i "/^SOURCE[[:space:]]*$inc\$/d" "$m"
     done
   done
+  sed -i "s/^VERSION 1.512/VERSION 1.513/" src/multimedia/QtMultimediaKit_dll.mmp   # the 1.2.1 version (clients import QtMultimediaKit{00010201})
 }
 
 stage_build() {
@@ -100,6 +102,8 @@ stage_sis() {
       qtversit_*)                          stub plugins/versit "$k" ;;
       qtcontacts_*)                        stub plugins/contacts "$k" ;;
       qtorganizer_*)                       stub plugins/organizer "$k" ;;
+      qtmultimediakit_m3u)                 stub plugins/playlistformats "$k" ;;
+      qtmultimediakit_*)                   stub plugins/mediaservice "$k" ;;
       qtlandmarks_*)                       stub plugins/landmarks "$k" ;;
       declarative_*)  n="${k#declarative_}"; stub "imports/QtMobility/$n" "$k"
                       extra="$extra --file $SRC/plugins/declarative/$n/qmldir=!:/resource/qt/imports/QtMobility/$n/qmldir" ;;

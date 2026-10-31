@@ -144,11 +144,28 @@ _QTM12_S4 = {   # the S4 line's 1.0.3 entries have these keys; the 1.2 ones are 
 }
 if os.environ.get("PHOREPOC_S4") != "1":
     _QTM12.update(_QTM12_S4)
+# QtMessaging's Symbian engines use the commonemail client API (EPL: oss.FCL.sf.app.commonemail/email_plat)
+_EMAILINC = ["-I" + os.path.join(SYMBIAN, "symbian-2010", "oss.FCL.sf.app.commonemail", "email_plat", d, "inc")
+             for d in ("email_client_api", "email_services_api")]
 for _k, (_m, _d, _r) in _QTM12.items():
-    COMPONENTS[_k] = _qtm(_m, _d, rom=_r, sis=True)
+    COMPONENTS[_k] = _qtm(_m, _d, rom=_r, sis=True,
+                          **(dict(flags=_MKSPECS + _QTQINC + _QTMINC + _EMAILINC) if _k == "qtmessaging" else {}))
 
 # the QML import plug-ins (plugins/declarative; the firmware's declarative_*.dll). messaging/multimedia ride on qtmessaging / the 1.2 QtMultimediaKit.
-for _n in ("contacts", "feedback", "gallery", "location", "organizer", "publishsubscribe", "sensors", "serviceframework", "systeminfo"):
+for _n in ("contacts", "feedback", "gallery", "location", "messaging", "organizer", "publishsubscribe", "sensors", "serviceframework", "systeminfo"):
     COMPONENTS["declarative_" + _n] = _qtm("plugins/declarative/%s/declarative_%s_dll.mmp" % (_n, _n), None,
                                            rom="declarative_%s.dll" % _n, sis=True,
                                            flags=_MKSPECS + _QTQINC + _QTMINC + ["-I" + os.path.join(QT, "include", "QtDeclarative")])
+
+# QtMultimediaKit 1.2 (qmake's mmp, VERSION 1.513 = 1.2.1) REPLACES the 1.0 build above under the same key (qtmultimediakit
+# -> qt48_multimediakit): the 1.2 .def keeps/extends the ordinals. The 1.0 build stays as qt48_multimediakit_10.
+COMPONENTS["qt48_multimediakit_10"] = COMPONENTS["qt48_multimediakit"]
+_MMINC = ["-I" + os.path.join(QTM, "src", "multimedia", s) for s in ("", "audio", "video", "effects")] +          ["-I" + os.path.join(EPOC32_ROOT, "include", "mmf", "common"), "-I" + os.path.join(EPOC32_ROOT, "include", "mmf", "server")]
+COMPONENTS["qt48_multimediakit"] = _qtm("src/multimedia/QtMultimediaKit_dll.mmp", "QtMultimediaKitu.def", rom="QtMultimediaKit.dll", sis=True,
+                                        flags=_MKSPECS + _QTQINC + _QTMINC + _MMINC + ["-I" + os.path.join(QTM, "include", "QtMultimediaKit")])
+for _k, _m in {"qtmultimediakit_ecamengine": "plugins/multimedia/symbian/ecam/qtmultimediakit_ecamengine_dll.mmp",
+               "qtmultimediakit_mmfengine": "plugins/multimedia/symbian/mmf/qtmultimediakit_mmfengine_dll.mmp",
+               "qtmultimediakit_m3u": "plugins/multimedia/m3u/qtmultimediakit_m3u_dll.mmp",
+               "declarative_multimedia": "plugins/declarative/multimedia/declarative_multimedia_dll.mmp"}.items():
+    COMPONENTS[_k] = _qtm(_m, None, rom=_k + ".dll", sis=True,
+                          flags=_MKSPECS + _QTQINC + _QTMINC + _MMINC + ["-I" + os.path.join(QT, "include", "QtDeclarative")])
