@@ -44,8 +44,9 @@ stage_configure() {
   { echo "QT_BUILD_TREE = $SYM"; echo "QT_CONFIG += declarative"; } > .qmake.cache
   export QMAKEFEATURES="$QTM/features"
   for p in src/symbian/symbian.pro src/symbian/extras/extras.pro src/components/components.pro; do
-    "$SYM/bin/qmake" -cache "$SRC/.qmake.cache" -spec "$SYM/mkspecs/symbian-sbsv2" "CONFIG+=mobility" "$SRC/$p" > "qmake-$(basename "$p").log" 2>&1 \
-      || { tail -30 "qmake-$(basename "$p").log"; exit 1; }
+    # run in the .pro's own directory: qmake writes the mmps/bld.inf/Makefile into the cwd, where the registry looks for them
+    ( cd "$SRC/$(dirname "$p")" && "$SYM/bin/qmake" -cache "$SRC/.qmake.cache" -spec "$SYM/mkspecs/symbian-sbsv2" "CONFIG+=mobility" "$SRC/$p" \
+        > "$SRC/qmake-$(basename "$p").log" 2>&1 ) || { tail -30 "$SRC/qmake-$(basename "$p").log"; exit 1; }
   done
   grep -rl --include=*.cpp --include=*.h -E '#include <c(math|stdlib|stdio|string|time|assert)>' src 2>/dev/null | while read -r f; do
     sed -i -E 's/#include <c(math|stdlib|stdio|string|time|assert)>/#include <\1.h>/' "$f"
