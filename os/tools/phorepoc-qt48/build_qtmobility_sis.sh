@@ -46,8 +46,7 @@ stage_configure() {
     find "src/$m" -name "*.h" ! -name "*_p.h" -exec cp -f {} "include/$n/" \;
   done
   # plain-C math use that the 2010 code got through other includes
-  sed -i '0,/#include/s//#include <math.h>
-  #include/' plugins/landmarks/symbian_landmarks/src/qlandmarkmanagerengine_symbian_p.cpp 2>/dev/null || true
+  sed -i '1i #include <math.h>' plugins/landmarks/symbian_landmarks/src/qlandmarkmanagerengine_symbian_p.cpp 2>/dev/null || true
   mkdir -p include/QtMobility; cp -f src/global/*.h include/QtMobility/ 2>/dev/null || true
   # <cmath>/<cstdlib> would reach the host toolchain's newlib headers: the C headers (the ROM's stdapis) instead
   grep -rl --include=*.cpp --include=*.h -E '#include <c(math|stdlib|stdio|string|time|assert)>' src plugins 2>/dev/null | while read -r f; do
