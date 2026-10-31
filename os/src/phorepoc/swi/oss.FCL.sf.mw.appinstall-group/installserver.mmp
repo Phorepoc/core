@@ -41,6 +41,8 @@ EPOCSTACKSIZE   0x3000
 UID			0x101F7295 0x101F7295
 VENDORID	0x70000001
 
+USERINCLUDE .   // Phorepoc: log.h with the release-build trace
+MACRO PHOREPOC_SWI_TRACE
 USERINCLUDE ../../../../baseline/symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/../source/swis/server
 USERINCLUDE ../../../../baseline/symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/../source/plan
 USERINCLUDE ../../../../baseline/symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/../source/sisregistry/common
