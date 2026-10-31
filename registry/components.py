@@ -1259,6 +1259,9 @@ COMPONENTS = {
     "etelsat": dict(mmp="oss.FCL.sf.os.cellularsrv/telephonyserver/etelsimtoolkit/group/etelsat.mmp"),   # RSat (the SIM toolkit ETel API), <- satengine
     "satshellcntrl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satui/satapp/Group/SatShellCntrl.mmp"),   # the SAT server loads it (its UI-client handler), <- satengine
     "satserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satengine/SatServer/SatServer/group/SatServer.mmp"),
+    # the SIM toolkit idle-text content publisher (0x102078EB): the homescreen profile widget declares it -- without it the
+    # catalogue's "Time & profile" widget fails its publishers and is removed ("Problem occurred. Widget(s) removed.")
+    "aisatplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satui/satplugin/group/aisatplugin.mmp"),
     "satengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satengine/SatServer/Engine/group/SatEngine.mmp"),
     "sateventmonitors": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satengine/SatServer/EventMonitors/group/EventMonitors.mmp"),
     "satsystemstate": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satengine/SatServer/SystemState/group/SatSystemState.mmp"),
