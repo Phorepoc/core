@@ -169,3 +169,17 @@ for _k, _m in {"qtmultimediakit_ecamengine": "plugins/multimedia/symbian/ecam/qt
                "declarative_multimedia": "plugins/declarative/multimedia/declarative_multimedia_dll.mmp"}.items():
     COMPONENTS[_k] = _qtm(_m, None, rom=_k + ".dll", sis=True,
                           flags=_MKSPECS + _QTQINC + _QTMINC + _MMINC + ["-I" + os.path.join(QT, "include", "QtDeclarative")])
+
+
+# ---- Qt Quick Components for Symbian 1.1.3 (package 0x200346DE; tools/phorepoc-qt48/build_qtcomponents_sis.sh) -------------------------
+# BSD sources (Nokia's qt-components, src/symbian). The mmps are the ones qmake generated (symbian3 + mobility, no symbian_internal).
+# QML import plug-ins: nothing links against them, so no .def.
+QTC = os.path.join(QB, "qtcomp-src")
+_QTCINC = ["-I" + os.path.join(QTC, "src", "symbian"), "-I" + os.path.join(QTC, "src", "symbian", "indicators"),
+           "-I" + os.path.join(QTC, "src", "components")]
+for _k, (_m, _r) in {
+        "symbianplugin_1_1_3": ("src/symbian/symbianplugin_1_1_3_dll.mmp", "symbianplugin_1_1_3.dll"),
+        "symbianextrasplugin_1_1_3": ("src/symbian/extras/symbianextrasplugin_1_1_3_dll.mmp", "symbianextrasplugin_1_1_3.dll"),
+        "qtcomponentsplugin": ("src/components/qtcomponentsplugin_dll.mmp", "qtcomponentsplugin.dll")}.items():
+    COMPONENTS[_k] = dict(mmp=os.path.join(QTC, _m), flags=_MKSPECS + _QTQINC + _QTMINC + _QTCINC + ["-I" + os.path.join(QTC, os.path.dirname(_m))],
+                          defs=_QTDEFS, vfp=True, allow_wsd=True, cdriver=True, rtti=True, x32_flags=_X32CXX, rom=_r, sis=True)

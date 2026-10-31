@@ -1,0 +1,11 @@
+--- a/src/symbian/sdeclarativesharedstatusbar.cpp	2026-10-31 07:46:06.922088900 +0000
++++ b/src/symbian/sdeclarativesharedstatusbar.cpp	2026-10-31 07:46:07.063095700 +0000
+@@ -40,7 +40,7 @@
+ 
+ #include "sdeclarativesharedstatusbar.h"
+ 
+-#if defined(Q_OS_SYMBIAN)
++#if defined(Q_OS_SYMBIAN) && defined(QTCOMP_SYMBIAN_INTERNAL)
+ #include "sdeclarativesharedstatusbar_p_symbian.h"
+ #else // defined(Q_OS_SYMBIAN)
+ #include "sdeclarativesharedstatusbar_p.h"

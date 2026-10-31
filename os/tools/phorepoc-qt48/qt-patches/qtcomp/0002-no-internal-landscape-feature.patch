@@ -1,0 +1,20 @@
+--- a/src/symbian/sdeclarativescreen_p.cpp	2026-10-31 07:46:06.998889000 +0000
++++ b/src/symbian/sdeclarativescreen_p.cpp	2026-10-31 07:46:07.065200500 +0000
+@@ -55,7 +55,7 @@
+ #endif
+ 
+ #ifdef Q_WS_SIMULATOR
+-#include <cmath>
++#include <math.h>
+ #endif
+ 
+ #ifdef Q_DEBUG_SCREEN
+@@ -319,7 +319,7 @@
+ 
+ bool SDeclarativeScreenPrivate::deviceSupportsOnlyLandscape() {
+     // Do not allow other orientations than landscape for VGA touch devices.
+-    if (FeatureManager::FeatureSupported(FfNativeLandscapeDisplayOrientation))
++    if (false)
+         return true;
+ 
+     return false;
