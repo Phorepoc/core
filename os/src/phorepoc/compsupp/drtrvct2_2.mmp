@@ -13,7 +13,7 @@ source          sftfpini.cpp
 SOURCEPATH      ../../../baseline/symbian-2010/oss.FCL.sf.os.kernelhwsrv/kernel/eka/compsupp/symcpp
 source          rtopnew.cpp rtopdel.cpp
 SOURCEPATH      .
-source          drtrvct2_2.cpp
+source          drtrvct2_2.cpp drtrvct2_2_rt.cpp
 
 OS_LAYER_SYSTEMINCLUDE_SYMBIAN
 

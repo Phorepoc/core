@@ -18,8 +18,8 @@
 // lr-1, then count+1 halfword offsets as bytes, the last the default), index in r3.
 //
 // The functions of the def whose behaviour is RVCT-internal (its decimal conversion _btod_* / _e2*, the division
-// helpers _ll_*div* / __rt_*div*, the __rt_mem* and _memset* variants, signal raising) panic "DRTRVCT2_2" with their
-// ordinal: no application here imports them, and their register interfaces are not derivable from their names.
+// helpers _ll_*div* / __rt_*div*, the __rt_mem* and _memset* variants, signal raising, library init) are in
+// drtrvct2_2_rt.cpp.
 #include <e32std.h>
 
 // the release's rtabort.cpp, here because GCC wants std::terminate declared before it is defined
@@ -78,13 +78,6 @@ extern "C"
 	EXPORT_C div_t div(int n, int d) { div_t r = { n / d, n % d }; return r; }
 	EXPORT_C ldiv_t ldiv(long n, long d) { ldiv_t r = { n / d, n % d }; return r; }
 	EXPORT_C lldiv_t lldiv(long long n, long long d) { lldiv_t r = { n / d, n % d }; return r; }
-
-	// ---- RVCT internals not implemented: panic with the ordinal
-	void DrtRvctUnimplemented(TInt aOrdinal)
-		{
-		_LIT(KPanic, "DRTRVCT2_2");
-		User::Panic(KPanic, aOrdinal);
-		}
 	}
 
 // the flag-returning comparisons and the switch dispatcher (ARM state; return with bx lr to either state)
@@ -143,43 +136,3 @@ asm(
 	"	add ip, lr, ip, lsl #1\n"
 	"	bx ip\n"
 	);
-
-#define DRT_UNIMPLEMENTED(name, ordinal) \
-	asm(".text\n.syntax unified\n.arm\n.balign 4\n.global " #name "\n.type " #name ", %function\n" #name ":\n" \
-		"\tmov r0, #" #ordinal "\n\tldr ip, =DrtRvctUnimplemented\n\tbx ip\n\t.ltorg\n");
-
-DRT_UNIMPLEMENTED(__btod_div_common, 11)
-DRT_UNIMPLEMENTED(__btod_mult_common, 12)
-DRT_UNIMPLEMENTED(__memmove_aligned, 13)
-DRT_UNIMPLEMENTED(__rt_divtest, 16)
-DRT_UNIMPLEMENTED(__rt_lib_init, 19)
-DRT_UNIMPLEMENTED(__rt_lib_shutdown, 20)
-DRT_UNIMPLEMENTED(__rt_memcpy, 21)
-DRT_UNIMPLEMENTED(__rt_memset, 22)
-DRT_UNIMPLEMENTED(__rt_raise, 23)
-DRT_UNIMPLEMENTED(__rt_sdiv, 24)
-DRT_UNIMPLEMENTED(__rt_sdiv10, 25)
-DRT_UNIMPLEMENTED(__rt_sdiv32by16, 26)
-DRT_UNIMPLEMENTED(__rt_sdiv64by32, 27)
-DRT_UNIMPLEMENTED(__rt_udiv, 29)
-DRT_UNIMPLEMENTED(__rt_udiv10, 30)
-DRT_UNIMPLEMENTED(__rt_udiv32by16, 31)
-DRT_UNIMPLEMENTED(_btod_d2e, 32)
-DRT_UNIMPLEMENTED(_btod_ediv, 33)
-DRT_UNIMPLEMENTED(_btod_edivd, 34)
-DRT_UNIMPLEMENTED(_btod_emul, 35)
-DRT_UNIMPLEMENTED(_btod_emuld, 36)
-DRT_UNIMPLEMENTED(_btod_etento, 37)
-DRT_UNIMPLEMENTED(_d2e_denorm_low, 38)
-DRT_UNIMPLEMENTED(_d2e_norm_op1, 39)
-DRT_UNIMPLEMENTED(_e2d, 40)
-DRT_UNIMPLEMENTED(_e2e, 41)
-DRT_UNIMPLEMENTED(_ll_srdv, 68)
-DRT_UNIMPLEMENTED(_ll_udiv10, 75)
-DRT_UNIMPLEMENTED(_ll_udiv_big, 76)
-DRT_UNIMPLEMENTED(_ll_udiv_ginormous, 77)
-DRT_UNIMPLEMENTED(_ll_udiv_small, 78)
-DRT_UNIMPLEMENTED(_ll_urdv, 79)
-DRT_UNIMPLEMENTED(_memcpy_lastbytes, 80)
-DRT_UNIMPLEMENTED(_memset, 81)
-DRT_UNIMPLEMENTED(_memset_w, 82)
