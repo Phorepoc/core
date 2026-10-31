@@ -63,7 +63,11 @@ stage_host() {
   for t in moc rcc uic; do make -C "src/tools/$t" clean >/dev/null 2>&1 || true; rm -f "$HOST/bin/$t"; done
   rm -rf "$SRC"/src/*/.moc "$SRC"/src/*/.rcc "$SRC"/src/*/.uic "$SYM"/src/*/.moc "$SYM"/src/*/.rcc "$SYM"/src/*/.uic 2>/dev/null || true
   make -C src/tools/bootstrap -j"$JOBS" "$QFIX" > bootstrap.log 2>&1 || { tail -30 bootstrap.log; exit 1; }
-  for t in moc rcc uic; do make -C "src/tools/$t" -j"$JOBS" "$QFIX" > "$t.log" 2>&1 || { tail -30 "$t.log"; exit 1; }; done
+  # uic at -O2 with GCC 13 loses widget names (a custom widget "treeView" comes out as "fileDialogTreeView"): build it -O0
+  for t in moc rcc uic; do
+    F="$QFIX"; [ "$t" = uic ] && F="${QFIX/-O2/-O0}"
+    make -C "src/tools/$t" -j"$JOBS" "$F" > "$t.log" 2>&1 || { tail -30 "$t.log"; exit 1; }
+  done
   touch "$HOST/.qfix"
   ls -la "$HOST/bin"
 }
