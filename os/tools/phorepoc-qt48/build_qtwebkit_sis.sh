@@ -33,7 +33,7 @@ stage_mocables() {
   for m in JavaScriptCore WebCore WebKit/qt; do
     local d="$SYM/src/$W/$m" s="$SRC/src/$W/$m"
     ( cd "$d" && make -s mocables > mocables.log 2>&1 && make -s compiler_rcc_make_all >> mocables.log 2>&1 ) || { echo "$m: mocables FAILED"; tail -5 "$d/mocables.log"; exit 1; }
-    for g in .moc .rcc .uic; do [ -d "$d/$g" ] && mkdir -p "$s/$g" && cp -ru "$d/$g/." "$s/$g/"; done
+    for g in .moc .rcc .uic; do if [ -d "$d/$g" ]; then mkdir -p "$s/$g" && cp -ru "$d/$g/." "$s/$g/"; fi; done
   done
 }
 
