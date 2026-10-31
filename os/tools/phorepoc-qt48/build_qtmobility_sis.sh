@@ -54,7 +54,7 @@ stage_configure() {
     sed -i -E 's/#include <c(math|stdlib|stdio|string|time|assert)>/#include <\1.h>/' "$f"
   done
   # moc/rcc outputs the mmps compile (host tools of the Qt build)
-  local qi="$Q/qt-src/include"; local minc=" -I$qi-I$qi/QtCore -I$qi/QtGui -I$qi/QtNetwork -I$qi/QtDeclarative -I$qi/QtScript -I$qi/QtSql -I$qi/QtXml"; for d in "$SRC"/include/Qt*; do minc="$minc -I\"$d\""; done
+  local qi="$Q/qt-src/include"; local minc=" -I$qi -I$qi/QtCore -I$qi/QtGui -I$qi/QtNetwork -I$qi/QtDeclarative -I$qi/QtScript -I$qi/QtSql -I$qi/QtXml"; for d in "$SRC"/include/Qt*; do minc="$minc -I\"$d\""; done
   for mk in $(find src plugins -name "Makefile*"); do
     local d; d=$(dirname "$mk"); ls "$d"/*.mmp >/dev/null 2>&1 || continue
     sed -i -e "s#/epocroot//*epoc32//*bin/#$SYM/bin/#g" -e "s#/epocroot/epoc32/include/Qt#$SYM/include/Qt#g" \
