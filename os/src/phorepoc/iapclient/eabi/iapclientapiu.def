@@ -8,9 +8,9 @@ EXPORTS
 	_ZN9IAPClient20purchaseFlowFinishedEi @ 7 NONAME
 	_ZN9IAPClient19productDataReceivedEi7QString5QHashIS0_8QVariantE @ 8 NONAME
 	_ZN9IAPClient14getProductDataERK7QString @ 9 NONAME
-	_ZN9IAPClient18getUserAndDeviceDataEv @ 10 NONAME
-	_ZN9IAPClient24userAndDeviceDataReceivedEi7QString @ 11 NONAME
-	_ZN9IAPClient25restorableProductsReceivedEi7QString5QListI5QHashIS0_8QVariantEE @ 12 NONAME
+	_ZN9IAPClient20getUserAndDeviceDataEv @ 10 NONAME
+	_ZN9IAPClient25userAndDeviceDataReceivedEi7QString @ 11 NONAME
+	_ZN9IAPClient26restorableProductsReceivedEi7QString5QListI5QHashIS0_8QVariantEE @ 12 NONAME
 	_ZN9IAPClient21getRestorableProductsEv @ 13 NONAME
 	_ZN9IAPClientD0Ev @ 14 NONAME
 	_ZN9IAPClientD1Ev @ 15 NONAME
