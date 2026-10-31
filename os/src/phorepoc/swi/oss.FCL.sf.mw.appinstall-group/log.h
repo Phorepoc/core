@@ -96,7 +96,7 @@ inline void DebugPrintf(TInt aLine, char* aFile, TRefByValue<const TDesC8> aForm
 		buffer.Append(KSwiMsgEnd);
 		}
 	
-	RDebug::RawPrint(buffer);
+	RDebug::Printf("%S", &buffer);   // Phorepoc: mode 0 reaches the debug log
 	
 	VA_END(list);
 	}
@@ -127,7 +127,7 @@ inline void DebugPrintf(TInt aLine, char* aFile, TRefByValue<const TDesC16> aFor
 		buffer.Append(KSwiMsgEnd);
 		}
 	
-	RDebug::RawPrint(buffer);
+	RDebug::Print(_L("%S"), &buffer);   // Phorepoc: mode 0 reaches the debug log
 	
 	VA_END(list);
 	}
