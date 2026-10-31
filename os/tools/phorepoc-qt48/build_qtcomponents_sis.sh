@@ -36,6 +36,8 @@ stage_configure() {
   [ -d "$QTM/features" ] || { echo "run build_qtmobility_sis.sh first (the MOBILITY qmake feature)"; exit 1; }
   mkdir -p /epocroot; ln -sfn "$B/epoc32" /epocroot/epoc32; export EPOCROOT=/epocroot/
   rm -rf "$SRC"; cp -r "$Q/qtcomp-git" "$SRC"; rm -rf "$SRC/.git"; cd "$SRC"
+  # upstream blobs are CRLF: the patched files go LF first so the (LF) patches apply
+  sed -i 's/\r$//' src/symbian/sdeclarativesharedstatusbar.cpp src/symbian/sdeclarativescreen_p.cpp
   for p in "$HERE"/qt-patches/qtcomp/*.patch; do patch -p1 -s < "$p"; done
   # what upstream's ./configure -symbian writes: symbian3 + mobility, NOT symbian_internal (the Avkon/CDL internals are not public)
   cp -f "$HERE/qt-patches/qtcomp/qt-components-config.prf" features/qt-components-config.prf
@@ -49,7 +51,7 @@ stage_configure() {
     sed -i -E 's/#include <c(math|stdlib|stdio|string|time|assert)>/#include <\1.h>/' "$f"
   done
   # moc/rcc outputs the mmps compile (host tools of the Qt build); qmake already wrote the real Makefile as Makefile.Makefile
-  local qi="$Q/qt-src/include" minc=" -I$qi -I$qi/QtCore -I$qi/QtGui -I$qi/QtNetwork -I$qi/QtDeclarative -I$qi/QtScript -I$qi/QtSvg"
+  local qi="$Q/qt-src/include"; local minc=" -I$qi -I$qi/QtCore -I$qi/QtGui -I$qi/QtNetwork -I$qi/QtDeclarative -I$qi/QtScript -I$qi/QtSvg"
   for mk in $(find src/symbian src/components -name "Makefile*"); do
     local d; d=$(dirname "$mk"); ls "$d"/*.mmp >/dev/null 2>&1 || continue
     sed -i -e "s#/epocroot//*epoc32//*bin/#$SYM/bin/#g" -e "s#/epocroot/epoc32/include/Qt#$SYM/include/Qt#g" \
