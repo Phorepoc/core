@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // libglesv2.mmp -- OURS: libGLESv2.dll, the frozen OpenGL ES 2.0 ABI (libglesv2u.def) as a thin front over phgl.dll
-// (gen/libglesv2_front.cpp, generated). UID = the 2010 opengles interface's.
+// (gen/libglesv2_front.cpp, generated).
+// UID3: 0x10285A7A, the identity S^3 ROMs and SDK import libraries give libGLESv2.dll (the 2010 opengles interface
+// mmp says 0x2002B6B7); an executable that links libGLESv2{000a0000}[10285a7a].dll fails to load (-5) on any other value.
 TARGET			libGLESv2.dll
 TARGETTYPE		dll
-UID				0x1000008d 0x2002B6B7
+UID				0x1000008d 0x10285A7A
 
 CAPABILITY		All -Tcb
 VENDORID		0
