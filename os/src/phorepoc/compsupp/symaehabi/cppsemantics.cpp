@@ -53,6 +53,7 @@
 #ifdef __EPOC32__
 /* Symbian specific support */
 #include "symbian_support.h"
+#include <e32debug.h>
 #endif
 
 /* <new>: e32cmn.h declares operator new (GCC's would clash) */
@@ -891,6 +892,10 @@ EXPORT_C void __cxa_throw(void *eop, void *t_, void (*d_)(void *))
 
 #ifdef CPP_DIAGNOSTICS
   printf("__cxa_throw: throw failed\n");
+#endif
+#ifdef __EPOC32__
+  // the unwinder gave up (no handler, or a frame without unwind data): say which type, then terminate
+  RDebug::Printf("PH: eh: __cxa_throw of %s found no handler (terminate)", t ? t->name() : "?");
 #endif
 
   __cxa_call_terminate(ucbp);

@@ -218,6 +218,11 @@ void InitialiseSymbianSpecificUnwinderCache(uint32_t addr, _Unwind_Control_Block
 	if (!ReLoadExceptionDescriptor(addr, ucbp))
 		{
 		SYMBIAN_EH_SUPPORT_PRINTF("EH ERROR: no exception descriptor for address 0x%08x\n", addr);
+		// the last word before abort(): which lookup failed and why (a release build otherwise dies as a bare USER-EXEC 3)
+		TUint raw = UserSvr::ExceptionDescriptor(addr);
+		const TExceptionDescriptor* d = (const TExceptionDescriptor*)(raw & 0xfffffffe);
+		RDebug::Printf("PH: eh: no exception descriptor for pc=%08x est=%08x kernel-ed=%08x %08x %08x %08x %08x", addr,
+			(TUint)GET_ROM_EST(ucbp), raw, d ? d->iExIdxBase : 0, d ? d->iExIdxLimit : 0, d ? d->iROSegmentBase : 0, d ? d->iROSegmentLimit : 0);
 		abort();
 		}
 	}
