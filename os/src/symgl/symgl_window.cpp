@@ -235,8 +235,7 @@ namespace
 			aSt.iDevice = dev;
 			}
 		TPixelsAndRotation pr;
-		if (aSt.iDevice->GetScreenModeSizeAndRotation(aSt.iDevice->CurrentScreenMode(), pr) != KErrNone)
-			return;
+		aSt.iDevice->GetScreenModeSizeAndRotation(aSt.iDevice->CurrentScreenMode(), pr);
 		aRot = (TInt)pr.iRotation;
 		if (pr.iRotation == CFbsBitGc::EGraphicsOrientationRotated90 || pr.iRotation == CFbsBitGc::EGraphicsOrientationRotated270)
 			{
