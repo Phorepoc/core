@@ -1905,7 +1905,9 @@ COMPONENTS = {
     "xn3resource": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.homescreen/idlehomescreen/xmluirendering/uiresource/group/xnresource.mmp"),   # the root
     "xn3utils": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.homescreen/idlehomescreen/xmluirendering/utils/group/xnutils.mmp"),   # the root
     "aifw": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.homescreensrv/idlefw/group/aifw.mmp",   # the root
-                 drop=["aieventhandler.cpp"], extra=["toolchain/shims/aifw_board/aieventhandler.cpp"]),   # sliced ?: fix
+                 drop=["aieventhandler.cpp", "aipluginfactory.cpp"],
+                 extra=["toolchain/shims/aifw_board/aieventhandler.cpp",     # sliced ?: fix
+                        "toolchain/shims/aifw_board/aipluginfactory.cpp"]),  # "PH: aifw publisher" load results
     "aiidleint": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.homescreensrv/idlefw/group/aiidleint.mmp"),   # the root
     "aiutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.homescreensrv/idlefw/group/aiutils.mmp"),   # the root
     "homescreen": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.homescreensrv/idlefw/group/homescreen.mmp"),   # the root
