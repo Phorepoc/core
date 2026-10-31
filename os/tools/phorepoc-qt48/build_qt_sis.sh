@@ -17,6 +17,7 @@
 #   fetch      the 4.8.7 tarball from download.qt.io (SHA-256 checked) -> <build>/qt48/qt-src
 #   host       qmake/moc/rcc/uic for the build machine (a shadow build) -> <build>/qt48/qt-host      (~10 min)
 #   configure  `configure -xplatform symbian-sbsv2` + qmake: a bld.inf and one .mmp per module -> <build>/qt48/qt-symbian   (~35 min)
+#   configure_full  the full configuration (-phonon -multimedia -openssl -openvg -opengl es2 -xmlpatterns) -> <build>/qt48/qt-symbian-full (EGL, OpenVG, GL, phonon ... mmps; QtTest mocs)
 #   mocables   moc/rcc/uic outputs the generated mmps compile                                         (~5 min)
 #   stage      the mmps and our Qt patches (qt-patches/) into the source tree
 #   build      the ARM images: qt48_core qt48_gui qt48_network qt48_svg qt48_xml qt48_sql (PHOREPOC_QT48=1 ARM_VFP=1)   (long)
@@ -29,11 +30,12 @@ Q="$B/qt48"
 SRC="$Q/qt-src"
 HOST="$Q/qt-host"
 SYM="$Q/qt-symbian"
+SYMF="$Q/qt-symbian-full"   # the full configure: -phonon -multimedia -openssl -openvg -opengl es2 -xmlpatterns (EGL, OpenVG, GL, phonon, Multimedia, XmlPatterns mmps)
 TARBALL_URL="${QT_URL:-https://download.qt.io/archive/qt/4.8/4.8.7/qt-everywhere-opensource-src-4.8.7.tar.gz}"
 TARBALL_SHA=e2882295097e47fe089f8ac741a95fef47e0a73a3f3cdf21b56990638f626ea0
-MODULES="${QT_MODULES:-core gui network svg xml sql script declarative multimedia opengl xmlpatterns phonon}"
+MODULES="${QT_MODULES:-core gui network svg xml sql script declarative multimedia openvg opengl xmlpatterns phonon testlib}"
 # Qt plug-ins (sys/bin DLL + a resource/qt/plugins stub, as Nokia's Qt package installs them): name:resource dir below resource/qt
-PLUGINS="${QT_PLUGINS:-qgif:imageformats qico:imageformats qjpeg:imageformats qmng:imageformats qsvg:imageformats qcncodecs:codecs qjpcodecs:codecs qkrcodecs:codecs qtwcodecs:codecs qsvgicon:iconengines qsymbianbearer:bearer phonon_mmf:phonon_backend}"
+PLUGINS="${QT_PLUGINS:-qgif:imageformats qtiff:imageformats qico:imageformats qjpeg:imageformats qmng:imageformats qsvg:imageformats qcncodecs:codecs qjpcodecs:codecs qkrcodecs:codecs qtwcodecs:codecs qsvgicon:iconengines qsymbianbearer:bearer phonon_mmf:phonon_backend qvggraphicssystem:graphicssystems qglgraphicssystem:graphicssystems}"
 IMPORTS="${QT_IMPORTS:-qmlfolderlistmodelplugin:folderlistmodel:folderlistmodel qmlgesturesplugin:gestures:gestures qmlparticlesplugin:particles:particles qmlshadersplugin:shaders:shaders}"
 JOBS="${JOBS:-$(nproc)}"
 mkdir -p "$Q"
@@ -89,6 +91,17 @@ stage_configure() {
     || { tail -40 configure.log; exit 1; }
 }
 
+stage_configure_full() {
+  [ -f "$SYMF/src/openvg/QtOpenVG_dll.mmp" ] && return 0
+  epocroot; mkdir -p "$SYMF"; cd "$SYMF"
+  CXXFLAGS="-std=gnu++98 -fpermissive -w" CFLAGS="-w" "$SRC/configure" -opensource -confirm-license -xplatform symbian-sbsv2 -platform linux-g++ \n    -no-webkit -phonon -multimedia -no-audio-backend -openssl -openvg -opengl es2 -graphicssystem raster \n    -no-qt3support -xmlpatterns -svg -nomake examples -nomake demos -nomake tools -nomake docs -nomake translations \n    -no-stl -fast -release > configure.log 2>&1 || { tail -40 configure.log; exit 1; }
+  # moc output the added modules compile (testlib: QtTest)
+  mkdir -p "$SYMF/bin"; for t in moc rcc uic; do cp -f "$HOST/bin/$t" "$SYMF/bin/$t"; done
+  local d="$SYMF/src/testlib"; mkdir -p "$d/.moc/release-shared" "$d/.rcc/release-shared" "$d/.uic/release-shared"
+  ( cd "$d" && make -s mocables > mocables.log 2>&1 ) || { tail -5 "$d/mocables.log"; exit 1; }
+  mkdir -p "$SRC/src/testlib/.moc/release-shared"; cp -ru "$d/.moc/." "$SRC/src/testlib/.moc/"
+}
+
 stage_mocables() {
   epocroot
   mkdir -p "$SYM/bin"
@@ -121,6 +134,29 @@ stage_stage() {
   # the generated mmps' SYSTEMINCLUDE ../../include is qt-src/include: use configure's own include/ tree and qconfig.h/.cpp
   cp -rf "$SYM/include/." "$SRC/include/"
   cp -f "$SYM/src/corelib/global/qconfig.h" "$SYM/src/corelib/global/qconfig.cpp" "$SRC/src/corelib/global/"
+  if [ -f "$SYMF/src/openvg/QtOpenVG_dll.mmp" ]; then
+    # the full configuration (EGL, OpenVG, OpenGL ES 2, phonon, Multimedia, XmlPatterns): its headers and qconfig.h, plus the mmps of the
+    # modules/plug-ins the minimal configuration has none for. Symbian's configure keeps Script/ScriptTools/XmlPatterns/Declarative off
+    # unless asked for by name in qconfig.h: we ship them, so qconfig.h turns them on first (the QT_NO_* guards honour QT_*).
+    cp -rf "$SYMF/include/." "$SRC/include/"
+    { printf '#ifndef QT_SCRIPTTOOLS\n#define QT_SCRIPTTOOLS\n#endif\n#ifndef QT_XMLPATTERNS\n#define QT_XMLPATTERNS\n#endif\n'
+      printf '#ifndef QT_DECLARATIVE\n#define QT_DECLARATIVE\n#endif\n#ifndef QT_SCRIPT\n#define QT_SCRIPT\n#endif\n'
+      cat "$SYMF/src/corelib/global/qconfig.h"; } > "$SRC/src/corelib/global/qconfig.h"
+    cp -f "$SRC/src/corelib/global/qconfig.h" "$SRC/include/QtCore/qconfig.h"
+    for f in $(cd "$SYMF" && find src -name "*.mmp"); do [ -f "$SRC/$f" ] || { mkdir -p "$SRC/$(dirname "$f")"; cp -f "$SYMF/$f" "$SRC/$f"; }; done
+    # QtGui WITH EGL (the minimal configuration stubs qegl*): the same sources, libEGL, no QT_NO_EGL -- what QtOpenGL/OpenVG and the
+    # graphics-system plug-ins need. The .def is the frozen one, so the ordinals do not move.
+    python3 - "$G" <<'PYEOF'
+import re, sys
+p = sys.argv[1]; s = open(p).read()
+s = re.sub(r"^MACRO\s+QT_NO_EGL\n", "", s, flags=re.M)
+s = re.sub(r"^SOURCE\s+qegl_stub\.cpp\n", "SOURCE\t\tqegl.cpp\n", s, flags=re.M)
+s = re.sub(r"^SOURCE\s+qeglproperties_stub\.cpp\n", "SOURCE\t\tqeglproperties.cpp\nSOURCE\t\tqegl_symbian.cpp\n", s, flags=re.M)
+if "libEGL.lib" not in s:
+    s = s.replace("LIBRARY\t\tavkon.lib\n", "LIBRARY\t\tavkon.lib\nLIBRARY\t\tlibEGL.lib\n", 1)
+open(p, "w", newline="\n").write(s)
+PYEOF
+  fi
   for d in $(cd "$SYM" && find src -type d \( -name .moc -o -name .rcc -o -name .uic \)); do
     mkdir -p "$SRC/$d" && cp -ru "$SYM/$d/." "$SRC/$d/"
   done
@@ -152,5 +188,5 @@ stage_sis() {
   python3 tools/make_sis.py $keys --arm --unsigned --uid 0x2001E61C --name Qt --version 4.8.7       --vendor "The Qt Project (packaged by Phorepoc)" --type "${QT_SIS_TYPE:-sa}" $extra --out "$Q/qt-4.8.7${QT_SIS_TYPE:+-$QT_SIS_TYPE}.sis"
 }
 
-STAGES="${*:-fetch host configure mocables stage build sis}"
+STAGES="${*:-fetch host configure configure_full mocables stage build sis}"
 for s in $STAGES; do echo "=== qt48: $s"; "stage_$s"; done

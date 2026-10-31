@@ -184,6 +184,19 @@ for _k, (_m, _r) in {
     COMPONENTS[_k] = dict(mmp=os.path.join(QTC, _m), flags=_MKSPECS + _QTQINC + _QTMINC + _QTCINC + ["-I" + os.path.join(QTC, os.path.dirname(_m))],
                           defs=_QTDEFS, vfp=True, allow_wsd=True, cdriver=True, rtti=True, x32_flags=_X32CXX, rom=_r, sis=True)
 
+# The Components 1.0 plug-ins (`import com.nokia.symbian 1.0`, the version Anna-era apps import): the real 1.1 package ships them beside
+# the 1.1 ones (qtcomponents_1_1.pkg "DEPLOYMENT 1.0 ..."). Same sources one release back (qt-components, parent of ff4b5c76
+# "switching to version 1.1"), same configure.
+QTC10 = os.path.join(QB, "qtcomp10-src")
+_QTCINC10 = ["-I" + os.path.join(QTC10, "src", "symbian"), "-I" + os.path.join(QTC10, "src", "symbian", "indicators"),
+             "-I" + os.path.join(QTC10, "src", "components")]
+for _k, (_m, _r) in {
+        "symbianplugin_1_0": ("src/symbian/symbianplugin_1_0_dll.mmp", "symbianplugin_1_0.dll"),
+        "symbianextrasplugin_1_0": ("src/symbian/extras/symbianextrasplugin_1_0_dll.mmp", "symbianextrasplugin_1_0.dll"),
+        "qtcomponentsplugin_1_0": ("src/components/qtcomponentsplugin_1_0_dll.mmp", "qtcomponentsplugin_1_0.dll")}.items():
+    COMPONENTS[_k] = dict(mmp=os.path.join(QTC10, _m), flags=_MKSPECS + _QTQINC + _QTMINC + _QTCINC10 + ["-I" + os.path.join(QTC10, os.path.dirname(_m))],
+                          defs=_QTDEFS, vfp=True, allow_wsd=True, cdriver=True, rtti=True, x32_flags=_X32CXX, rom=_r, sis=True)
+
 
 # ---- QtWebKit (src/3rdparty/webkit; package 0x200267C2 "QtWebKit"; tools/phorepoc-qt48/build_qtwebkit_sis.sh) -------------------------
 # jscore.lib + webcore.lib are the static libraries QtWebKit.dll links (keys = the lib stems so STATICLIBRARY resolves). First step:
@@ -199,6 +212,14 @@ COMPONENTS["webcore"] = _qt("3rdparty/webkit/Source/WebCore", "webcore_lib.mmp",
 COMPONENTS["qt48_webkit"] = dict(
     _dll("3rdparty/webkit/Source/WebKit/qt", "QtWebKit_dll.mmp", "QtWebKit.dll", os.path.join(_WK, "WebKit", "qt", "symbian", "eabi", "QtWebKitu.def"),
          noinc=["stl-off"], flags=_WKFLAGS), sis=True)
+
+# the QtWebKit QML import (`import QtWebKit 1.0`: WebView) and the Symbian platform plug-in (select popups etc.), shipped with QtWebKit.dll
+for _k, (_m, _f, _r) in {
+        "qmlwebkitplugin": ("3rdparty/webkit/Source/WebKit/qt/declarative", "qmlwebkitplugin_dll.mmp", "qmlwebkitplugin.dll"),
+        "webkitplatformplugin": ("3rdparty/webkit/Source/WebKit/qt/symbian/platformplugin", "platformplugin_dll.mmp", "platformplugin.dll")}.items():
+    COMPONENTS["qt48_" + _k] = _qt(_m, _f, rom=_r, allow_wsd=True, cdriver=True, rtti=True, sis=True, noinc=["stl-off"],
+                                   flags=_WKFLAGS + ["-I" + os.path.join(_WK, "WebKit", "qt", "Api"), "-I" + os.path.join(QT, "include", "QtWebKit"),
+                                                     "-I" + os.path.join(QT, "include", "QtDeclarative")])
 
 # ---- IAP client stand-in (package 0x200345C8 "IAP" 3.23.7; tools/phorepoc-qt48/build_iap_sis.sh) ---------------------------------------
 # OURS (os/src/phorepoc/iapclient): iapclientapi.dll, UID3 0x2FF345C1, VERSION 0.518; the build script copies the sources to
@@ -217,7 +238,7 @@ COMPONENTS["iapclientapi"] = dict(
 # module rebuilt WITH SSL (qsslsocket*, QSslError ...: Qt resolves libssl/libcrypto by ordinal at run time, symbian branch of
 # qsslsocket_openssl_symbols.cpp). phonon is Qt's bundled src/3rdparty/phonon (LGPL 2.1), the MMF backend src/3rdparty/phonon/mmf.
 _QINCS = ["-I" + os.path.join(QT, "include")] + ["-I" + os.path.join(QT, "include", m) for m in (
-    "QtCore", "QtGui", "QtNetwork", "QtXml", "QtScript", "QtDeclarative", "QtXmlPatterns", "QtMultimedia", "QtOpenGL", "QtOpenVG", "QtSvg")]
+    "QtCore", "QtGui", "QtNetwork", "QtXml", "QtScript", "QtDeclarative", "QtXmlPatterns", "QtMultimedia", "QtOpenGL", "QtOpenVG", "QtSvg", "QtTest")]
 _PHINC = ["-I" + os.path.join(QT, "src", "3rdparty", "phonon", "phonon"), "-I" + os.path.join(QT, "src", "3rdparty", "phonon"),
           "-I" + os.path.join(QT, "src", "3rdparty", "phonon", "mmf"), "-I" + os.path.join(QT, "include", "phonon")]
 # Qt's own design (phonon.pro adds stlportv5 for numeric_limits only): the stl-off <new> (a no-op over euser's) comes before
@@ -236,7 +257,10 @@ COMPONENTS.update({
     "qt48_phonon": _dll("phonon", "phonon_dll.mmp", "phonon.dll", "phononu.def", flags=_QINCS + _PHINC, **_STLOFF_FIRST),
     "qt48_multimedia": _dll("multimedia", "QtMultimedia_dll.mmp", "QtMultimedia.dll", "QtMultimediau.def", flags=_QINCS),
     "qt48_opengl": _dll("opengl", "QtOpenGL_dll.mmp", "QtOpenGL.dll", "QtOpenGLu.def", flags=_QINCS),
-    "qt48_openvg": _dll("openvg", "QtOpenVG_dll.mmp", "QtOpenVG.dll", "QtOpenVGu.def", flags=_QINCS),
+    # __OPENVGHEADERS_USE_VG_1_1: what an S^3 SDK sets in its system-wide .hrh (vg/openvg.h otherwise redirects to the 1.0 API; Qt wants
+    # vgDrawGlyphs). libOpenVG is the 1.1 interface (libopenvg11u.def).
+    "qt48_openvg": _dll("openvg", "QtOpenVG_dll.mmp", "QtOpenVG.dll", "QtOpenVGu.def", flags=_QINCS, defs=_QTDEFS + ["__OPENVGHEADERS_USE_VG_1_1"]),
+    "qt48_testlib": _dll("testlib", "QtTest_dll.mmp", "QtTest.dll", "QtTestu.def", flags=_QINCS),
 })
 # plug-ins (nothing links against them: no .def). key: (module dir under src/, mmp, installed name)
 _QPLUG = {
@@ -247,6 +271,8 @@ _QPLUG = {
     "qjpeg": ("plugins/imageformats/jpeg", "qjpeg_dll.mmp", "qjpeg.dll"),
     "qmng": ("plugins/imageformats/mng", "qmng_dll.mmp", "qmng.dll"),
     "qsvg": ("plugins/imageformats/svg", "qsvg_dll.mmp", "qsvg.dll"),
+    "qvggraphicssystem": ("plugins/graphicssystems/openvg", "qvggraphicssystem_dll.mmp", "qvggraphicssystem.dll"),
+    "qglgraphicssystem": ("plugins/graphicssystems/opengl", "qglgraphicssystem_dll.mmp", "qglgraphicssystem.dll"),
     "qtiff": ("plugins/imageformats/tiff", "qtiff_dll.mmp", "qtiff.dll"),
     "qcncodecs": ("plugins/codecs/cn", "qcncodecs_dll.mmp", "qcncodecs.dll"),
     "qjpcodecs": ("plugins/codecs/jp", "qjpcodecs_dll.mmp", "qjpcodecs.dll"),

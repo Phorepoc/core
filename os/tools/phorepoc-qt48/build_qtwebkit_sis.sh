@@ -35,12 +35,22 @@ stage_mocables() {
     ( cd "$d" && make -s mocables > mocables.log 2>&1 && make -s compiler_rcc_make_all >> mocables.log 2>&1 ) || { echo "$m: mocables FAILED"; tail -5 "$d/mocables.log"; exit 1; }
     for g in .moc .rcc .uic; do if [ -d "$d/$g" ]; then mkdir -p "$s/$g" && cp -ru "$d/$g/." "$s/$g/"; fi; done
   done
+  # the QML import and the Symbian platform plug-in (full configuration: the minimal one has no mmp for them); plug-ins export the two
+  # fixed Qt plug-in ordinals (plugin_commonu.def, as every Qt plug-in dir has)
+  local SYMF="$Q/qt-symbian-full" m
+  for m in WebKit/qt/declarative WebKit/qt/symbian/platformplugin; do
+    local d="$SYMF/src/$W/$m" s="$SRC/src/$W/$m"
+    mkdir -p "$d/.moc/release-shared" "$d/.rcc/release-shared" "$d/.uic/release-shared"
+    ( cd "$d" && make -s mocables > mocables.log 2>&1 && make -s compiler_rcc_make_all >> mocables.log 2>&1 ) || { echo "$m: mocables FAILED"; tail -5 "$d/mocables.log"; exit 1; }
+    for g in .moc .rcc .uic; do mkdir -p "$s/$g" && cp -ru "$d/$g/." "$s/$g/"; done
+    cp -f "$SRC/src/plugins/imageformats/tiff/plugin_commonu.def" "$s/"
+  done
 }
 
 stage_build() {
   export PHOREPOC_QT48=1 ARM_VFP=1
   cd "$PDK"
-  for k in jscore webcore qt48_webkit; do python3 tools/emitter/build_mmp.py "$k"; done
+  for k in jscore webcore qt48_webkit qt48_qmlwebkitplugin qt48_webkitplatformplugin; do python3 tools/emitter/build_mmp.py "$k"; done
 }
 
 stage_sis() {
@@ -48,7 +58,14 @@ stage_sis() {
   cd "$PDK"
   local extra="--file $HERE/QTWEBKIT-SOURCE-OFFER.txt=!:/resource/QtWebKit/SOURCE-OFFER.txt --file $SRC/LICENSE.LGPL=!:/resource/QtWebKit/LICENSE.LGPL"
   [ -f "$SRC/LGPL_EXCEPTION.txt" ] && extra="$extra --file $SRC/LGPL_EXCEPTION.txt=!:/resource/QtWebKit/LGPL_EXCEPTION.txt"
-  python3 tools/make_sis.py qt48_webkit --arm --unsigned --uid 0x200267C2 --name QtWebKit --version 4.8.1 \
+  # Qt finds plug-ins by their stub (resource/qt/...): the QML import QtWebKit 1.0 (imports/QtWebKit + qmldir) and the platform plug-in
+  # (QtPlatformPlugin::load() scans <library path>/webkit/)
+  local stubs="$Q/qtwk-stubs"; mkdir -p "$stubs"
+  printf 'This file is a Qt plugin stub file. The real Qt plugin is located in /sys/bin.\n' > "$stubs/stub.qtplugin"
+  local W3="$SRC/src/$W/WebKit/qt"
+  extra="$extra --file $stubs/stub.qtplugin=!:/resource/qt/imports/QtWebKit/qmlwebkitplugin.qtplugin --file $W3/declarative/qmldir=!:/resource/qt/imports/QtWebKit/qmldir"
+  extra="$extra --file $stubs/stub.qtplugin=!:/resource/qt/plugins/webkit/platformplugin.qtplugin"
+  python3 tools/make_sis.py qt48_webkit qt48_qmlwebkitplugin qt48_webkitplatformplugin --arm --unsigned --uid 0x200267C2 --name QtWebKit --version 4.8.1 \
     --depends 0x2001E61C,4.7.3,Qt --vendor "The Qt Project (packaged by Phorepoc)" --type "${QT_SIS_TYPE:-sa}" $extra --out "$Q/qtwebkit-4.8.1.sis"
 }
 

@@ -1,0 +1,14 @@
+The Symbian C library (stdapis) has no <search.h>; the only one on the include path is the
+XIMP search framework's, a C++ header. libtiff then #includes C++ into a C source.
+tiffiop.h declares lfind() itself when HAVE_SEARCH_H is unset, and tif_dirinfo.c has its own td_lfind().
+--- a/src/3rdparty/libtiff/libtiff/tif_config.h
++++ b/src/3rdparty/libtiff/libtiff/tif_config.h
+@@ -135,7 +135,7 @@
+ #endif
+
+ /* Define to 1 if you have the <search.h> header file. */
+-#if !defined(Q_OS_WINCE) && !defined(Q_OS_VXWORKS) && !defined(Q_OS_ANDROID)
++#if !defined(Q_OS_WINCE) && !defined(Q_OS_VXWORKS) && !defined(Q_OS_ANDROID) && !defined(Q_OS_SYMBIAN)
+ #define HAVE_SEARCH_H 1
+ #endif
+

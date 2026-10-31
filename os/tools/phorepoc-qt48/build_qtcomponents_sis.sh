@@ -10,6 +10,7 @@
 #
 # Stages (default: all, in order; each is skipped when its output exists):
 #   fetch      git clone nemomobile/qt-components, check out da3bea3c -> <build>/qt48/qtcomp-git
+#   configure10 the same for the 1.0 plug-ins (the tree one release back) -> <build>/qt48/qtcomp10-src
 #   configure  qt-patches/qtcomp/* + the host qmake -> a .mmp per plug-in DLL in <build>/qt48/qtcomp-src
 #   build      the ARM images (PHOREPOC_QT48=1 ARM_VFP=1)
 #   sis        <build>/qt48/qtcomponents-1.1.3.sis (package 0x200346DE)
@@ -22,7 +23,9 @@ SRC="$Q/qtcomp-src"
 SYM="$Q/qt-symbian"
 QTM="$Q/qtm12-src"
 REV="${QTCOMP_REV:-da3bea3c532acbb7e975fb49951b64d0270e4d5d}"
-KEYS="${QTCOMP_KEYS:-qtcomponentsplugin symbianplugin_1_1_3 symbianextrasplugin_1_1_3}"
+KEYS="${QTCOMP_KEYS:-qtcomponentsplugin symbianplugin_1_1_3 symbianextrasplugin_1_1_3 symbianplugin_1_0 symbianextrasplugin_1_0 qtcomponentsplugin_1_0}"
+REV10="${QTCOMP_REV10:-ff4b5c76^}"   # the last tree before "switching to version 1.1": the Components 1.0 plug-ins (com.nokia.symbian 1.0)
+SRC10="$Q/qtcomp10-src"
 
 stage_fetch() {
   [ -d "$Q/qtcomp-git/src/symbian" ] && return 0
@@ -30,15 +33,19 @@ stage_fetch() {
   git -C "$Q/qtcomp-git" checkout -q "$REV"
 }
 
-stage_configure() {
-  [ -f "$SRC/src/symbian/symbianplugin_1_1_3_dll.mmp" ] && return 0
+# configure_tree <dir> <mmp that marks it done> <git rev> <apply our patches: 1|0>: the tree of one Components release -> mmps
+configure_tree() {
+  local SRC=$1 done_mmp=$2 gitrev=$3 patches=$4
+  [ -f "$SRC/$done_mmp" ] && return 0
   [ -f "$SYM/bin/qmake" ] || { echo "run build_qt_sis.sh (fetch host configure mocables) first"; exit 1; }
   [ -d "$QTM/features" ] || { echo "run build_qtmobility_sis.sh first (the MOBILITY qmake feature)"; exit 1; }
   mkdir -p /epocroot; ln -sfn "$B/epoc32" /epocroot/epoc32; export EPOCROOT=/epocroot/
-  rm -rf "$SRC"; cp -r "$Q/qtcomp-git" "$SRC"; rm -rf "$SRC/.git"; cd "$SRC"
+  rm -rf "$SRC"; mkdir -p "$SRC"; git -C "$Q/qtcomp-git" archive "$gitrev" | tar -x -C "$SRC"; cd "$SRC"
   # upstream blobs are CRLF: the patched files go LF first so the (LF) patches apply
-  sed -i 's/\r$//' src/symbian/sdeclarativesharedstatusbar.cpp src/symbian/sdeclarativescreen_p.cpp
-  for p in "$HERE"/qt-patches/qtcomp/*.patch; do patch -p1 -s < "$p"; done
+  if [ "$patches" = 1 ]; then   # (the 1.1 tree's files; the 1.0 tree has neither)
+    sed -i 's/\r$//' src/symbian/sdeclarativesharedstatusbar.cpp src/symbian/sdeclarativescreen_p.cpp
+    for p in "$HERE"/qt-patches/qtcomp/*.patch; do patch -p1 -s < "$p"; done
+  fi
   # what upstream's ./configure -symbian writes: symbian3 + mobility, NOT symbian_internal (the Avkon/CDL internals are not public)
   cp -f "$HERE/qt-patches/qtcomp/qt-components-config.prf" features/qt-components-config.prf
   { echo "QT_BUILD_TREE = $SYM"; echo "QT_CONFIG += declarative"; } > .qmake.cache
@@ -68,6 +75,9 @@ stage_configure() {
   done
 }
 
+stage_configure() { configure_tree "$SRC" src/symbian/symbianplugin_1_1_3_dll.mmp "$REV" 1; }
+stage_configure10() { configure_tree "$SRC10" src/symbian/symbianplugin_1_0_dll.mmp "$REV10" 0; }
+
 stage_build() {
   export PHOREPOC_QT48=1 ARM_VFP=1
   cd "$PDK"
@@ -92,6 +102,13 @@ stage_sis() {
   dir "$s/symbian" imports/com/nokia/symbian.1.1;   stub imports/com/nokia/symbian.1.1 symbianplugin_1_1_3
   dir "$s/symbian/extras" imports/com/nokia/extras.1.1; stub imports/com/nokia/extras.1.1 symbianextrasplugin_1_1_3
   dir "$s/components" imports/Qt/labs/components.1.1; stub imports/Qt/labs/components.1.1 qtcomponentsplugin
+  # Components 1.0 (`import com.nokia.symbian 1.0`): qtcomponents_1_0.pkg's layout -- the unversioned import dirs. LGPL 2.1 sources (the
+  # 1.0 release was not yet BSD): the licence text rides along.
+  local s10="$SRC10/src"
+  dir "$s10/symbian" imports/com/nokia/symbian;   stub imports/com/nokia/symbian symbianplugin_1_0
+  dir "$s10/symbian/extras" imports/com/nokia/extras; stub imports/com/nokia/extras symbianextrasplugin_1_0
+  dir "$s10/components" imports/Qt/labs/components; stub imports/Qt/labs/components qtcomponentsplugin_1_0
+  extra="$extra --file $SRC10/LICENSE.LGPL=!:/resource/QtComponents/LICENSE.LGPL-1.0"
   # Qt.labs.components.native: the same QML (not the shared-status-bar pair) with its own qmldir, plus a stub of the symbian plug-in
   for f in "$s"/symbian/*.qml "$s"/symbian/*.js; do
     case "$(basename "$f")" in StatusBarDefault.qml|StatusBarShared.qml) continue;; esac
@@ -105,5 +122,5 @@ stage_sis() {
     --vendor "Nokia (packaged by Phorepoc)" --type "${QT_SIS_TYPE:-sa}" $extra --out "$Q/qtcomponents-1.1.3.sis"
 }
 
-STAGES="${*:-fetch configure build sis}"
+STAGES="${*:-fetch configure configure10 build sis}"
 for s in $STAGES; do echo "=== qtcomponents: $s"; "stage_$s"; done
