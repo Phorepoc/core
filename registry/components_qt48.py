@@ -209,3 +209,47 @@ COMPONENTS["iapclientapi"] = dict(
     mmp=os.path.join(_IAP, "iapclientapi.mmp"), flags=_MKSPECS + ["-I" + QTINC, "-I" + os.path.join(QTINC, "QtCore")],
     defs=_QTDEFS, vfp=True, x32_flags=_X32CXX, allow_wsd=True, cdriver=True, rtti=True, sis=True, rom="iapclientapi.dll",
     **{"def": os.path.join(_IAP, "eabi", "iapclientapiu.def")})
+
+
+# ---- the rest of the Qt package: phonon (+ its MMF backend), XmlPatterns, Multimedia, OpenGL, OpenVG and the Qt plug-ins -------------------
+# Same layout as Nokia's Qt package for the Symbian^3 phones (src/s60installs/qt.iby). The mmps are the ones qmake generated with
+# `-phonon -multimedia -xmlpatterns -openssl -openvg -opengl es2` (build_qt_sis.sh `configure-full`); QtNetwork's is the same
+# module rebuilt WITH SSL (qsslsocket*, QSslError ...: Qt resolves libssl/libcrypto by ordinal at run time, symbian branch of
+# qsslsocket_openssl_symbols.cpp). phonon is Qt's bundled src/3rdparty/phonon (LGPL 2.1), the MMF backend src/3rdparty/phonon/mmf.
+_QINCS = ["-I" + os.path.join(QT, "include")] + ["-I" + os.path.join(QT, "include", m) for m in (
+    "QtCore", "QtGui", "QtNetwork", "QtXml", "QtScript", "QtDeclarative", "QtXmlPatterns", "QtMultimedia", "QtOpenGL", "QtOpenVG", "QtSvg")]
+_PHINC = ["-I" + os.path.join(QT, "src", "3rdparty", "phonon", "phonon"), "-I" + os.path.join(QT, "src", "3rdparty", "phonon"),
+          "-I" + os.path.join(QT, "src", "3rdparty", "phonon", "mmf"), "-I" + os.path.join(QT, "include", "phonon")]
+COMPONENTS.update({
+    "qt48_network": _dll("network", "QtNetwork_dll.mmp", "QtNetwork.dll", "QtNetworku.def"),   # (now with SSL)
+    "qt48_xmlpatterns": _dll("xmlpatterns", "QtXmlPatterns_dll.mmp", "QtXmlPatterns.dll", "QtXmlPatternsu.def", flags=_QINCS,
+                              cxx_eh=True, defs=[d for d in _QTDEFS if d != "QT_NO_EXCEPTIONS"]),   # Patternist reports errors by C++ exceptions
+    "qt48_phonon": _dll("phonon", "phonon_dll.mmp", "phonon.dll", "phononu.def", flags=_QINCS + _PHINC, noinc=["stl-off"]),
+    "qt48_multimedia": _dll("multimedia", "QtMultimedia_dll.mmp", "QtMultimedia.dll", "QtMultimediau.def", flags=_QINCS),
+    "qt48_opengl": _dll("opengl", "QtOpenGL_dll.mmp", "QtOpenGL.dll", "QtOpenGLu.def", flags=_QINCS),
+    "qt48_openvg": _dll("openvg", "QtOpenVG_dll.mmp", "QtOpenVG.dll", "QtOpenVGu.def", flags=_QINCS),
+})
+# plug-ins (nothing links against them: no .def). key: (module dir under src/, mmp, installed name)
+_QPLUG = {
+    "phonon_mmf": ("plugins/phonon/mmf", "phonon_mmf_dll.mmp", "phonon_mmf.dll"),
+    "qsymbianbearer": ("plugins/bearer/symbian/symbian_3", "qsymbianbearer_dll.mmp", "qsymbianbearer.dll"),
+    "qgif": ("plugins/imageformats/gif", "qgif_dll.mmp", "qgif.dll"),
+    "qico": ("plugins/imageformats/ico", "qico_dll.mmp", "qico.dll"),
+    "qjpeg": ("plugins/imageformats/jpeg", "qjpeg_dll.mmp", "qjpeg.dll"),
+    "qmng": ("plugins/imageformats/mng", "qmng_dll.mmp", "qmng.dll"),
+    "qsvg": ("plugins/imageformats/svg", "qsvg_dll.mmp", "qsvg.dll"),
+    "qtiff": ("plugins/imageformats/tiff", "qtiff_dll.mmp", "qtiff.dll"),
+    "qcncodecs": ("plugins/codecs/cn", "qcncodecs_dll.mmp", "qcncodecs.dll"),
+    "qjpcodecs": ("plugins/codecs/jp", "qjpcodecs_dll.mmp", "qjpcodecs.dll"),
+    "qkrcodecs": ("plugins/codecs/kr", "qkrcodecs_dll.mmp", "qkrcodecs.dll"),
+    "qtwcodecs": ("plugins/codecs/tw", "qtwcodecs_dll.mmp", "qtwcodecs.dll"),
+    "qsvgicon": ("plugins/iconengines/svgiconengine", "qsvgicon_dll.mmp", "qsvgicon.dll"),
+    "qmlfolderlistmodelplugin": ("imports/folderlistmodel", "qmlfolderlistmodelplugin_dll.mmp", "qmlfolderlistmodelplugin.dll"),
+    "qmlgesturesplugin": ("imports/gestures", "qmlgesturesplugin_dll.mmp", "qmlgesturesplugin.dll"),
+    "qmlparticlesplugin": ("imports/particles", "qmlparticlesplugin_dll.mmp", "qmlparticlesplugin.dll"),
+    "qmlshadersplugin": ("imports/shaders", "qmlshadersplugin_dll.mmp", "qmlshadersplugin.dll"),
+}
+for _k, (_m, _f, _r) in _QPLUG.items():
+    COMPONENTS["qt48_plug_" + _k] = _qt(_m, _f, rom=_r, allow_wsd=True, cdriver=True, rtti=True, sis=True,
+                                        flags=_QINCS + (_PHINC if _k == "phonon_mmf" else []),
+                                        **(dict(noinc=["stl-off"]) if _k == "phonon_mmf" else {}))

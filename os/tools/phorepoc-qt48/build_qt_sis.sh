@@ -31,7 +31,10 @@ HOST="$Q/qt-host"
 SYM="$Q/qt-symbian"
 TARBALL_URL="${QT_URL:-https://download.qt.io/archive/qt/4.8/4.8.7/qt-everywhere-opensource-src-4.8.7.tar.gz}"
 TARBALL_SHA=e2882295097e47fe089f8ac741a95fef47e0a73a3f3cdf21b56990638f626ea0
-MODULES="${QT_MODULES:-core gui network svg xml sql}"
+MODULES="${QT_MODULES:-core gui network svg xml sql script declarative multimedia opengl}"
+# Qt plug-ins (sys/bin DLL + a resource/qt/plugins stub, as Nokia's Qt package installs them): name:resource dir below resource/qt
+PLUGINS="${QT_PLUGINS:-qgif:imageformats qico:imageformats qjpeg:imageformats qmng:imageformats qsvg:imageformats qcncodecs:codecs qjpcodecs:codecs qkrcodecs:codecs qtwcodecs:codecs qsvgicon:iconengines qsymbianbearer:bearer}"
+IMPORTS="${QT_IMPORTS:-qmlfolderlistmodelplugin:folderlistmodel:folderlistmodel qmlgesturesplugin:gestures:gestures qmlparticlesplugin:particles:particles qmlshadersplugin:shaders:shaders}"
 JOBS="${JOBS:-$(nproc)}"
 mkdir -p "$Q"
 
@@ -136,6 +139,16 @@ stage_sis() {
   # store-ready: package "Qt" 4.8.7 (the name/version a Qt app's SIS depends on), the LGPL text, its exception and the source offer inside
   local extra="--file $HERE/QT-SOURCE-OFFER.txt=!:/resource/Qt/SOURCE-OFFER.txt --file $SRC/LICENSE.LGPL=!:/resource/Qt/LICENSE.LGPL"
   [ -f "$SRC/LGPL_EXCEPTION.txt" ] && extra="$extra --file $SRC/LGPL_EXCEPTION.txt=!:/resource/Qt/LGPL_EXCEPTION.txt"
+  local stub="$SRC/src/s60installs/qsymbianbearer.qtplugin"
+  local p
+  for p in $PLUGINS; do
+    keys="$keys qt48_plug_${p%%:*}"; extra="$extra --file $stub=!:/resource/qt/plugins/${p#*:}/${p%%:*}.qtplugin"
+  done
+  for p in $IMPORTS; do   # name:src/imports dir:Qt/labs dir
+    local n=${p%%:*} r=${p#*:}; local d=${r%%:*}
+    keys="$keys qt48_plug_$n"; extra="$extra --file $stub=!:/resource/qt/imports/Qt/labs/${r#*:}/$n.qtplugin"
+    [ -f "$SRC/src/imports/$d/qmldir" ] && extra="$extra --file $SRC/src/imports/$d/qmldir=!:/resource/qt/imports/Qt/labs/${r#*:}/qmldir"
+  done
   python3 tools/make_sis.py $keys --arm --unsigned --uid 0x2001E61C --name Qt --version 4.8.7       --vendor "The Qt Project (packaged by Phorepoc)" --type "${QT_SIS_TYPE:-sa}" $extra --out "$Q/qt-4.8.7${QT_SIS_TYPE:+-$QT_SIS_TYPE}.sis"
 }
 
