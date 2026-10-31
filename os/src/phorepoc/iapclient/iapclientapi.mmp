@@ -1,0 +1,27 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0
+
+// iapclientapi.mmp -- the In-App Purchase client stand-in. UID3 and version are what the consumer's import table names
+// (iapclientapi{00000206}[2ff345c1].dll); the .def's ordinals 5/13/16 are fixed by that consumer.
+TARGET			iapclientapi.dll
+TARGETTYPE		DLL
+UID				0x1000008d 0x2FF345C1
+VERSION			0.518
+SECUREID		0x2FF345C1
+CAPABILITY		ALL -TCB
+EPOCALLOWDLLDATA
+EPOCSTACKSIZE	0x14000
+MACRO			UNICODE
+MACRO			QT_SHARED
+MACRO			QT_NO_DEBUG
+MACRO			QT_CORE_LIB
+MACRO			QT_NO_EXCEPTIONS
+SYSTEMINCLUDE	/epoc32/include
+SYSTEMINCLUDE	/epoc32/include/QtCore
+SYSTEMINCLUDE	/epoc32/include/stdapis
+SYSTEMINCLUDE	/epoc32/include/stdapis/sys
+SOURCEPATH		.
+SOURCE			iapclient.cpp
+SOURCE			moc_iapclient.cpp
+LIBRARY			QtCore.lib libpthread.lib libc.lib libm.lib euser.lib libdl.lib
+DEFFILE			eabi/iapclientapiu.def

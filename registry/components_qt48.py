@@ -199,3 +199,13 @@ COMPONENTS["webcore"] = _qt("3rdparty/webkit/Source/WebCore", "webcore_lib.mmp",
 COMPONENTS["qt48_webkit"] = dict(
     _dll("3rdparty/webkit/Source/WebKit/qt", "QtWebKit_dll.mmp", "QtWebKit.dll", os.path.join(_WK, "WebKit", "qt", "symbian", "eabi", "QtWebKitu.def"),
          noinc=["stl-off"], flags=_WKFLAGS), sis=True)
+
+# ---- IAP client stand-in (package 0x200345C8 "IAP" 3.23.7; tools/phorepoc-qt48/build_iap_sis.sh) ---------------------------------------
+# OURS (os/src/phorepoc/iapclient): iapclientapi.dll, UID3 0x2FF345C1, VERSION 0.518; the build script copies the sources to
+# <build>/qt48/iap-src and runs the host moc there (moc_iapclient.cpp), so the mmp points at the copy. .def ordinals 5/13/16 are
+# fixed by the one consumer we know; the rest are ours.
+_IAP = os.path.join(QB, "iap-src")
+COMPONENTS["iapclientapi"] = dict(
+    mmp=os.path.join(_IAP, "iapclientapi.mmp"), flags=_MKSPECS + ["-I" + QTINC, "-I" + os.path.join(QTINC, "QtCore")],
+    defs=_QTDEFS, vfp=True, x32_flags=_X32CXX, allow_wsd=True, cdriver=True, rtti=True, sis=True, rom="iapclientapi.dll",
+    **{"def": os.path.join(_IAP, "eabi", "iapclientapiu.def")})
