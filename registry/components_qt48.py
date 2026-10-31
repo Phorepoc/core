@@ -191,7 +191,7 @@ for _k, (_m, _r) in {
 # Symbian's math.h had; the shims/cmath keeps libstdc++/newlib <cmath> out.
 _WK = os.path.join(QT, "src", "3rdparty", "webkit", "Source")
 _WKSHIMS = os.path.join(OS_ROOT, "tools", "phorepoc-qt48", "shims", "webkit")
-_WKFLAGS = (["-I" + _WKSHIMS, "-DENABLE_JIT=0", "-DENABLE_YARR_JIT=0", "-DENABLE_ASSEMBLER=0", "-include", os.path.join(_WKSHIMS, "wk_math.h"),
+_WKFLAGS = (["-I" + _WKSHIMS, "-I" + os.path.dirname(_WKSHIMS), "-DENABLE_JIT=0", "-DENABLE_YARR_JIT=0", "-DENABLE_ASSEMBLER=0", "-include", os.path.join(_WKSHIMS, "wk_math.h"),
              "-I" + os.path.join(SYMBIAN, "kernelhwsrv", "kernel", "eka", "compsupp", "symcpp")]
             + ["-I" + os.path.join(QT, "include")] + ["-I" + os.path.join(QT, "include", m) for m in ("QtCore", "QtGui", "QtNetwork")])
 COMPONENTS["jscore"] = _qt("3rdparty/webkit/Source/JavaScriptCore", "jscore_lib.mmp", noinc=["stl-off"], flags=_WKFLAGS)
