@@ -2194,6 +2194,10 @@ COMPONENTS = {
     "drtrvct2_2": dict(arm_only=True, mmp=os.path.join(OS_ROOT, "src/phorepoc/compsupp/drtrvct2_2.mmp"), own_newdel=True, rtti=False,
                        flags=["-include", os.path.join(SYMBIAN, "symbian-2010", KHS, "symcpp/symcpp.h")],
                        **{"def": KHS + "eabi/drtrvct2_2u.def"}),
+    # dfprvct2_2: the RVCT 2.2 floating-point runtime (the release links ARM's proprietary fplib; ours is written from its
+    # behaviour: src/phorepoc/compsupp/dfprvct2_2.cpp). The 40 ordinals of the release's dfprvct2_2u.def
+    "dfprvct2_2": dict(arm_only=True, mmp=os.path.join(OS_ROOT, "src/phorepoc/compsupp/dfprvct2_2.mmp"), rom="dfprvct2_2.dll", rtti=False,
+                       **{"def": KHS + "eabi/dfprvct2_2u.def"}),
     "simatktsy": dict(mmp="oss.FCL.sf.os.cellularsrv/telephonyserverplugins/licenseetsystub/simatk_tsy_stub/group/simatktsy.mmp", rom="simatktsy.dll",
                       **{"def": "oss.FCL.sf.os.cellularsrv/telephonyserverplugins/licenseetsystub/simatk_tsy_stub/eabi/SIMATKTSYu.def"}),
     # sysutil's setup process: publishes the device-type attributes (+ version texts) as P&S the first
