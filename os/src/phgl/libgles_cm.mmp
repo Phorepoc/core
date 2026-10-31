@@ -6,7 +6,7 @@
 // exports the egl* functions, which go to libEGL.dll (gen/libgles_cm_front.cpp).
 // UID3: 0x101FCABD, the identity every S^3 ROM gives libGLES_CM.dll. Executables and DLLs link it as libGLES_CM{000a0000}[101fcabd].dll;
 // the loader refuses an import whose UID3 differs from the DLL's (KErrNotSupported, -5: Duomi's DmKXTAPPUTILS.dll failed to load with the old
-// UID3 0x101FCABD). Executables built without the UID3 in the import name (King Oddball) load either way.
+// UID3 0xE7015B02). Executables built without the UID3 in the import name (King Oddball) load either way.
 TARGET			libGLES_CM.dll
 TARGETTYPE		dll
 UID				0x1000008d 0x101FCABD
