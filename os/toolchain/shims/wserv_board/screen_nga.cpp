@@ -39,6 +39,9 @@
 #endif
 #include <graphics/wsdisplaycontrol.h>
 
+// OURS: RWindowBase::FixNativeOrientation windows turn with the screen (cliwin_nga.cpp)
+void PhApplyFixedNativeRotations(const CScreen& aScreen);
+
 GLREF_D CDebugLogBase *wsDebugLog;
 
 LOCAL_C inline MWsScene::TSceneRotation GcToScreen(CFbsBitGc::TGraphicsOrientation aGcOrientation)
@@ -997,7 +1000,7 @@ void CScreen::doSetScreenMode(TInt aMode,TBool aInsideStartup)
 			
 			if (!aInsideStartup)
 				{
-				iWindowElementSet->ResubmitAllElementExtents();
+				iWindowElementSet->ResubmitAllElementExtents(); PhApplyFixedNativeRotations(*this);   // OURS: FixNativeOrientation windows (cliwin_nga.cpp)
 				//TODO jonas: we'd like to not have to clear at all... make the actual change to compositor etc lazily!
 				if(BlankScreenOnRotation())
 					{
@@ -1023,7 +1026,7 @@ void CScreen::doSetScreenMode(TInt aMode,TBool aInsideStartup)
 			}
 		if (!aInsideStartup && (*iModes)[aMode]->iOrigin != (*iModes)[iScreenSizeMode]->iOrigin)
 			{
-			iWindowElementSet->ResubmitAllElementExtents();
+			iWindowElementSet->ResubmitAllElementExtents(); PhApplyFixedNativeRotations(*this);   // OURS: FixNativeOrientation windows (cliwin_nga.cpp)
 			if ((*iModes)[aMode]->iRotation == (*iModes)[iScreenSizeMode]->iRotation)
 				{
 				//TODO jonas: we'd like to not have to clear at all... make the actual change to compositor etc lazily!
@@ -2025,7 +2028,7 @@ TInt CScreen::SetConfiguration(const TDisplayConfiguration& aConfigInput)
 			//Or there may be no change to do.
 			(void)UpdateOrientation(&oldRotation);
 			
-			iWindowElementSet->ResubmitAllElementExtents();
+			iWindowElementSet->ResubmitAllElementExtents(); PhApplyFixedNativeRotations(*this);   // OURS: FixNativeOrientation windows (cliwin_nga.cpp)
 			if(iDsaDevice && iDsaDevice->GraphicsAccelerator())
 				{
 				iDsaDevice->ChangeScreenDevice(iDsaDevice); // orientation has changed, therefore we need to re-initialise the screen device's graphics accelerator
@@ -2118,7 +2121,7 @@ TInt CScreen::UpdateConfiguration(const TDisplayConfiguration& aConfigInput)
         //Or there may be no change to do.
         (void)UpdateOrientation(&oldRotation);
         
-        iWindowElementSet->ResubmitAllElementExtents();
+        iWindowElementSet->ResubmitAllElementExtents(); PhApplyFixedNativeRotations(*this);   // OURS: FixNativeOrientation windows (cliwin_nga.cpp)
         if(iDsaDevice && iDsaDevice->GraphicsAccelerator())
             {
             iDsaDevice->ChangeScreenDevice(iDsaDevice); // orientation has changed, therefore we need to re-initialise the screen device's graphics accelerator

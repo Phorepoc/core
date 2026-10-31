@@ -287,7 +287,9 @@ COMPONENTS = {
         rom="sgresource_nga.dll", rom_as="sgresource.dll",
         **{"def": f"{G}/graphicsresourceservices/graphicsresourceinterface/eabi/sgresourceu.def"}),
     "ws32_nga": dict(mmp=f"{G}/windowing/windowserver/group/W32_nga.MMP", nga=True, rtti=True,
-                     rom="ws32_nga.dll", rom_as="ws32.dll"),
+                     rom="ws32_nga.dll", rom_as="ws32.dll",
+                     # RWindowBase::FixNativeOrientation as Symbian^3 devices implement it (2010: KErrNotSupported)
+                     drop=["RWINDOW.CPP"], extra=["toolchain/shims/ws32_board/rwindow_nga.cpp"]),
     "wsgraphicdrawer_nga": dict(mmp=f"{G}/windowing/windowserver/group/WSGRAPHICDRAWER_nga.MMP", nga=True,
                                 rom="wsgraphicdrawer_nga.dll", rom_as="wsgraphicdrawer.dll"),
     "wserv_nga": dict(mmp=f"{G}/windowing/windowserver/group/openwfc/WServ_nga.MMP", nga=True,

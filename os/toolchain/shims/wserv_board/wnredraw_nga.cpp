@@ -28,6 +28,10 @@
 #include "EVQUEUE.H"
 #include <s32mem.h>
 #include <gdi.h>
+
+// OURS: RWindowBase::FixNativeOrientation windows (cliwin_nga.cpp)
+TBool PhIsFixedNativeOrientation(const CWsClientWindow& aWin);
+void PhSetFixedNativeSourceOrientation(const CWsClientWindow& aWin, TInt aOrientation);
 #include "panics.h"
 #include "inifile.h"
 #include "rootwin.h"
@@ -495,6 +499,14 @@ TBackgroundAttributes& CWsWindowRedraw::AcquireBackgroundElementL()
 	SetHasElement(EFalse);
 	TBackgroundAttributes& backgroundAttributes = set.AcquireBackgroundElementL(*cliWin);
 	MWsElement& element = *(backgroundAttributes.iElement);
+	if (PhIsFixedNativeOrientation(*cliWin))
+		{
+		// OURS: a FixNativeOrientation window's element is marked for the render stage, as the device's server does
+		// (cliwin_nga.cpp)
+		TUint32 flags;
+		element.GetRenderStageFlags(flags);
+		element.SetRenderStageFlags(flags | MWsElement::EElementRenderStageReserved);
+		}
 	element.SetGlobalAlpha(cliWin->IsVisible() ? 0xFF : 0);
 	SetHasElement(ETrue);
 	screen->ElementAdded();
@@ -530,7 +542,8 @@ void CWsWindowRedraw::SetBackgroundSurfaceL(const TSurfaceId& aSurface)
 
 	TRect winExtent = cliWin->FullRect();
 	element.SetDestinationRectangle(winExtent);
-	
+	PhSetFixedNativeSourceOrientation(*cliWin, CFbsBitGc::EGraphicsOrientationNormal);	// OURS (cliwin_nga.cpp)
+
 	// By default Element's source rectangle is set to its surface rectangle
 	TRect srcRect;
 	element.GetSourceRectangle(srcRect);
@@ -661,6 +674,8 @@ void CWsWindowRedraw::SetBackgroundSurfaceL(const TSurfaceConfiguration& aConfig
 		  RDebug::Printf("PH: SetBackgroundSurface KErrArgument viewport=%d,%d-%d,%d extent=%d,%d-%d,%d orient=%d sid=%08x%08x", vp.iTl.iX, vp.iTl.iY, vp.iBr.iX, vp.iBr.iY, ex.iTl.iX, ex.iTl.iY, ex.iBr.iX, ex.iBr.iY, (TInt)aConfiguration.Orientation(), sid.iInternal[1], sid.iInternal[0]); }
 		OwnerPanic(EWservPanicInvalidSurfaceConfiguration);
 		}
+	// OURS: a FixNativeOrientation window's element turns with the screen too (cliwin_nga.cpp)
+	PhSetFixedNativeSourceOrientation(*cliWin, aConfiguration.Orientation());
     TRect srcRect;
     aConfiguration.GetViewport(srcRect);
     if (!srcRect.IsEmpty())
@@ -686,7 +701,8 @@ void CWsWindowRedraw::SetBackgroundSurfaceL(const TSurfaceConfiguration& aConfig
 		TRect newViewport;
 		aConfiguration.GetViewport(newViewport);
 		CFbsBitGc::TGraphicsOrientation orientation = aConfiguration.Orientation();
-		MWsElement::TElementRotation newRotation = GcToElementRotation(orientation);
+		// OURS: the rotation the element got (a FixNativeOrientation window's is composed with the screen's)
+		MWsElement::TElementRotation newRotation = PhIsFixedNativeOrientation(*cliWin) ? element.SourceRotation() : GcToElementRotation(orientation);
 		TBool newFlip = aConfiguration.Flip();
 		
 		//The following parameter guarantees that update will be scheduled. 

@@ -38,8 +38,94 @@
 
 #include "windowelementset.h"
 
+// OURS (2026-10-31): RWindowBase::FixNativeOrientation, as Symbian^3 devices implement it (the 2010 client returned
+// KErrNotSupported and the server had no opcode; client side: ws32_board/rwindow_nga.cpp). The device's server, for
+// window opcode 0x99: panics the client if the window is already fixed or active, sets a native-orientation bit in the
+// window's flags (TBaseWinFlags: the bit after EBaseWinNodeCreated) and replies with the screen's rotation. The
+// window's composition element then carries EElementRenderStageReserved (the device's server sets it when it creates
+// the background element), and every rectangle it gives the element is turned into the native frame -- its compositor
+// places the element without the screen's rotation. Our compositor rotates the whole scene instead (libWFC context
+// rotation), so here the element's source rotation is composed with the screen's: the native-frame surface is turned
+// into the mode's frame and the scene rotation turns it back -- the same pixels on the panel. It is recomputed whenever
+// the screen rotates (CScreen resubmits the element extents) or the window moves.
+const TInt EWsWinOpFixNativeOrientation = 0x99;
+const TUint KBaseWinFixedNativeOrientation = 0x00000004;
 
+struct TPhNativeOrientationWin
+	{
+	const CWsClientWindow* iWin;
+	TInt iSourceOrientation;	// the surface configuration's own orientation (CFbsBitGc::TGraphicsOrientation)
+	};
+// the fixed windows: the redraw/element/screen code asks by window (CWsWindowBase's flags are not theirs to read)
+static RArray<TPhNativeOrientationWin>* PhNativeOrientationWins = NULL;
 
+static TInt PhFindNativeOrientationWin(const CWsClientWindow& aWin)
+	{
+	if (PhNativeOrientationWins)
+		{
+		for (TInt i = PhNativeOrientationWins->Count() - 1; i >= 0; --i)
+			{
+			if ((*PhNativeOrientationWins)[i].iWin == &aWin)
+				return i;
+			}
+		}
+	return KErrNotFound;
+	}
+
+TBool PhIsFixedNativeOrientation(const CWsClientWindow& aWin)
+	{
+	return PhFindNativeOrientationWin(aWin) != KErrNotFound;
+	}
+
+// the element's source rotation = the surface's own orientation composed with the screen's
+void PhApplyFixedNativeRotation(const CWsClientWindow& aWin)
+	{
+	const TInt i = PhFindNativeOrientationWin(aWin);
+	if (i == KErrNotFound || !aWin.Screen())
+		return;
+	TBackgroundAttributes* background = aWin.Screen()->WindowElements().FindBackgroundElement(aWin);
+	if (!background || !background->iElement)
+		return;
+	const TInt gc = ((*PhNativeOrientationWins)[i].iSourceOrientation + (TInt)aWin.Screen()->Orientation()) & 3;
+	background->iElement->SetSourceRotation(GcToElementRotation((CFbsBitGc::TGraphicsOrientation)gc));
+	}
+
+// SetBackgroundSurfaceL: the configuration's orientation, then the composed rotation
+void PhSetFixedNativeSourceOrientation(const CWsClientWindow& aWin, TInt aOrientation)
+	{
+	const TInt i = PhFindNativeOrientationWin(aWin);
+	if (i == KErrNotFound)
+		return;
+	(*PhNativeOrientationWins)[i].iSourceOrientation = aOrientation;
+	PhApplyFixedNativeRotation(aWin);
+	}
+
+// CScreen, after the screen rotated and the element extents were resubmitted
+void PhApplyFixedNativeRotations(const CScreen& aScreen)
+	{
+	if (!PhNativeOrientationWins)
+		return;
+	for (TInt i = PhNativeOrientationWins->Count() - 1; i >= 0; --i)
+		{
+		const CWsClientWindow& win = *(*PhNativeOrientationWins)[i].iWin;
+		if (win.Screen() == &aScreen)
+			PhApplyFixedNativeRotation(win);
+		}
+	}
+
+static void PhForgetNativeOrientationWin(const CWsClientWindow& aWin)
+	{
+	const TInt i = PhFindNativeOrientationWin(aWin);
+	if (i == KErrNotFound)
+		return;
+	PhNativeOrientationWins->Remove(i);
+	if (PhNativeOrientationWins->Count() == 0)
+		{
+		PhNativeOrientationWins->Close();
+		delete PhNativeOrientationWins;
+		PhNativeOrientationWins = NULL;
+		}
+	}
 
 TBool CWsClientWindow::iAbsoluteFading = EFalse;
 
@@ -614,6 +700,7 @@ void CWsClientWindow::DeleteBaseArea()
 
 CWsClientWindow::~CWsClientWindow()
 	{
+	PhForgetNativeOrientationWin(*this);
 	while(iVisibleRegionTrackingCounter>0)
 		{
 		SetupVisibleRegionTracking(EFalse);
@@ -771,6 +858,23 @@ void CWsClientWindow::CommandL(TInt aOpcode, const TAny *aCmdData)
 		{
 		switch(aOpcode)
 			{
+			case EWsWinOpFixNativeOrientation:
+				// OURS: see PhNativeOrientationWins above. The device panics with 0x55 (the 2010 value is
+				// EWservPanicUnableToEnableAdvPointer: also "only before Activate()").
+				if ((iBaseWinFlags & KBaseWinFixedNativeOrientation) || IsActivated())
+					OwnerPanic(EWservPanicUnableToEnableAdvPointer);
+				{
+				if (!PhNativeOrientationWins)
+					PhNativeOrientationWins = new(ELeave) RArray<TPhNativeOrientationWin>;
+				TPhNativeOrientationWin entry;
+				entry.iWin = this;
+				entry.iSourceOrientation = CFbsBitGc::EGraphicsOrientationNormal;
+				PhNativeOrientationWins->AppendL(entry);
+				}
+				iBaseWinFlags |= KBaseWinFixedNativeOrientation;
+				RDebug::Printf("PH: wserv FixNativeOrientation window %x, screen rotation %d", (TUint)this, (TInt)Screen()->Orientation());
+				SetReply(Screen()->Orientation());
+				break;
 			case EWsWinOpActivate:
 				Activate();
 				break;
@@ -1393,6 +1497,7 @@ void CWsClientWindow::UpdateElementExtent(const TPoint* aOffset)
 	if (Redraw()->HasElement())
 		{
 		Screen()->WindowElements().UpdateElementExtent(*this, aOffset);
+		PhApplyFixedNativeRotation(*this);	// OURS: FixNativeOrientation (above)
 		}
 	}
 
