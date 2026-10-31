@@ -49,7 +49,12 @@ log = log.replace("#ifdef _DEBUG", "#if defined(_DEBUG) || defined(PHOREPOC_SWI_
 old = "#define DEBUG_CODE_SECTION(a) TRAP_IGNORE({ a; }) "
 assert old in log, "log.h DEBUG_CODE_SECTION anchor moved"
 log = log.replace(old, "#ifdef _DEBUG\n" + old + "\n#else\n#define DEBUG_CODE_SECTION(a)   // Phorepoc: debug-only code stays debug-only\n#endif", 1)
-# RawPrint (DebugPrint mode 1) does not reach the board's debug log; RDebug::Printf/Print (mode 0) does
+# short lines: the board's debug log keeps 160 characters of a user print; the time stamp + full source path took most of them
+for b in ("buffer", "header"):
+    old = b + ".AppendFormat(KSwiLineFileFormat, now.Int64(), aLine, aFile);"
+    assert log.count(old) == 1, "log.h " + b + " format anchor moved"
+    log = log.replace(old, b + ".AppendFormat(_L8(\"%d: \"), aLine);   // Phorepoc: \"<source line>: \" only", 1)
+# RDebug::Printf/Print (DebugPrint mode 0), as the rest of the board's diagnostics
 assert log.count("RDebug::RawPrint(buffer);") == 2, "log.h RawPrint anchors moved"
 log = log.replace("RDebug::RawPrint(buffer);", "RDebug::Printf(\"%S\", &buffer);   // Phorepoc: mode 0 reaches the debug log", 1)
 log = log.replace("RDebug::RawPrint(buffer);", "RDebug::Print(_L(\"%S\"), &buffer);   // Phorepoc: mode 0 reaches the debug log", 1)

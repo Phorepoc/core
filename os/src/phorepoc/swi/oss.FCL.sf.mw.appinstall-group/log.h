@@ -88,7 +88,7 @@ inline void DebugPrintf(TInt aLine, char* aFile, TRefByValue<const TDesC8> aForm
 	_LIT8(KSwiLogPrefix, "[SWI] ");
 	_LIT8(KSwiLineFileFormat, "%Ld Line: % 5d, File: %s -- ");
 	buffer.Append(KSwiLogPrefix);
-	buffer.AppendFormat(KSwiLineFileFormat, now.Int64(), aLine, aFile);
+	buffer.AppendFormat(_L8("%d: "), aLine);   // Phorepoc: "<source line>: " only
 	buffer.AppendFormatList(aFormat, list, &overflowHandler8);
 	_LIT8(KSwiMsgEnd, "\r\n");
 	if(buffer.MaxLength() >= (buffer.Length() + KSwiMsgEnd().Length()))
@@ -116,7 +116,7 @@ inline void DebugPrintf(TInt aLine, char* aFile, TRefByValue<const TDesC16> aFor
 	_LIT8(KSwiLogPrefix, "[SWI] ");
 	_LIT8(KSwiLineFileFormat, "%Ld Line: % 5d, File: %s -- ");
 	header.Append(KSwiLogPrefix);
-	header.AppendFormat(KSwiLineFileFormat, now.Int64(), aLine, aFile);
+	header.AppendFormat(_L8("%d: "), aLine);   // Phorepoc: "<source line>: " only
 	
 	TBuf<256> buffer;
 	buffer.Copy(header);
