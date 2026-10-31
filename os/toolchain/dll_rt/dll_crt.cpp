@@ -10,12 +10,13 @@
 // Deliberately NO data/bss here: Symbian DLLs must carry no writable static data.
 #include <e32std.h>
 
-void operator delete(TAny* aPtr, TUint) __NO_THROW
+// (weak: the Standard C++ new/delete provider, stdnew, defines the real sized operator delete itself)
+__attribute__((weak)) void operator delete(TAny* aPtr, TUint) __NO_THROW
 	{
 	operator delete(aPtr);
 	}
 
-void operator delete[](TAny* aPtr, TUint) __NO_THROW
+__attribute__((weak)) void operator delete[](TAny* aPtr, TUint) __NO_THROW
 	{
 	operator delete[](aPtr);
 	}

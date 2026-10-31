@@ -31,9 +31,9 @@ HOST="$Q/qt-host"
 SYM="$Q/qt-symbian"
 TARBALL_URL="${QT_URL:-https://download.qt.io/archive/qt/4.8/4.8.7/qt-everywhere-opensource-src-4.8.7.tar.gz}"
 TARBALL_SHA=e2882295097e47fe089f8ac741a95fef47e0a73a3f3cdf21b56990638f626ea0
-MODULES="${QT_MODULES:-core gui network svg xml sql script declarative multimedia opengl}"
+MODULES="${QT_MODULES:-core gui network svg xml sql script declarative multimedia opengl xmlpatterns phonon}"
 # Qt plug-ins (sys/bin DLL + a resource/qt/plugins stub, as Nokia's Qt package installs them): name:resource dir below resource/qt
-PLUGINS="${QT_PLUGINS:-qgif:imageformats qico:imageformats qjpeg:imageformats qmng:imageformats qsvg:imageformats qcncodecs:codecs qjpcodecs:codecs qkrcodecs:codecs qtwcodecs:codecs qsvgicon:iconengines qsymbianbearer:bearer}"
+PLUGINS="${QT_PLUGINS:-qgif:imageformats qico:imageformats qjpeg:imageformats qmng:imageformats qsvg:imageformats qcncodecs:codecs qjpcodecs:codecs qkrcodecs:codecs qtwcodecs:codecs qsvgicon:iconengines qsymbianbearer:bearer phonon_mmf:phonon_backend}"
 IMPORTS="${QT_IMPORTS:-qmlfolderlistmodelplugin:folderlistmodel:folderlistmodel qmlgesturesplugin:gestures:gestures qmlparticlesplugin:particles:particles qmlshadersplugin:shaders:shaders}"
 JOBS="${JOBS:-$(nproc)}"
 mkdir -p "$Q"

@@ -449,7 +449,10 @@ COMPONENTS = {
                       extra=["toolchain/shims/stdcpp_board/stdcpp_x32.cpp"]),
     # Standard C++ (genericopenlibs/cppstdlib): stdnew.dll = the STDCPP target type's operator new/delete + std::exception,
     "stdnew": dict(arm_only=True, mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cppstdlib/group/stdnew.mmp", cdriver=True, rtti=True,
-                   defs=["__SOFTFP="], own_new=True),   # (typeinfo std::bad_alloc, ordinal 19: not defined by its sources -- stub)
+                   # (STDCPP: __SYMBIAN_STDCPP_SUPPORT__ from the mmp; built with exceptions on as the GCCE flm does -- cxx_eh)
+                   defs=["__SOFTFP="], own_new=True, own_newdel=True, cxx_eh=True, allow_wsd=True,
+                   supcxx_drop=["eh_exception.o", "new_handler.o"],
+                   extra=["toolchain/shims/stdcpp_board/stdnew_nothrow.cpp"]),   # (exception.cpp / set_new_handler.cpp define them)
     # libstdcppv5.dll (UID3 0x20017610): the Standard C++ library (STLport 5) SDK apps built with the STDCPP plug-in import
     "libstdcppv5": dict(arm_only=True, mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cppstdlib/group/libstdcpp.mmp", cdriver=True, allow_wsd=True,
                         static_ctors=True, rtti=True, defs=["__SOFTFP="], own_new=True),

@@ -220,11 +220,20 @@ _QINCS = ["-I" + os.path.join(QT, "include")] + ["-I" + os.path.join(QT, "includ
     "QtCore", "QtGui", "QtNetwork", "QtXml", "QtScript", "QtDeclarative", "QtXmlPatterns", "QtMultimedia", "QtOpenGL", "QtOpenVG", "QtSvg")]
 _PHINC = ["-I" + os.path.join(QT, "src", "3rdparty", "phonon", "phonon"), "-I" + os.path.join(QT, "src", "3rdparty", "phonon"),
           "-I" + os.path.join(QT, "src", "3rdparty", "phonon", "mmf"), "-I" + os.path.join(QT, "include", "phonon")]
+# Qt's own design (phonon.pro adds stlportv5 for numeric_limits only): the stl-off <new> (a no-op over euser's) comes before
+# STLport's -- the generated mmps list it first; our registry flags would put it after the mmp's include dirs. symcpp.h: what gcce.h
+# pre-includes (std::nothrow_t) for a module without STDCPP.
+_STLOFF_FIRST = dict(arm_incs_first=True, incs_first=[os.path.join(QT, "mkspecs", "common", "symbian", "stl-off"), "toolchain/shims/stlport_board"],
+                     arm_flags=["-include", "symcpp.h"])
 COMPONENTS.update({
     "qt48_network": _dll("network", "QtNetwork_dll.mmp", "QtNetwork.dll", "QtNetworku.def"),   # (now with SSL)
-    "qt48_xmlpatterns": _dll("xmlpatterns", "QtXmlPatterns_dll.mmp", "QtXmlPatterns.dll", "QtXmlPatternsu.def", flags=_QINCS,
-                              cxx_eh=True, defs=[d for d in _QTDEFS if d != "QT_NO_EXCEPTIONS"]),   # Patternist reports errors by C++ exceptions
-    "qt48_phonon": _dll("phonon", "phonon_dll.mmp", "phonon.dll", "phononu.def", flags=_QINCS + _PHINC, noinc=["stl-off"]),
+    "qt48_xmlpatterns": _dll("xmlpatterns", "QtXmlPatterns_dll.mmp", "QtXmlPatterns.dll", "QtXmlPatternsu.def", flags=_QINCS, noinc=["stl-off"],
+                              cxx_eh=True, defs=[d for d in _QTDEFS if d != "QT_NO_EXCEPTIONS"] + ["__SYMBIAN_STDCPP_SUPPORT__"],
+                              # Qt's stl.prf recipe for a module that needs std::bad_alloc (QT_CATCH in qdebug.h once exceptions are on): STLport's <new>
+                              # (the real stdnew header) instead of stl-off's, __SYMBIAN_STDCPP_SUPPORT__, and stdnew.dll for its ordinals
+                              arm_incs_first=True, incs_first=[os.path.join(BUILD, "epoc32", "include", "stdapis", "stlportv5"), "toolchain/shims/stlport_board"],
+                              libs=["stdnew.lib"]),   # Patternist reports errors by C++ exceptions
+    "qt48_phonon": _dll("phonon", "phonon_dll.mmp", "phonon.dll", "phononu.def", flags=_QINCS + _PHINC, **_STLOFF_FIRST),
     "qt48_multimedia": _dll("multimedia", "QtMultimedia_dll.mmp", "QtMultimedia.dll", "QtMultimediau.def", flags=_QINCS),
     "qt48_opengl": _dll("opengl", "QtOpenGL_dll.mmp", "QtOpenGL.dll", "QtOpenGLu.def", flags=_QINCS),
     "qt48_openvg": _dll("openvg", "QtOpenVG_dll.mmp", "QtOpenVG.dll", "QtOpenVGu.def", flags=_QINCS),
@@ -252,4 +261,4 @@ _QPLUG = {
 for _k, (_m, _f, _r) in _QPLUG.items():
     COMPONENTS["qt48_plug_" + _k] = _qt(_m, _f, rom=_r, allow_wsd=True, cdriver=True, rtti=True, sis=True,
                                         flags=_QINCS + (_PHINC if _k == "phonon_mmf" else []),
-                                        **(dict(noinc=["stl-off"]) if _k == "phonon_mmf" else {}))
+                                        **(_STLOFF_FIRST if _k == "phonon_mmf" else {}))
