@@ -42,6 +42,7 @@ namespace
 		RChunk iChunk;
 		TSurfaceId iSurfaceId;
 		TSize iSurfaceSize;
+		TInt iSurfaceRot;				// the CFbsBitGc::TGraphicsOrientation the surface was configured for
 		TInt iStride;
 		TInt iOffset[KNbuf];
 		TUint iSubmitNo;				// the next submit's number; its buffer = iSubmitNo % KNbuf
@@ -210,6 +211,40 @@ namespace
 		aSt.iSurfaceOk = EFalse;
 		}
 
+	// The surface of a window in a ROTATED screen mode is in the screen's NATIVE orientation (the panel's own: 360x640 for
+	// a 640x360 mode rotated 90/270), and the compositor turns it back: the background surface configuration's
+	// orientation becomes the element's source rotation (2010 wserv windowelementset.cpp CWindowElement::SetElement:
+	// SetSourceRotation(GcToElementRotation(Orientation()))), the scene rotation then rotates the whole landscape scene
+	// to the panel -- the very design the ALF UI element uses (360x640 source, rotation 270, 640x360 destination). A GL
+	// application reads the screen mode itself, swaps its size for rotations 90/270 and draws its picture rotated into
+	// that native frame (Angry Birds: glViewport(0,0,360,640) in mode 1); a window-sized 640x360 surface under it gave a
+	// shifted, flipped fragment. aNative = the window's size turned back into the native frame, aRot = the mode's rotation.
+	void NativeGeometry(TWinState& aSt, const TSize& aWindowSize, TSize& aNative, TInt& aRot)
+		{
+		aNative = aWindowSize;
+		aRot = CFbsBitGc::EGraphicsOrientationNormal;
+		RWindow& win = *aSt.iWindow;
+		if (!aSt.iDevice)
+			{
+			CWsScreenDevice* dev = new CWsScreenDevice(*win.Session());
+			if (!dev || dev->Construct(win.ScreenNumber()) != KErrNone)
+				{
+				delete dev;
+				return;
+				}
+			aSt.iDevice = dev;
+			}
+		TPixelsAndRotation pr;
+		if (aSt.iDevice->GetScreenModeSizeAndRotation(aSt.iDevice->CurrentScreenMode(), pr) != KErrNone)
+			return;
+		aRot = (TInt)pr.iRotation;
+		if (pr.iRotation == CFbsBitGc::EGraphicsOrientationRotated90 || pr.iRotation == CFbsBitGc::EGraphicsOrientationRotated270)
+			{
+			aNative.iWidth = aWindowSize.iHeight;
+			aNative.iHeight = aWindowSize.iWidth;
+			}
+		}
+
 	// a KNbuf-buffer XRGB8888 surface of aSize as the window's background (guestegl.cpp's attributes)
 	TInt OpenSurface(TWinState& aSt, const TSize& aSize)
 		{
@@ -250,6 +285,12 @@ namespace
 			return r;
 		TSurfaceConfiguration cfg;
 		cfg.SetSurfaceId(aSt.iSurfaceId);
+		TSize nativeSz;
+		TInt rot;
+		NativeGeometry(aSt, aSize, nativeSz, rot);		// (aSize is already native: see symgl_window_size)
+		if (rot != CFbsBitGc::EGraphicsOrientationNormal)
+			cfg.SetOrientation((CFbsBitGc::TGraphicsOrientation)rot);
+		aSt.iSurfaceRot = rot;
 		if ((r = win.SetBackgroundSurface(cfg, ETrue)) != KErrNone)
 			return r;
 		win.Session()->Flush();
@@ -266,15 +307,23 @@ namespace
 	void PresentBitmap(TWinState& aSt, const TUint8* aSrc, TInt aSrcStride, TInt aW, TInt aH)
 		{
 		RWindow& win = *aSt.iWindow;
-		if (!aSt.iDevice)
+		if (!aSt.iGc)		// (the device may exist already: NativeGeometry makes it for the screen mode query)
 			{
 			if (RFbsSession::GetSession() == NULL && RFbsSession::Connect() != KErrNone)
 				return;
-			aSt.iDevice = new CWsScreenDevice(*win.Session());
-			if (!aSt.iDevice || aSt.iDevice->Construct() != KErrNone || aSt.iDevice->CreateContext(aSt.iGc) != KErrNone)
+			if (!aSt.iDevice)
 				{
-				delete aSt.iDevice;
-				aSt.iDevice = NULL;
+				aSt.iDevice = new CWsScreenDevice(*win.Session());
+				if (!aSt.iDevice || aSt.iDevice->Construct(win.ScreenNumber()) != KErrNone)
+					{
+					delete aSt.iDevice;
+					aSt.iDevice = NULL;
+					return;
+					}
+				}
+			if (aSt.iDevice->CreateContext(aSt.iGc) != KErrNone)
+				{
+				aSt.iGc = NULL;
 				return;
 				}
 			}
@@ -315,8 +364,13 @@ extern "C" int symgl_window_size(void* aNative, unsigned* aWidth, unsigned* aHei
 	const TSize s = static_cast<RWindow*>(aNative)->Size();
 	if (s.iWidth <= 0 || s.iHeight <= 0)
 		return 0;
-	*aWidth = s.iWidth;
-	*aHeight = s.iHeight;
+	TSize n = s;
+	TInt rot;
+	TWinState* st = Find(aNative, ETrue);
+	if (st)
+		NativeGeometry(*st, s, n, rot);
+	*aWidth = n.iWidth;
+	*aHeight = n.iHeight;
 	return 1;
 	}
 
@@ -326,7 +380,10 @@ extern "C" int symgl_window_surface(void* aNative, unsigned aWidth, unsigned aHe
 	if (!st)
 		return 0;
 	const TSize size(aWidth, aHeight);
-	if (st->iSurfaceOk && st->iSurfaceSize != size)
+	TSize nsz;
+	TInt nrot;
+	NativeGeometry(*st, st->iWindow->Size(), nsz, nrot);
+	if (st->iSurfaceOk && (st->iSurfaceSize != size || st->iSurfaceRot != nrot))
 		{
 		CloseSurface(*st);				// the window was resized: a new surface of the new size
 		st->iSurfaceTried = EFalse;
