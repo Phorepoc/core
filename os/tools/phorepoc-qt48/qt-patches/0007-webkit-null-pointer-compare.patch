@@ -1,0 +1,11 @@
+--- a/src/3rdparty/webkit/Source/WebCore/html/HTMLImageElement.cpp	2026-10-31 07:52:47.600544100 +0000
++++ b/src/3rdparty/webkit/Source/WebCore/html/HTMLImageElement.cpp	2026-10-31 07:52:47.649462900 +0000
+@@ -74,7 +74,7 @@
+     RefPtr<HTMLImageElement> image = adoptRef(new HTMLImageElement(imgTag, document));
+     if (optionalWidth)
+         image->setWidth(*optionalWidth);
+-    if (optionalHeight > 0)
++    if (optionalHeight)
+         image->setHeight(*optionalHeight);
+     return image.release();
+ }

@@ -1,0 +1,2 @@
+// QtWebKit set: the Symbian stdapis math.h, not libstdc++/newlib <cmath>
+#include <math.h>

@@ -183,3 +183,19 @@ for _k, (_m, _r) in {
         "qtcomponentsplugin": ("src/components/qtcomponentsplugin_dll.mmp", "qtcomponentsplugin.dll")}.items():
     COMPONENTS[_k] = dict(mmp=os.path.join(QTC, _m), flags=_MKSPECS + _QTQINC + _QTMINC + _QTCINC + ["-I" + os.path.join(QTC, os.path.dirname(_m))],
                           defs=_QTDEFS, vfp=True, allow_wsd=True, cdriver=True, rtti=True, x32_flags=_X32CXX, rom=_r, sis=True)
+
+
+# ---- QtWebKit (src/3rdparty/webkit; package 0x200267C2 "QtWebKit"; tools/phorepoc-qt48/build_qtwebkit_sis.sh) -------------------------
+# jscore.lib + webcore.lib are the static libraries QtWebKit.dll links (keys = the lib stems so STATICLIBRARY resolves). First step:
+# JavaScriptCore as an interpreter (JIT, YARR JIT and assembler off). wk_math.h gives the global isnan/isinf/signbit/isfinite that
+# Symbian's math.h had; the shims/cmath keeps libstdc++/newlib <cmath> out.
+_WK = os.path.join(QT, "src", "3rdparty", "webkit", "Source")
+_WKSHIMS = os.path.join(OS_ROOT, "tools", "phorepoc-qt48", "shims", "webkit")
+_WKFLAGS = (["-I" + _WKSHIMS, "-DENABLE_JIT=0", "-DENABLE_YARR_JIT=0", "-DENABLE_ASSEMBLER=0", "-include", os.path.join(_WKSHIMS, "wk_math.h"),
+             "-I" + os.path.join(SYMBIAN, "kernelhwsrv", "kernel", "eka", "compsupp", "symcpp")]
+            + ["-I" + os.path.join(QT, "include")] + ["-I" + os.path.join(QT, "include", m) for m in ("QtCore", "QtGui", "QtNetwork")])
+COMPONENTS["jscore"] = _qt("3rdparty/webkit/Source/JavaScriptCore", "jscore_lib.mmp", noinc=["stl-off"], flags=_WKFLAGS)
+COMPONENTS["webcore"] = _qt("3rdparty/webkit/Source/WebCore", "webcore_lib.mmp", noinc=["stl-off"], flags=_WKFLAGS)
+COMPONENTS["qt48_webkit"] = dict(
+    _dll("3rdparty/webkit/Source/WebKit/qt", "QtWebKit_dll.mmp", "QtWebKit.dll", os.path.join(_WK, "WebKit", "qt", "symbian", "eabi", "QtWebKitu.def"),
+         noinc=["stl-off"], flags=_WKFLAGS), sis=True)
