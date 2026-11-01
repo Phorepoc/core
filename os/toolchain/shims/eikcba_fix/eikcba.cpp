@@ -828,6 +828,7 @@ public:
         }
         TAknsItemID SemiButtonPressedID       = KAknsIIDQgnFrSctrlSkButtonPressed;
         TAknsItemID SemiButtonPressedCenterID = KAknsIIDQgnFrSctrlSkButtonCenterPressed;
+        { aGc.SetPenStyle( CGraphicsContext::ENullPen ); aGc.SetBrushStyle( CGraphicsContext::ESolidBrush ); aGc.SetBrushColor( TRgb( 255, 0, 0 ) ); aGc.DrawRect( iLeftFrameInnerRect ); aGc.SetBrushStyle( CGraphicsContext::ENullBrush ); }   // PH diag: red UNDER the left frame
         
         CEikCbaButton* button1 = static_cast<CEikCbaButton*>
             (iOwner.Control(KControlArrayCBAButton1Posn));
@@ -890,6 +891,8 @@ public:
                     SemiButtonID,
                     SemiButtonCenterID);
             }                    
+            }   // PH diag: a green strip AFTER the frames (shows unless something overpaints)
+            { aGc.SetPenStyle( CGraphicsContext::ENullPen ); aGc.SetBrushStyle( CGraphicsContext::ESolidBrush ); aGc.SetBrushColor( TRgb( 0, 255, 0 ) ); aGc.DrawRect( TRect( 0, 0, 360, 4 ) ); aGc.SetBrushStyle( CGraphicsContext::ENullBrush );
         _AKNTRACE_FUNC_EXIT;
         }
 public:
