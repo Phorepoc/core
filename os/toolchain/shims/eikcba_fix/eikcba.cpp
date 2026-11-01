@@ -4565,6 +4565,22 @@ void CEikCba::Draw( const TRect& aRect ) const
         return;
         }
     
+    {   // Phorepoc diagnostic (the home screen's black softkey bar): which CBA draws how, on each change, bounded
+    static TInt logged, lastFlags = -1, lastLayout = -1;
+    const TInt layout = AknLayoutFlags();
+    if ( logged < 12 && ( iCbaFlags != lastFlags || layout != lastLayout ) )
+        {
+        ++logged;
+        lastFlags = iCbaFlags;
+        lastLayout = layout;
+        TBuf8<64> proc;
+        proc.Copy( RProcess().Name().Left( 64 ) );
+        RDebug::Printf( "PH: cba draw %S rect %d,%d-%d,%d cbaFlags %x layout %x flags %x idle %d wallpaperType %d",
+            &proc, Rect().iTl.iX, Rect().iTl.iY, Rect().iBr.iX, Rect().iBr.iY, iCbaFlags, layout,
+            (TInt)( iFlags.IsSet( ECbaEmbedded ) | iFlags.IsSet( ECbaInsideDialog ) << 1 ),
+            (TInt)AknStatuspaneUtils::IdleLayoutActive(), iExtension ? iExtension->iWallpaperInUse : -1 );
+        }
+    }
     if ( iCbaFlags & EEikCbaFlagSemiTransparent )
         {
         CWindowGc &gc = SystemGc();
