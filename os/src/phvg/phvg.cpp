@@ -55,7 +55,7 @@ namespace
 	// filled the fixed per-process GPU arena. The worker submits (glFlush) between commands -- where no fill is half done
 	// -- once the pending outputs pass KOutFlush.
 	TUint gOutBytes;
-	TUint gSince[4];		// TEMP (flick blanking hunt): since the last present -- fills, image draws, mid-frame submits, presents of other surfaces
+	TUint gSince[6];		// TEMP (flick blanking hunt): since the last present -- fills, image draws, mid-frame submits, presents of other surfaces
 	const TUint KOutFlush = 16 << 20;
 	inline void Drew(TInt aVerts) { const TUint b = ((TUint)aVerts * 32 + 4095) & ~4095u; gOutBytes += b; }
 	TInt gGlLive[2];			// TEMP (GPU arena growth hunt): live GL textures, renderbuffers
@@ -710,6 +710,7 @@ namespace
 			{
 			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, gVtx);
 			glDrawArrays(GL_TRIANGLES, 0, aE.iN * 6), Drew(aE.iN * 6);
+			gSince[3] += aE.iN;
 			aE.iN = 0;
 			}
 		}
@@ -1255,8 +1256,16 @@ namespace
 			}
 		else if (!black && prevBlack && bl < 40)
 			RDebug::Printf("PH: vg2 phvg present drawn again: fills %u, images %u, mid-frame submits %u", gSince[0], gSince[1], gSince[2]);
+		if (gSince[0] >= 500)
+			{
+			static TInt hl;
+			if (hl++ < 30)
+				RDebug::Printf("PH: vg2 phvg heavy present: fills %u (trapezoids %u), images %u, mid-frame submits %u taking %u ms, %u ms since the last present",
+					gSince[0], gSince[3], gSince[1], gSince[2], gSince[4] / 24000, (User::FastCounter() - gSince[5]) / 24000);
+			}
+		gSince[5] = User::FastCounter();
 		prevBlack = black;
-		Mem::FillZ(gSince, sizeof(gSince));
+		Mem::FillZ(gSince, 5 * sizeof(TUint));
 		}
 		const TInt err = glGetError();
 		const TUint t1 = User::FastCounter();
@@ -1587,7 +1596,7 @@ namespace
 			DrainRing();
 			gRingWaitTicks = User::FastCounter() - tRing0;
 			if (gOutBytes > KOutFlush)
-				glFlush(), gOutBytes = 0, gSince[2]++;
+				{ const TUint f0 = User::FastCounter(); glFlush(); gSince[4] += User::FastCounter() - f0; gOutBytes = 0; gSince[2]++; }
 			if (!__e32_atomic_load_acq32(&gCmdPending))
 				continue;
 			switch (gCmd.iOp)
@@ -1603,7 +1612,7 @@ namespace
 				default:			gCmd.iResult = 0; break;
 				}
 			if (gOutBytes > KOutFlush)
-				glFlush(), gOutBytes = 0, gSince[2]++;
+				{ const TUint f0 = User::FastCounter(); glFlush(); gSince[4] += User::FastCounter() - f0; gOutBytes = 0; gSince[2]++; }
 			__e32_atomic_store_rel32(&gCmdPending, 0);
 			done.Signal();
 			}
