@@ -1253,6 +1253,11 @@ namespace
 			TShadow* src = Find(f.iSrcCookie);
 			if (!src || !src->iFbo0 || src->iState == 0 || src->iW != f.iIw || src->iH != f.iIh || src->iCookie == f.iCookie)
 				{
+				static TInt dl;
+				if (dl++ < 30)	// TEMP (O5 black frame hunt)
+					RDebug::Printf("PH: vg2 phvg resident draw DROPPED #%d: src %x found %d fbo %d state %d %dx%d (want %dx%d) onto %x", dl,
+						(unsigned)f.iSrcCookie, src != NULL, src ? (TInt)src->iFbo0 : 0, src ? src->iState : -1, src ? src->iW : 0, src ? src->iH : 0,
+						f.iIw, f.iIh, (unsigned)f.iCookie);
 				gStat[4]++;
 				return;
 				}
@@ -1621,10 +1626,18 @@ extern "C"
 						lru = i;
 				if (lru < 0)
 					{
+					static TInt rl;
+					if (rl++ < 30)	// TEMP (O5 black frame hunt)
+						RDebug::Printf("PH: vg2 phvg budget REFUSED #%d: %dx%d S%d needs %d KB, %d KB in use", rl, aW, aH, sc, need >> 10, used >> 10);
 					gStat[4]++;
 					return -1;
 					}
 				used -= ShadowBytes(gSh[lru].iW, gSh[lru].iH, gSh[lru].iS);
+				{
+				static TInt el;
+				if (el++ < 30)	// TEMP (O5 black frame hunt)
+					RDebug::Printf("PH: vg2 phvg budget EVICT #%d: %x %dx%d state %d for a %dx%d", el, (unsigned)gSh[lru].iCookie, gSh[lru].iW, gSh[lru].iH, gSh[lru].iState, aW, aH);
+				}
 				PhvgForget(gSh[lru].iCookie);
 				}
 			}
