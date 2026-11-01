@@ -63,6 +63,17 @@ volatile TInt* gPhvgLive = NULL;		// the engine's count of valid shadows; NULL u
 // the engine cookie of a surface: the Image holding its pixels (O5)
 static inline TAny* Ck(const Surface* aS) { return (TAny*)aS->m_image; }
 
+// TEMP diagnostics (O5 bring-up): the engine ops on small images (icons), in order
+static TInt gTrN;
+static void Tr(const char* aOp, const void* aCk, TInt aA, TInt aB)
+	{
+	const Image* im = (const Image*)aCk;
+	if (gTrN >= 900 || !im || im->m_width > 128 || im->m_height > 128)
+		return;
+	++gTrN;
+	RDebug::Printf("PH: vg2 tr %s %08x %dx%d refs %d a=%d b=%x", aOp, (TUint)im, im->m_width, im->m_height, im->m_referenceCount, aA, aB);
+	}
+
 namespace
 	{
 	struct TTable
@@ -176,7 +187,7 @@ namespace
 		const Image* im = aS->m_image;
 		// a VGImage's pbuffer: the image is referenced by the VGImage handle as well (m_referenceCount > 1). Child images
 		// share their parent's pixels at an offset: not on the GPU (a shadow per image would duplicate the shared pixels).
-		return im->m_ownsData && !im->m_parent && im->m_referenceCount == 1;	// TEMP bisect
+		return im->m_ownsData && !im->m_parent && (aS->getNumSamples() == 1 || im->m_referenceCount == 1);
 		}
 
 	TUint8 Pack(RIfloat aV)
@@ -281,6 +292,7 @@ namespace
 		const TUint t0 = User::FastCounter();
 		ReadSurface(aS, buf);
 		const TInt r = gT.Upload(Ck(aS), w, h, buf);
+		Tr("upload", aS->m_image, r, 0);
 		User::Free(buf);
 		gPerf[0]++; gPerf[1] += User::FastCounter() - t0;
 		return r == 1;
@@ -473,6 +485,7 @@ void PhvgCpuAccess(const Surface* aS, bool aWrite)
 			{
 			const TUint t0 = User::FastCounter();
 			if (gT.Readback(Ck(aS), rect, buf) == 1)
+				Tr("surf-readback", aS->m_image, rect[2]-rect[0], rect[3]-rect[1]);
 				{
 				WriteSurface((Surface*)aS, rect, buf);
 				PhvgImgWritten(aS->m_image);		// the GPU's pixels are now in its memory
@@ -483,6 +496,7 @@ void PhvgCpuAccess(const Surface* aS, bool aWrite)
 		}
 	if (aWrite)
 		gT.Invalidate(Ck(aS));
+		Tr("surf-inval", aS->m_image, 0, 0);
 	}
 
 // O3 -- RESIDENT SURFACES. A CPU consumer that only READS a GPU-ahead surface into a plain 8-bit-per-channel sRGB
@@ -604,6 +618,7 @@ void PhvgForget(const Surface* aS)
 	{
 	if (gLoad == 1 && aS->m_image->m_referenceCount <= 1)
 		gT.Forget(Ck(aS));
+		Tr("forget-surf", aS->m_image, 0, 0);
 	}
 
 // The image is being destroyed (Image::~Image).
@@ -611,6 +626,7 @@ void PhvgForgetImage(const Image* aImg)
 	{
 	if (gLoad == 1 && gPhvgLive && *gPhvgLive)
 		gT.Forget((TAny*)aImg);
+		Tr("forget-img", aImg, 0, 0);
 	}
 
 // O5: a CPU access to an image's pixels that does not go through a Surface (vgDrawImage / paint patterns on the CPU, image
@@ -637,6 +653,7 @@ void PhvgImageCpuAccess(const Image* aImg, bool aWrite)
 			{
 			const TUint t0 = User::FastCounter();
 			if (gT.Readback(ck, rect, buf) == 1)
+				Tr("img-readback", aImg, rect[2]-rect[0], rect[3]-rect[1]);
 				{
 				Image* im = (Image*)aImg;
 				const TBool plain = d.bitsPerPixel == 32 && d.redBits == 8 && d.greenBits == 8 && d.blueBits == 8 &&
@@ -677,6 +694,7 @@ void PhvgImageCpuAccess(const Image* aImg, bool aWrite)
 		}
 	if (aWrite)
 		gT.Invalidate(ck);
+		Tr("img-inval", aImg, 0, 0);
 	}
 
 // O5: the GPU holds the current content of this image (a shadow in state 1 or 2): a draw of it can sample the shadow.
@@ -704,6 +722,7 @@ bool PhvgTryClear(Surface* aS, const Color& aColor, int aX, int aY, int aW, int 
 	if (gT.State(Ck(aS), sw, sh) < 0)
 		return false;
 	TInt res = gT.Clear(Ck(aS), sw, sh, r.x, r.y, r.width, r.height, rgba);
+	Tr("clear", aS->m_image, res, r.width * 10000 + r.height);
 	if (res == -1)
 		{
 		if (!UploadSurface(aS))
@@ -805,6 +824,7 @@ namespace
 			gStroke.iFill.iEvenOdd = 0;				// every piece has a positive winding: non-zero = union
 			gStroke.iFill.iStroke = 1;
 			gT.Fill(&gStroke.iFill);
+			Tr("stroke", gStroke.iFill.iCookie, gStroke.iCount, 0);
 			}
 		gStroke.iCount = 0;
 		}
@@ -1070,6 +1090,7 @@ bool PhvgTryFill(const Rasterizer& aR)
 			f.iRects = nsc ? sc : NULL;
 			f.iNRects = nsc;
 			done = gT.Fill(&f) == 1;
+			Tr("fill", s->m_image, done, f.iPaintType);
 			}
 		}
 	User::Free(edges);
@@ -1109,6 +1130,7 @@ int PhvgDrawImage(Surface* aS, const void* aKey, int aIw, int aIh, unsigned aHas
 	im.iRects = aRects; im.iNRects = aN; im.iPixels = aPixels;
 	const TUint t0 = User::FastCounter();
 	const int res = gT.DrawImage(&im);
+	Tr("draw", aS->m_image, res, (TInt)aKey);
 	gPerf[4]++; gPerf[5] += User::FastCounter() - t0;
 	if (res == -2)
 		gPerf[6]++;
@@ -1154,6 +1176,7 @@ int PhvgDrawResident(Surface* aS, const Image* aSrc, const float* aM, int aBlend
 	im.iRects = aRects; im.iNRects = aN;
 	const TUint t0 = User::FastCounter();
 	const int res = gT.DrawImage(&im);
+	Tr("draw-res", aS->m_image, res, (TInt)aSrc);
 	gPerf[4]++; gPerf[5] += User::FastCounter() - t0;
 	if (res == 1)
 		gPerf[7]++;
