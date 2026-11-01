@@ -48,6 +48,7 @@ namespace OpenVGRI
 // OURS (O2): the GPU engine hooks, riPhvg.cpp (contract at its head)
 extern volatile TInt* gPhvgLive;
 void PhvgCpuAccess(const Surface* aS, bool aWrite);
+void PhvgImageCpuAccess(const Image* aImg, bool aWrite);	// O5: a GPU-ahead image is read back before the CPU samples it
 extern const PixelPipe* gPhvgLastPipe;	//OURS (O4): the pipe a stroke is being set up with (riPhvg.cpp)
 
 /*-------------------------------------------------------------------*//*!
@@ -192,6 +193,7 @@ void PixelPipe::setMask(bool masking)
 void PixelPipe::setImage(Image* image, VGImageMode imageMode)
 {
     RI_ASSERT(imageMode == VG_DRAW_IMAGE_NORMAL || imageMode == VG_DRAW_IMAGE_MULTIPLY || imageMode == VG_DRAW_IMAGE_STENCIL);
+    PhvgImageCpuAccess(image, false);	//OURS (O5): the CPU pipe samples it
     m_image = image;
     m_imageMode = imageMode;
 }
@@ -259,6 +261,8 @@ void PixelPipe::setPaint(const Paint* paint)
     m_paint = paint;
     if(!m_paint)
         m_paint = &m_defaultPaint;
+    if(m_paint->m_pattern)
+        PhvgImageCpuAccess(m_paint->m_pattern, false);	//OURS (O5)
     if(m_paint->m_pattern)
         m_tileFillColor.convert(m_paint->m_pattern->getDescriptor().internalFormat);
 }

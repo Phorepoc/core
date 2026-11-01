@@ -45,7 +45,7 @@ typedef void* EGLImageKHR;
 
 namespace
 	{
-	const TInt KMaxShadows = 24;
+	const TInt KMaxShadows = 96;			// O5: VGImages stay resident (ALF's canvas buffers, rendered icons); LRU eviction of synced ones
 	const TInt KMaxSide = 1024;				// larger surfaces are declined (the RI renders them)
 	const TInt KBatchPieces = 1024;			// trapezoids per draw call
 
@@ -60,7 +60,9 @@ namespace
 		GLuint	iTexM, iFboM;				// S/2 (only S == 4)
 		GLuint	iTexR, iFboR;				// 1x resolve + upload staging
 		GLuint	iRbRd, iFboRd;				// 1x RENDERBUFFER the resolve passes write and glReadPixels reads (a texture may be tiled by the GPU; a renderbuffer is linear = direct rows)
+		TUint	iUse;						// O5: last-use stamp (LRU eviction)
 		};
+	TUint			gUseClock = 0;
 
 	TShadow			gSh[KMaxShadows];
 	TInt			gLast = 0;				// lookup cache
@@ -385,11 +387,15 @@ namespace
 	TShadow* Find(TAny* aCookie)
 		{
 		if (gSh[gLast].iCookie == aCookie)
+			{
+			gSh[gLast].iUse = ++gUseClock;
 			return &gSh[gLast];
+			}
 		for (TInt i = 0; i < KMaxShadows; i++)
 			if (gSh[i].iCookie == aCookie)
 				{
 				gLast = i;
+				gSh[i].iUse = ++gUseClock;
 				return &gSh[i];
 				}
 		return NULL;
@@ -553,6 +559,7 @@ namespace
 				gSh[i].iW = aW;
 				gSh[i].iH = aH;
 				gSh[i].iS = sc;
+				gSh[i].iUse = ++gUseClock;
 				gLast = i;
 				return &gSh[i];
 				}
@@ -1231,11 +1238,45 @@ namespace
 			User::Free(e.iOwnPixels);
 			e.iOwnPixels = NULL;
 			}
-		else
+		else if (!e.iIm.iSrcCookie)
 			gImgPerf[1]++;
 		const TPhvgImage& f = e.iIm;
+		// O5: a resident source samples its own shadow: a 1x MSAA shadow's texture directly, a supersampled one through a
+		// fresh 1x resolve into its iTexR (the read target may be a renderbuffer, so Resolve() cannot be reused for this)
+		GLuint srcTex = 0;
+		if (f.iSrcCookie)
+			{
+			TShadow* src = Find(f.iSrcCookie);
+			if (!src || !src->iFbo0 || src->iState == 0 || src->iW != f.iIw || src->iH != f.iIh || src->iCookie == f.iCookie)
+				{
+				gStat[4]++;
+				return;
+				}
+			if (src->iS == 1)
+				srcTex = src->iTex0;
+			else
+				{
+				SetNoTests();
+				if (src->iS == 4)
+					{
+					glBindFramebuffer(GL_FRAMEBUFFER, src->iFboM);
+					BlitTex(src->iTex0, src->iW * 2, src->iH * 2, GL_LINEAR);
+					glBindFramebuffer(GL_FRAMEBUFFER, src->iFboR);
+					BlitTex(src->iTexM, src->iW, src->iH, GL_LINEAR);
+					}
+				else
+					{
+					glBindFramebuffer(GL_FRAMEBUFFER, src->iFboR);
+					BlitTex(src->iTex0, src->iW, src->iH, GL_LINEAR);
+					}
+				srcTex = src->iTexR;
+				}
+			gImgPerf[6]++;
+			}
+		else if (e.iSlot >= 0)
+			srcTex = gTexGl[e.iSlot];
 		TShadow* s = Get(f.iCookie, f.iW, f.iH, EFalse);
-		if (!s || !s->iFbo0 || s->iState == 0 || !gProgImg || !gTexGl[e.iSlot])
+		if (!s || !s->iFbo0 || s->iState == 0 || !gProgImg || !srcTex)
 			return;
 		const TReal32 W = (TReal32)s->iW, H = (TReal32)s->iH;
 		const TInt S = s->iS;
@@ -1250,7 +1291,14 @@ namespace
 		glUniform4f(gImgMul, f.iMul[0], f.iMul[1], f.iMul[2], f.iMul[3]);
 		glUniform1i(gImgSampler, 0);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, gTexGl[e.iSlot]);
+		glBindTexture(GL_TEXTURE_2D, srcTex);
+		if (f.iSrcCookie)
+			{
+			// shadow textures are LINEAR-filtered (resolve passes); a pixel-aligned draw samples texel centres either way, but
+			// keep it exact like the uploaded ones
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			}
 		if (f.iBlendSrc)
 			glDisable(GL_BLEND);
 		else
@@ -1279,8 +1327,8 @@ namespace
 		gStat[11]++;
 		gImgPerf[4] += User::FastCounter() - t0;
 		if ((++gImgPerf[0] & 255) == 0)
-			RDebug::Printf("PH: vg2 phvg images: draws %u cache hits %u misses %u uploaded %u KB; worker ticks %u (texture upload ticks %u)",
-				gImgPerf[0], gImgPerf[1], gImgPerf[2], gImgPerf[3] / 1024, gImgPerf[4], gImgPerf[5]);
+			RDebug::Printf("PH: vg2 phvg images: draws %u cache hits %u misses %u resident %u uploaded %u KB; worker ticks %u (texture upload ticks %u); shadows live %d",
+				gImgPerf[0], gImgPerf[1], gImgPerf[2], gImgPerf[6], gImgPerf[3] / 1024, gImgPerf[4], gImgPerf[5], gLive);
 		}
 
 	// the worker: run every queued entry, in order
@@ -1412,6 +1460,21 @@ namespace
 		{
 		TInt slot = -1;
 		TUint8* own = NULL;
+		if (f.iSrcCookie)
+			{
+			// O5: the source is a resident image's shadow -- no texture directory entry, no pixels
+			TQEnt& e = QSlot();
+			e.iType = EQDraw;
+			e.iSlot = -1;
+			e.iOwnPixels = NULL;
+			e.iIm = f;
+			e.iIm.iPixels = NULL;
+			e.iIm.iRects = NULL;
+			for (TInt i = 0; i < f.iNRects * 4; i++)
+				e.iRects[i] = f.iRects[i];
+			QPublish();
+			return 1;
+			}
 		for (TInt i = 0; i < KMaxTex; i++)
 			if (gDir[i].iUsed && gDir[i].iKey == f.iKey && gDir[i].iW == f.iIw && gDir[i].iH == f.iIh && gDir[i].iHash == f.iHash)
 				{
@@ -1535,7 +1598,27 @@ extern "C"
 		if (old && (old->iW != aW || old->iH != aH))
 			PhvgForget(aCookie);			// GL objects are the worker's to delete
 		TShadow* s = Get(aCookie, aW, aH, ETrue);
+		if (!s && !Find(aCookie))
+			{
+			// O5: the table is full -- evict the least recently used shadow the CPU also holds (state 0/1); a GPU-ahead one
+			// (state 2) is the only copy of its pixels and stays
+			TInt lru = -1;
+			for (TInt i = 0; i < KMaxShadows; i++)
+				if (gSh[i].iCookie && gSh[i].iState != 2 && (lru < 0 || gSh[i].iUse < gSh[lru].iUse))
+					lru = i;
+			if (lru >= 0)
+				{
+				PhvgForget(gSh[lru].iCookie);
+				s = Get(aCookie, aW, aH, ETrue);
+				}
+			}
 		return s ? s->iState : -1;
+		}
+
+	EXPORT_C TInt PhvgHas(TAny* aCookie, TInt aW, TInt aH)
+		{
+		const TShadow* s = Find(aCookie);
+		return (s && s->iFbo0 && s->iW == aW && s->iH == aH) ? s->iState : 0;
 		}
 
 	EXPORT_C TInt PhvgUpload(TAny* aCookie, TInt aW, TInt aH, const TUint8* aRgba)

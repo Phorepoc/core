@@ -60,6 +60,9 @@ static inline unsigned PhvgImgSlot(const void* aImg) { return ((TUint)aImg >> 4)
 void PhvgImgWritten(const void* aImg) { ++gPhvgImgGen[PhvgImgSlot(aImg)]; }
 volatile TInt* gPhvgLive = NULL;		// the engine's count of valid shadows; NULL until the engine is loaded
 
+// the engine cookie of a surface: the Image holding its pixels (O5)
+static inline TAny* Ck(const Surface* aS) { return (TAny*)aS->m_image; }
+
 namespace
 	{
 	struct TTable
@@ -78,6 +81,7 @@ namespace
 		TInt (*ReadDirect)(TAny*, const TInt*, TUint8*);
 		TInt (*DrawImage)(const TPhvgImage*);
 		TInt (*Present)(TAny*, TUint8*, TInt, TInt, TInt);	// optional (an older engine has none: the readback path)
+		TInt (*Has)(TAny*, TInt, TInt);						// O5: optional (none = no resident sources)
 		};
 	TTable	gT;
 	TInt	gLoad = 0;					// 0 not tried, 1 engine up, -1 unavailable
@@ -110,6 +114,7 @@ namespace
 		gT.ReadDirect = (TInt (*)(TAny*, const TInt*, TUint8*))lib.Lookup(EPhvgReadDirect);
 		gT.DrawImage = (TInt (*)(const TPhvgImage*))lib.Lookup(EPhvgDrawImage);
 		gT.Present = (TInt (*)(TAny*, TUint8*, TInt, TInt, TInt))lib.Lookup(EPhvgPresent);
+		gT.Has = (TInt (*)(TAny*, TInt, TInt))lib.Lookup(EPhvgHas);
 		if (!gT.Init || !gT.LivePtr || !gT.State || !gT.Upload || !gT.Fill || !gT.Clear || !gT.Dirty || !gT.Readback ||
 		    !gT.Invalidate || !gT.Forget)
 			{
@@ -158,13 +163,20 @@ namespace
 		return gLoad == 1;
 		}
 
+	// O5 -- GPU-RESIDENT IMAGES: a GPU shadow belongs to the IMAGE that holds the pixels, not to a Surface. ALF draws a
+	// window's or an icon's content through a pbuffer over a VGImage (eglCreatePbufferFromClientBuffer), destroys the pbuffer
+	// and then draws the VGImage: keyed by the Surface, the GPU's content died with the pbuffer (and VGImage pbuffers had to
+	// stay on the CPU). Keyed by the Image, the content stays on the GPU, a vgDrawImage of it samples the shadow (no hash,
+	// no upload, no readback), and only a CPU access to the image's pixels reads it back (PhvgImageCpuAccess).
 	TBool Eligible(const Surface* aS)
 		{
 		const Color::Descriptor& d = aS->getDescriptor();
 		if (d.isLuminance() || !d.isNonlinear())
 			return EFalse;
 		const Image* im = aS->m_image;
-		return im->m_ownsData && im->m_referenceCount == 1 && !im->m_parent;
+		// a VGImage's pbuffer: the image is referenced by the VGImage handle as well (m_referenceCount > 1). Child images
+		// share their parent's pixels at an offset: not on the GPU (a shadow per image would duplicate the shared pixels).
+		return im->m_ownsData && !im->m_parent && (aS->getNumSamples() == 1 || im->m_referenceCount == 1);
 		}
 
 	TUint8 Pack(RIfloat aV)
@@ -268,7 +280,7 @@ namespace
 			return EFalse;
 		const TUint t0 = User::FastCounter();
 		ReadSurface(aS, buf);
-		const TInt r = gT.Upload(aS, w, h, buf);
+		const TInt r = gT.Upload(Ck(aS), w, h, buf);
 		User::Free(buf);
 		gPerf[0]++; gPerf[1] += User::FastCounter() - t0;
 		return r == 1;
@@ -444,14 +456,14 @@ void PhvgCpuAccess(const Surface* aS, bool aWrite)
 	if (!gPhvgLive || !*gPhvgLive)
 		return;
 	TInt rect[4];
-	if (gT.Dirty((TAny*)aS, rect))
+	if (gT.Dirty(Ck(aS), rect))
 		{
 		const int w = rect[2] - rect[0], h = rect[3] - rect[1];
 		TUint8* buf = (TUint8*)User::Alloc(w * h * 4);
 		if (buf)
 			{
 			const TUint t0 = User::FastCounter();
-			if (gT.Readback((TAny*)aS, rect, buf) == 1)
+			if (gT.Readback(Ck(aS), rect, buf) == 1)
 				{
 				WriteSurface((Surface*)aS, rect, buf);
 				PhvgImgWritten(aS->m_image);		// the GPU's pixels are now in its memory
@@ -461,7 +473,7 @@ void PhvgCpuAccess(const Surface* aS, bool aWrite)
 			}
 		}
 	if (aWrite)
-		gT.Invalidate((TAny*)aS);
+		gT.Invalidate(Ck(aS));
 	}
 
 // O3 -- RESIDENT SURFACES. A CPU consumer that only READS a GPU-ahead surface into a plain 8-bit-per-channel sRGB
@@ -483,7 +495,7 @@ bool PhvgTryBlitOut(const Surface* aS, Image* aDst, int aSx, int aSy, int aDx, i
 	    d.alphaBits > 8)
 		return false;
 	TInt dirty[4];
-	if (!gT.Dirty((TAny*)aS, dirty) || !gT.ReadDirect)			// only a GPU-ahead surface; else the RI is current
+	if (!gT.Dirty(Ck(aS), dirty) || !gT.ReadDirect)			// only a GPU-ahead surface; else the RI is current
 		return false;
 	// PRESENT: the whole surface into a top-down 32-bit premultiplied BGRA destination (a window's surface buffer read
 	// with a negative stride: row 0 = the bottom at the highest address) -- the GPU writes the destination itself, no
@@ -505,7 +517,7 @@ bool PhvgTryBlitOut(const Surface* aS, Image* aDst, int aSx, int aSy, int aDx, i
 	    d.blueShift == 0 && d.greenShift == 8 && d.redShift == 16 && d.alphaShift == 24)
 		{
 		TUint8* top = (TUint8*)aDst->m_data + (aH - 1) * aDst->m_stride;		// the lowest address: the surface's top row
-		const TInt pr = gT.Present((TAny*)aS, top, -aDst->m_stride, aW, aH);
+		const TInt pr = gT.Present(Ck(aS), top, -aDst->m_stride, aW, aH);
 		static TInt npr;
 		if (npr < 4 || (pr != 1 && npr < 12))
 			{
@@ -522,7 +534,7 @@ bool PhvgTryBlitOut(const Surface* aS, Image* aDst, int aSx, int aSy, int aDx, i
 	if (!buf)
 		return false;
 	const TInt rect[4] = { aSx, aSy, aSx + aW, aSy + aH };
-	if (gT.ReadDirect((TAny*)aS, rect, buf) != 1)
+	if (gT.ReadDirect(Ck(aS), rect, buf) != 1)
 		{
 		User::Free(buf);
 		return false;
@@ -578,11 +590,80 @@ bool PhvgTryBlitOut(const Surface* aS, Image* aDst, int aSx, int aSy, int aDx, i
 	return true;
 	}
 
-// The surface is being destroyed.
+// The surface is being destroyed. Its image keeps the GPU content while something else (a VGImage handle) still holds it (O5).
 void PhvgForget(const Surface* aS)
 	{
-	if (gLoad == 1)
-		gT.Forget((TAny*)aS);
+	if (gLoad == 1 && aS->m_image->m_referenceCount <= 1)
+		gT.Forget(Ck(aS));
+	}
+
+// The image is being destroyed (Image::~Image).
+void PhvgForgetImage(const Image* aImg)
+	{
+	if (gLoad == 1 && gPhvgLive && *gPhvgLive)
+		gT.Forget((TAny*)aImg);
+	}
+
+// O5: a CPU access to an image's pixels that does not go through a Surface (vgDrawImage / paint patterns on the CPU, image
+// blits and filters, vgGetImageSubData, child images, mipmaps): a GPU-ahead image is read back into its own pixels first;
+// a write then drops the shadow (the CPU pixels are the truth again). Child images act on their root's shadow.
+void PhvgImageCpuAccess(const Image* aImg, bool aWrite)
+	{
+	if (!gPhvgLive || !*gPhvgLive || !aImg)
+		return;
+	while (aImg->m_parent)
+		aImg = aImg->m_parent;
+	TAny* ck = (TAny*)aImg;
+	TInt rect[4];
+	if (gT.Dirty(ck, rect))
+		{
+		const Color::Descriptor& d = aImg->m_desc;
+		const int w = rect[2] - rect[0], h = rect[3] - rect[1];
+		TUint8* buf = (TUint8*)User::Alloc(w * h * 4);
+		if (buf)
+			{
+			const TUint t0 = User::FastCounter();
+			if (gT.Readback(ck, rect, buf) == 1)
+				{
+				Image* im = (Image*)aImg;
+				const TBool plain = d.bitsPerPixel == 32 && d.redBits == 8 && d.greenBits == 8 && d.blueBits == 8 &&
+				                    d.alphaBits == 8 && d.isPremultiplied() && d.isNonlinear() && !d.isLuminance();
+				for (int y = rect[1]; y < rect[3]; y++)
+					{
+					const TUint8* p = buf + (y - rect[1]) * w * 4;
+					if (plain)
+						{
+						RIuint32* row = (RIuint32*)(im->m_data + (y + im->m_storageOffsetY) * im->m_stride) + im->m_storageOffsetX;
+						for (int x = rect[0]; x < rect[2]; x++, p += 4)
+							row[x] = ((RIuint32)p[0] << d.redShift) | ((RIuint32)p[1] << d.greenShift) |
+							         ((RIuint32)p[2] << d.blueShift) | ((RIuint32)p[3] << d.alphaShift);
+						}
+					else
+						for (int x = rect[0]; x < rect[2]; x++, p += 4)
+							{
+							Color c(p[0] / 255.0f, p[1] / 255.0f, p[2] / 255.0f, p[3] / 255.0f, Color::sRGBA_PRE);
+							c.clamp();
+							c.convert(d.internalFormat);
+							im->writePixel(x, y, c);	// (PhvgImgWritten: harmless, the shadow is not GPU-ahead any more)
+							}
+					}
+				im->m_mipmapsValid = false;
+				PhvgImgWritten(aImg);
+				}
+			User::Free(buf);
+			gPerf[2]++; gPerf[3] += User::FastCounter() - t0;
+			}
+		}
+	if (aWrite)
+		gT.Invalidate(ck);
+	}
+
+// O5: the GPU holds the current content of this image (a shadow in state 1 or 2): a draw of it can sample the shadow.
+bool PhvgImageResident(const Image* aImg)
+	{
+	if (!gPhvgLive || !*gPhvgLive || aImg->m_parent || !gT.Has)
+		return false;
+	return gT.Has((TAny*)aImg, aImg->m_width, aImg->m_height) > 0;
 	}
 
 // Surface::clear (no scissor). True = the GPU did it (or there was nothing to do).
@@ -599,14 +680,14 @@ bool PhvgTryClear(Surface* aS, const Color& aColor, int aX, int aY, int aW, int 
 	c.clamp();
 	c.convert(Color::sRGBA_PRE);
 	const TReal32 rgba[4] = { c.r, c.g, c.b, c.a };
-	if (gT.State(aS, sw, sh) < 0)
+	if (gT.State(Ck(aS), sw, sh) < 0)
 		return false;
-	TInt res = gT.Clear(aS, sw, sh, r.x, r.y, r.width, r.height, rgba);
+	TInt res = gT.Clear(Ck(aS), sw, sh, r.x, r.y, r.width, r.height, rgba);
 	if (res == -1)
 		{
 		if (!UploadSurface(aS))
 			return false;
-		res = gT.Clear(aS, sw, sh, r.x, r.y, r.width, r.height, rgba);
+		res = gT.Clear(Ck(aS), sw, sh, r.x, r.y, r.width, r.height, rgba);
 		}
 	return res == 1;
 	}
@@ -722,7 +803,7 @@ bool PhvgStrokeBegin(const Rasterizer& aR)
 	if (!BuildPaint(p, f))
 		return false;
 	const int w = s->getWidth(), h = s->getHeight();
-	TInt st = gT.State(s, w, h);
+	TInt st = gT.State(Ck(s), w, h);
 	if (st < 0)
 		return false;
 	if (st == 0 && !UploadSurface(s))			// the CPU pixels (earlier fills of this very draw call) go to the GPU first
@@ -742,7 +823,7 @@ bool PhvgStrokeBegin(const Rasterizer& aR)
 		Mem::Copy(gStroke.iRamp, f.iRamp, KPhvgRamp * 4);
 		gStroke.iFill.iRamp = gStroke.iRamp;
 		}
-	gStroke.iFill.iCookie = s;
+	gStroke.iFill.iCookie = Ck(s);
 	gStroke.iFill.iW = w;
 	gStroke.iFill.iH = h;
 	gStroke.iEdges = e;
@@ -954,12 +1035,12 @@ bool PhvgTryFill(const Rasterizer& aR)
 	bool done = false;
 	if (sane)
 		{
-		TInt st = gT.State(s, w, h);
+		TInt st = gT.State(Ck(s), w, h);
 		if (st == 0 && UploadSurface(s))
 			st = 1;
 		if (st > 0)
 			{
-			f.iCookie = s;
+			f.iCookie = Ck(s);
 			f.iW = w;
 			f.iH = h;
 			f.iEdges = edges;
@@ -990,14 +1071,14 @@ int PhvgDrawImage(Surface* aS, const void* aKey, int aIw, int aIh, unsigned aHas
 	if (!PhvgSurfaceGpu(aS))
 		return 0;
 	const int w = aS->getWidth(), h = aS->getHeight();
-	TInt st = gT.State(aS, w, h);
+	TInt st = gT.State(Ck(aS), w, h);
 	if (st < 0)
 		return 0;
 	if (st == 0 && !UploadSurface(aS))
 		return 0;
 	TPhvgImage im;
 	Mem::FillZ(&im, sizeof(im));
-	im.iCookie = aS; im.iW = w; im.iH = h;
+	im.iCookie = Ck(aS); im.iW = w; im.iH = h;
 	im.iKey = (TAny*)aKey; im.iIw = aIw; im.iIh = aIh; im.iHash = aHash;
 	for (int i = 0; i < 6; i++)
 		im.iM[i] = aM[i];
@@ -1011,6 +1092,38 @@ int PhvgDrawImage(Surface* aS, const void* aKey, int aIw, int aIh, unsigned aHas
 	if (res == -2)
 		gPerf[6]++;
 	return res;
+	}
+
+// O5: the same draw from a RESIDENT source image (PhvgImageResident true): the engine samples the image's shadow. 1 done, 0 not
+// (the caller falls back to the pixel path, which reads the image back first).
+int PhvgDrawResident(Surface* aS, const Image* aSrc, const float* aM, int aBlendSrc, const float* aMul, const int* aRects, int aN)
+	{
+	if (!PhvgSurfaceGpu(aS) || aSrc == aS->m_image)
+		return 0;
+	const int w = aS->getWidth(), h = aS->getHeight();
+	TInt st = gT.State(Ck(aS), w, h);
+	if (st < 0)
+		return 0;
+	if (st == 0 && !UploadSurface(aS))
+		return 0;
+	if (!PhvgImageResident(aSrc))			// (a full table may have evicted it while making room for the destination)
+		return 0;
+	TPhvgImage im;
+	Mem::FillZ(&im, sizeof(im));
+	im.iCookie = Ck(aS); im.iW = w; im.iH = h;
+	im.iSrcCookie = (TAny*)aSrc; im.iIw = aSrc->m_width; im.iIh = aSrc->m_height;
+	for (int i = 0; i < 6; i++)
+		im.iM[i] = aM[i];
+	im.iBlendSrc = aBlendSrc;
+	for (int i = 0; i < 4; i++)
+		im.iMul[i] = aMul[i];
+	im.iRects = aRects; im.iNRects = aN;
+	const TUint t0 = User::FastCounter();
+	const int res = gT.DrawImage(&im);
+	gPerf[4]++; gPerf[5] += User::FastCounter() - t0;
+	if (res == 1)
+		gPerf[7]++;
+	return res == 1;
 	}
 
 const unsigned* PhvgPerf() { return gPerf; }

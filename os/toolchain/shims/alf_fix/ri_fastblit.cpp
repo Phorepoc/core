@@ -36,6 +36,9 @@ bool PhvgSurfaceGpu(const Surface* aS);			// riPhvg.cpp (O4b)
 unsigned PhvgImgGen(const void* aImg);		// riPhvg.cpp: write generation of an Image (its 64-way slot)
 const unsigned* PhvgPerf();				// riPhvg.cpp: 0 surface uploads, 1 ticks, 2 readbacks, 3 ticks, 4 DrawImage calls, 5 round-trip ticks, 6 misses
 const unsigned* PhvgFillStats();			// riPhvg.cpp: path fills 0 GPU, 1 coverage, 2 scissor, 3 surface, 4 paint, 5 GPU failed
+bool PhvgImageResident(const Image* aImg);		// riPhvg.cpp (O5): the GPU holds this image's current content
+int PhvgDrawResident(Surface* aS, const Image* aSrc, const float* aM, int aBlendSrc, const float* aMul, const int* aRects, int aN);
+void PhvgImageCpuAccess(const Image* aImg, bool aWrite);	// riPhvg.cpp (O5): read a GPU-ahead image back before the CPU reads it
 int PhvgDrawImage(Surface* aS, const void* aKey, int aIw, int aIh, unsigned aHash, const float* aM, int aBlendSrc,
                   const float* aMul, const int* aRects, int aN, const unsigned char* aPixels);
 
@@ -378,6 +381,12 @@ static bool PhRiScaledDraw(VGContext* c, Surface* s, Image* img, RIfloat a, RIfl
 				mul[0] = pc.r; mul[1] = pc.g; mul[2] = pc.b; mul[3] = pc.a;
 				}
 			const float M[6] = { a, 0.0f, tx, 0.0f, dd, ty };
+			if (PhvgImageResident(img) && PhvgDrawResident(s, img, M, c->m_blendMode == VG_BLEND_SRC, mul, &rects[0][0], nr))
+				{
+				++gGpuImg;
+				return true;
+				}
+			PhvgImageCpuAccess(img, false);
 			const TUint hash = PhImageHash(img, w, h);
 			const int blendSrc = c->m_blendMode == VG_BLEND_SRC;
 			int r = PhvgDrawImage(s, img, w, h, hash, M, blendSrc, mul, &rects[0][0], nr, NULL);
@@ -400,6 +409,7 @@ static bool PhRiScaledDraw(VGContext* c, Surface* s, Image* img, RIfloat a, RIfl
 			}
 		++gGpuImgDecl;
 		}
+	PhvgImageCpuAccess(img, false);
 	PhvgCpuAccess(s, true);
 	TUint mr = 255, mg = 255, mb = 255, ma = 255;
 	if (multiply)
@@ -603,6 +613,13 @@ static bool PhRiFastDrawImageImpl(VGContext* c, Image* img, const Matrix3x3& m)
 				}
 			const float M[6] = { flipX ? -1.0f : 1.0f, 0.0f, (float)itx, 0.0f, flipY ? -1.0f : 1.0f, (float)ity };
 			const float mul[4] = { multiply ? mr / 255.0f : 1.0f, multiply ? mg / 255.0f : 1.0f, multiply ? mb / 255.0f : 1.0f, multiply ? ma / 255.0f : 1.0f };
+			if (PhvgImageResident(img) && PhvgDrawResident(s, img, M, c->m_blendMode == VG_BLEND_SRC, mul, &rects[0][0], nr))
+				{
+				++taken; ++gGpuImg;
+				PhGpuReport();
+				return true;
+				}
+			PhvgImageCpuAccess(img, false);
 			const TUint th0 = User::FastCounter();
 			const TUint hash = PhImageHash(img, w, h);
 			gHashTicks += User::FastCounter() - th0;
@@ -632,6 +649,7 @@ static bool PhRiFastDrawImageImpl(VGContext* c, Image* img, const Matrix3x3& m)
 		++gGpuImgDecl;
 		PhGpuReport();
 		}
+	PhvgImageCpuAccess(img, false);
 	PhvgCpuAccess(s, true);
 	const TInt dstOffX = dst->m_storageOffsetX, dstOffY = dst->m_storageOffsetY;
 	const TInt srcOffX = img->m_storageOffsetX, srcOffY = img->m_storageOffsetY;

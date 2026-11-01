@@ -13,3 +13,4 @@ EXPORTS
 	PhvgReadDirect @ 12 NONAME
 	PhvgDrawImage @ 13 NONAME
 	PhvgPresent @ 14 NONAME
+	PhvgHas @ 15 NONAME

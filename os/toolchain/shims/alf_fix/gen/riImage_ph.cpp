@@ -53,6 +53,8 @@ namespace OpenVGRI
 void PhvgCpuAccess(const Surface* aS, bool aWrite);
 void PhvgImgWritten(const void* aImg);		//OURS (ALF): every write into an Image bumps ITS write generation (riPhvg.cpp); the GPU texture cache trusts a content hash until it changes
 void PhvgForget(const Surface* aS);
+void PhvgForgetImage(const Image* aImg);			// O5 (riPhvg.cpp)
+void PhvgImageCpuAccess(const Image* aImg, bool aWrite);
 bool PhvgTryClear(Surface* aS, const Color& aColor, int aX, int aY, int aW, int aH);
 bool PhvgTryClearRects(Surface* aS, const Color& aColor, int aX, int aY, int aW, int aH, const Array<Rectangle>& aScissors);
 bool PhvgTryBlitOut(const Surface* aS, Image* aDst, int aSx, int aSy, int aDx, int aDy, int aW, int aH);
@@ -621,6 +623,7 @@ Image::Image(Image* parent, int x, int y, int width, int height) :
 
 Image::~Image()
 {
+	PhvgForgetImage(this);	//OURS (O5): its GPU shadow
 	RI_ASSERT(m_referenceCount == 0);
 
 	if(m_parent)
@@ -683,6 +686,7 @@ bool Image::overlaps(const Image* src) const
 
 void Image::clear(const Color& clearColor, int x, int y, int w, int h)
 {
+	PhvgImageCpuAccess(this, true);	//OURS (O5)
 	PhvgImgWritten(this);	//OURS
 	RI_ASSERT(m_data);
 	RI_ASSERT(m_referenceCount > 0);
@@ -812,6 +816,7 @@ static void computeBlitRegion(int& sx, int& sy, int& dx, int& dy, int& w, int& h
 
 void Image::blit(const Image& src, int sx, int sy, int dx, int dy, int w, int h, bool dither)
 {
+	PhvgImageCpuAccess(&src, false); PhvgImageCpuAccess(this, true);	//OURS (O5)
 	PhvgImgWritten(this);	//OURS
 	//img=>img: vgCopyImage
 	//img=>user: vgGetImageSubData
@@ -884,6 +889,7 @@ void Image::blit(const Image& src, int sx, int sy, int dx, int dy, int w, int h,
 
 void Image::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, int h)
 {
+	PhvgImageCpuAccess(this, true);	//OURS (O5)
 	PhvgImgWritten(this);	//OURS
 	//fb=>img: vgGetPixels
 	//fb=>user: vgReadPixels
@@ -1491,6 +1497,7 @@ Color Image::resample(RIfloat x, RIfloat y, const Matrix3x3& surfaceToImage, VGI
 
 void Image::makeMipMaps()
 {
+	PhvgImageCpuAccess(this, false);	//OURS (O5)
 	RI_ASSERT(m_data);
 	RI_ASSERT(m_referenceCount > 0);
 
@@ -1600,6 +1607,7 @@ void Image::makeMipMaps()
 
 void Image::colorMatrix(const Image& src, const RIfloat* matrix, bool filterFormatLinear, bool filterFormatPremultiplied, VGbitfield channelMask)
 {
+	PhvgImageCpuAccess(&src, false); PhvgImageCpuAccess(this, true);	//OURS (O5)
 	RI_ASSERT(src.m_data);	//source exists
 	RI_ASSERT(m_data);	//destination exists
 	RI_ASSERT(matrix);
@@ -1718,6 +1726,7 @@ static Color::InternalFormat getProcessingFormat(Color::InternalFormat srcFormat
 
 void Image::convolve(const Image& src, int kernelWidth, int kernelHeight, int shiftX, int shiftY, const RIint16* kernel, RIfloat scale, RIfloat bias, VGTilingMode tilingMode, const Color& edgeFillColor, bool filterFormatLinear, bool filterFormatPremultiplied, VGbitfield channelMask)
 {
+	PhvgImageCpuAccess(&src, false); PhvgImageCpuAccess(this, true);	//OURS (O5)
 	RI_ASSERT(src.m_data);	//source exists
 	RI_ASSERT(m_data);	//destination exists
 	RI_ASSERT(kernel && kernelWidth > 0 && kernelHeight > 0);
@@ -1791,6 +1800,7 @@ void Image::convolve(const Image& src, int kernelWidth, int kernelHeight, int sh
 
 void Image::separableConvolve(const Image& src, int kernelWidth, int kernelHeight, int shiftX, int shiftY, const RIint16* kernelX, const RIint16* kernelY, RIfloat scale, RIfloat bias, VGTilingMode tilingMode, const Color& edgeFillColor, bool filterFormatLinear, bool filterFormatPremultiplied, VGbitfield channelMask)
 {
+	PhvgImageCpuAccess(&src, false); PhvgImageCpuAccess(this, true);	//OURS (O5)
 	RI_ASSERT(src.m_data);	//source exists
 	RI_ASSERT(m_data);	//destination exists
 	RI_ASSERT(kernelX && kernelY && kernelWidth > 0 && kernelHeight > 0);
@@ -1889,6 +1899,7 @@ void Image::separableConvolve(const Image& src, int kernelWidth, int kernelHeigh
 
 void Image::gaussianBlur(const Image& src, RIfloat stdDeviationX, RIfloat stdDeviationY, VGTilingMode tilingMode, const Color& edgeFillColor, bool filterFormatLinear, bool filterFormatPremultiplied, VGbitfield channelMask)
 {
+	PhvgImageCpuAccess(&src, false); PhvgImageCpuAccess(this, true);	//OURS (O5)
 	RI_ASSERT(src.m_data);	//source exists
 	RI_ASSERT(m_data);	//destination exists
 	RI_ASSERT(stdDeviationX > 0.0f && stdDeviationY > 0.0f);
@@ -2012,6 +2023,7 @@ static Color::InternalFormat getLUTFormat(bool outputLinear, bool outputPremulti
 
 void Image::lookup(const Image& src, const RIuint8 * redLUT, const RIuint8 * greenLUT, const RIuint8 * blueLUT, const RIuint8 * alphaLUT, bool outputLinear, bool outputPremultiplied, bool filterFormatLinear, bool filterFormatPremultiplied, VGbitfield channelMask)
 {
+	PhvgImageCpuAccess(&src, false); PhvgImageCpuAccess(this, true);	//OURS (O5)
 	RI_ASSERT(src.m_data);	//source exists
 	RI_ASSERT(m_data);	//destination exists
 	RI_ASSERT(redLUT && greenLUT && blueLUT && alphaLUT);
@@ -2053,6 +2065,7 @@ void Image::lookup(const Image& src, const RIuint8 * redLUT, const RIuint8 * gre
 
 void Image::lookupSingle(const Image& src, const RIuint32 * lookupTable, VGImageChannel sourceChannel, bool outputLinear, bool outputPremultiplied, bool filterFormatLinear, bool filterFormatPremultiplied, VGbitfield channelMask)
 {
+	PhvgImageCpuAccess(&src, false); PhvgImageCpuAccess(this, true);	//OURS (O5)
 	RI_ASSERT(src.m_data);	//source exists
 	RI_ASSERT(m_data);	//destination exists
 	RI_ASSERT(lookupTable);
@@ -2326,6 +2339,7 @@ void Surface::clear(const Color& clearColor, int x, int y, int w, int h, const A
 
 void Surface::blit(const Image& src, int sx, int sy, int dx, int dy, int w, int h)
 {
+	PhvgImageCpuAccess(&src, false);	//OURS (O5)
 	Rectangle rect;
 	rect.x = 0;
 	rect.y = 0;
@@ -2345,6 +2359,7 @@ void Surface::blit(const Image& src, int sx, int sy, int dx, int dy, int w, int 
 
 void Surface::blit(const Image& src, int sx, int sy, int dx, int dy, int w, int h, const Array<Rectangle>& scissors)
 {
+	PhvgImageCpuAccess(&src, false);	//OURS (O5)
 	PhvgCpuAccess(this, true);	//OURS (O2)
 	//img=>fb: vgSetPixels
 	//user=>fb: vgWritePixels
@@ -2531,6 +2546,7 @@ void Surface::blit(const Surface* src, int sx, int sy, int dx, int dy, int w, in
 
 void Surface::mask(const Image* src, VGMaskOperation operation, int x, int y, int w, int h)
 {
+	PhvgImageCpuAccess(src, false);	//OURS (O5)
 	RI_ASSERT(w > 0 && h > 0);
 
 	if(operation == VG_CLEAR_MASK || operation == VG_FILL_MASK)

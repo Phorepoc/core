@@ -49,6 +49,7 @@ struct TPhvgImage
 	const TInt*	iRects;			// iNRects disjoint rectangles x,y,w,h (surface pixels) the draw is clipped to
 	TInt		iNRects;
 	const TUint8* iPixels;		// iIw*iIh RGBA8 premultiplied sRGB, row 0 = image y 0; NULL when the cache is expected to hold the texture
+	TAny*		iSrcCookie;		// O5: non-NULL = the source is the GPU shadow of this cookie (a resident image): iKey/iHash/iPixels unused
 	};
 
 const TInt KPhvgRamp = 512;
@@ -70,9 +71,10 @@ enum TPhvgOrdinal
 	EPhvgStats,			// void (TInt out[12]): fills, clears, uploads, readbacks, declines, edges, glErrors, shadows, directReads, gradientFills, strokeFills, 0
 	EPhvgReadDirect,		// TInt (cookie, const TInt* rect, TUint8* out): shadow -> out, the shadow STAYS ahead (O3 residency)
 	EPhvgDrawImage,			// TInt (const TPhvgImage*): 1 done, 0 declined, -2 texture not cached and no pixels given (O4b)
-	EPhvgPresent			// TInt (cookie, TUint8* base, TInt stride, w, h): the whole shadow resolved by the GPU STRAIGHT INTO memory
+	EPhvgPresent,			// TInt (cookie, TUint8* base, TInt stride, w, h): the whole shadow resolved by the GPU STRAIGHT INTO memory
 							// (a 32-bit premultiplied BGRA buffer the GPU can import -- a window's surface buffer -- rows from the
 							// surface's TOP (VG y = h-1) at base, stride > 0); no readback, the shadow stays ahead. 1 done, 0 declined
+	EPhvgHas				// TInt (cookie, w, h): the shadow's state if one of that size exists (0 none / stale), never creates, never waits (O5)
 	};
 
 // the process switch (RProperty, TInt): 1 = GPU engine, 0 / undefined = the reference implementation. Read in the
