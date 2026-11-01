@@ -55,7 +55,8 @@ namespace
 	// filled the fixed per-process GPU arena. The worker submits (glFlush) between commands -- where no fill is half done
 	// -- once the pending outputs pass KOutFlush.
 	TUint gOutBytes;
-	const TUint KOutFlush = 0xFFFFFFFFu;	// TEMP A/B: never
+	TUint gSince[4];		// TEMP (flick blanking hunt): since the last present -- fills, image draws, mid-frame submits, presents of other surfaces
+	const TUint KOutFlush = 16 << 20;
 	inline void Drew(TInt aVerts) { const TUint b = ((TUint)aVerts * 32 + 4095) & ~4095u; gOutBytes += b; }
 	TInt gGlLive[2];			// TEMP (GPU arena growth hunt): live GL textures, renderbuffers
 	TUint gRefuse[3];			// PhvgState -1: 0 size (ChooseScale), 1 budget (only GPU-ahead shadows left), 2 table full of GPU-ahead shadows
@@ -1231,6 +1232,32 @@ namespace
 			}
 		}
 		glFinish(), gOutBytes = 0;		// the buffer is complete (and out of the GPU's way) before the compositor is told
+		{
+		// TEMP (flick blanking hunt): is the presented content band black?
+		TUint n = 0, k = 0;
+		for (TInt y = s->iH / 7; y < s->iH * 6 / 7; y += 16)
+			{
+			const TUint32* row = (const TUint32*)((const TUint8*)c.iOut + y * c.iX);
+			for (TInt x = 8; x < s->iW; x += 16)
+				{
+				++n;
+				k += (row[x] & 0xE0E0E0) == 0;
+				}
+			}
+		static TBool prevBlack;
+		static TInt bl;
+		const TBool black = n && k * 100 / n >= 97;
+		if (black && !prevBlack && bl < 40)
+			{
+			bl++;
+			RDebug::Printf("PH: vg2 phvg present BLACK #%d: %dx%d cookie %08x; since the last present: fills %u, images %u, mid-frame submits %u",
+				bl, s->iW, s->iH, (TUint)c.iCookie, gSince[0], gSince[1], gSince[2]);
+			}
+		else if (!black && prevBlack && bl < 40)
+			RDebug::Printf("PH: vg2 phvg present drawn again: fills %u, images %u, mid-frame submits %u", gSince[0], gSince[1], gSince[2]);
+		prevBlack = black;
+		Mem::FillZ(gSince, sizeof(gSince));
+		}
 		const TInt err = glGetError();
 		const TUint t1 = User::FastCounter();
 		static TUint np;
@@ -1308,6 +1335,7 @@ namespace
 	// the worker executes one ring entry
 	void DoQueued(TQEnt& e)
 		{
+		gSince[1]++;
 		const TUint t0 = User::FastCounter();
 		if (e.iType == EQDrop)
 			{
@@ -1559,13 +1587,13 @@ namespace
 			DrainRing();
 			gRingWaitTicks = User::FastCounter() - tRing0;
 			if (gOutBytes > KOutFlush)
-				glFlush(), gOutBytes = 0;
+				glFlush(), gOutBytes = 0, gSince[2]++;
 			if (!__e32_atomic_load_acq32(&gCmdPending))
 				continue;
 			switch (gCmd.iOp)
 				{
 				case EOpUpload:		gCmd.iResult = DoUpload(gCmd); break;
-				case EOpFill:		gCmd.iResult = DoFill(*gCmd.iFill); break;
+				case EOpFill:		gCmd.iResult = DoFill(*gCmd.iFill); gSince[0]++; break;
 				case EOpClear:		gCmd.iResult = DoClear(gCmd); break;
 				case EOpReadback:	gCmd.iResult = DoReadback(gCmd); break;
 				case EOpForget:		gCmd.iResult = DoForget(gCmd); break;
@@ -1575,7 +1603,7 @@ namespace
 				default:			gCmd.iResult = 0; break;
 				}
 			if (gOutBytes > KOutFlush)
-				glFlush(), gOutBytes = 0;
+				glFlush(), gOutBytes = 0, gSince[2]++;
 			__e32_atomic_store_rel32(&gCmdPending, 0);
 			done.Signal();
 			}
