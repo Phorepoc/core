@@ -652,6 +652,14 @@ void PhvgImageCpuAccess(const Image* aImg, bool aWrite)
 				}
 			User::Free(buf);
 			gPerf[2]++; gPerf[3] += User::FastCounter() - t0;
+			static TInt nr;
+			if (nr < 30)
+				{
+				++nr;
+				RDebug::Printf("PH: vg2 image readback #%d img %08x %dx%d rect %d,%d-%d,%d write %d ticks %u caller %08x", nr, (TUint)aImg,
+					aImg->m_width, aImg->m_height, rect[0], rect[1], rect[2], rect[3], (int)aWrite, User::FastCounter() - t0,
+					(TUint)__builtin_return_address(0));
+				}
 			}
 		}
 	if (aWrite)
@@ -1108,6 +1116,19 @@ int PhvgDrawResident(Surface* aS, const Image* aSrc, const float* aM, int aBlend
 		return 0;
 	if (!PhvgImageResident(aSrc))			// (a full table may have evicted it while making room for the destination)
 		return 0;
+	{
+		static TInt nd;
+		if (nd < 40)
+			{
+			++nd;
+			const Color::Descriptor& d = aSrc->m_desc;
+			TInt hs = gT.Has((TAny*)aSrc, aSrc->m_width, aSrc->m_height);
+			RDebug::Printf("PH: vg2 resident draw #%d src %08x %dx%d fmt %d bpp %d bits %d%d%d%d pre %d refs %d state %d -> dst %08x %dx%d M %d,%d,%d,%d,%d,%d blendSrc %d",
+				nd, (TUint)aSrc, aSrc->m_width, aSrc->m_height, (int)d.internalFormat, d.bitsPerPixel, d.redBits, d.greenBits, d.blueBits,
+				d.alphaBits, (int)d.isPremultiplied(), aSrc->m_referenceCount, hs, (TUint)aS->m_image, w, h,
+				(int)aM[0], (int)aM[1], (int)aM[2], (int)aM[3], (int)aM[4], (int)aM[5], aBlendSrc);
+			}
+	}
 	TPhvgImage im;
 	Mem::FillZ(&im, sizeof(im));
 	im.iCookie = Ck(aS); im.iW = w; im.iH = h;
