@@ -50,6 +50,7 @@ namespace
 	// which Mesa's own buffers and tile heaps share); past it the least recently used synced shadow goes, else the new
 	// surface stays on the CPU
 	const TInt KShadowBudget = 96 << 20;
+	TInt gGlLive[2];			// TEMP (GPU arena growth hunt): live GL textures, renderbuffers
 	TUint gRefuse[3];			// PhvgState -1: 0 size (ChooseScale), 1 budget (only GPU-ahead shadows left), 2 table full of GPU-ahead shadows
 	const TInt KMaxSide = 1024;				// larger surfaces are declined (the RI renders them)
 	const TInt KBatchPieces = 1024;			// trapezoids per draw call
@@ -356,7 +357,7 @@ namespace
 			gImgMul = glGetUniformLocation(gProgImg, "u_mul");
 			gImgSampler = glGetUniformLocation(gProgImg, "u_tex");
 			}
-		glGenTextures(1, &gRampTex);
+		gGlLive[0]++, glGenTextures(1, &gRampTex);
 		glBindTexture(GL_TEXTURE_2D, gRampTex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, KPhvgRamp, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -455,11 +456,11 @@ namespace
 		if (aS.iFboM) glDeleteFramebuffers(1, &aS.iFboM);
 		if (aS.iFboR) glDeleteFramebuffers(1, &aS.iFboR);
 		if (aS.iFboRd) glDeleteFramebuffers(1, &aS.iFboRd);
-		if (aS.iRbRd) glDeleteRenderbuffers(1, &aS.iRbRd);
-		if (aS.iTex0) glDeleteTextures(1, &aS.iTex0);
-		if (aS.iTexM) glDeleteTextures(1, &aS.iTexM);
-		if (aS.iTexR) glDeleteTextures(1, &aS.iTexR);
-		if (aS.iRbDs) glDeleteRenderbuffers(1, &aS.iRbDs);
+		if (aS.iRbRd) gGlLive[1]--, glDeleteRenderbuffers(1, &aS.iRbRd);
+		if (aS.iTex0) gGlLive[0]--, glDeleteTextures(1, &aS.iTex0);
+		if (aS.iTexM) gGlLive[0]--, glDeleteTextures(1, &aS.iTexM);
+		if (aS.iTexR) gGlLive[0]--, glDeleteTextures(1, &aS.iTexR);
+		if (aS.iRbDs) gGlLive[1]--, glDeleteRenderbuffers(1, &aS.iRbDs);
 		aS.iFboRd = aS.iRbRd = 0;
 		aS.iFbo0 = aS.iFboM = aS.iFboR = aS.iTex0 = aS.iTexM = aS.iTexR = aS.iRbDs = 0;
 		}
@@ -476,7 +477,7 @@ namespace
 	GLuint MakeTex(TInt aW, TInt aH, GLint aFilter)
 		{
 		GLuint t = 0;
-		glGenTextures(1, &t);
+		gGlLive[0]++, glGenTextures(1, &t);
 		glBindTexture(GL_TEXTURE_2D, t);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, aW, aH, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, aFilter);
@@ -512,7 +513,7 @@ namespace
 				gFbTexMs(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, aS.iTex0, 0, KMsaaSamples);
 			else
 				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, aS.iTex0, 0);
-			glGenRenderbuffers(1, &aS.iRbDs);
+			gGlLive[1]++, glGenRenderbuffers(1, &aS.iRbDs);
 			glBindRenderbuffer(GL_RENDERBUFFER, aS.iRbDs);
 			if (gPacked)
 				{
@@ -559,7 +560,7 @@ namespace
 		aS.iTexR = MakeTex(aS.iW, aS.iH, GL_NEAREST);
 		aS.iFboR = MakeFbo(aS.iTexR);
 		// the read-back target: an RGBA8 renderbuffer (falls back to the texture when this machine cannot make one)
-		glGenRenderbuffers(1, &aS.iRbRd);
+		gGlLive[1]++, glGenRenderbuffers(1, &aS.iRbRd);
 		glBindRenderbuffer(GL_RENDERBUFFER, aS.iRbRd);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8_OES, aS.iW, aS.iH);
 		glGenFramebuffers(1, &aS.iFboRd);
@@ -569,7 +570,7 @@ namespace
 			{
 			Log("renderbuffer read-back target unavailable, reading the texture", aS.iW, aS.iH);
 			glDeleteFramebuffers(1, &aS.iFboRd);
-			glDeleteRenderbuffers(1, &aS.iRbRd);
+			gGlLive[1]--, glDeleteRenderbuffers(1, &aS.iRbRd);
 			aS.iFboRd = aS.iRbRd = 0;
 			}
 		return ETrue;
@@ -1105,7 +1106,7 @@ namespace
 		if (aT.iFbo)
 			glDeleteFramebuffers(1, &aT.iFbo);
 		if (aT.iTex)
-			glDeleteTextures(1, &aT.iTex);
+			gGlLive[0]--, glDeleteTextures(1, &aT.iTex);
 		if (aT.iImg)
 			gDestroyImage(gDpy, aT.iImg);
 		Mem::FillZ(&aT, sizeof(aT));
@@ -1153,7 +1154,7 @@ namespace
 			}
 		TTarget& t = *lru;
 		t.iImg = img;
-		glGenTextures(1, &t.iTex);
+		gGlLive[0]++, glGenTextures(1, &t.iTex);
 		glBindTexture(GL_TEXTURE_2D, t.iTex);
 		gImageTarget(GL_TEXTURE_2D, img);
 		glGenFramebuffers(1, &t.iFbo);
@@ -1266,7 +1267,7 @@ namespace
 		{
 		if (gTexGl[aSlot])
 			{
-			glDeleteTextures(1, &gTexGl[aSlot]);
+			gGlLive[0]--, glDeleteTextures(1, &gTexGl[aSlot]);
 			gTexGl[aSlot] = 0;
 			}
 		}
@@ -1274,7 +1275,7 @@ namespace
 	void TexSet(TInt aSlot, const TUint8* aPixels, TInt aW, TInt aH)
 		{
 		TexFree(aSlot);
-		glGenTextures(1, &gTexGl[aSlot]);
+		gGlLive[0]++, glGenTextures(1, &gTexGl[aSlot]);
 		glBindTexture(GL_TEXTURE_2D, gTexGl[aSlot]);
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, aW, aH, 0, GL_RGBA, GL_UNSIGNED_BYTE, aPixels);
@@ -1409,8 +1410,11 @@ namespace
 					ahead += gSh[i].iState == 2;
 					bytes += gSh[i].iS ? ShadowBytes(gSh[i].iW, gSh[i].iH, gSh[i].iS) : 0;
 					}
-			RDebug::Printf("PH: vg2 phvg shadows: %d of %d slots (%d GPU-ahead), %d KB; refused size %u budget %u table %u",
-				n, KMaxShadows, ahead, bytes >> 10, gRefuse[0], gRefuse[1], gRefuse[2]);
+			TInt withGl = 0;
+			for (TInt i = 0; i < KMaxShadows; i++)
+				withGl += gSh[i].iCookie && gSh[i].iFbo0;
+			RDebug::Printf("PH: vg2 phvg shadows: %d of %d slots (%d GPU-ahead), %d KB; refused size %u budget %u table %u; GL: %d shadows, %d textures, %d renderbuffers, dir %d KB",
+				n, KMaxShadows, ahead, bytes >> 10, gRefuse[0], gRefuse[1], gRefuse[2], withGl, gGlLive[0], gGlLive[1], gDirBytes >> 10);
 			}
 		}
 
