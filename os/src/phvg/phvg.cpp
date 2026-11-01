@@ -120,6 +120,11 @@ namespace
 	// the fill and memory traffic (a tiled GPU resolves 4x on the way out, nearly for free). NULL = supersampled shadows.
 	void			(*gFbTexMs)(GLenum, GLenum, GLenum, GLuint, GLint, GLsizei);
 	void			(*gRbStorageMs)(GLenum, GLsizei, GLenum, GLsizei, GLsizei);
+	// EXT_discard_framebuffer: after a fill the stencil is zero again and depth is never used -- discarding both means a
+	// framebuffer job never writes them back and the next job starts from a cleared stencil instead of RELOADING it. lima
+	// reloads a 4-sample depth-stencil wrongly; a job submitted mid-frame (KOutFlush) then filled with a stale stencil and
+	// painted the scrolled app grid black. Without the extension the worker never submits mid-frame.
+	void			(*gDiscardFb)(GLenum, GLsizei, const GLenum*);
 	const TInt		KMsaaSamples = 4;
 	TReal32*		gVtx;					// KBatchPieces * 12 floats
 
@@ -329,6 +334,9 @@ namespace
 				gFbTexMs = NULL, gRbStorageMs = NULL;
 			}
 		Log("shadow anti-aliasing: 1 = 4x MSAA in tile memory, 0 = supersampled", gFbTexMs != NULL);
+		if (HasExt("GL_EXT_discard_framebuffer"))
+			gDiscardFb = (void (*)(GLenum, GLsizei, const GLenum*))eglGetProcAddress("glDiscardFramebufferEXT");
+		Log("depth-stencil discarded after fills (mid-frame submits allowed)", gDiscardFb != NULL);
 		gProgFlat = Link(KVsFlat, KFsFlat);
 		gProgTex = Link(KVsTex, KFsTex);
 		if (!gProgFlat || !gProgTex)
@@ -927,6 +935,11 @@ namespace
 			QuadVerts(v, 0.0f, e.iMinY, W, e.iMaxY);
 			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
 			glDrawArrays(GL_TRIANGLES, 0, 6), Drew(6);
+			if (gDiscardFb)
+				{
+				static const GLenum KZs[2] = { GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT };
+				gDiscardFb(GL_FRAMEBUFFER, 2, KZs);
+				}
 			}
 		SetNoTests();
 		// dirty pixels: the edge bounding box, one pixel of slack
@@ -1483,8 +1496,8 @@ namespace
 			const TUint tRing0 = User::FastCounter();
 			DrainRing();
 			gRingWaitTicks = User::FastCounter() - tRing0;
-			if (gOutBytes > KOutFlush)
-				glFinish(), gOutBytes = 0;	// TEMP A/B: finish, not flush
+			if (gOutBytes > KOutFlush && gDiscardFb)
+				glFlush(), gOutBytes = 0;
 			if (!__e32_atomic_load_acq32(&gCmdPending))
 				continue;
 			switch (gCmd.iOp)
@@ -1499,8 +1512,8 @@ namespace
 				case EOpNop:		gCmd.iResult = 1; break;
 				default:			gCmd.iResult = 0; break;
 				}
-			if (gOutBytes > KOutFlush)
-				glFinish(), gOutBytes = 0;	// TEMP A/B: finish, not flush
+			if (gOutBytes > KOutFlush && gDiscardFb)
+				glFlush(), gOutBytes = 0;
 			__e32_atomic_store_rel32(&gCmdPending, 0);
 			done.Signal();
 			}
