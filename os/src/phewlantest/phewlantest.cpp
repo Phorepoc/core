@@ -8,8 +8,9 @@
 //   scan      CWlanMgmtClient::GetScanResults -- the scan every UI (WLAN app, Qt bearer, ConnMon) gets: frames,
 //             distinct BSSIDs, the target SSID seen (best RX level), time
 //   iaps      GetAvailableIaps -- what ConnMon / the Qt bearer offer apps: is the target IAP usable right now
-//   connect   RConnection::Start() WITHOUT preferences -- the connection an application asks for (the default
-//             destination; MPM picks the IAP), timed; then the IAP it got and the WLAN connection mode
+//   connect   RConnection::Start on the target IAP by id, as the Qt bearer starts a ConnMon-available
+//             configuration (attempted even when not offered, to tell "not offered" from "the join failed"), timed;
+//             then the IAP it got and the WLAN connection mode
 //   dns       RHostResolver::GetByName, timed
 //   http      GET / from <host>: time to the first response byte, the status line
 //   latency   <n> TCP connects to <host>:80: min / mean / max ms, failures
@@ -17,7 +18,7 @@
 //   release   everything closed; then the time until the WLAN engine leaves the network (idle timeout), bounded
 // Ends "[phewlantest] RESULT PASS|FAIL cycles c/n ...". Every wait is bounded.
 //
-//   phewlantest [cycles <n>] [ssid <name>] [host <name>] [bighost <name>] [bigpath </path>] [pings <n>] [idle <s>]
+//   phewlantest [scans <n> [gap <s>]] [cycles <n>] [ssid <name>] [host <name>] [bighost <name>] [bigpath </path>] [pings <n>] [idle <s>]
 #include <e32base.h>
 #include <e32debug.h>
 #include <f32file.h>
@@ -25,6 +26,7 @@
 #include <in_sock.h>
 #include <commdb.h>
 #include <cdbcols.h>
+#include <commdbconnpref.h>
 #include <wlanmgmtclient.h>
 #include <wlanscaninfo.h>
 
@@ -87,6 +89,76 @@ static TInt Await(TRequestStatus& aStatus, TInt aSeconds)
 	return aStatus.Int();
 	}
 
+// a request whose completion is delivered by the server's client-side active objects (the WLAN management client):
+// it only arrives while the active scheduler runs, so the status belongs to an active object and the wait is a
+// nested scheduler loop, bounded by a timer (a plain WaitForRequest never sees it: boot 2081 timed out every scan)
+class CReq : public CActive
+	{
+public:
+	typedef void (*TCancelFn)(TAny*);
+	CReq(TCancelFn aCancel, TAny* aObj) : CActive(EPriorityStandard), iCancel(aCancel), iObj(aObj)
+		{
+		CActiveScheduler::Add(this);
+		}
+	~CReq()
+		{
+		Cancel();
+		}
+	TRequestStatus& Status()
+		{
+		return iStatus;
+		}
+	// after the request was issued on Status(): KErrTimedOut (cancelled) else the completion code
+	TInt Wait(TInt aSeconds)
+		{
+		SetActive();
+		iTimedOut = EFalse;
+		CPeriodic* timer = CPeriodic::New(CActive::EPriorityHigh);
+		if (timer)
+			timer->Start(aSeconds * 1000000, aSeconds * 1000000, TCallBack(Expired, this));
+		iWait.Start();
+		delete timer;
+		if (iTimedOut)
+			{
+			Cancel();
+			return KErrTimedOut;
+			}
+		return iStatus.Int();
+		}
+private:
+	static TInt Expired(TAny* aSelf)
+		{
+		CReq* self = static_cast<CReq*>(aSelf);
+		self->iTimedOut = ETrue;
+		if (self->iWait.IsStarted())
+			self->iWait.AsyncStop();
+		return 0;
+		}
+	void RunL()
+		{
+		if (iWait.IsStarted())
+			iWait.AsyncStop();
+		}
+	void DoCancel()
+		{
+		iCancel(iObj);
+		}
+	CActiveSchedulerWait iWait;
+	TCancelFn iCancel;
+	TAny* iObj;
+	TBool iTimedOut;
+	};
+
+static void CancelScan(TAny* aMgmt)
+	{
+	static_cast<CWlanMgmtClient*>(aMgmt)->CancelGetScanResults();
+	}
+
+static void CancelIaps(TAny* aMgmt)
+	{
+	static_cast<CWlanMgmtClient*>(aMgmt)->CancelGetAvailableIaps();
+	}
+
 struct TArgs
 	{
 	TInt iCycles;
@@ -96,6 +168,8 @@ struct TArgs
 	TBuf8<128> iBigPath;
 	TInt iPings;
 	TInt iIdle;
+	TInt iScans;
+	TInt iGap;
 	};
 
 static void ParseArgs(TArgs& aArgs)
@@ -103,10 +177,12 @@ static void ParseArgs(TArgs& aArgs)
 	aArgs.iCycles = 3;
 	aArgs.iSsid.Copy(_L8("ASUS"));
 	aArgs.iHost.Copy(_L("example.com"));
-	aArgs.iBigHost.Copy(_L("ipv4.download.thinkbroadband.com"));
-	aArgs.iBigPath.Copy(_L8("/1MB.zip"));
+	aArgs.iBigHost.Copy(_L("www.google.com"));	// plain HTTP, ~87 KB (thinkbroadband / neverssl never answered from here)
+	aArgs.iBigPath.Copy(_L8("/"));
 	aArgs.iPings = 10;
 	aArgs.iIdle = 240;
+	aArgs.iScans = 0;
+	aArgs.iGap = 20;
 	TBuf<256> cmd;
 	User::CommandLine(cmd);
 	TLex lex(cmd);
@@ -120,6 +196,8 @@ static void ParseArgs(TArgs& aArgs)
 		if (key == _L("cycles")) num.Val(aArgs.iCycles);
 		else if (key == _L("pings")) num.Val(aArgs.iPings);
 		else if (key == _L("idle")) num.Val(aArgs.iIdle);
+		else if (key == _L("scans")) num.Val(aArgs.iScans);
+		else if (key == _L("gap")) num.Val(aArgs.iGap);
 		else if (key == _L("ssid")) aArgs.iSsid.Copy(val.Left(32));
 		else if (key == _L("host")) aArgs.iHost.Copy(val.Left(64));
 		else if (key == _L("bighost")) aArgs.iBigHost.Copy(val.Left(64));
@@ -146,14 +224,10 @@ static TBool ScanL(CWlanMgmtClient& aMgmt, const TDesC8& aSsid)
 	CWlanScanInfo* info = CWlanScanInfo::NewL();
 	CleanupStack::PushL(info);
 	TInt64 t0 = NowUs();
-	TRequestStatus st;
-	aMgmt.GetScanResults(st, *info);
-	TInt r = Await(st, KConnectTimeout);
-	if (r == KErrTimedOut)
-		{
-		aMgmt.CancelGetScanResults();
-		User::WaitForRequest(st);
-		}
+	CReq* req = new (ELeave) CReq(CancelScan, &aMgmt);
+	aMgmt.GetScanResults(req->Status(), *info);
+	TInt r = req->Wait(KConnectTimeout);
+	delete req;
 	TInt ms = Ms(t0);
 	TInt frames = 0, target = 0, best = 0;
 	RArray<TWlanBssid> seen;
@@ -191,13 +265,13 @@ static TBool AvailableIaps(CWlanMgmtClient& aMgmt, TUint32 aIap)
 	{
 	RArray<TUint> iaps;
 	TInt64 t0 = NowUs();
-	TRequestStatus st;
-	aMgmt.GetAvailableIaps(st, iaps);
-	TInt r = Await(st, KConnectTimeout);
-	if (r == KErrTimedOut)
+	TInt r = KErrNoMemory;
+	CReq* req = new CReq(CancelIaps, &aMgmt);
+	if (req)
 		{
-		aMgmt.CancelGetAvailableIaps();
-		User::WaitForRequest(st);
+		aMgmt.GetAvailableIaps(req->Status(), iaps);
+		r = req->Wait(KConnectTimeout);
+		delete req;
 		}
 	TBuf8<120> list;
 	TBool found = EFalse;
@@ -338,7 +412,8 @@ static TBool CycleL(TInt aN, const TArgs& aArgs, CWlanMgmtClient& aMgmt, TUint32
 	TBool ok = ETrue;
 	if (!ScanL(aMgmt, aArgs.iSsid))
 		ok = EFalse;
-	if (!AvailableIaps(aMgmt, aIap))
+	const TBool available = AvailableIaps(aMgmt, aIap);
+	if (!available)
 		ok = EFalse;
 	RSocketServ ss;
 	User::LeaveIfError(ss.Connect());
@@ -348,7 +423,12 @@ static TBool CycleL(TInt aN, const TArgs& aArgs, CWlanMgmtClient& aMgmt, TUint32
 	CleanupClosePushL(conn);
 	TRequestStatus st;
 	TInt64 t0 = NowUs();
-	conn.Start(st);					// no preferences: what an application's connection does
+	// as the Qt bearer (QNetworkSession on a ConnMon-available configuration): the IAP by id, no prompt. Started
+	// even when the engine did not report it available, so "not offered" and "offered but the join failed" differ
+	TCommDbConnPref pref;
+	pref.SetIapId(aIap);
+	pref.SetDialogPreference(ECommDbDialogPrefDoNotPrompt);
+	conn.Start(pref, st);
 	TInt r = Await(st, KConnectTimeout);
 	if (r == KErrTimedOut)
 		{
@@ -360,7 +440,8 @@ static TBool CycleL(TInt aN, const TArgs& aArgs, CWlanMgmtClient& aMgmt, TUint32
 		conn.GetIntSetting(_L("IAP\\Id"), got);
 	TInt32 quality = 0;
 	aMgmt.GetConnectionSignalQuality(quality);
-	Log(_L8("connect: r=%d %d ms, iap %u, wlan mode %d, signal quality %d"), r, Ms(t0), got, WlanMode(aMgmt), quality);
+	Log(_L8("connect: r=%d %d ms, iap %u (offered by the engine: %d), wlan mode %d, signal quality %d"), r, Ms(t0), got,
+		available, WlanMode(aMgmt), quality);
 	if (r != KErrNone)
 		{
 		CleanupStack::PopAndDestroy(2);		// conn, ss
@@ -470,6 +551,24 @@ static void RunL()
 		&args.iSsid, iap, &host8, &big8, &args.iBigPath, args.iPings, args.iIdle);
 	CWlanMgmtClient* mgmt = CWlanMgmtClient::NewL();
 	CleanupStack::PushL(mgmt);
+	if (args.iScans > 0)
+		{
+		// scans <n>: the scan + availability steps only, n times back to back (no connection): how often the target
+		// network is seen and offered -- an application (the Qt bearer) only connects to an offered IAP
+		TInt seen = 0, offered = 0;
+		for (TInt i = 1; i <= args.iScans; ++i)
+			{
+			if (i > 1)
+				User::After(args.iGap * 1000000);	// past the engine's scan cache (back to back = the cached list in 0-1 ms)
+			Log(_L8("scan %d/%d"), i, args.iScans);
+			seen += ScanL(*mgmt, args.iSsid) ? 1 : 0;
+			offered += AvailableIaps(*mgmt, iap) ? 1 : 0;
+			}
+		Log(_L8("RESULT %S scans: target seen %d/%d, offered %d/%d"), offered == args.iScans ? &KPass() : &KFail(), seen,
+			args.iScans, offered, args.iScans);
+		CleanupStack::PopAndDestroy(mgmt);
+		return;
+		}
 	TInt passed = 0;
 	for (TInt c = 1; c <= args.iCycles; ++c)
 		{
@@ -487,6 +586,9 @@ static void RunL()
 GLDEF_C TInt E32Main()
 	{
 	CTrapCleanup* tc = CTrapCleanup::New();
+	// CCommsDatabase and the WLAN management client add active objects (E32USER-CBase 44 without a scheduler)
+	CActiveScheduler* sched = new CActiveScheduler;
+	CActiveScheduler::Install(sched);
 	RFs fs;
 	if (fs.Connect() == KErrNone)
 		{
@@ -499,6 +601,7 @@ GLDEF_C TInt E32Main()
 	if (LogOpen)
 		LogFile.Close();
 	fs.Close();
+	delete sched;
 	delete tc;
 	return err;
 	}
