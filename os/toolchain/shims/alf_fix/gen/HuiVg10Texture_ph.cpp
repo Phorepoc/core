@@ -1500,6 +1500,14 @@ VGImage CHuiVg10Texture::CreateRenderedImage(CNvgEngine* aNvgEngine, HBufC8* aNV
         RDebug::Printf("PH: alf: nvg header colour %08x margin %d bitmapId %d isMask %d len %d body %S",
             iconheader.GetIconColor(), (TInt)iconheader.IsMarginCorrection(), iconheader.GetBitmapId(), (TInt)iconheader.IsMask(),
             body.Length(), &hex);
+        if (body.Length() > 200 && body.Length() < 400 && aDestSize.iHeight == 57)
+            for (TInt off = 0; off < body.Length(); off += 48)
+                {
+                TBuf8<100> line;
+                for (TInt i = off; i < body.Length() && i < off + 48; i++)
+                    line.AppendFormat(_L8("%02x"), body[i]);
+                RDebug::Printf("PH: alf: nvg body +%03x %S", off, &line);
+                }
         }
     }
     HUI_VG_INVARIANT();
