@@ -432,6 +432,25 @@ namespace
 
 	void FreeGl(TShadow& aS)
 		{
+		// O5: submit what is queued on these framebuffers, then detach every attachment before deleting -- a deleted
+		// framebuffer that was still bound, or a renderbuffer still attached, can keep its GPU buffers referenced
+		if (aS.iFbo0 || aS.iFboM || aS.iFboR || aS.iFboRd)
+			{
+			glFlush();
+			const GLuint fbos[4] = { aS.iFbo0, aS.iFboM, aS.iFboR, aS.iFboRd };
+			for (TInt i = 0; i < 4; i++)
+				if (fbos[i])
+					{
+					glBindFramebuffer(GL_FRAMEBUFFER, fbos[i]);
+					glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+					glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, 0);
+					glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, 0);
+					glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, 0);
+					}
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glBindRenderbuffer(GL_RENDERBUFFER, 0);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			}
 		if (aS.iFbo0) glDeleteFramebuffers(1, &aS.iFbo0);
 		if (aS.iFboM) glDeleteFramebuffers(1, &aS.iFboM);
 		if (aS.iFboR) glDeleteFramebuffers(1, &aS.iFboR);
