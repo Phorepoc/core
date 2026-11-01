@@ -40,7 +40,6 @@
 #include <AknsMaskedLayerBackgroundControlContext.h>
 #include <AknsDrawUtils.h>
 #include <AknsConstants.h>
-#include <AknsItemData.h>
 #include <aknconsts.h>
 #include <AknSgcc.h>
 #include <AknStatuspaneUtils.h>
@@ -910,18 +909,6 @@ public:
                 bmp ? (TInt)bmp->DisplayMode() : 0, bmp ? bmp->ExtendedBitmapType().iUid : 0, bmp ? (TInt)bmp->IsCompressedInRAM() : 0, c.Internal(),
                 msk ? msk->Handle() : 0, msk ? msk->SizeInPixels().iWidth : 0, msk ? msk->SizeInPixels().iHeight : 0,
                 msk ? (TInt)msk->DisplayMode() : 0, msk ? msk->ExtendedBitmapType().iUid : 0, msk ? (TInt)msk->IsCompressedInRAM() : 0, m.Internal() );
-            // the frame item itself and each piece: type + (bitmap) handle / size / extended type
-            const TAknsItemID ids[3] = { KAknsIIDQgnFrSctrlSkButton, KAknsIIDQgnFrSctrlSkButtonCenter, KAknsIIDQgnFrSctrlSkButtonCornerTl };
-            for ( TInt k = 0; k < 3; k++ )
-                {
-                CAknsItemData* d = s ? s->GetCachedItemData( ids[k] ) : NULL;
-                CFbsBitmap* b = NULL;
-                if ( d && AknsUtils::IsDerivedType( EAknsITBitmap, d->Type() ) )
-                    b = static_cast<CAknsBitmapItemData*>( d )->Bitmap();
-                RDebug::Printf( "PH: cba semi item %d type %d bitmap %x %dx%d ext %08x", k, d ? (TInt)d->Type() : -1,
-                    b ? b->Handle() : 0, b ? b->SizeInPixels().iWidth : 0, b ? b->SizeInPixels().iHeight : 0,
-                    b ? b->ExtendedBitmapType().iUid : 0 );
-                }
             }
         }
         _AKNTRACE_FUNC_EXIT;
