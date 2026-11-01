@@ -51,8 +51,6 @@ namespace
 	// surface stays on the CPU
 	const TInt KShadowBudget = 96 << 20;
 	TUint gRefuse[3];			// PhvgState -1: 0 size (ChooseScale), 1 budget (only GPU-ahead shadows left), 2 table full of GPU-ahead shadows
-	TInt ShadowBytes(TInt aW, TInt aH, TInt aS);
-	TInt ShadowBytesInUse(TAny* aExcept);
 	const TInt KMaxSide = 1024;				// larger surfaces are declined (the RI renders them)
 	const TInt KBatchPieces = 1024;			// trapezoids per draw call
 
@@ -389,6 +387,24 @@ namespace
 		if ((aS.iState != 0) != (aState != 0))
 			gLive += aState ? 1 : -1;
 		aS.iState = aState;
+		}
+
+	// the GPU memory of a shadow (MakeTex / renderbuffers in EnsureGl): colour S x S, depth-stencil (x4 samples when MSAA),
+	// the 2x stage of S = 4, the 1x resolve texture and the read-back renderbuffer
+	TInt ShadowBytes(TInt aW, TInt aH, TInt aS)
+		{
+		const TInt px = aW * aH;
+		const TInt ds = aS == 1 ? px * 16 : px * aS * aS * 4;
+		return px * aS * aS * 4 + ds + (aS == 4 ? px * 16 : 0) + px * 8;
+		}
+
+	TInt ShadowBytesInUse(TAny* aExcept)
+		{
+		TInt n = 0;
+		for (TInt i = 0; i < KMaxShadows; i++)
+			if (gSh[i].iCookie && gSh[i].iCookie != aExcept && gSh[i].iS)
+				n += ShadowBytes(gSh[i].iW, gSh[i].iH, gSh[i].iS);
+		return n;
 		}
 
 	TShadow* Find(TAny* aCookie)
@@ -1676,24 +1692,6 @@ extern "C"
 				gRefuse[2]++;
 			}
 		return s ? s->iState : -1;
-		}
-
-	// the GPU memory of a shadow (MakeTex / renderbuffers in EnsureGl): colour S x S, depth-stencil (x4 samples when MSAA),
-	// the 2x stage of S = 4, the 1x resolve texture and the read-back renderbuffer
-	TInt ShadowBytes(TInt aW, TInt aH, TInt aS)
-		{
-		const TInt px = aW * aH;
-		const TInt ds = aS == 1 ? px * 16 : px * aS * aS * 4;
-		return px * aS * aS * 4 + ds + (aS == 4 ? px * 16 : 0) + px * 8;
-		}
-
-	TInt ShadowBytesInUse(TAny* aExcept)
-		{
-		TInt n = 0;
-		for (TInt i = 0; i < KMaxShadows; i++)
-			if (gSh[i].iCookie && gSh[i].iCookie != aExcept && gSh[i].iS)
-				n += ShadowBytes(gSh[i].iW, gSh[i].iH, gSh[i].iS);
-		return n;
 		}
 
 	EXPORT_C TInt PhvgHas(TAny* aCookie, TInt aW, TInt aH)
