@@ -1217,6 +1217,19 @@ namespace
 		QuadVerts(v, 0, 0, 1, 1);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
 		glDrawArrays(GL_TRIANGLES, 0, 6), Drew(6);
+		{
+		static TInt pl;
+		static TUint pmax, pt0, pn;
+		pn++;
+		if (gOutBytes > pmax) pmax = gOutBytes;
+		const TUint now = User::NTickCount();
+		if (pl < 40 && now - pt0 >= 1000)	// TEMP (GPU arena growth hunt): vertex outputs pending at a present
+			{
+			pl++;
+			RDebug::Printf("PH: vg2 phvg presents: %u in the last second, outputs pending now %u KB, max %u KB", pn, gOutBytes >> 10, pmax >> 10);
+			pt0 = now; pn = 0; pmax = 0;
+			}
+		}
 		glFinish(), gOutBytes = 0;		// the buffer is complete (and out of the GPU's way) before the compositor is told
 		const TInt err = glGetError();
 		const TUint t1 = User::FastCounter();
