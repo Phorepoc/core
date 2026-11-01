@@ -834,6 +834,23 @@ namespace
 		e.iMaxY = 0.0f;
 		e.iEvenOdd = f.iEvenOdd;
 		TReal32 minX = W + 1.0f, maxX = -1.0f;
+		// The stencil trapezoid of an edge spans from a left bound to the edge. For a closed path any bound at or left of the
+		// path's leftmost point gives the same counts (left of the path they sum to zero), so the path's own bounding box
+		// is used, not the surface's left edge: a glyph's trapezoids then stay inside the glyph instead of each spanning the
+		// screen width -- the tiler binned every one into every tile of its rows (a 16 MB tile heap for one Applications-grid
+		// frame) and the fill rate paid for the whole width.
+		if (!f.iLeft)
+			{
+			TReal32 lx = W + 1.0f;
+			for (TInt i = 0; i < f.iCount; i++)
+				{
+				const TReal32 x0 = f.iEdges[i * 4], x1 = f.iEdges[i * 4 + 2];
+				if (x0 < lx) lx = x0;
+				if (x1 < lx) lx = x1;
+				}
+			lx = (TReal32)(TInt)lx - 1.0f;		// one pixel left of the leftmost point (truncation toward 0 only moves it right for x < 0: clamped below)
+			e.iXl = lx < -1.0f ? -1.0f : (lx > W + 1.0f ? W + 1.0f : lx);
+			}
 		for (TInt i = 0; i < f.iCount; i++)
 			{
 			TReal32 x0 = f.iEdges[i * 4], y0 = f.iEdges[i * 4 + 1], x1 = f.iEdges[i * 4 + 2], y1 = f.iEdges[i * 4 + 3];
