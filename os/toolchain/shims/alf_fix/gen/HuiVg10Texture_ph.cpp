@@ -1493,6 +1493,13 @@ VGImage CHuiVg10Texture::CreateRenderedImage(CNvgEngine* aNvgEngine, HBufC8* aNV
             vgGetImageSubData(image, &px[i], 4, VG_sARGB_8888_PRE, xs[i], aDestSize.iHeight / 2, 1, 1);
         RDebug::Printf("PH: alf: nvg rendered %dx%d image %x direct %d cmds %d vgErr %x readErr %x px %08x %08x %08x",
             aDestSize.iWidth, aDestSize.iHeight, image, direct, iIconCommands != NULL, vgErr, vgGetError(), px[0], px[1], px[2]);
+        const TPtrC8 body(GetNvgDataWithoutHeader(aNVGData));
+        TBuf8<100> hex;
+        for (TInt i = 0; i < body.Length() && i < 32; i++)
+            hex.AppendFormat(_L8("%02x"), body[i]);
+        RDebug::Printf("PH: alf: nvg header colour %08x margin %d bitmapId %d isMask %d len %d body %S",
+            iconheader.GetIconColor(), (TInt)iconheader.IsMarginCorrection(), iconheader.GetBitmapId(), (TInt)iconheader.IsMask(),
+            body.Length(), &hex);
         }
     }
     HUI_VG_INVARIANT();
