@@ -1,0 +1,14 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// phewhere.mmp -- OURS: which DLL holds a code address (a crash pc), and the nearest export below it
+TARGET			phewhere.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157FD
+CAPABILITY		None
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phewhere.cpp
+LIBRARY			euser.lib efsrv.lib

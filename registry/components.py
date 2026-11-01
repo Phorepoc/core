@@ -973,6 +973,7 @@ COMPONENTS = {
     # OURS: the WLAN regression benchmark (scan, available IAPs, an application's connection, DNS/HTTP/latency/throughput,
     # the idle disconnect + reconnect, N cycles); "[phewlantest] RESULT"
     "phewlantest": dict(mmp=os.path.join(OS_ROOT, "src/phewlantest/phewlantest.mmp"), flags=["-I", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.os.wlan/wlan_plat/wlan_management_api/inc")]),
+    "phewhere": dict(mmp=os.path.join(OS_ROOT, "src/phewhere/phewhere.mmp")),
     "commsdatcreator": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/dbcreator/commsdatcreator/group/cdccommsdatcreator.mmp", flags=["-finput-charset=ISO-8859-1"]),   # Latin-1 _LIT16 literals (cdcreaderxml.cpp)   # dbcreator: CreateTablesL = every S60 CommsDat table (cmsetup)
     "sigtest": dict(mmp=os.path.join(OS_ROOT, "src/sigtest/sigtest.mmp")),
     "phealloctest": dict(mmp=os.path.join(OS_ROOT, "src/phealloctest/phealloctest.mmp")),   # allocator / fast-exec cost (perf 2026-10-26)
