@@ -33,6 +33,7 @@
 #include "riRasterizer.h"
 #include <centralrepository.h>
 #include <e32debug.h>
+#include <e32atomics.h>
 #include <hal.h>
 
 //==============================================================================================
@@ -69,7 +70,7 @@ template<class A> static A& PhRasterPool()
 	static TPhRasterPoolCell cell;
 	return reinterpret_cast<A&>(cell);
 }
-static const void* gPhRasterPoolOwner;
+static volatile TUint32 gPhRasterPoolOwner;	// the owning Rasterizer's address (euser's atomics: GCC's builtins are libgcc calls on ARMv5)
 
 // OURS (O2): the GPU engine hook, riPhvg.cpp
 bool PhvgTryFill(const Rasterizer& aR);
@@ -104,8 +105,8 @@ Rasterizer::Rasterizer() :
 {
 	// OURS (perf 2026-11-01): take the pooled edge storage if no other rasterizer holds it
 	RI_ASSERT(sizeof(m_edges) == sizeof(TPhRasterPoolCell) && sizeof(m_scissorEdges) == sizeof(TPhRasterPoolCell));
-	const void* none = NULL;
-	if(__atomic_compare_exchange_n(&gPhRasterPoolOwner, &none, (const void*)this, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
+	TUint32 none = 0;
+	if(__e32_atomic_cas_acq32(&gPhRasterPoolOwner, &none, (TUint32)this))
 	{
 		m_edges.swap(PhRasterPool<Array<Edge> >());
 		m_scissorEdges.swap(PhRasterPool<Array<ScissorEdge> >());
@@ -124,13 +125,13 @@ Rasterizer::Rasterizer() :
 Rasterizer::~Rasterizer()
 {
 	PhvgStrokeEnd(this);	//OURS (O4): paints a pending GPU stroke
-	if(gPhRasterPoolOwner == this)	//OURS (perf 2026-11-01): give the storage back to the pool
+	if(gPhRasterPoolOwner == (TUint32)this)	//OURS (perf 2026-11-01): give the storage back to the pool
 	{
 		m_edges.clear();
 		m_scissorEdges.clear();
 		m_edges.swap(PhRasterPool<Array<Edge> >());
 		m_scissorEdges.swap(PhRasterPool<Array<ScissorEdge> >());
-		__atomic_store_n(&gPhRasterPoolOwner, (const void*)NULL, __ATOMIC_RELEASE);
+		__e32_atomic_store_rel32(&gPhRasterPoolOwner, 0);
 	}
 }
 
@@ -463,7 +464,7 @@ void Rasterizer::fill()
 	Array<ActiveEdge> aetLocal;
 	Array<ScissorEdge> scissorAetLocal;
 	Array<int> windowLocal;
-	const bool pooled = gPhRasterPoolOwner == this;
+	const bool pooled = gPhRasterPoolOwner == (TUint32)this;
 	Array<ActiveEdge>& aet = pooled ? PhRasterPool<Array<ActiveEdge> >() : aetLocal;
 	Array<ScissorEdge>& scissorAet = pooled ? PhRasterPool<Array<ScissorEdge> >() : scissorAetLocal;
 	Array<int>& window = pooled ? PhRasterPool<Array<int> >() : windowLocal;
