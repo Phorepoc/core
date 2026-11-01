@@ -1266,16 +1266,6 @@ void CHuiCanvasGraphicImageRasterizer::RasterizeL(CHuiCanvasGraphicImage& aImage
     
     // Has it old content at all ?
     TBool hasContent = aImage.iTexture->HasContent();
-    //OURS TEMP (scroll blank hunt): large bitmaps' cache decisions
-    if (bitmap->SizeInPixels().iWidth >= 200 && bitmap->SizeInPixels().iHeight >= 200)
-        {
-        static TInt phn;
-        if (++phn <= 80 || (phn & 63) == 0)
-            RDebug::Printf("PH: alf: texcache #%d bmp h=%x %dx%d touch %d (cached %d) serial %d (cached %d) volatile %d content %d check %d -> upload %d",
-                phn, bitmap->Handle(), bitmap->SizeInPixels().iWidth, bitmap->SizeInPixels().iHeight, bitmapTouchCount, aImage.iBitmapTouchCount,
-                (TInt)bitmap->SerialNumber(), (TInt)aImage.iSerialNumber, volatileBitmapOrMask, hasContent, touchCountCheckEnabled,
-                !hasContent || (touchCountCheckEnabled && touchCountChanged) || serialNumberChanged);
-        }
     
     if (!hasContent || (touchCountCheckEnabled && touchCountChanged) || serialNumberChanged)
         {
