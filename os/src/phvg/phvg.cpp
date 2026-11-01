@@ -50,6 +50,13 @@ namespace
 	// which Mesa's own buffers and tile heaps share); past it the least recently used synced shadow goes, else the new
 	// surface stays on the CPU
 	const TInt KShadowBudget = 96 << 20;
+	// O5: lima gives every draw its own vertex-output buffer (>= one 4 KB page; ~32 bytes a vertex) and keeps them until
+	// the framebuffer's job is submitted -- up to 2500 draws a job. With a hundred shadows drawn between presents that
+	// filled the fixed per-process GPU arena. The worker submits (glFlush) between commands -- where no fill is half done
+	// -- once the pending outputs pass KOutFlush.
+	TUint gOutBytes;
+	const TUint KOutFlush = 16 << 20;
+	inline void Drew(TInt aVerts) { const TUint b = ((TUint)aVerts * 32 + 4095) & ~4095u; gOutBytes += b; }
 	TInt gGlLive[2];			// TEMP (GPU arena growth hunt): live GL textures, renderbuffers
 	TUint gRefuse[3];			// PhvgState -1: 0 size (ChooseScale), 1 budget (only GPU-ahead shadows left), 2 table full of GPU-ahead shadows
 	const TInt KMaxSide = 1024;				// larger surfaces are declined (the RI renders them)
@@ -644,7 +651,7 @@ namespace
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, aFilter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, aFilter);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDrawArrays(GL_TRIANGLES, 0, 6), Drew(6);
 		}
 
 	void DirtyAdd(TShadow& aS, TInt aX0, TInt aY0, TInt aX1, TInt aY1)
@@ -701,7 +708,7 @@ namespace
 		if (aE.iN)
 			{
 			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, gVtx);
-			glDrawArrays(GL_TRIANGLES, 0, aE.iN * 6);
+			glDrawArrays(GL_TRIANGLES, 0, aE.iN * 6), Drew(aE.iN * 6);
 			aE.iN = 0;
 			}
 		}
@@ -919,7 +926,7 @@ namespace
 			TReal32 v[12];
 			QuadVerts(v, 0.0f, e.iMinY, W, e.iMaxY);
 			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
+			glDrawArrays(GL_TRIANGLES, 0, 6), Drew(6);
 			}
 		SetNoTests();
 		// dirty pixels: the edge bounding box, one pixel of slack
@@ -1209,8 +1216,8 @@ namespace
 		TReal32 v[12];
 		QuadVerts(v, 0, 0, 1, 1);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glFinish();						// the buffer is complete (and out of the GPU's way) before the compositor is told
+		glDrawArrays(GL_TRIANGLES, 0, 6), Drew(6);
+		glFinish(), gOutBytes = 0;		// the buffer is complete (and out of the GPU's way) before the compositor is told
 		const TInt err = glGetError();
 		const TUint t1 = User::FastCounter();
 		static TUint np;
@@ -1386,7 +1393,7 @@ namespace
 			{
 			const TInt* r = e.iRects + i * 4;
 			glScissor(r[0] * S, r[1] * S, r[2] * S, r[3] * S);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
+			glDrawArrays(GL_TRIANGLES, 0, 6), Drew(6);
 			if (r[0] < bx0) bx0 = r[0];
 			if (r[1] < by0) by0 = r[1];
 			if (r[0] + r[2] > bx1) bx1 = r[0] + r[2];
@@ -1463,6 +1470,8 @@ namespace
 			const TUint tRing0 = User::FastCounter();
 			DrainRing();
 			gRingWaitTicks = User::FastCounter() - tRing0;
+			if (gOutBytes > KOutFlush)
+				glFlush(), gOutBytes = 0;
 			if (!__e32_atomic_load_acq32(&gCmdPending))
 				continue;
 			switch (gCmd.iOp)
@@ -1477,6 +1486,8 @@ namespace
 				case EOpNop:		gCmd.iResult = 1; break;
 				default:			gCmd.iResult = 0; break;
 				}
+			if (gOutBytes > KOutFlush)
+				glFlush(), gOutBytes = 0;
 			__e32_atomic_store_rel32(&gCmdPending, 0);
 			done.Signal();
 			}
