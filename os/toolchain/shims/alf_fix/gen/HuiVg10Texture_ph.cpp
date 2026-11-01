@@ -1401,7 +1401,6 @@ VGImage CHuiVg10Texture::CreateRenderedImage(CNvgEngine* aNvgEngine, HBufC8* aNV
             aNvgEngine->DrawNvg(GetNvgDataWithoutHeader(aNVGData), aDestSize, NULL, NULL);
             }
         }
-    }
     
     // NVG-TLV icon margin special case check:
     // Check, if the icon has to be margin corrected
@@ -1495,6 +1494,7 @@ VGImage CHuiVg10Texture::CreateRenderedImage(CNvgEngine* aNvgEngine, HBufC8* aNV
         RDebug::Printf("PH: alf: nvg rendered %dx%d image %x direct %d cmds %d vgErr %x readErr %x px %08x %08x %08x",
             aDestSize.iWidth, aDestSize.iHeight, image, direct, iIconCommands != NULL, vgErr, vgGetError(), px[0], px[1], px[2]);
         }
+    }
     HUI_VG_INVARIANT();
     
     return image;
