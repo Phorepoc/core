@@ -46,10 +46,10 @@ typedef void* EGLImageKHR;
 namespace
 	{
 	const TInt KMaxShadows = 96;			// O5: VGImages stay resident (ALF's canvas buffers, rendered icons); LRU eviction of synced ones
-	// O5: the GPU memory the shadows may hold (their textures and render buffers come out of the process's 128 MB GPU arena,
+	// O5: the GPU memory the shadows may hold (their textures and render buffers come out of the process's 256 MB GPU arena,
 	// which Mesa's own buffers and tile heaps share); past it the least recently used synced shadow goes, else the new
 	// surface stays on the CPU
-	const TInt KShadowBudget = 28 << 20;
+	const TInt KShadowBudget = 96 << 20;
 	const TInt KMaxSide = 1024;				// larger surfaces are declined (the RI renders them)
 	const TInt KBatchPieces = 1024;			// trapezoids per draw call
 
