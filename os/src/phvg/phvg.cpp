@@ -46,6 +46,10 @@ typedef void* EGLImageKHR;
 namespace
 	{
 	const TInt KMaxShadows = 96;			// O5: VGImages stay resident (ALF's canvas buffers, rendered icons); LRU eviction of synced ones
+	// O5: the GPU memory the shadows may hold (their textures and render buffers come out of the process's 128 MB GPU arena,
+	// which Mesa's own buffers and tile heaps share); past it the least recently used synced shadow goes, else the new
+	// surface stays on the CPU
+	const TInt KShadowBudget = 28 << 20;
 	const TInt KMaxSide = 1024;				// larger surfaces are declined (the RI renders them)
 	const TInt KBatchPieces = 1024;			// trapezoids per draw call
 
@@ -1591,12 +1595,39 @@ extern "C"
 		return &gLive;
 		}
 
+	TInt ShadowBytes(TInt aW, TInt aH, TInt aS);
+	TInt ShadowBytesInUse(TAny* aExcept);
+
 	EXPORT_C TInt PhvgState(TAny* aCookie, TInt aW, TInt aH)
 		{
 		Drain();
 		TShadow* old = Find(aCookie);
 		if (old && (old->iW != aW || old->iH != aH))
 			PhvgForget(aCookie);			// GL objects are the worker's to delete
+		if (!Find(aCookie))
+			{
+			// O5: a new shadow must fit the budget: evict least recently used synced shadows (state 0/1: the CPU holds their
+			// pixels); GPU-ahead ones hold the only copy and stay. Not enough = this surface stays on the CPU.
+			const TInt sc = ChooseScale(aW, aH);
+			if (!sc)
+				return -1;
+			const TInt need = ShadowBytes(aW, aH, sc);
+			TInt used = ShadowBytesInUse(NULL);
+			while (used + need > KShadowBudget)
+				{
+				TInt lru = -1;
+				for (TInt i = 0; i < KMaxShadows; i++)
+					if (gSh[i].iCookie && gSh[i].iState != 2 && (lru < 0 || gSh[i].iUse < gSh[lru].iUse))
+						lru = i;
+				if (lru < 0)
+					{
+					gStat[4]++;
+					return -1;
+					}
+				used -= ShadowBytes(gSh[lru].iW, gSh[lru].iH, gSh[lru].iS);
+				PhvgForget(gSh[lru].iCookie);
+				}
+			}
 		TShadow* s = Get(aCookie, aW, aH, ETrue);
 		if (!s && !Find(aCookie))
 			{
@@ -1613,6 +1644,24 @@ extern "C"
 				}
 			}
 		return s ? s->iState : -1;
+		}
+
+	// the GPU memory of a shadow (MakeTex / renderbuffers in EnsureGl): colour S x S, depth-stencil (x4 samples when MSAA),
+	// the 2x stage of S = 4, the 1x resolve texture and the read-back renderbuffer
+	TInt ShadowBytes(TInt aW, TInt aH, TInt aS)
+		{
+		const TInt px = aW * aH;
+		const TInt ds = aS == 1 ? px * 16 : px * aS * aS * 4;
+		return px * aS * aS * 4 + ds + (aS == 4 ? px * 16 : 0) + px * 8;
+		}
+
+	TInt ShadowBytesInUse(TAny* aExcept)
+		{
+		TInt n = 0;
+		for (TInt i = 0; i < KMaxShadows; i++)
+			if (gSh[i].iCookie && gSh[i].iCookie != aExcept && gSh[i].iS)
+				n += ShadowBytes(gSh[i].iW, gSh[i].iH, gSh[i].iS);
+		return n;
 		}
 
 	EXPORT_C TInt PhvgHas(TAny* aCookie, TInt aW, TInt aH)
