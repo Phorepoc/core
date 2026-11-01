@@ -12,6 +12,8 @@ extern "C" symgpu_t* symgpu_open(void) { return NULL; }
 extern "C" void symgpu_close(symgpu_t*) {}
 extern "C" void symgpu_info(symgpu_t*, symgpu_info_t* aOut) { Mem::FillZ(aOut, sizeof(*aOut)); }
 extern "C" int symgpu_commit(symgpu_t*, uint32_t, uint32_t) { return KErrNotSupported; }
+extern "C" int symgpu_heap_create(symgpu_t*, uint32_t, uint32_t, uint32_t) { return KErrNotSupported; }
+extern "C" int symgpu_heap_free(symgpu_t*, uint32_t) { return KErrNotSupported; }
 extern "C" int symgpu_import(symgpu_t*, int, uint32_t, uint32_t, uint32_t*) { return KErrNotSupported; }
 extern "C" int symgpu_import_addr(symgpu_t*, const void*, uint32_t, uint32_t*) { return KErrNotSupported; }
 extern "C" int symgpu_unimport(symgpu_t*, uint32_t) { return KErrNotSupported; }
