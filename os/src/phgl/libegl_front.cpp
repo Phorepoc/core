@@ -947,6 +947,16 @@ EGLSurface eglGetCurrentSurface(EGLint readdraw)
 
 // ---- forwarded with Mesa's display (or, for an OpenVG-bound thread / a VG handle, the VG EGL's) -----------------------
 
+// a failed config choice / context creation: the attribute list, on one line (failures only; eglGetError is left
+// for the client, which reads it next)
+static void LogAttribs(const char* aWhat, TInt aArg, const EGLint* aAttribs)
+	{
+	TBuf8<200> s;
+	for (TInt i = 0; aAttribs && aAttribs[i] != EGL_NONE && i < 40 && s.Length() < 180; i += 2)
+		s.AppendFormat(_L8(" %x=%x"), aAttribs[i], aAttribs[i + 1]);
+	RDebug::Printf("[libEGL] %s (%x):%S", aWhat, aArg, &s);
+	}
+
 #define FORWARD(ord, ret, fail, sig, args) \
 	{ \
 	EGLDisplay d = Forward(dpy); \
@@ -987,8 +997,16 @@ EGLBoolean eglChooseConfig(EGLDisplay dpy, const EGLint* attrib_list, EGLConfig*
 				VgAdd(configs[i]);
 		return ok;
 		}
-	FORWARD(EOrdChooseConfig, EGLBoolean, EGL_FALSE, (EGLDisplay, const EGLint*, EGLConfig*, EGLint, EGLint*),
-	        (d, attrib_list, configs, config_size, num_config))
+	EGLBoolean ok = EGL_FALSE;
+	{
+	EGLDisplay d = Forward(dpy);
+	typedef EGLBoolean (*F)(EGLDisplay, const EGLint*, EGLConfig*, EGLint, EGLint*);
+	F f = d != EGL_NO_DISPLAY ? (F)Fn(EOrdChooseConfig) : NULL;
+	ok = f ? f(d, attrib_list, configs, config_size, num_config) : EGL_FALSE;
+	}
+	if (!ok || (num_config && !*num_config))	// no match: what the client asked for (Qt's chooser retries smaller sets)
+		LogAttribs("eglChooseConfig: no config", ok, attrib_list);
+	return ok;
 	}
 
 EGLBoolean eglGetConfigAttrib(EGLDisplay dpy, EGLConfig config, EGLint attribute, EGLint* value)
@@ -1118,8 +1136,16 @@ EGLContext eglCreateContext(EGLDisplay dpy, EGLConfig config, EGLContext share_c
 		VgAdd(c);
 		return c;
 		}
-	FORWARD(EOrdCreateContext, EGLContext, EGL_NO_CONTEXT, (EGLDisplay, EGLConfig, EGLContext, const EGLint*),
-	        (d, config, share_context, attrib_list))
+	EGLContext c = EGL_NO_CONTEXT;
+	{
+	EGLDisplay d = Forward(dpy);
+	typedef EGLContext (*F)(EGLDisplay, EGLConfig, EGLContext, const EGLint*);
+	F f = d != EGL_NO_DISPLAY ? (F)Fn(EOrdCreateContext) : NULL;
+	c = f ? f(d, config, share_context, attrib_list) : EGL_NO_CONTEXT;
+	}
+	if (c == EGL_NO_CONTEXT)
+		LogAttribs("eglCreateContext: failed", (TInt)(TUint)config, attrib_list);
+	return c;
 	}
 
 EGLBoolean eglDestroyContext(EGLDisplay dpy, EGLContext ctx)
