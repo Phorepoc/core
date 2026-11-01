@@ -68,7 +68,7 @@ static TInt gTrN;
 static void Tr(const char* aOp, const void* aCk, TInt aA, TInt aB)
 	{
 	const Image* im = (const Image*)aCk;
-	if (gTrN >= 900 || !im || im->m_width > 128 || im->m_height > 128)
+	if (gTrN >= 1500 || !im || im->m_width > 128 || im->m_height > 128 || im->m_width < 40 || im->m_height < 40)
 		return;
 	++gTrN;
 	RDebug::Printf("PH: vg2 tr %s %08x %dx%d refs %d a=%d b=%x", aOp, (TUint)im, im->m_width, im->m_height, im->m_referenceCount, aA, aB);
