@@ -798,6 +798,32 @@ public:
                 iLeftFrameOuterRect.iTl.iX, iLeftFrameOuterRect.iTl.iY, iLeftFrameOuterRect.iBr.iX, iLeftFrameOuterRect.iBr.iY,
                 iRightFrameOuterRect.iTl.iX, iRightFrameOuterRect.iTl.iY, iRightFrameOuterRect.iBr.iX, iRightFrameOuterRect.iBr.iY,
                 iOwner.Rect().iTl.iX, iOwner.Rect().iTl.iY, iOwner.Rect().iBr.iX, iOwner.Rect().iBr.iY );
+            // the centre slice rasterised at its frame size: colour + mask samples (is the theme art transparent?)
+            CFbsBitmap* art = NULL;
+            CFbsBitmap* artMask = NULL;
+            TRAPD( err, AknsUtils::CreateIconL( s, KAknsIIDQgnFrSctrlSkButtonCenter, art, artMask, KNullDesC, -1, -1 ) );
+            if ( !err && art )
+                {
+                AknIconUtils::SetSize( art, iLeftFrameInnerRect.Size(), EAspectRatioNotPreserved );
+                const TSize sz( art->SizeInPixels() );
+                TRgb c[3], m[3];
+                const TPoint p[3] = { TPoint( 1, 1 ), TPoint( sz.iWidth / 2, sz.iHeight / 2 ), TPoint( sz.iWidth - 2, sz.iHeight - 2 ) };
+                for ( TInt i = 0; i < 3; i++ )
+                    {
+                    art->GetPixel( c[i], p[i] );
+                    if ( artMask )
+                        artMask->GetPixel( m[i], p[i] );
+                    }
+                RDebug::Printf( "PH: cba semi centre art %dx%d mode %d mask %s mode %d; colour %08x %08x %08x mask %08x %08x %08x",
+                    sz.iWidth, sz.iHeight, (TInt)art->DisplayMode(), artMask ? "yes" : "no", artMask ? (TInt)artMask->DisplayMode() : 0,
+                    c[0].Internal(), c[1].Internal(), c[2].Internal(), m[0].Internal(), m[1].Internal(), m[2].Internal() );
+                }
+            else
+                {
+                RDebug::Printf( "PH: cba semi centre art: CreateIconL %d", err );
+                }
+            delete art;
+            delete artMask;
             }
         }
         TAknsItemID SemiButtonPressedID       = KAknsIIDQgnFrSctrlSkButtonPressed;
