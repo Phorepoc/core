@@ -1463,6 +1463,65 @@ namespace
 		return 1;
 		}
 
+	// TEMP (mid-frame reload hunt): does a framebuffer keep its pixels across a submit? 64 x 64: clear red, a blue quad on
+	// the left half, glFlush (or not), a green quad on the top-right quarter; read the bottom-right (red expected), the left
+	// (blue), the top-right (green). aMs: a 4-sample render-to-texture framebuffer like a 1x shadow, else plain.
+	void ReloadSelfTest(TBool aMs, TBool aFlush)
+		{
+		const TInt N = 64;
+		GLuint tex = MakeTex(N, N, GL_NEAREST), fbo = 0, rb = 0;
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		if (aMs && gFbTexMs)
+			gFbTexMs(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0, KMsaaSamples);
+		else
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+		glGenRenderbuffers(1, &rb);
+		glBindRenderbuffer(GL_RENDERBUFFER, rb);
+		if (aMs && gRbStorageMs)
+			gRbStorageMs(GL_RENDERBUFFER, KMsaaSamples, GL_DEPTH24_STENCIL8_OES, N, N);
+		else
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, N, N);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rb);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rb);
+		const TInt complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+		SetNoTests();
+		glViewport(0, 0, N, N);
+		glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+		glClearStencil(0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glUseProgram(gProgFlat);
+		glUniform2f(gFlatScale, 2.0f / N, 2.0f / N);
+		TReal32 v[12];
+		glUniform4f(gFlatColor, 0.0f, 0.0f, 1.0f, 1.0f);
+		QuadVerts(v, 0.0f, 0.0f, N / 2, N);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		if (aFlush)
+			glFlush();
+		glUniform4f(gFlatColor, 0.0f, 1.0f, 0.0f, 1.0f);
+		QuadVerts(v, N / 2, N / 2, N, N);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glFinish();
+		// read through a plain framebuffer on the same texture (the 1-sample image)
+		GLuint rd = 0;
+		glGenFramebuffers(1, &rd);
+		glBindFramebuffer(GL_FRAMEBUFFER, rd);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+		TUint32 px[3] = { 0, 0, 0 };
+		glReadPixels(48, 16, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &px[0]);
+		glReadPixels(16, 32, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &px[1]);
+		glReadPixels(48, 48, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &px[2]);
+		RDebug::Printf("PH: vg2 phvg reload self-test ms %d flush %d complete %d: bottom-right %08x (red ff0000ff) left %08x (blue ffff0000) top-right %08x (green ff00ff00)",
+			aMs, aFlush, complete, px[0], px[1], px[2]);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDeleteFramebuffers(1, &rd);
+		glDeleteFramebuffers(1, &fbo);
+		glDeleteRenderbuffers(1, &rb);
+		glDeleteTextures(1, &tex);
+		}
+
 	TInt WorkerMain(TAny*)
 		{
 		CTrapCleanup* tc = CTrapCleanup::New();
@@ -1470,6 +1529,13 @@ namespace
 		req.SetHandle(gReqH);
 		done.SetHandle(gDoneH);
 		const TBool ok = GlInit();
+		if (ok)
+			{
+			ReloadSelfTest(EFalse, EFalse);
+			ReloadSelfTest(EFalse, ETrue);
+			ReloadSelfTest(ETrue, EFalse);
+			ReloadSelfTest(ETrue, ETrue);
+			}
 		gCmd.iResult = ok;
 		done.Signal();
 		if (!ok)
