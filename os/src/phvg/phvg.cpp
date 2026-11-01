@@ -45,7 +45,7 @@ typedef void* EGLImageKHR;
 
 namespace
 	{
-	const TInt KMaxShadows = 96;			// O5: VGImages stay resident (ALF's canvas buffers, rendered icons); LRU eviction of synced ones
+	const TInt KMaxShadows = 512;			// O5: VGImages stay resident (ALF's canvas buffers, rendered icons: a full Applications grid holds ~100 GPU-only icons); KShadowBudget is the real limit
 	// O5: the GPU memory the shadows may hold (their textures and render buffers come out of the process's 256 MB GPU arena,
 	// which Mesa's own buffers and tile heaps share); past it the least recently used synced shadow goes, else the new
 	// surface stays on the CPU
@@ -1190,7 +1190,7 @@ namespace
 	// the exports that only read shadow state, via Drain()) sees all earlier image draws as done. The texture cache is DECIDED on the caller's side (a
 	// directory of slots with LRU + byte budget, so a draw can answer "texture missing, send the pixels" without a round trip) and EXECUTED on the worker's
 	// side (gTexGl[slot]); an upload entry carries its own copy of the pixels, a drop entry frees a slot's GL texture.
-	const TInt KMaxTex = 96;
+	const TInt KMaxTex = 256;			// (a scrolled Applications grid: ~100 icons + their text glyph atlases)
 	const TInt KTexBudget = 24 * 1024 * 1024;
 	const TInt KQ = 128;
 	const TInt KQRects = 64;
