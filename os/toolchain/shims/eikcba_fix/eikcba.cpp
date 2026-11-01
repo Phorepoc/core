@@ -828,7 +828,6 @@ public:
         }
         TAknsItemID SemiButtonPressedID       = KAknsIIDQgnFrSctrlSkButtonPressed;
         TAknsItemID SemiButtonPressedCenterID = KAknsIIDQgnFrSctrlSkButtonCenterPressed;
-        { aGc.SetPenStyle( CGraphicsContext::ENullPen ); aGc.SetBrushStyle( CGraphicsContext::ESolidBrush ); aGc.SetBrushColor( TRgb( 255, 0, 0 ) ); aGc.DrawRect( iLeftFrameInnerRect ); aGc.SetBrushStyle( CGraphicsContext::ENullBrush ); }   // PH diag: red UNDER the left frame
         
         CEikCbaButton* button1 = static_cast<CEikCbaButton*>
             (iOwner.Control(KControlArrayCBAButton1Posn));
@@ -891,8 +890,27 @@ public:
                     SemiButtonID,
                     SemiButtonCenterID);
             }                    
-        // PH diag: a green strip AFTER the frames (shows unless something overpaints)
-        { aGc.SetPenStyle( CGraphicsContext::ENullPen ); aGc.SetBrushStyle( CGraphicsContext::ESolidBrush ); aGc.SetBrushColor( TRgb( 0, 255, 0 ) ); aGc.DrawRect( TRect( 0, 0, 360, 4 ) ); aGc.SetBrushStyle( CGraphicsContext::ENullBrush ); }
+        {   // PH diag: the prepared cached centre bitmap the frame draw hands to the window server (what ALF uploads)
+        static TInt logged2;
+        if ( logged2++ < 2 )
+            {
+            MAknsSkinInstance* s = AknsUtils::SkinInstance();
+            CFbsBitmap* bmp = NULL;
+            CFbsBitmap* msk = NULL;
+            if ( s )
+                AknsUtils::GetCachedMaskedBitmap( s, KAknsIIDQgnFrSctrlSkButtonCenter, bmp, msk );
+            TRgb c( 0 ), m( 0 );
+            if ( bmp && bmp->SizeInPixels().iWidth > 0 )
+                bmp->GetPixel( c, TPoint( bmp->SizeInPixels().iWidth / 2, bmp->SizeInPixels().iHeight / 2 ) );
+            if ( msk && msk->SizeInPixels().iWidth > 0 )
+                msk->GetPixel( m, TPoint( msk->SizeInPixels().iWidth / 2, msk->SizeInPixels().iHeight / 2 ) );
+            RDebug::Printf( "PH: cba semi cached centre bmp %x %dx%d mode %d ext %08x compr %d px %08x; mask %x %dx%d mode %d ext %08x compr %d px %08x",
+                bmp ? bmp->Handle() : 0, bmp ? bmp->SizeInPixels().iWidth : 0, bmp ? bmp->SizeInPixels().iHeight : 0,
+                bmp ? (TInt)bmp->DisplayMode() : 0, bmp ? bmp->ExtendedBitmapType().iUid : 0, bmp ? (TInt)bmp->IsCompressedInRAM() : 0, c.Internal(),
+                msk ? msk->Handle() : 0, msk ? msk->SizeInPixels().iWidth : 0, msk ? msk->SizeInPixels().iHeight : 0,
+                msk ? (TInt)msk->DisplayMode() : 0, msk ? msk->ExtendedBitmapType().iUid : 0, msk ? (TInt)msk->IsCompressedInRAM() : 0, m.Internal() );
+            }
+        }
         _AKNTRACE_FUNC_EXIT;
         }
 public:
