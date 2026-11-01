@@ -147,7 +147,11 @@ static PhHashRec gHashRec[64];
 static TUint gHashSkips, gHashFull;
 static TUint PhImageHash(Image* img, int w, int h)
 	{
-	const TUint ep = PhvgImgGen(img);
+	// a child image shares its root's pixels: a write through the root or another child changes it too
+	const Image* root = img;
+	while (root->m_parent)
+		root = root->m_parent;
+	const TUint ep = PhvgImgGen(img) + (root != img ? PhvgImgGen(root) * 2654435761u : 0u);
 	const int fmt = (int)img->m_desc.internalFormat;
 	PhHashRec& r = gHashRec[((TUint)img >> 4) & 63];
 	if (img->m_ownsData && r.iImg == img && r.iW == w && r.iH == h && r.iFmt == fmt && r.iEpoch == ep)

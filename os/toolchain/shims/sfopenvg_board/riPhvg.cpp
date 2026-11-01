@@ -448,6 +448,8 @@ namespace
 
 // ---- hooks ---------------------------------------------------------------------------------------------------------
 
+void PhvgImageCpuAccess(const Image* aImg, bool aWrite);
+
 // Before any CPU access to a colour buffer (see the contract above).
 void PhvgCpuAccess(const Surface* aS, bool aWrite)
 	{
@@ -455,6 +457,13 @@ void PhvgCpuAccess(const Surface* aS, bool aWrite)
 		PhvgImgWritten(aS->m_image);		// a CPU write into a surface may be a write into a VGImage (pbuffer from client buffer)
 	if (!gPhvgLive || !*gPhvgLive)
 		return;
+	if (aS->m_image->m_parent)
+		{
+		// a surface over a CHILD image is never on the GPU itself, but its pixels are its root's: the root's shadow is
+		// read back first and, on a write, dropped (O5)
+		PhvgImageCpuAccess(aS->m_image, aWrite);
+		return;
+		}
 	TInt rect[4];
 	if (gT.Dirty(Ck(aS), rect))
 		{
@@ -609,10 +618,14 @@ void PhvgForgetImage(const Image* aImg)
 // a write then drops the shadow (the CPU pixels are the truth again). Child images act on their root's shadow.
 void PhvgImageCpuAccess(const Image* aImg, bool aWrite)
 	{
-	if (!gPhvgLive || !*gPhvgLive || !aImg)
+	if (!aImg)
 		return;
 	while (aImg->m_parent)
 		aImg = aImg->m_parent;
+	if (aWrite)
+		PhvgImgWritten(aImg);		// a write into a child changes its root's pixels (and every other child's: ri_fastblit's hash epoch includes the root's)
+	if (!gPhvgLive || !*gPhvgLive)
+		return;
 	TAny* ck = (TAny*)aImg;
 	TInt rect[4];
 	if (gT.Dirty(ck, rect))
@@ -669,7 +682,7 @@ void PhvgImageCpuAccess(const Image* aImg, bool aWrite)
 // O5: the GPU holds the current content of this image (a shadow in state 1 or 2): a draw of it can sample the shadow.
 bool PhvgImageResident(const Image* aImg)
 	{
-	if (true || !gPhvgLive || !*gPhvgLive || aImg->m_parent || !gT.Has)
+	if (!gPhvgLive || !*gPhvgLive || aImg->m_parent || !gT.Has)
 		return false;
 	return gT.Has((TAny*)aImg, aImg->m_width, aImg->m_height) > 0;
 	}
