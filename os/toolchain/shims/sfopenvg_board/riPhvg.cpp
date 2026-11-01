@@ -176,7 +176,7 @@ namespace
 		const Image* im = aS->m_image;
 		// a VGImage's pbuffer: the image is referenced by the VGImage handle as well (m_referenceCount > 1). Child images
 		// share their parent's pixels at an offset: not on the GPU (a shadow per image would duplicate the shared pixels).
-		return im->m_ownsData && !im->m_parent && (aS->getNumSamples() == 1 || im->m_referenceCount == 1);
+		return im->m_ownsData && !im->m_parent && im->m_referenceCount == 1;	// TEMP bisect
 		}
 
 	TUint8 Pack(RIfloat aV)
