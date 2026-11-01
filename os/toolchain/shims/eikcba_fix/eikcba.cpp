@@ -33,6 +33,7 @@
 #include <aknappui.h>
 #include <eikappui.h>
 #include <eikapp.h>
+#include <e32debug.h>
 #include <AknUtils.h> // LayoutUtils
 #include <aknlayoutscalable_apps.cdl.h>
 #include <AknsBasicBackgroundControlContext.h>
@@ -785,6 +786,20 @@ public:
         
         TAknsItemID SemiButtonID              = KAknsIIDQgnFrSctrlSkButton;
         TAknsItemID SemiButtonCenterID        = KAknsIIDQgnFrSctrlSkButtonCenter;
+        {   // Phorepoc diagnostic (the home screen's softkey bar drew black): what the skin gives for the frame, once
+        static TInt logged;
+        if ( logged++ < 2 )
+            {
+            MAknsSkinInstance* s = AknsUtils::SkinInstance();
+            CFbsBitmap* bmp = s ? AknsUtils::GetCachedBitmap( s, KAknsIIDQgnFrSctrlSkButtonCenter ) : NULL;
+            RDebug::Printf( "PH: cba semi frame center item %s %dx%d mode %d; frame L %d,%d-%d,%d R %d,%d-%d,%d bar %d,%d-%d,%d",
+                bmp ? "found" : "MISSING", bmp ? bmp->SizeInPixels().iWidth : 0, bmp ? bmp->SizeInPixels().iHeight : 0,
+                bmp ? (TInt)bmp->DisplayMode() : 0,
+                iLeftFrameOuterRect.iTl.iX, iLeftFrameOuterRect.iTl.iY, iLeftFrameOuterRect.iBr.iX, iLeftFrameOuterRect.iBr.iY,
+                iRightFrameOuterRect.iTl.iX, iRightFrameOuterRect.iTl.iY, iRightFrameOuterRect.iBr.iX, iRightFrameOuterRect.iBr.iY,
+                iOwner.Rect().iTl.iX, iOwner.Rect().iTl.iY, iOwner.Rect().iBr.iX, iOwner.Rect().iBr.iY );
+            }
+        }
         TAknsItemID SemiButtonPressedID       = KAknsIIDQgnFrSctrlSkButtonPressed;
         TAknsItemID SemiButtonPressedCenterID = KAknsIIDQgnFrSctrlSkButtonCenterPressed;
         
