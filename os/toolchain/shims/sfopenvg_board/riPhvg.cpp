@@ -669,7 +669,7 @@ void PhvgImageCpuAccess(const Image* aImg, bool aWrite)
 // O5: the GPU holds the current content of this image (a shadow in state 1 or 2): a draw of it can sample the shadow.
 bool PhvgImageResident(const Image* aImg)
 	{
-	if (!gPhvgLive || !*gPhvgLive || aImg->m_parent || !gT.Has)
+	if (true || !gPhvgLive || !*gPhvgLive || aImg->m_parent || !gT.Has)
 		return false;
 	return gT.Has((TAny*)aImg, aImg->m_width, aImg->m_height) > 0;
 	}
