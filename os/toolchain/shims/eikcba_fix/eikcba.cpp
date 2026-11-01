@@ -33,7 +33,6 @@
 #include <aknappui.h>
 #include <eikappui.h>
 #include <eikapp.h>
-#include <e32debug.h>
 #include <AknUtils.h> // LayoutUtils
 #include <aknlayoutscalable_apps.cdl.h>
 #include <AknsBasicBackgroundControlContext.h>
@@ -786,46 +785,6 @@ public:
         
         TAknsItemID SemiButtonID              = KAknsIIDQgnFrSctrlSkButton;
         TAknsItemID SemiButtonCenterID        = KAknsIIDQgnFrSctrlSkButtonCenter;
-        {   // Phorepoc diagnostic (the home screen's softkey bar drew black): what the skin gives for the frame, once
-        static TInt logged;
-        if ( logged++ < 2 )
-            {
-            MAknsSkinInstance* s = AknsUtils::SkinInstance();
-            CFbsBitmap* bmp = s ? AknsUtils::GetCachedBitmap( s, KAknsIIDQgnFrSctrlSkButtonCenter ) : NULL;
-            RDebug::Printf( "PH: cba semi frame center item %s %dx%d mode %d; frame L %d,%d-%d,%d R %d,%d-%d,%d bar %d,%d-%d,%d",
-                bmp ? "found" : "MISSING", bmp ? bmp->SizeInPixels().iWidth : 0, bmp ? bmp->SizeInPixels().iHeight : 0,
-                bmp ? (TInt)bmp->DisplayMode() : 0,
-                iLeftFrameOuterRect.iTl.iX, iLeftFrameOuterRect.iTl.iY, iLeftFrameOuterRect.iBr.iX, iLeftFrameOuterRect.iBr.iY,
-                iRightFrameOuterRect.iTl.iX, iRightFrameOuterRect.iTl.iY, iRightFrameOuterRect.iBr.iX, iRightFrameOuterRect.iBr.iY,
-                iOwner.Rect().iTl.iX, iOwner.Rect().iTl.iY, iOwner.Rect().iBr.iX, iOwner.Rect().iBr.iY );
-            // the centre slice rasterised at its frame size: colour + mask samples (is the theme art transparent?)
-            CFbsBitmap* art = NULL;
-            CFbsBitmap* artMask = NULL;
-            TRAPD( err, AknsUtils::CreateIconL( s, KAknsIIDQgnFrSctrlSkButtonCenter, art, artMask, KNullDesC, -1, -1 ) );
-            if ( !err && art )
-                {
-                AknIconUtils::SetSize( art, iLeftFrameInnerRect.Size(), EAspectRatioNotPreserved );
-                const TSize sz( art->SizeInPixels() );
-                TRgb c[3], m[3];
-                const TPoint p[3] = { TPoint( 1, 1 ), TPoint( sz.iWidth / 2, sz.iHeight / 2 ), TPoint( sz.iWidth - 2, sz.iHeight - 2 ) };
-                for ( TInt i = 0; i < 3; i++ )
-                    {
-                    art->GetPixel( c[i], p[i] );
-                    if ( artMask )
-                        artMask->GetPixel( m[i], p[i] );
-                    }
-                RDebug::Printf( "PH: cba semi centre art %dx%d mode %d mask %s mode %d; colour %08x %08x %08x mask %08x %08x %08x",
-                    sz.iWidth, sz.iHeight, (TInt)art->DisplayMode(), artMask ? "yes" : "no", artMask ? (TInt)artMask->DisplayMode() : 0,
-                    c[0].Internal(), c[1].Internal(), c[2].Internal(), m[0].Internal(), m[1].Internal(), m[2].Internal() );
-                }
-            else
-                {
-                RDebug::Printf( "PH: cba semi centre art: CreateIconL %d", err );
-                }
-            delete art;
-            delete artMask;
-            }
-        }
         TAknsItemID SemiButtonPressedID       = KAknsIIDQgnFrSctrlSkButtonPressed;
         TAknsItemID SemiButtonPressedCenterID = KAknsIIDQgnFrSctrlSkButtonCenterPressed;
         
@@ -890,27 +849,6 @@ public:
                     SemiButtonID,
                     SemiButtonCenterID);
             }                    
-        {   // PH diag: the prepared cached centre bitmap the frame draw hands to the window server (what ALF uploads)
-        static TInt logged2;
-        if ( logged2++ < 2 )
-            {
-            MAknsSkinInstance* s = AknsUtils::SkinInstance();
-            CFbsBitmap* bmp = NULL;
-            CFbsBitmap* msk = NULL;
-            if ( s )
-                AknsUtils::GetCachedMaskedBitmap( s, KAknsIIDQgnFrSctrlSkButtonCenter, bmp, msk );
-            TRgb c( 0 ), m( 0 );
-            if ( bmp && bmp->SizeInPixels().iWidth > 0 )
-                bmp->GetPixel( c, TPoint( bmp->SizeInPixels().iWidth / 2, bmp->SizeInPixels().iHeight / 2 ) );
-            if ( msk && msk->SizeInPixels().iWidth > 0 )
-                msk->GetPixel( m, TPoint( msk->SizeInPixels().iWidth / 2, msk->SizeInPixels().iHeight / 2 ) );
-            RDebug::Printf( "PH: cba semi cached centre bmp %x %dx%d mode %d ext %08x compr %d px %08x; mask %x %dx%d mode %d ext %08x compr %d px %08x",
-                bmp ? bmp->Handle() : 0, bmp ? bmp->SizeInPixels().iWidth : 0, bmp ? bmp->SizeInPixels().iHeight : 0,
-                bmp ? (TInt)bmp->DisplayMode() : 0, bmp ? bmp->ExtendedBitmapType().iUid : 0, bmp ? (TInt)bmp->IsCompressedInRAM() : 0, c.Internal(),
-                msk ? msk->Handle() : 0, msk ? msk->SizeInPixels().iWidth : 0, msk ? msk->SizeInPixels().iHeight : 0,
-                msk ? (TInt)msk->DisplayMode() : 0, msk ? msk->ExtendedBitmapType().iUid : 0, msk ? (TInt)msk->IsCompressedInRAM() : 0, m.Internal() );
-            }
-        }
         _AKNTRACE_FUNC_EXIT;
         }
 public:
@@ -4612,22 +4550,6 @@ void CEikCba::Draw( const TRect& aRect ) const
         return;
         }
     
-    {   // Phorepoc diagnostic (the home screen's black softkey bar): which CBA draws how, on each change, bounded
-    static TInt logged, lastFlags = -1, lastLayout = -1;
-    const TInt layout = AknLayoutFlags();
-    if ( logged < 12 && ( iCbaFlags != lastFlags || layout != lastLayout ) )
-        {
-        ++logged;
-        lastFlags = iCbaFlags;
-        lastLayout = layout;
-        TBuf8<64> proc;
-        proc.Copy( RProcess().Name().Left( 64 ) );
-        RDebug::Printf( "PH: cba draw %S rect %d,%d-%d,%d cbaFlags %x layout %x flags %x idle %d wallpaperType %d",
-            &proc, Rect().iTl.iX, Rect().iTl.iY, Rect().iBr.iX, Rect().iBr.iY, iCbaFlags, layout,
-            (TInt)( iFlags.IsSet( ECbaEmbedded ) | iFlags.IsSet( ECbaInsideDialog ) << 1 ),
-            (TInt)AknStatuspaneUtils::IdleLayoutActive(), iExtension ? iExtension->iWallpaperInUse : -1 );
-        }
-    }
     if ( iCbaFlags & EEikCbaFlagSemiTransparent )
         {
         CWindowGc &gc = SystemGc();

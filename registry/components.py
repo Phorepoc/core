@@ -1200,8 +1200,8 @@ COMPONENTS = {
                                           "resource\\skins\\101f84b9\\101f84b9.sel=" + os.path.join(OS_ROOT, "data/effects/phorepoc.sel")]),
     "huirenderpluginvg": dict(mmp=_ALF + "coretoolkit/rendervg10/group/huirendervg10.mmp", alf=2, vfp=True, defs=["__SOFTFP="],
                           allow_wsd=True, libs=["surfacemanager.lib", "surfaceupdateclient.lib", "hal.lib"],   # phvgwindow.h (the alf window surface)
-                          extra=["toolchain/shims/alf_fix/huitexturehandle_local.cpp", _AG + "HuiVg10Texture_ph.cpp"] + ([_AG + "HuiVg10RenderPlugin_ph.cpp", _AG + "HuiVg10RenderSurface_ph.cpp", _AG + "huivg10canvasrenderbuffer_ph.cpp"] if _ALFTRACE else []),
-                          drop=["huivg10texture.cpp"] + (["huivg10renderplugin.cpp", "huivg10rendersurface.cpp", "huivg10canvasrenderbuffer.cpp"] if _ALFTRACE else [])),
+                          extra=["toolchain/shims/alf_fix/huitexturehandle_local.cpp"] + ([_AG + "HuiVg10RenderPlugin_ph.cpp", _AG + "HuiVg10RenderSurface_ph.cpp", _AG + "huivg10canvasrenderbuffer_ph.cpp"] if _ALFTRACE else []),
+                          drop=["huivg10renderplugin.cpp", "huivg10rendersurface.cpp", "huivg10canvasrenderbuffer.cpp"] if _ALFTRACE else []),
     # library it links; the wrtharvester CPS plug-in publishes installed widgets to the homescreen.
     "widgetregistryclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/widgetregistry/group/WidgetRegistryClient.mmp"),
     # (both #include <libxml2_*.h> bare: an S60 platform build had stdapis/libxml2 on its system path)
