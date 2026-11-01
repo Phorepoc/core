@@ -1401,20 +1401,6 @@ VGImage CHuiVg10Texture::CreateRenderedImage(CNvgEngine* aNvgEngine, HBufC8* aNV
             aNvgEngine->DrawNvg(GetNvgDataWithoutHeader(aNVGData), aDestSize, NULL, NULL);
             }
         }
-    {   // PH diag (black skin frames): what the NVG draw left in the VGImage, bounded
-    static TInt nvgLogged;
-    if (nvgLogged < 30)
-        {
-        ++nvgLogged;
-        vgFinish();
-        const VGErrorCode vgErr = vgGetError();
-        TUint32 px[3] = { 0xdeadbeef, 0xdeadbeef, 0xdeadbeef };
-        const TInt xs[3] = { 1, aDestSize.iWidth / 2, aDestSize.iWidth - 2 };
-        for (TInt i = 0; i < 3; i++)
-            vgGetImageSubData(image, &px[i], 4, VG_sARGB_8888_PRE, xs[i], aDestSize.iHeight / 2, 1, 1);
-        RDebug::Printf("PH: alf: nvg rendered %dx%d image %x direct %d cmds %d vgErr %x readErr %x px %08x %08x %08x",
-            aDestSize.iWidth, aDestSize.iHeight, image, direct, iIconCommands != NULL, vgErr, vgGetError(), px[0], px[1], px[2]);
-        }
     }
     
     // NVG-TLV icon margin special case check:
@@ -1495,6 +1481,20 @@ VGImage CHuiVg10Texture::CreateRenderedImage(CNvgEngine* aNvgEngine, HBufC8* aNV
         SetIconColor(image, size, iconColor);
         }
     
+    {   // PH diag (black skin frames): what the NVG draw left in the VGImage, bounded
+    static TInt nvgLogged;
+    if (nvgLogged < 30)
+        {
+        ++nvgLogged;
+        vgFinish();
+        const VGErrorCode vgErr = vgGetError();   // after the surface is released (an image bound as a pbuffer is IN_USE)
+        TUint32 px[3] = { 0xdeadbeef, 0xdeadbeef, 0xdeadbeef };
+        const TInt xs[3] = { 1, aDestSize.iWidth / 2, aDestSize.iWidth - 2 };
+        for (TInt i = 0; i < 3; i++)
+            vgGetImageSubData(image, &px[i], 4, VG_sARGB_8888_PRE, xs[i], aDestSize.iHeight / 2, 1, 1);
+        RDebug::Printf("PH: alf: nvg rendered %dx%d image %x direct %d cmds %d vgErr %x readErr %x px %08x %08x %08x",
+            aDestSize.iWidth, aDestSize.iHeight, image, direct, iIconCommands != NULL, vgErr, vgGetError(), px[0], px[1], px[2]);
+        }
     HUI_VG_INVARIANT();
     
     return image;
