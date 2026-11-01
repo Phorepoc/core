@@ -55,7 +55,7 @@ namespace
 	// filled the fixed per-process GPU arena. The worker submits (glFlush) between commands -- where no fill is half done
 	// -- once the pending outputs pass KOutFlush.
 	TUint gOutBytes;
-	const TUint KOutFlush = 16 << 20;
+	const TUint KOutFlush = 0xFFFFFFFFu;	// TEMP A/B: never
 	inline void Drew(TInt aVerts) { const TUint b = ((TUint)aVerts * 32 + 4095) & ~4095u; gOutBytes += b; }
 	TInt gGlLive[2];			// TEMP (GPU arena growth hunt): live GL textures, renderbuffers
 	TUint gRefuse[3];			// PhvgState -1: 0 size (ChooseScale), 1 budget (only GPU-ahead shadows left), 2 table full of GPU-ahead shadows
