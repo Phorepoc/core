@@ -1288,6 +1288,21 @@ void CHuiCanvasGraphicImageRasterizer::RasterizeL(CHuiCanvasGraphicImage& aImage
             startTime.UniversalTime();
 #endif
 
+            {   // PH diag (black skin frames): what a masked bitmap holds when it is uploaded, bounded
+            static TInt upLogged;
+            const TSize bs(bitmap->SizeInPixels());
+            if (mask && upLogged < 40 && bs.iWidth >= 60 && bs.iHeight >= 30 && bs.iHeight <= 64)
+                {
+                ++upLogged;
+                TRgb c, m;
+                bitmap->GetPixel(c, TPoint(bs.iWidth / 2, bs.iHeight / 2));
+                mask->GetPixel(m, TPoint(bs.iWidth / 2, bs.iHeight / 2));
+                RDebug::Printf("PH: alf: upload masked %x %dx%d mode %d ext %08x compr %d px %08x / mask %x mode %d ext %08x px %08x",
+                    bitmap->Handle(), bs.iWidth, bs.iHeight, (TInt)bitmap->DisplayMode(), bitmap->ExtendedBitmapType().iUid,
+                    (TInt)bitmap->IsCompressedInRAM(), c.Internal(), mask->Handle(), (TInt)mask->DisplayMode(),
+                    mask->ExtendedBitmapType().iUid, m.Internal());
+                }
+            }
             CHuiTexture* texture = aImage.iTexture;
             texture->UploadL(*bitmap, mask, uploadFlags);
 
