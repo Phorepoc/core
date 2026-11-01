@@ -457,7 +457,10 @@ COMPONENTS = {
                    extra=["toolchain/shims/stdcpp_board/stdnew_nothrow.cpp"]),   # (exception.cpp / set_new_handler.cpp define them)
     # libstdcppv5.dll (UID3 0x20017610): the Standard C++ library (STLport 5) SDK apps built with the STDCPP plug-in import
     "libstdcppv5": dict(arm_only=True, mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cppstdlib/group/libstdcpp.mmp", cdriver=True, allow_wsd=True,
-                        static_ctors=True, rtti=True, defs=["__SOFTFP="], own_new=True),
+                        static_ctors=True, rtti=True, defs=["__SOFTFP="], own_new=True,
+                        # the stream classes' typeinfo/vtables/VTTs (STLport's GCC config skips the library's forced
+                        # instantiations; SDK apps import them -- std::stringstream died EUSRNIMP)
+                        extra=["toolchain/shims/stdcpp_board/stream_instantiate.cpp"]),
     "sqlite3": dict(mmp="oss.FCL.sf.os.persistentdata/persistentstorage/sqlite3api/GROUP/sqlite3.mmp", cdriver=True, allow_wsd=True,
                     defs=["__SOFTFP="]),
     "libc": dict(mmp=_OENV + "libc/group/libc.mmp", cdriver=True, allow_wsd=True, static_ctors=True, defs=["__SOFTFP="],
