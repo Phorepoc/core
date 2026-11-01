@@ -50,6 +50,9 @@ namespace
 	// which Mesa's own buffers and tile heaps share); past it the least recently used synced shadow goes, else the new
 	// surface stays on the CPU
 	const TInt KShadowBudget = 96 << 20;
+	TUint gRefuse[3];			// PhvgState -1: 0 size (ChooseScale), 1 budget (only GPU-ahead shadows left), 2 table full of GPU-ahead shadows
+	TInt ShadowBytes(TInt aW, TInt aH, TInt aS);
+	TInt ShadowBytesInUse(TAny* aExcept);
 	const TInt KMaxSide = 1024;				// larger surfaces are declined (the RI renders them)
 	const TInt KBatchPieces = 1024;			// trapezoids per draw call
 
@@ -1338,6 +1341,19 @@ namespace
 		if ((++gImgPerf[0] & 255) == 0)
 			RDebug::Printf("PH: vg2 phvg images: draws %u cache hits %u misses %u resident %u uploaded %u KB; worker ticks %u (texture upload ticks %u); shadows live %d",
 				gImgPerf[0], gImgPerf[1], gImgPerf[2], gImgPerf[6], gImgPerf[3] / 1024, gImgPerf[4], gImgPerf[5], gLive);
+		if ((gImgPerf[0] & 255) == 0)
+			{
+			TInt n = 0, ahead = 0, bytes = 0;
+			for (TInt i = 0; i < KMaxShadows; i++)
+				if (gSh[i].iCookie)
+					{
+					n++;
+					ahead += gSh[i].iState == 2;
+					bytes += gSh[i].iS ? ShadowBytes(gSh[i].iW, gSh[i].iH, gSh[i].iS) : 0;
+					}
+			RDebug::Printf("PH: vg2 phvg shadows: %d of %d slots (%d GPU-ahead), %d KB; refused size %u budget %u table %u",
+				n, KMaxShadows, ahead, bytes >> 10, gRefuse[0], gRefuse[1], gRefuse[2]);
+			}
 		}
 
 	// the worker: run every queued entry, in order
@@ -1600,9 +1616,6 @@ extern "C"
 		return &gLive;
 		}
 
-	TInt ShadowBytes(TInt aW, TInt aH, TInt aS);
-	TInt ShadowBytesInUse(TAny* aExcept);
-
 	EXPORT_C TInt PhvgState(TAny* aCookie, TInt aW, TInt aH)
 		{
 		Drain();
@@ -1615,7 +1628,10 @@ extern "C"
 			// pixels); GPU-ahead ones hold the only copy and stay. Not enough = this surface stays on the CPU.
 			const TInt sc = ChooseScale(aW, aH);
 			if (!sc)
+				{
+				gRefuse[0]++;
 				return -1;
+				}
 			const TInt need = ShadowBytes(aW, aH, sc);
 			TInt used = ShadowBytesInUse(NULL);
 			while (used + need > KShadowBudget)
@@ -1629,6 +1645,7 @@ extern "C"
 					static TInt rl;
 					if (rl++ < 30)	// TEMP (O5 black frame hunt)
 						RDebug::Printf("PH: vg2 phvg budget REFUSED #%d: %dx%d S%d needs %d KB, %d KB in use", rl, aW, aH, sc, need >> 10, used >> 10);
+					gRefuse[1]++;
 					gStat[4]++;
 					return -1;
 					}
@@ -1655,6 +1672,8 @@ extern "C"
 				PhvgForget(gSh[lru].iCookie);
 				s = Get(aCookie, aW, aH, ETrue);
 				}
+			else
+				gRefuse[2]++;
 			}
 		return s ? s->iState : -1;
 		}
