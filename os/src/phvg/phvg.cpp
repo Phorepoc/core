@@ -420,9 +420,9 @@ namespace
 		{
 		if (aW < 1 || aH < 1 || aW > KMaxSide || aH > KMaxSide)
 			return 0;
-		if (aW <= 256 && aH <= 256)
-			return 4;
-		return gFbTexMs ? 1 : 2;		// 1 = a 1x shadow with 4x MSAA (EnsureGl falls back to 2 if it cannot be made)
+		if (gFbTexMs)
+			return 1;					// a 1x shadow with 4x MSAA in tile memory, any size (EnsureGl falls back to 2 if it cannot be made)
+		return aW <= 256 && aH <= 256 ? 4 : 2;
 		}
 
 	GLuint MakeTex(TInt aW, TInt aH, GLint aFilter)
