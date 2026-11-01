@@ -240,6 +240,7 @@ CHuiGc::TOrientation CHuiCanvasWsPainter::CalculateRelativeOrientation()
     return relativeOrientation;
     }
 
+static TUint gPhCmdsRun;	//OURS TEMP (scroll blank hunt): commands executed
 void CHuiCanvasWsPainter::HandleBufferL(TRect& aDisplayRect, TInt aAction, const CHuiCanvasVisual& aUser, CHuiGc* aGc, TPoint aPos ) 
     {   
 	#ifdef __ALF_SYMBIAN_RWINDOW_CLEARING_BUG_WORKAROUND__
@@ -332,6 +333,7 @@ void CHuiCanvasWsPainter::HandleBufferL(TRect& aDisplayRect, TInt aAction, const
                 }
             
             
+            const TUint phCmd0 = gPhCmdsRun;	//OURS TEMP
             /* Check if we have buffers that are not yet been drawn (or we render buffer is disabled) */
             TBool cachePrepared = !HasCommandBuffersWithoutFlags(EHuiCanvasBufferStatusDrawn) || !iCanvasWsGc->IsRenderBufferEnabled();
 
@@ -414,6 +416,17 @@ void CHuiCanvasWsPainter::HandleBufferL(TRect& aDisplayRect, TInt aAction, const
             
             /* End draw. If render buffer is in use, this will update the screen */
             iCanvasWsGc->EndActionL(iFullUpdateRegion, updateDisplay);                 
+            //OURS TEMP (scroll blank hunt): the grid-sized windows' draw passes
+            if (aDisplayRect.Height() > 300)
+                {
+                static TInt phn;
+                if (++phn <= 400)
+                    RDebug::Printf("PH: alf: wsdraw #%d viz %x rect %d,%d %dx%d bufs %d cmds %u cachePrep %d rb %d/%d ignHandled %d clear %d upd %d err %d opaque %d",
+                        phn, (unsigned)&aUser, aDisplayRect.iTl.iX, aDisplayRect.iTl.iY, aDisplayRect.Width(), aDisplayRect.Height(),
+                        iCommandBuffers.Count(), gPhCmdsRun - phCmd0, cachePrepared, iCanvasWsGc->IsRenderBufferEnabled(),
+                        iCanvasWsGc->IsRenderBufferInitialized(), ignoreHandledBuffers, clearBeforeHandlingBuffer, updateDisplay, err,
+                        (aUser.Flags() & EHuiVisualFlagOpaqueHint) != 0);
+                }
             
             /* Mark that cache is not more clear */
             iCacheCleared = EFalse;
@@ -815,6 +828,7 @@ void CHuiCanvasWsPainter::DoHandleBufferStringL(TInt aIndex, TRect& /*aDisplayRe
     do
         {
         command = readerStream.ReadUint8L();
+        ++gPhCmdsRun;	//OURS TEMP (scroll blank hunt)
         { static TUint phops[256]; static TUint64 phtm[256]; static TUint phprev = 0, phprevT = 0, phtot = 0; static TInt phf2; if (!phf2) HAL::Get(HAL::EFastCounterFrequency, phf2); const TUint phnow = User::FastCounter(); if (phprevT) phtm[phprev & 255] += (TUint)(phnow - phprevT); phprev = command; phprevT = phnow; if ((++phtot & 4095) == 0) { TInt b1 = 0, b2 = 0, b3 = 0; for (TInt q = 0; q < 256; q++) { if (phtm[q] > phtm[b1]) b1 = q; } for (TInt q = 0; q < 256; q++) { if (q != b1 && phtm[q] > phtm[b2]) b2 = q; } for (TInt q = 0; q < 256; q++) { if (q != b1 && q != b2 && phtm[q] > phtm[b3]) b3 = q; } RDebug::Printf("PH: alf: canvas time after %u cmds: op %d %u ms (x%u), op %d %u ms (x%u), op %d %u ms (x%u)", phtot, b1, (TUint)(phtm[b1] * 1000 / (phf2 ? phf2 : 1)), phops[b1], b2, (TUint)(phtm[b2] * 1000 / (phf2 ? phf2 : 1)), phops[b2], b3, (TUint)(phtm[b3] * 1000 / (phf2 ? phf2 : 1)), phops[b3]); } TUint& phc = phops[command & 255]; ++phc; if (phc == 1 || (phc & 255) == 0) RDebug::Printf("PH: alf: canvas op %d x%u gc=%s", (int)command, phc, iCanvasWsGc == iCanvasWsHwGc ? "HW(VG)" : iCanvasWsGc == iCanvasWsSwGc ? "SW" : iCanvasWsGc == iCanvasWsBitGc ? "BIT(CFbsBitGc)" : "?"); }
 #ifdef HUI_DEBUG_TRACK_DRAWING
         TTlsData::CommandDebugger()->SetDescription( command );
