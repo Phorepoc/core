@@ -1366,7 +1366,7 @@ void CEikCba::BaseConstructL()
     // Phorepoc: an embedded CBA (the options menu's, a popup's) made its window transparent when it was created
     // (SetContainerWindowL / BaseConstructL: EnableWindowTransparency) and its Draw paints only the softkey frames;
     // the opaque toolbar colour here left the area around the frames white.
-    if ( ! ( iCbaFlags & EEikCbaFlagTransparent ) && !iFlags.IsSet( ECbaEmbedded ) )
+    if ( ! ( iCbaFlags & ( EEikCbaFlagTransparent | EEikCbaFlagSemiTransparent ) ) && !iFlags.IsSet( ECbaEmbedded ) )
         {
         window.SetBackgroundColor(iEikonEnv->ControlColor(EColorToolbarBackground, *this));
         }
@@ -4433,9 +4433,10 @@ void CEikCba::DoColorChange()
     _AKNTRACE_FUNC_ENTER;
     iBrushAndPenContext->SetBrushColor(iEikonEnv->ControlColor(EColorToolbarBackground, *this));
     iBrushAndPenContext->SetPenColor(iEikonEnv->ControlColor(EColorToolbarText, *this));
-    // Phorepoc: an embedded CBA's window stays transparent (ConstructL), and so does a transparent one's
-    // (SetButtonGroupFlags: the keylock's screen-sized CBA) -- the opaque toolbar colour made it a white screen
-    if ( !iFlags.IsSet( ECbaEmbedded ) && !( iCbaFlags & EEikCbaFlagTransparent ) )
+    // Phorepoc: an embedded CBA's window stays transparent (ConstructL), and so does a transparent or semi-transparent
+    // one's (SetButtonGroupFlags: the keylock's screen-sized CBA; the home screen's softkeys, xnmenuadapter) -- the
+    // opaque toolbar colour made the first a white screen and the second a solid bar over the wallpaper
+    if ( !iFlags.IsSet( ECbaEmbedded ) && !( iCbaFlags & ( EEikCbaFlagTransparent | EEikCbaFlagSemiTransparent ) ) )
         {
         Window().SetBackgroundColor(iEikonEnv->ControlColor(EColorToolbarBackground, *this));
         }
