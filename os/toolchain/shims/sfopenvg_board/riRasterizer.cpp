@@ -33,7 +33,6 @@
 #include "riRasterizer.h"
 #include <centralrepository.h>
 #include <e32debug.h>
-#include <e32atomics.h>
 #include <hal.h>
 
 //==============================================================================================
@@ -70,7 +69,24 @@ template<class A> static A& PhRasterPool()
 	static TPhRasterPoolCell cell;
 	return reinterpret_cast<A&>(cell);
 }
-static volatile TUint32 gPhRasterPoolOwner;	// the owning Rasterizer's address (euser's atomics: GCC's builtins are libgcc calls on ARMv5)
+static TUint32 gPhRasterPoolOwner;	// the owning Rasterizer's address, 0 = free
+// The owner word's atomics, compiled for ARMv7 so GCC inlines LDREX/STREX + DMB: the library builds for ARMv5TE, where
+// the builtins become libgcc calls, and euser's __e32_atomic_* imports land on not-implemented stubs here (EUSRNIMP).
+// Every core this runs on (Cortex-A53 in AArch32, x86) has them.
+#if defined(__arm__)
+#define PH_POOL_ATOMIC __attribute__((target("arch=armv7-a")))
+#else
+#define PH_POOL_ATOMIC
+#endif
+static PH_POOL_ATOMIC bool PhRasterPoolClaim(TUint32 aOwner)
+{
+	TUint32 none = 0;
+	return __atomic_compare_exchange_n(&gPhRasterPoolOwner, &none, aOwner, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED);
+}
+static PH_POOL_ATOMIC void PhRasterPoolRelease()
+{
+	__atomic_store_n(&gPhRasterPoolOwner, (TUint32)0, __ATOMIC_RELEASE);
+}
 
 // OURS (O2): the GPU engine hook, riPhvg.cpp
 bool PhvgTryFill(const Rasterizer& aR);
@@ -105,8 +121,7 @@ Rasterizer::Rasterizer() :
 {
 	// OURS (perf 2026-11-01): take the pooled edge storage if no other rasterizer holds it
 	RI_ASSERT(sizeof(m_edges) == sizeof(TPhRasterPoolCell) && sizeof(m_scissorEdges) == sizeof(TPhRasterPoolCell));
-	TUint32 none = 0;
-	if(__e32_atomic_cas_acq32(&gPhRasterPoolOwner, &none, (TUint32)this))
+	if(PhRasterPoolClaim((TUint32)this))
 	{
 		m_edges.swap(PhRasterPool<Array<Edge> >());
 		m_scissorEdges.swap(PhRasterPool<Array<ScissorEdge> >());
@@ -131,7 +146,7 @@ Rasterizer::~Rasterizer()
 		m_scissorEdges.clear();
 		m_edges.swap(PhRasterPool<Array<Edge> >());
 		m_scissorEdges.swap(PhRasterPool<Array<ScissorEdge> >());
-		__e32_atomic_store_rel32(&gPhRasterPoolOwner, 0);
+		PhRasterPoolRelease();
 	}
 }
 
