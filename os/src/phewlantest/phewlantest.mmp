@@ -1,0 +1,16 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// phewlantest.mmp -- OURS: the WLAN regression benchmark (scan, available IAPs, an application's connection, DNS,
+// HTTP, latency, download throughput, the idle disconnect and the reconnect after it; see phewlantest.cpp)
+TARGET			phewlantest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157FE
+CAPABILITY		NetworkServices NetworkControl ReadDeviceData WriteDeviceData ReadUserData
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phewlantest.cpp
+LIBRARY			euser.lib efsrv.lib esock.lib insock.lib commdb.lib ecom.lib
