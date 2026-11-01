@@ -55,6 +55,22 @@ static int PheAntialiasSamples()
 namespace OpenVGRI
 {
 
+// OURS (perf 2026-11-01): every draw builds a local Rasterizer (riApi.cpp), whose edge array grew from 8 by doubling
+// and whose fill() built three more arrays -- per path, freed on return. A 2000-edge skin path ended in 80-160 KB
+// blocks, above the hybrid heap's 64 KB page threshold, so each draw mapped and unmapped chunk pages (ALF scrolling:
+// ~40 % of alfredserver in User::Alloc/Free + ChunkAdjust). The storage now stays in a process pool: one rasterizer at
+// a time owns it (atomic owner, taken in the constructor, given back in the destructor); a rasterizer built while
+// another owns it (a second drawing thread) allocates as before. Results are unchanged: only the capacity is kept.
+// The pool slots are raw {pointer, size, allocated} cells, Array's layout, zero = an empty Array (no static
+// constructor); PhRasterPool is only instantiated inside Rasterizer members, where the private item types are visible.
+struct TPhRasterPoolCell { void* iArray; int iSize; int iAllocated; };
+template<class A> static A& PhRasterPool()
+{
+	static TPhRasterPoolCell cell;
+	return reinterpret_cast<A&>(cell);
+}
+static const void* gPhRasterPoolOwner;
+
 // OURS (O2): the GPU engine hook, riPhvg.cpp
 bool PhvgTryFill(const Rasterizer& aR);
 // OURS (O4): strokes (a coverage-buffer rasterizer with no pixel pipe) are captured and painted by the GPU, riPhvg.cpp
@@ -85,7 +101,18 @@ Rasterizer::Rasterizer() :
     m_fillRule(VG_EVEN_ODD),
     m_pixelPipe(NULL),
     m_covBuffer(NULL)
-{}
+{
+	// OURS (perf 2026-11-01): take the pooled edge storage if no other rasterizer holds it
+	RI_ASSERT(sizeof(m_edges) == sizeof(TPhRasterPoolCell) && sizeof(m_scissorEdges) == sizeof(TPhRasterPoolCell));
+	const void* none = NULL;
+	if(__atomic_compare_exchange_n(&gPhRasterPoolOwner, &none, (const void*)this, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
+	{
+		m_edges.swap(PhRasterPool<Array<Edge> >());
+		m_scissorEdges.swap(PhRasterPool<Array<ScissorEdge> >());
+		m_edges.clear();
+		m_scissorEdges.clear();
+	}
+}
 
 /*-------------------------------------------------------------------*//*!
 * \brief	Rasterizer destructor.
@@ -97,6 +124,14 @@ Rasterizer::Rasterizer() :
 Rasterizer::~Rasterizer()
 {
 	PhvgStrokeEnd(this);	//OURS (O4): paints a pending GPU stroke
+	if(gPhRasterPoolOwner == this)	//OURS (perf 2026-11-01): give the storage back to the pool
+	{
+		m_edges.clear();
+		m_scissorEdges.clear();
+		m_edges.swap(PhRasterPool<Array<Edge> >());
+		m_scissorEdges.swap(PhRasterPool<Array<ScissorEdge> >());
+		__atomic_store_n(&gPhRasterPoolOwner, (const void*)NULL, __ATOMIC_RELEASE);
+	}
 }
 
 /*-------------------------------------------------------------------*//*!
@@ -424,12 +459,20 @@ void Rasterizer::fill()
     if(ey > m_covMaxy) m_covMaxy = ey;
 
 	//fill the screen
-	Array<ActiveEdge> aet;
-	Array<ScissorEdge> scissorAet;
+	//OURS (perf 2026-11-01): the pool owner's scanline arrays keep their capacity between fills
+	Array<ActiveEdge> aetLocal;
+	Array<ScissorEdge> scissorAetLocal;
+	Array<int> windowLocal;
+	const bool pooled = gPhRasterPoolOwner == this;
+	Array<ActiveEdge>& aet = pooled ? PhRasterPool<Array<ActiveEdge> >() : aetLocal;
+	Array<ScissorEdge>& scissorAet = pooled ? PhRasterPool<Array<ScissorEdge> >() : scissorAetLocal;
+	Array<int>& window = pooled ? PhRasterPool<Array<int> >() : windowLocal;
+	aet.clear();
+	scissorAet.clear();
+	window.clear();
 	//OURS (perf 2026-10-26): edges sorted by top y and a window of the ones that can still touch a scanline; the
 	//reference scanned every edge of the path on every scanline (NVG skin shapes: ~4 ms a path while scrolling)
 	m_edges.sort();	//throws bad_alloc
-	Array<int> window;
 	int nextEdge = 0;
 	for(int j=sy;j<ey;j++)
 	{
