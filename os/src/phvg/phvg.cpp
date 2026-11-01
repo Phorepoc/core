@@ -55,7 +55,7 @@ namespace
 	// filled the fixed per-process GPU arena. The worker submits (glFlush) between commands -- where no fill is half done
 	// -- once the pending outputs pass KOutFlush.
 	TUint gOutBytes;
-	const TUint KOutFlush = 0xFFFFFFFFu;	// TEMP A/B: never
+	const TUint KOutFlush = 16 << 20;
 	inline void Drew(TInt aVerts) { const TUint b = ((TUint)aVerts * 32 + 4095) & ~4095u; gOutBytes += b; }
 	TInt gGlLive[2];			// TEMP (GPU arena growth hunt): live GL textures, renderbuffers
 	TUint gRefuse[3];			// PhvgState -1: 0 size (ChooseScale), 1 budget (only GPU-ahead shadows left), 2 table full of GPU-ahead shadows
@@ -1484,7 +1484,7 @@ namespace
 			DrainRing();
 			gRingWaitTicks = User::FastCounter() - tRing0;
 			if (gOutBytes > KOutFlush)
-				glFlush(), gOutBytes = 0;
+				glFinish(), gOutBytes = 0;	// TEMP A/B: finish, not flush
 			if (!__e32_atomic_load_acq32(&gCmdPending))
 				continue;
 			switch (gCmd.iOp)
@@ -1500,7 +1500,7 @@ namespace
 				default:			gCmd.iResult = 0; break;
 				}
 			if (gOutBytes > KOutFlush)
-				glFlush(), gOutBytes = 0;
+				glFinish(), gOutBytes = 0;	// TEMP A/B: finish, not flush
 			__e32_atomic_store_rel32(&gCmdPending, 0);
 			done.Signal();
 			}
