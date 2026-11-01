@@ -28,7 +28,7 @@ symgpu_t *symgpu_open(void);                       /* NULL: no GPU driver in thi
 void symgpu_close(symgpu_t *m);
 void symgpu_info(symgpu_t *m, symgpu_info_t *out);
 int symgpu_commit(symgpu_t *m, uint32_t offset, uint32_t size);
-/* a growable GP tile heap (lima LIMA_BO_FLAG_HEAP) at arena [offset, offset + max), its first precommitted bytes already
+/* a growable GPU tiler heap (the DRM heap-BO model) at arena [offset, offset + max), its first precommitted bytes already
    committed: the kernel commits the first pages and grows it when a GP job runs out of tile memory; 0 or an error */
 int symgpu_heap_create(symgpu_t *m, uint32_t offset, uint32_t max, uint32_t precommitted);
 int symgpu_heap_free(symgpu_t *m, uint32_t offset);
