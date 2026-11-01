@@ -1503,6 +1503,15 @@ namespace
 		QuadVerts(v, N / 2, N / 2, N, N);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+		// a cover pass where the stencil is not zero: nothing may change (the stencil was cleared, never written)
+		glEnable(GL_STENCIL_TEST);
+		glStencilFunc(GL_NOTEQUAL, 0, 0xFF);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		glUniform4f(gFlatColor, 1.0f, 1.0f, 0.0f, 1.0f);
+		QuadVerts(v, 0.0f, 0.0f, N, N);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDisable(GL_STENCIL_TEST);
 		glFinish();
 		// read through a plain framebuffer on the same texture (the 1-sample image)
 		GLuint rd = 0;
