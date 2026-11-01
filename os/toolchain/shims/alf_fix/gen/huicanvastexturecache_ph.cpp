@@ -1153,7 +1153,9 @@ void CHuiCanvasGraphicImageRasterizer::RasterizeL(CHuiCanvasGraphicImage& aImage
         {
         // ...no, so we need to duplicate the handle
         bitmap = new(ELeave)CFbsBitmap;                       
-        bitmap->Duplicate(bitmapHandle);
+        const TInt dupErr = bitmap->Duplicate(bitmapHandle);
+        static TInt dupLogged;   // PH diag: a dead handle uploads as an empty (black) texture
+        if (dupErr && dupLogged++ < 20) RDebug::Printf("PH: alf: canvas bitmap Duplicate(%x) = %d", bitmapHandle, dupErr);
         if (bitmap)
             {
             if (KHuiCanvasKeepBitmapPointer)
@@ -1189,7 +1191,9 @@ void CHuiCanvasGraphicImageRasterizer::RasterizeL(CHuiCanvasGraphicImage& aImage
             {
             // ...no, so we need to duplicate the handle
             mask = new(ELeave)CFbsBitmap;                       
-            mask->Duplicate(maskHandle);
+            const TInt maskDupErr = mask->Duplicate(maskHandle);
+            static TInt maskDupLogged;
+            if (maskDupErr && maskDupLogged++ < 20) RDebug::Printf("PH: alf: canvas mask Duplicate(%x) = %d", maskHandle, maskDupErr);
             if (mask)
                 {
                 if (KHuiCanvasKeepBitmapPointer)
