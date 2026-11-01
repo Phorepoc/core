@@ -389,13 +389,19 @@ namespace
 		aS.iState = aState;
 		}
 
-	// the GPU memory of a shadow (MakeTex / renderbuffers in EnsureGl): colour S x S, depth-stencil (x4 samples when MSAA),
-	// the 2x stage of S = 4, the 1x resolve texture and the read-back renderbuffer
+	// the GPU memory of a shadow (MakeTex / renderbuffers in EnsureGl), as Mesa allocates it: every buffer padded to 16 x 16
+	// tiles (lima); colour S x S; when MSAA (S = 1), EXT_multisampled_render_to_texture's implicit 4-sample colour buffer
+	// next to the texture (Mesa's state tracker emulates the extension) and a 4-sample depth-stencil, else a 1-sample
+	// depth-stencil at S x S; the 2x stage of S = 4; the 1x resolve texture and the read-back renderbuffer
 	TInt ShadowBytes(TInt aW, TInt aH, TInt aS)
 		{
-		const TInt px = aW * aH;
-		const TInt ds = aS == 1 ? px * 16 : px * aS * aS * 4;
-		return px * aS * aS * 4 + ds + (aS == 4 ? px * 16 : 0) + px * 8;
+		const TInt w = (aW * aS + 15) & ~15, h = (aH * aS + 15) & ~15;		// the S x S buffers
+		const TInt w1 = (aW + 15) & ~15, h1 = (aH + 15) & ~15;				// the 1x ones
+		const TInt big = w * h;
+		TInt n = big * 4 + (aS == 1 ? big * 16 + big * 16 : big * 4);		// colour (+ MSAA colour) + depth-stencil
+		if (aS == 4)
+			n += ((aW * 2 + 15) & ~15) * ((aH * 2 + 15) & ~15) * 4;
+		return n + w1 * h1 * 8;
 		}
 
 	TInt ShadowBytesInUse(TAny* aExcept)
