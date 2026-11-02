@@ -50,7 +50,7 @@ namespace
 	// which Mesa's own buffers and tile heaps share); past it the least recently used synced shadow goes, else the new
 	// surface stays on the CPU
 	const TInt KShadowBudget = 96 << 20;
-	// O5: lima gives every draw its own vertex-output buffer (>= one 4 KB page; ~32 bytes a vertex) and keeps them until
+	// O5: the tiled GPU driver gives every draw its own vertex-output buffer (>= one 4 KB page; ~32 bytes a vertex) and keeps them until
 	// the framebuffer's job is submitted -- up to 2500 draws a job. With a hundred shadows drawn between presents that
 	// filled the fixed per-process GPU arena. The worker submits (glFlush) between commands -- where no fill is half done
 	// -- once the pending outputs pass KOutFlush.
@@ -475,7 +475,7 @@ namespace
 		}
 
 	// the GPU memory of a shadow (MakeTex / renderbuffers in EnsureGl), as Mesa allocates it: every buffer padded to 16 x 16
-	// tiles (lima); colour S x S (with MSAA, S = 1, the samples live in tile memory: lima resolves them on write-back, no
+	// tiles (tiled GPUs); colour S x S (with MSAA, S = 1, the samples live in tile memory: the driver resolves them on write-back, no
 	// extra colour buffer) and a depth-stencil at S x S (4 samples = 16 bytes a pixel when MSAA); the 2x stage of S = 4; the
 	// 1x resolve texture and the read-back renderbuffer
 	TInt ShadowBytes(TInt aW, TInt aH, TInt aS)
