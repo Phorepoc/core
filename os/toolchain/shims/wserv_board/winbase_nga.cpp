@@ -517,21 +517,10 @@ TBool CWsWindowBase::CommandL(TInt aOpcode, TWsWinCmdUnion &aCmd)
 			}
 			break;
 		case EWsWinOpEnableAdvancedPointers:
-      if(!IsActivated())
-          {
-          // Must call this BEFORE activating the window.
-          iBaseWinFlags |= EBaseWinAdvancedPointersEnabled;
-          }
-      else if (iBaseWinFlags & EBaseWinAdvancedPointersEnabled)
-          {
-          // OURS: a repeat on a window that already has them changes nothing -- no panic. Fragger enables them before
-          // ActivateL and again in every foreground gain, and runs on the phones it shipped for: their WSERV accepts the repeat.
-          }
-      else
-          {                    
-          // Called after activation, so panic the client.                
-          OwnerPanic(EWservPanicUnableToEnableAdvPointer);
-          }
+			// OURS: honoured after activation too (2010: EWservPanicUnableToEnableAdvPointer). Shipped games call it again
+			// on an activated window in every foreground gain (Fragger) and run on the phones they were made
+			// for, so that window server took the call; the window gets advanced pointer events from then on.
+			iBaseWinFlags |= EBaseWinAdvancedPointersEnabled;
 			break;
 		// Remove as a workaround for Bug 3802
 		// PHOREPOC board copy (2026-10-18): back as the accepting no-op it was. Qt 4.8 (qwidget_s60.cpp s60UpdateIsOpaque, Hb's
