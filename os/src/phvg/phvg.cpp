@@ -274,6 +274,58 @@ namespace
 		return EFalse;
 		}
 
+	// Does 4x MSAA in tile memory actually smooth edges? A diagonal edge into a 32 x 32 render-to-texture framebuffer, read
+	// back through a plain one: a driver that accepts the multisample attachment but renders 1 sample leaves no pixel
+	// between black and white (jagged shadows -- the icons once looked like that); then the shadows are supersampled.
+	TBool MsaaSmooths()
+		{
+		const TInt N = 32;
+		GLuint tex = 0, fbo = 0, rd = 0;
+		glGenTextures(1, &tex);
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, N, N, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		gFbTexMs(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0, KMsaaSamples);
+		TInt mixed = -1;
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+			{
+			glDisable(GL_BLEND);
+			glDisable(GL_STENCIL_TEST);
+			glDisable(GL_SCISSOR_TEST);
+			glViewport(0, 0, N, N);
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+			glUseProgram(gProgFlat);
+			glUniform2f(gFlatScale, 2.0f / N, 2.0f / N);
+			glUniform4f(gFlatColor, 1.0f, 1.0f, 1.0f, 1.0f);
+			const TReal32 v[6] = { 0.0f, 0.0f, (TReal32)N, 0.0f, 0.0f, (TReal32)N * 0.7f };
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
+			glEnableVertexAttribArray(0);
+			glDrawArrays(GL_TRIANGLES, 0, 3);
+			glFinish();
+			glGenFramebuffers(1, &rd);
+			glBindFramebuffer(GL_FRAMEBUFFER, rd);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+			TUint32 px[N * N];
+			glReadPixels(0, 0, N, N, GL_RGBA, GL_UNSIGNED_BYTE, px);
+			mixed = 0;
+			for (TInt i = 0; i < N * N; i++)
+				{
+				const TUint r = px[i] & 0xFF;
+				mixed += r > 16 && r < 239;
+				}
+			glDeleteFramebuffers(1, &rd);
+			}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDeleteFramebuffers(1, &fbo);
+		glDeleteTextures(1, &tex);
+		Log("MSAA edge check: partly covered pixels (0 = no anti-aliasing, -1 = incomplete)", mixed);
+		return mixed > 0;
+		}
+
 	TBool GlInit()
 		{
 		gDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -327,7 +379,6 @@ namespace
 			if (!gFbTexMs || !gRbStorageMs)
 				gFbTexMs = NULL, gRbStorageMs = NULL;
 			}
-		Log("shadow anti-aliasing: 1 = 4x MSAA in tile memory, 0 = supersampled", gFbTexMs != NULL);
 		gProgFlat = Link(KVsFlat, KFsFlat);
 		gProgTex = Link(KVsTex, KFsTex);
 		if (!gProgFlat || !gProgTex)
@@ -385,6 +436,9 @@ namespace
 		glEnableVertexAttribArray(0);
 		RDebug::Printf("PH: vg2 phvg: GL up: %s / %s, packed depth-stencil %d", (const char*)glGetString(GL_RENDERER),
 		               (const char*)glGetString(GL_VERSION), gPacked);
+		if (gFbTexMs && !MsaaSmooths())
+			gFbTexMs = NULL, gRbStorageMs = NULL;
+		Log("shadow anti-aliasing: 1 = 4x MSAA in tile memory, 0 = supersampled", gFbTexMs != NULL);
 		return ETrue;
 		}
 
