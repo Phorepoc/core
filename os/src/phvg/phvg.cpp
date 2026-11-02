@@ -317,8 +317,22 @@ namespace
 				const TUint r = px[i] & 0xFF;
 				mixed += r > 16 && r < 239;
 				}
-			for (TInt i = 0; i < 4; i++)
-				aRow[i] = px[8 * N + 22 + i];		// across the edge on row 8 (x = 32 - 8 / 0.7 * ... ~ 21)
+			// error against the exact coverage (16 x 16 subsamples) of the triangle (0,0) (N,0) (0,0.7N)
+			TInt err = 0;
+			for (TInt y = 0; y < N; y++)
+				for (TInt x = 0; x < N; x++)
+					{
+					TInt in = 0;
+					for (TInt sy = 0; sy < 16; sy++)
+						for (TInt sx = 0; sx < 16; sx++)
+							{
+							const TReal32 fx = x + (sx + 0.5f) / 16, fy = y + (sy + 0.5f) / 16;
+							in += fx / N + fy / (0.7f * N) < 1.0f;
+							}
+					const TInt want = in * 255 / 256, got = px[y * N + x] & 0xFF;
+					err += want > got ? want - got : got - want;
+					}
+			aRow[0] = err;
 			glDeleteFramebuffers(1, &rd);
 			}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -332,16 +346,17 @@ namespace
 		// TEMP (msrtt resolve probe): lima's write-back mode for a 4-sample framebuffer on a 1-sample texture
 		void (*setMode)(TInt) = (void (*)(TInt))eglGetProcAddress("symLimaWbMode");
 		TInt best = -1;
+		TUint bestErr = 0;
 		for (TInt m = 0; m < 8 && (m == 0 || setMode); m++)
 			{
 			if (setMode)
 				setMode(m);
 			TUint32 row[4] = { 0, 0, 0, 0 };
 			const TInt mixed = MsaaMixed(row);
-			RDebug::Printf("PH: vg2 phvg MSAA edge check, write-back mode %d: %d partly covered pixels; row 8: %08x %08x %08x %08x",
-				m, mixed, row[0], row[1], row[2], row[3]);
-			if (best < 0 && mixed > 0)
-				best = m;
+			RDebug::Printf("PH: vg2 phvg MSAA edge check, write-back mode %d: %d partly covered pixels, error vs exact coverage %u",
+				m, mixed, row[0]);
+			if (mixed > 0 && (best < 0 || row[0] < bestErr))
+				best = m, bestErr = row[0];
 			}
 		if (setMode)
 			setMode(best > 0 ? best : 0);
