@@ -103,8 +103,10 @@ void CMmListBoxContainer::ConstructL( const TRect& aRect,
     
     SetMopParent( aObjectProvider );
     CreateWindowL(); // Creates window.
-    // Phorepoc: no white WSERV clear (the default background) before the first draw / on exposure
-    Window().SetBackgroundColor( KRgbBlack );
+    // Phorepoc: no WSERV clear at all on server-initiated redraws (the default clears white; a black clear still showed
+    // as a black frame whenever a kinetic scroll invalidated the grid before the app's redraw reached the compositor):
+    // the window keeps its previous content until the app draws
+    Window().SetBackgroundColor();
     iWidget = CreateListboxL( aTemplateLibrary );
     iWidget->SetListBoxObserver( this );
     SetRect( aRect ); // Sets rectangle of frame.
