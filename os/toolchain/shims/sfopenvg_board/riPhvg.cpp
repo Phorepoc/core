@@ -735,6 +735,9 @@ namespace
 		};
 	TStroke gStroke;
 
+	TReal32* gFillEdges = NULL;		// PhvgPathFill's edge array (grow-only, kept between fills)
+	TInt gFillCap = 0;
+
 	TInt gStrokeDbg = 0;
 
 	// diagnostics (first 10 strokes): the pieces together must be balanced on every scanline (sum of the signed edge
@@ -835,14 +838,21 @@ bool PhvgStrokeBegin(const Rasterizer& aR)
 		return false;
 	if (st == 0 && !UploadSurface(s))			// the CPU pixels (earlier fills of this very draw call) go to the GPU first
 		return false;
-	const TInt cap = 2048;
-	TReal32* e = (TReal32*)User::Alloc(cap * 4 * sizeof(TReal32));
-	TReal32* lf = (TReal32*)User::Alloc(cap * sizeof(TReal32));
-	if (!e || !lf)
+	// the edge arrays stay allocated from stroke to stroke (grow-only): a 40 KB alloc + free per stroke made the heap
+	// map and unmap its top pages every time (RHybridHeap trims a free top beyond its hysteresis) -- the kernel's
+	// ChunkAdjust was the switcher's hottest function while sliding
+	if (!gStroke.iEdges || !gStroke.iLeft)
 		{
-		User::Free(e);
-		User::Free(lf);
-		return false;
+		const TInt cap = 2048;
+		TReal32* e = (TReal32*)User::ReAlloc(gStroke.iEdges, cap * 4 * sizeof(TReal32));
+		if (e)
+			gStroke.iEdges = e;
+		TReal32* lf = (TReal32*)User::ReAlloc(gStroke.iLeft, cap * sizeof(TReal32));
+		if (lf)
+			gStroke.iLeft = lf;
+		if (!e || !lf)
+			return false;
+		gStroke.iCap = cap;
 		}
 	gStroke.iFill = f;
 	if (f.iRamp)
@@ -856,10 +866,7 @@ bool PhvgStrokeBegin(const Rasterizer& aR)
 	gStroke.iFill.iRects = nsc ? gStroke.iSc : NULL;
 	gStroke.iFill.iNRects = nsc;
 	gStroke.iNothing = aR.m_scissor && nsc == 0;
-	gStroke.iEdges = e;
-	gStroke.iLeft = lf;
 	gStroke.iCount = 0;
-	gStroke.iCap = cap;
 	gStroke.iOwner = &aR;
 	return true;
 	}
@@ -950,11 +957,7 @@ void PhvgStrokeEnd(const Rasterizer* aR)
 	if (gStroke.iOwner != aR)
 		return;
 	StrokeFlush();
-	User::Free(gStroke.iEdges);
-	User::Free(gStroke.iLeft);
-	gStroke.iEdges = NULL;
-	gStroke.iLeft = NULL;
-	gStroke.iOwner = NULL;
+	gStroke.iOwner = NULL;						// (the edge arrays are kept for the next stroke)
 	}
 
 // why path fills stay on the CPU (GPU mode only; ri_fastblit.cpp prints them with the "RI gpu" line):
@@ -1041,9 +1044,19 @@ bool PhvgTryFill(const Rasterizer& aR)
 	if (n == 0)
 		return true;							// an empty path paints nothing
 	const int w = s->getWidth(), h = s->getHeight();
-	TReal32* edges = (TReal32*)User::Alloc(n * 4 * sizeof(TReal32));
-	if (!edges)
-		return false;
+	// a scratch array kept between fills (grow-only; see PhvgStrokeBegin: an alloc + free per draw maps and unmaps heap pages)
+	if (n > gFillCap)
+		{
+		TInt cap = gFillCap ? gFillCap : 1024;
+		while (cap < n)
+			cap *= 2;
+		TReal32* g = (TReal32*)User::ReAlloc(gFillEdges, cap * 4 * sizeof(TReal32));
+		if (!g)
+			return false;
+		gFillEdges = g;
+		gFillCap = cap;
+		}
+	TReal32* edges = gFillEdges;
 	TBool sane = ETrue;
 	for (int i = 0; i < n; i++)
 		{
@@ -1081,7 +1094,6 @@ bool PhvgTryFill(const Rasterizer& aR)
 			done = gT.Fill(&f) == 1;
 			}
 		}
-	User::Free(edges);
 	gFillStat[done ? 0 : 5]++;
 	return done;
 	}

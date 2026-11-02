@@ -2059,13 +2059,35 @@ void RI_APIENTRY vgMask(VGHandle mask, VGMaskOperation operation, VGint x, VGint
 * \note		
 *//*-------------------------------------------------------------------*/
 
+// OURS (2026-11-02): one coverage buffer for every stroke, all zero between strokes. The reference allocated, cleared and
+// freed a whole-surface buffer per stroke (a 360x640 surface: 900 KB, its pages mapped and unmapped by the heap each time)
+// even when the GPU takes the stroke and the buffer stays empty -- the task switcher strokes many frames a frame, and
+// that was most of the compositor's CPU while sliding. Now a stroke only clears the box it covered (nothing on the GPU
+// path). The RI mutex (RI_GET_CONTEXT) serialises the callers.
+static RIuint32* gPhCov = NULL;
+static int gPhCovCap = 0;			// pixels
+static bool gPhCovDirty = false;	// a stroke threw before clearing its box: clear all before the next one
+
 static void renderStroke(const VGContext* context, int w, int h, int numSamples, Path* path, Rasterizer& rasterizer, const PixelPipe* pixelPipe, const Matrix3x3& userToSurface)
 {
     RI_ASSERT(context);
     RI_ASSERT(w > 0 && h > 0 && numSamples >= 1 && numSamples <= 32);
 
-    RIuint32* covBuffer = RI_NEW_ARRAY(RIuint32, w*h);
-    memset(covBuffer, 0, w*h*sizeof(RIuint32));
+    if(w*h > gPhCovCap)
+    {
+        RIuint32* grown = RI_NEW_ARRAY(RIuint32, w*h);	//throws bad_alloc
+        RI_DELETE_ARRAY(gPhCov);
+        gPhCov = grown;
+        gPhCovCap = w*h;
+        gPhCovDirty = true;
+    }
+    if(gPhCovDirty)
+    {
+        memset(gPhCov, 0, gPhCovCap*sizeof(RIuint32));
+        gPhCovDirty = false;
+    }
+    RIuint32* covBuffer = gPhCov;
+    gPhCovDirty = true;		// until the box is cleared below
 
     rasterizer.setup(0, 0, w, h, VG_NON_ZERO, NULL, covBuffer);
     path->stroke(userToSurface, rasterizer, context->m_strokeDashPattern, context->m_strokeDashPhase, context->m_strokeDashPhaseReset ? true : false,
@@ -2095,7 +2117,10 @@ static void renderStroke(const VGContext* context, int w, int h, int numSamples,
             }
         }
     }
-    RI_DELETE_ARRAY(covBuffer);
+    if(ex > sx)
+        for(int j=sy;j<ey;j++)
+            memset(covBuffer + j*w + sx, 0, (ex-sx)*sizeof(RIuint32));		// the buffer is all zero again
+    gPhCovDirty = false;
 }
 
 #ifdef BUILD_WITH_PRIVATE_OPENVG

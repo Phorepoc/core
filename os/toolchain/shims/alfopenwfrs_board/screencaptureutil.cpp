@@ -225,6 +225,10 @@ TInt CScreenCaptureUtil::CopySurfaceToBitmapL(CFbsBitmap& aCopyToBitmap)
 	CleanupClosePushL(chunk);
 	User::LeaveIfError(iSurfaceManager.MapSurface(iLocalSurface, chunk));
 	TUint8* surfacePtr = chunk.Base();
+	// OURS (2026-11-02): inside Begin/EndDataAccess. A bare DataAddress() marks the bitmap volatile for good
+	// (CFbsBitmap::DataAddress), and Alf re-uploads a volatile bitmap on every frame it draws: the task switcher's
+	// previews (captured straight into them) went back to the GPU ~15 times a second while sliding
+	aCopyToBitmap.BeginDataAccess();
 	TUint8* bitmapPtr = (TUint8*)aCopyToBitmap.DataAddress();
 	TInt copyBytes=info.iSize.iWidth*bytesPerPixel;
 	for (TInt y=0; y<info.iSize.iHeight; y++)
@@ -241,6 +245,7 @@ TInt CScreenCaptureUtil::CopySurfaceToBitmapL(CFbsBitmap& aCopyToBitmap)
 		surfacePtr += info.iStride;
 		bitmapPtr += aCopyToBitmap.DataStride();
 		}
+	aCopyToBitmap.EndDataAccess(EFalse);		// (changed: its touch count goes up, so caches take the new pixels once)
 	CleanupStack::PopAndDestroy(&chunk);
 	return KErrNone;
 	}

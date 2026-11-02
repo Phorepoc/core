@@ -2733,6 +2733,8 @@ for _src, _k, _v in _EXTEND:
 # is redrawn in full into a new buffer when shown again; huicanvastexturecache_ph.cpp keeps up to 8 MB of them.
 COMPONENTS["hitchcock"]["drop"] = list(COMPONENTS["hitchcock"].get("drop") or []) + ["huicanvastexturecache.cpp"]
 COMPONENTS["hitchcock"]["extra"] = list(COMPONENTS["hitchcock"].get("extra") or []) + [_AG + "huicanvastexturecache_ph.cpp"]
+if os.environ.get("ALF_TIMING") == "1":   # huicanvaswspainter_ph.cpp: the time per canvas command (off: ~5% of the compositor)
+    COMPONENTS["hitchcock"]["defs"] = list(COMPONENTS["hitchcock"].get("defs") or []) + ["PH_ALF_TIMING"]
 
 # Staged as sflibopenvgrefimpl.dll at ALF>=s2 in place of the default one.
 if _ALFTRACE:
