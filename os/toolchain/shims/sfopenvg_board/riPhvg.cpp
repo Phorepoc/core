@@ -730,6 +730,8 @@ namespace
 		TReal32*			iEdges;
 		TReal32*			iLeft;		// per edge: the x its trapezoid starts from (the piece's own left bound)
 		TInt				iCount, iCap;
+		TInt				iSc[KPhvgMaxScissor * 4];	// the draw's scissor rectangles (iFill.iRects points here)
+		TBool				iNothing;	// scissored away entirely: the pieces are taken and nothing is painted
 		};
 	TStroke gStroke;
 
@@ -788,7 +790,7 @@ namespace
 
 	void StrokeFlush()
 		{
-		if (gStroke.iCount > 0)
+		if (gStroke.iCount > 0 && !gStroke.iNothing)
 			{
 			StrokeDebug();
 			gStroke.iFill.iEdges = gStroke.iEdges;
@@ -802,11 +804,13 @@ namespace
 		}
 	}
 
+static TInt ScissorRects(const Rasterizer& aR, TInt aW, TInt aH, TInt* aOut);
+
 // Rasterizer::setup with a coverage buffer: True = captured (the pieces will go to the GPU).
 bool PhvgStrokeBegin(const Rasterizer& aR)
 	{
 	const PixelPipe* p = gPhvgLastPipe;
-	if (!p || aR.m_scissor || gStroke.iOwner || !p->m_drawable || !WantGpu(EFalse))
+	if (!p || gStroke.iOwner || !p->m_drawable || !WantGpu(EFalse))
 		return false;
 	Surface* s = p->m_drawable->getColorBuffer();
 	if (!s || !Eligible(s))
@@ -816,6 +820,16 @@ bool PhvgStrokeBegin(const Rasterizer& aR)
 	if (!BuildPaint(p, f))
 		return false;
 	const int w = s->getWidth(), h = s->getHeight();
+	// a scissored stroke clips to the draw's rectangles like a fill (drawPath sets them before the stroke's setup). It used to
+	// stay on the CPU: ALF scissors nearly every draw, so each stroke (the task switcher's frames) read the whole dirty
+	// region back first -- ~40 ms each, a core busy while sliding
+	TInt nsc = 0;
+	if (aR.m_scissor)
+		{
+		nsc = ScissorRects(aR, w, h, gStroke.iSc);
+		if (nsc < 0)
+			return false;						// too many or overlapping rectangles: the RI draws it
+		}
 	TInt st = gT.State(Ck(s), w, h);
 	if (st < 0)
 		return false;
@@ -839,6 +853,9 @@ bool PhvgStrokeBegin(const Rasterizer& aR)
 	gStroke.iFill.iCookie = Ck(s);
 	gStroke.iFill.iW = w;
 	gStroke.iFill.iH = h;
+	gStroke.iFill.iRects = nsc ? gStroke.iSc : NULL;
+	gStroke.iFill.iNRects = nsc;
+	gStroke.iNothing = aR.m_scissor && nsc == 0;
 	gStroke.iEdges = e;
 	gStroke.iLeft = lf;
 	gStroke.iCount = 0;
