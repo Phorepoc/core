@@ -1028,7 +1028,8 @@ COMPONENTS = {
                                # x32: riDefs.h wants the COMPILER's <float.h>, which -nostdinc hides
                                x32_flags=["-idirafter", "/usr/lib/gcc/x86_64-linux-gnu/13/include"],
                                # the reference 0.75-px Gaussian left edge pixels 89% opaque: a line at every skin-frame slice join
-                               drop=["rieglos.cpp", "rirasterizer.cpp", "riimage.cpp", "ripixelpipe.cpp"], extra=["toolchain/shims/stems/riEGLOS.cpp", "toolchain/shims/sfopenvg_board/riRasterizer.cpp", "toolchain/shims/sfopenvg_board/riImage.cpp", "toolchain/shims/sfopenvg_board/riPixelPipe.cpp", "toolchain/shims/sfopenvg_board/riPhvg.cpp"],
+                               # riPath.cpp = curves flattened for their size on the surface (the reference: 256 lines each)
+                               drop=["rieglos.cpp", "rirasterizer.cpp", "riimage.cpp", "ripixelpipe.cpp", "ripath.cpp"], extra=["toolchain/shims/stems/riEGLOS.cpp", "toolchain/shims/sfopenvg_board/riRasterizer.cpp", "toolchain/shims/sfopenvg_board/riImage.cpp", "toolchain/shims/sfopenvg_board/riPixelPipe.cpp", "toolchain/shims/sfopenvg_board/riPhvg.cpp", "toolchain/shims/sfopenvg_board/riPath.cpp"],
                                noinc=["stdapis"], flags=["-iquote", os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.os.graphics/openvg/openvgrefimplementation/sfopenvg/sfopenvg"),
                                                          "-I" + os.path.join(OS_ROOT, "toolchain/shims/sfopenvg_inc"),
                                                          "-I" + os.path.join(OS_ROOT, "src/phvg"),
