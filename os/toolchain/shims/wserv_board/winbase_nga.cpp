@@ -522,6 +522,11 @@ TBool CWsWindowBase::CommandL(TInt aOpcode, TWsWinCmdUnion &aCmd)
           // Must call this BEFORE activating the window.
           iBaseWinFlags |= EBaseWinAdvancedPointersEnabled;
           }
+      else if (iBaseWinFlags & EBaseWinAdvancedPointersEnabled)
+          {
+          // OURS: a repeat on a window that already has them changes nothing -- no panic. Fragger enables them before
+          // ActivateL and again in every foreground gain, and runs on the phones it shipped for: their WSERV accepts the repeat.
+          }
       else
           {                    
           // Called after activation, so panic the client.                
