@@ -64,7 +64,7 @@ BUILTIN = {
 _SFVG = "oss.FCL.sf.os.graphics/openvg/openvgrefimplementation/sfopenvg/group/"
 _OENV = "oss.FCL.sf.os.ossrv/genericopenlibs/openenvcore/"
 _ALF = "oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/"
-# ALF_LOG=1 ph component build -arch arm alfrenderstage alfappservercore alfdecoderserverclient_real: the release's own RDebug::Print logging
+# ALF_LOG=1 phe component build -arch arm alfrenderstage alfappservercore alfdecoderserverclient_real: the release's own RDebug::Print logging
 # (alflogger.h _ALF_LOGGING) -- "CAlfRenderStage: ready to rock", connect/bridge steps; per-frame lines too, so first boots only
 _ALFLOG = dict(defs=["_ALF_LOGGING"]) if os.environ.get("ALF_LOG") == "1" else {}
 _ALFRC = os.environ.get("ALF_RC", "c")
@@ -330,7 +330,7 @@ COMPONENTS = {
         mmp="oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/domainmgr/group/domainpolicy.mmp"),
     "domainpolicy2": dict(
         mmp="oss.FCL.sf.os.devicesrv/sysstatemgmt/systemstatemgr/dompolicy/group/domainpolicy2.mmp"),
-    # ECOM_TRACE=1 ph component build ... ecomserver: the server's own RDebug tracing (EComDebug.h ECOM_TRACE): discovery per drive,
+    # ECOM_TRACE=1 phe component build ... ecomserver: the server's own RDebug tracing (EComDebug.h ECOM_TRACE): discovery per drive,
     # rejected plug-ins (SID / UID2 / hash mismatches), startup states
     "ecomserver": dict(
         mmp=f"{OSSRV}/lowlevellibsandfws/pluginfw/Framework/MMPFiles/EComServer.mmp",

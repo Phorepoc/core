@@ -5,8 +5,8 @@
 # build_qt_sis.sh -- Qt 4.8.7 for ARM as an INSTALLABLE SIS, from the public Qt source. Qt is LGPL, so it is never in the
 # ROM image: it is built and packaged separately (package 0x2001E61C "Qt" 4.8.7, which is also what a Qt app's SIS depends on).
 #
-# Runs INSIDE the toolchain image with the pdk, core and the adaptations mounted as `ph` mounts them (PHOREPOC_PDK, PHOREPOC_CORE,
-# PHOREPOC_OS_ROOT, PHOREPOC_SYMBIAN, PHOREPOC_ADAPTATIONS, PHOREPOC_BUILD) and the include tree exported (`ph source export -a`).
+# Runs INSIDE the toolchain image with the pdk, core and the adaptations mounted as `phe` mounts them (PHOREPOC_PDK, PHOREPOC_CORE,
+# PHOREPOC_OS_ROOT, PHOREPOC_SYMBIAN, PHOREPOC_ADAPTATIONS, PHOREPOC_BUILD) and the include tree exported (`phe source export -a`).
 #
 #   docker run --rm -v <pdk>:/pdk -v <core>:/core -v <core>/os:/os:ro -v <symbian>:/symbian:ro -v <build>:/build \
 #       -v <soc>:/adapt/0:ro -v <board>:/adapt/1:ro -w /pdk \

@@ -6,7 +6,7 @@ build it. The Symbian source itself isn't stored here. `fetch.sh` downloads it a
 `sources.lock`.
 
 The tools that turn all this into a bootable image are in the [pdk](https://github.com/Phorepoc/pdk), and you drive them
-with its `ph` command.
+with its `phe` command.
 
 ## Devices
 
@@ -21,23 +21,23 @@ is in the pdk's [docs/layering.md](https://github.com/Phorepoc/pdk/blob/main/doc
 ## Building
 
 You'll need Docker and a checkout of the pdk next to this one, plus the repositories of the board you build for
-(`ph board list` shows the boards it finds). For a board called `myboard`:
+(`phe board list` shows the boards it finds). For a board called `myboard`:
 
 ```sh
-ph source fetch                        # download the Symbian source into core/symbian/
-ph source export -a                    # put together the include tree
-ph source mbg -a                       # generate the icon headers
-ph component resources -A -b myboard        # compile the resource files
-ph component build -A -b myboard            # build every component
-ph image rom -b myboard                     # and put them into a ROM
+phe source fetch                        # download the Symbian source into core/symbian/
+phe source export -a                    # put together the include tree
+phe source mbg -a                       # generate the icon headers
+phe component resources -A -b myboard        # compile the resource files
+phe component build -A -b myboard            # build every component
+phe image rom -b myboard                     # and put them into a ROM
 ```
 
-`-b` tells `ph` which board to build for. Without it, `ph` builds core alone for an architecture (`--arch x32` or
+`-b` tells `phe` which board to build for. Without it, `phe` builds core alone for an architecture (`--arch x32` or
 `--arch arm`). Everything runs inside the
 toolchain container, so you don't need any Symbian tools installed. Builds are reproducible: the same source gives the
-same bytes, and `ph image compare` checks one build against another.
+same bytes, and `phe image compare` checks one build against another.
 
-The [ph manual](https://github.com/Phorepoc/pdk/tree/main/docs/ph) explains each command in detail.
+The [phe manual](https://github.com/Phorepoc/pdk/tree/main/docs/phe) explains each command in detail.
 
 ## Finding your way around
 
@@ -54,7 +54,7 @@ registry/rom_heap.tsv    heap and stack sizes for the programs in the ROM
 sources.lock, fetch.sh   which Symbian source we build, and the script that downloads it
 ```
 
-By default `ph` expects this repository in a folder called `core` next to the pdk. If yours is somewhere else, point
+By default `phe` expects this repository in a folder called `core` next to the pdk. If yours is somewhere else, point
 `PHOREPOC_CORE` at it. `PHOREPOC_SYMBIAN` and `PHOREPOC_BUILD` do the same for the Symbian source and the build
 output, which otherwise go into `symbian/` and `build/` here.
 
