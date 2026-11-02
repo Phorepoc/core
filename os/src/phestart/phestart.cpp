@@ -123,7 +123,9 @@ static TInt Run()
 	ls.Close();
 	if (r != KErrNone)
 		return r;
-	// bring it to the foreground once its window group exists
+	// once its window group exists, give it 2 s to take the focus itself (as when the menu starts it), then bring it to
+	// the foreground. An early BringToForeground is a focus change the app sees while it is still starting: Fragger's
+	// foreground handler then resumed a mixer thread that had not started yet (null read)
 	RWsSession ws;
 	if (ws.Connect() == KErrNone)
 		{
@@ -133,8 +135,16 @@ static TInt Run()
 			TApaTask task = tl.FindApp(uid);
 			if (task.Exists())
 				{
-				task.BringToForeground();
-				RDebug::Printf("PH: [phestart] foreground requested (try %d)", i);
+				TInt w = 0;
+				for (; w < 8 && ws.GetFocusWindowGroup() != task.WgId(); ++w)
+					User::After(250000);
+				if (ws.GetFocusWindowGroup() == task.WgId())
+					RDebug::Printf("PH: [phestart] in the foreground (try %d, after %d ms)", i, w * 250);
+				else
+					{
+					task.BringToForeground();
+					RDebug::Printf("PH: [phestart] foreground requested (try %d)", i);
+					}
 				break;
 				}
 			User::After(250000);
