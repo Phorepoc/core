@@ -55,10 +55,8 @@ namespace
 	// filled the fixed per-process GPU arena. The worker submits (glFlush) between commands -- where no fill is half done
 	// -- once the pending outputs pass KOutFlush.
 	TUint gOutBytes;
-	TUint gSince[6];		// TEMP (flick blanking hunt): since the last present -- fills, image draws, mid-frame submits, presents of other surfaces
 	const TUint KOutFlush = 16 << 20;
 	inline void Drew(TInt aVerts) { const TUint b = ((TUint)aVerts * 32 + 4095) & ~4095u; gOutBytes += b; }
-	TInt gGlLive[2];			// TEMP (GPU arena growth hunt): live GL textures, renderbuffers
 	TUint gRefuse[3];			// PhvgState -1: 0 size (ChooseScale), 1 budget (only GPU-ahead shadows left), 2 table full of GPU-ahead shadows
 	const TInt KMaxSide = 1024;				// larger surfaces are declined (the RI renders them)
 	const TInt KBatchPieces = 1024;			// trapezoids per draw call
@@ -365,7 +363,7 @@ namespace
 			gImgMul = glGetUniformLocation(gProgImg, "u_mul");
 			gImgSampler = glGetUniformLocation(gProgImg, "u_tex");
 			}
-		gGlLive[0]++, glGenTextures(1, &gRampTex);
+		glGenTextures(1, &gRampTex);
 		glBindTexture(GL_TEXTURE_2D, gRampTex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, KPhvgRamp, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -464,11 +462,11 @@ namespace
 		if (aS.iFboM) glDeleteFramebuffers(1, &aS.iFboM);
 		if (aS.iFboR) glDeleteFramebuffers(1, &aS.iFboR);
 		if (aS.iFboRd) glDeleteFramebuffers(1, &aS.iFboRd);
-		if (aS.iRbRd) gGlLive[1]--, glDeleteRenderbuffers(1, &aS.iRbRd);
-		if (aS.iTex0) gGlLive[0]--, glDeleteTextures(1, &aS.iTex0);
-		if (aS.iTexM) gGlLive[0]--, glDeleteTextures(1, &aS.iTexM);
-		if (aS.iTexR) gGlLive[0]--, glDeleteTextures(1, &aS.iTexR);
-		if (aS.iRbDs) gGlLive[1]--, glDeleteRenderbuffers(1, &aS.iRbDs);
+		if (aS.iRbRd) glDeleteRenderbuffers(1, &aS.iRbRd);
+		if (aS.iTex0) glDeleteTextures(1, &aS.iTex0);
+		if (aS.iTexM) glDeleteTextures(1, &aS.iTexM);
+		if (aS.iTexR) glDeleteTextures(1, &aS.iTexR);
+		if (aS.iRbDs) glDeleteRenderbuffers(1, &aS.iRbDs);
 		aS.iFboRd = aS.iRbRd = 0;
 		aS.iFbo0 = aS.iFboM = aS.iFboR = aS.iTex0 = aS.iTexM = aS.iTexR = aS.iRbDs = 0;
 		}
@@ -485,7 +483,7 @@ namespace
 	GLuint MakeTex(TInt aW, TInt aH, GLint aFilter)
 		{
 		GLuint t = 0;
-		gGlLive[0]++, glGenTextures(1, &t);
+		glGenTextures(1, &t);
 		glBindTexture(GL_TEXTURE_2D, t);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, aW, aH, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, aFilter);
@@ -521,7 +519,7 @@ namespace
 				gFbTexMs(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, aS.iTex0, 0, KMsaaSamples);
 			else
 				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, aS.iTex0, 0);
-			gGlLive[1]++, glGenRenderbuffers(1, &aS.iRbDs);
+			glGenRenderbuffers(1, &aS.iRbDs);
 			glBindRenderbuffer(GL_RENDERBUFFER, aS.iRbDs);
 			if (gPacked)
 				{
@@ -568,7 +566,7 @@ namespace
 		aS.iTexR = MakeTex(aS.iW, aS.iH, GL_NEAREST);
 		aS.iFboR = MakeFbo(aS.iTexR);
 		// the read-back target: an RGBA8 renderbuffer (falls back to the texture when this machine cannot make one)
-		gGlLive[1]++, glGenRenderbuffers(1, &aS.iRbRd);
+		glGenRenderbuffers(1, &aS.iRbRd);
 		glBindRenderbuffer(GL_RENDERBUFFER, aS.iRbRd);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8_OES, aS.iW, aS.iH);
 		glGenFramebuffers(1, &aS.iFboRd);
@@ -578,7 +576,7 @@ namespace
 			{
 			Log("renderbuffer read-back target unavailable, reading the texture", aS.iW, aS.iH);
 			glDeleteFramebuffers(1, &aS.iFboRd);
-			gGlLive[1]--, glDeleteRenderbuffers(1, &aS.iRbRd);
+			glDeleteRenderbuffers(1, &aS.iRbRd);
 			aS.iFboRd = aS.iRbRd = 0;
 			}
 		return ETrue;
@@ -710,7 +708,6 @@ namespace
 			{
 			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, gVtx);
 			glDrawArrays(GL_TRIANGLES, 0, aE.iN * 6), Drew(aE.iN * 6);
-			gSince[3] += aE.iN;
 			aE.iN = 0;
 			}
 		}
@@ -1115,7 +1112,7 @@ namespace
 		if (aT.iFbo)
 			glDeleteFramebuffers(1, &aT.iFbo);
 		if (aT.iTex)
-			gGlLive[0]--, glDeleteTextures(1, &aT.iTex);
+			glDeleteTextures(1, &aT.iTex);
 		if (aT.iImg)
 			gDestroyImage(gDpy, aT.iImg);
 		Mem::FillZ(&aT, sizeof(aT));
@@ -1163,7 +1160,7 @@ namespace
 			}
 		TTarget& t = *lru;
 		t.iImg = img;
-		gGlLive[0]++, glGenTextures(1, &t.iTex);
+		glGenTextures(1, &t.iTex);
 		glBindTexture(GL_TEXTURE_2D, t.iTex);
 		gImageTarget(GL_TEXTURE_2D, img);
 		glGenFramebuffers(1, &t.iFbo);
@@ -1219,54 +1216,7 @@ namespace
 		QuadVerts(v, 0, 0, 1, 1);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
 		glDrawArrays(GL_TRIANGLES, 0, 6), Drew(6);
-		{
-		static TInt pl;
-		static TUint pmax, pt0, pn;
-		pn++;
-		if (gOutBytes > pmax) pmax = gOutBytes;
-		const TUint now = User::NTickCount();
-		if (pl < 40 && now - pt0 >= 1000)	// TEMP (GPU arena growth hunt): vertex outputs pending at a present
-			{
-			pl++;
-			RDebug::Printf("PH: vg2 phvg presents: %u in the last second, outputs pending now %u KB, max %u KB", pn, gOutBytes >> 10, pmax >> 10);
-			pt0 = now; pn = 0; pmax = 0;
-			}
-		}
 		glFinish(), gOutBytes = 0;		// the buffer is complete (and out of the GPU's way) before the compositor is told
-		{
-		// TEMP (flick blanking hunt): is the presented content band black?
-		TUint n = 0, k = 0;
-		for (TInt y = s->iH / 7; y < s->iH * 6 / 7; y += 16)
-			{
-			const TUint32* row = (const TUint32*)((const TUint8*)c.iOut + y * c.iX);
-			for (TInt x = 8; x < s->iW; x += 16)
-				{
-				++n;
-				k += (row[x] & 0xE0E0E0) == 0;
-				}
-			}
-		static TBool prevBlack;
-		static TInt bl;
-		const TBool black = n && k * 100 / n >= 97;
-		if (black && !prevBlack && bl < 40)
-			{
-			bl++;
-			RDebug::Printf("PH: vg2 phvg present BLACK #%d: %dx%d cookie %08x; since the last present: fills %u, images %u, mid-frame submits %u",
-				bl, s->iW, s->iH, (TUint)c.iCookie, gSince[0], gSince[1], gSince[2]);
-			}
-		else if (!black && prevBlack && bl < 40)
-			RDebug::Printf("PH: vg2 phvg present drawn again: fills %u, images %u, mid-frame submits %u", gSince[0], gSince[1], gSince[2]);
-		if (gSince[0] >= 500)
-			{
-			static TInt hl;
-			if (hl++ < 30)
-				RDebug::Printf("PH: vg2 phvg heavy present: fills %u (trapezoids %u), images %u, mid-frame submits %u taking %u ms, %u ms since the last present",
-					gSince[0], gSince[3], gSince[1], gSince[2], gSince[4] / 24000, (User::FastCounter() - gSince[5]) / 24000);
-			}
-		gSince[5] = User::FastCounter();
-		prevBlack = black;
-		Mem::FillZ(gSince, 5 * sizeof(TUint));
-		}
 		const TInt err = glGetError();
 		const TUint t1 = User::FastCounter();
 		static TUint np;
@@ -1323,7 +1273,7 @@ namespace
 		{
 		if (gTexGl[aSlot])
 			{
-			gGlLive[0]--, glDeleteTextures(1, &gTexGl[aSlot]);
+			glDeleteTextures(1, &gTexGl[aSlot]);
 			gTexGl[aSlot] = 0;
 			}
 		}
@@ -1331,7 +1281,7 @@ namespace
 	void TexSet(TInt aSlot, const TUint8* aPixels, TInt aW, TInt aH)
 		{
 		TexFree(aSlot);
-		gGlLive[0]++, glGenTextures(1, &gTexGl[aSlot]);
+		glGenTextures(1, &gTexGl[aSlot]);
 		glBindTexture(GL_TEXTURE_2D, gTexGl[aSlot]);
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, aW, aH, 0, GL_RGBA, GL_UNSIGNED_BYTE, aPixels);
@@ -1344,7 +1294,6 @@ namespace
 	// the worker executes one ring entry
 	void DoQueued(TQEnt& e)
 		{
-		gSince[1]++;
 		const TUint t0 = User::FastCounter();
 		if (e.iType == EQDrop)
 			{
@@ -1372,11 +1321,6 @@ namespace
 			TShadow* src = Find(f.iSrcCookie);
 			if (!src || !src->iFbo0 || src->iState == 0 || src->iW != f.iIw || src->iH != f.iIh || src->iCookie == f.iCookie)
 				{
-				static TInt dl;
-				if (dl++ < 30)	// TEMP (O5 black frame hunt)
-					RDebug::Printf("PH: vg2 phvg resident draw DROPPED #%d: src %x found %d fbo %d state %d %dx%d (want %dx%d) onto %x", dl,
-						(unsigned)f.iSrcCookie, src != NULL, src ? (TInt)src->iFbo0 : 0, src ? src->iState : -1, src ? src->iW : 0, src ? src->iH : 0,
-						f.iIw, f.iIh, (unsigned)f.iCookie);
 				gStat[4]++;
 				return;
 				}
@@ -1467,11 +1411,8 @@ namespace
 					ahead += gSh[i].iState == 2;
 					bytes += gSh[i].iS ? ShadowBytes(gSh[i].iW, gSh[i].iH, gSh[i].iS) : 0;
 					}
-			TInt withGl = 0;
-			for (TInt i = 0; i < KMaxShadows; i++)
-				withGl += gSh[i].iCookie && gSh[i].iFbo0;
-			RDebug::Printf("PH: vg2 phvg shadows: %d of %d slots (%d GPU-ahead), %d KB; refused size %u budget %u table %u; GL: %d shadows, %d textures, %d renderbuffers, dir %d KB",
-				n, KMaxShadows, ahead, bytes >> 10, gRefuse[0], gRefuse[1], gRefuse[2], withGl, gGlLive[0], gGlLive[1], gDirBytes >> 10);
+			RDebug::Printf("PH: vg2 phvg shadows: %d of %d slots (%d GPU-ahead), %d KB; refused size %u budget %u table %u",
+				n, KMaxShadows, ahead, bytes >> 10, gRefuse[0], gRefuse[1], gRefuse[2]);
 			}
 		}
 
@@ -1500,74 +1441,6 @@ namespace
 		return 1;
 		}
 
-	// TEMP (mid-frame reload hunt): does a framebuffer keep its pixels across a submit? 64 x 64: clear red, a blue quad on
-	// the left half, glFlush (or not), a green quad on the top-right quarter; read the bottom-right (red expected), the left
-	// (blue), the top-right (green). aMs: a 4-sample render-to-texture framebuffer like a 1x shadow, else plain.
-	void ReloadSelfTest(TBool aMs, TBool aFlush)
-		{
-		const TInt N = 64;
-		GLuint tex = MakeTex(N, N, GL_NEAREST), fbo = 0, rb = 0;
-		glGenFramebuffers(1, &fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		if (aMs && gFbTexMs)
-			gFbTexMs(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0, KMsaaSamples);
-		else
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
-		glGenRenderbuffers(1, &rb);
-		glBindRenderbuffer(GL_RENDERBUFFER, rb);
-		if (aMs && gRbStorageMs)
-			gRbStorageMs(GL_RENDERBUFFER, KMsaaSamples, GL_DEPTH24_STENCIL8_OES, N, N);
-		else
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, N, N);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rb);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rb);
-		const TInt complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
-		SetNoTests();
-		glViewport(0, 0, N, N);
-		glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-		glClearStencil(0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		glUseProgram(gProgFlat);
-		glUniform2f(gFlatScale, 2.0f / N, 2.0f / N);
-		TReal32 v[12];
-		glUniform4f(gFlatColor, 0.0f, 0.0f, 1.0f, 1.0f);
-		QuadVerts(v, 0.0f, 0.0f, N / 2, N);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		if (aFlush)
-			glFlush();
-		glUniform4f(gFlatColor, 0.0f, 1.0f, 0.0f, 1.0f);
-		QuadVerts(v, N / 2, N / 2, N, N);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		// a cover pass where the stencil is not zero: nothing may change (the stencil was cleared, never written)
-		glEnable(GL_STENCIL_TEST);
-		glStencilFunc(GL_NOTEQUAL, 0, 0xFF);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-		glUniform4f(gFlatColor, 1.0f, 1.0f, 0.0f, 1.0f);
-		QuadVerts(v, 0.0f, 0.0f, N, N);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, v);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glDisable(GL_STENCIL_TEST);
-		glFinish();
-		// read through a plain framebuffer on the same texture (the 1-sample image)
-		GLuint rd = 0;
-		glGenFramebuffers(1, &rd);
-		glBindFramebuffer(GL_FRAMEBUFFER, rd);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
-		TUint32 px[3] = { 0, 0, 0 };
-		glReadPixels(48, 16, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &px[0]);
-		glReadPixels(16, 32, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &px[1]);
-		glReadPixels(48, 48, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &px[2]);
-		RDebug::Printf("PH: vg2 phvg reload self-test ms %d flush %d complete %d: bottom-right %08x (red ff0000ff) left %08x (blue ffff0000) top-right %08x (green ff00ff00)",
-			aMs, aFlush, complete, px[0], px[1], px[2]);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glDeleteFramebuffers(1, &rd);
-		glDeleteFramebuffers(1, &fbo);
-		glDeleteRenderbuffers(1, &rb);
-		glDeleteTextures(1, &tex);
-		}
-
 	TInt WorkerMain(TAny*)
 		{
 		CTrapCleanup* tc = CTrapCleanup::New();
@@ -1575,13 +1448,6 @@ namespace
 		req.SetHandle(gReqH);
 		done.SetHandle(gDoneH);
 		const TBool ok = GlInit();
-		if (ok)
-			{
-			ReloadSelfTest(EFalse, EFalse);
-			ReloadSelfTest(EFalse, ETrue);
-			ReloadSelfTest(ETrue, EFalse);
-			ReloadSelfTest(ETrue, ETrue);
-			}
 		gCmd.iResult = ok;
 		done.Signal();
 		if (!ok)
@@ -1596,13 +1462,13 @@ namespace
 			DrainRing();
 			gRingWaitTicks = User::FastCounter() - tRing0;
 			if (gOutBytes > KOutFlush)
-				{ const TUint f0 = User::FastCounter(); glFlush(); gSince[4] += User::FastCounter() - f0; gOutBytes = 0; gSince[2]++; }
+				glFlush(), gOutBytes = 0;
 			if (!__e32_atomic_load_acq32(&gCmdPending))
 				continue;
 			switch (gCmd.iOp)
 				{
 				case EOpUpload:		gCmd.iResult = DoUpload(gCmd); break;
-				case EOpFill:		gCmd.iResult = DoFill(*gCmd.iFill); gSince[0]++; break;
+				case EOpFill:		gCmd.iResult = DoFill(*gCmd.iFill); break;
 				case EOpClear:		gCmd.iResult = DoClear(gCmd); break;
 				case EOpReadback:	gCmd.iResult = DoReadback(gCmd); break;
 				case EOpForget:		gCmd.iResult = DoForget(gCmd); break;
@@ -1612,7 +1478,7 @@ namespace
 				default:			gCmd.iResult = 0; break;
 				}
 			if (gOutBytes > KOutFlush)
-				{ const TUint f0 = User::FastCounter(); glFlush(); gSince[4] += User::FastCounter() - f0; gOutBytes = 0; gSince[2]++; }
+				glFlush(), gOutBytes = 0;
 			__e32_atomic_store_rel32(&gCmdPending, 0);
 			done.Signal();
 			}
@@ -1840,19 +1706,11 @@ extern "C"
 						lru = i;
 				if (lru < 0)
 					{
-					static TInt rl;
-					if (rl++ < 30)	// TEMP (O5 black frame hunt)
-						RDebug::Printf("PH: vg2 phvg budget REFUSED #%d: %dx%d S%d needs %d KB, %d KB in use", rl, aW, aH, sc, need >> 10, used >> 10);
 					gRefuse[1]++;
 					gStat[4]++;
 					return -1;
 					}
 				used -= ShadowBytes(gSh[lru].iW, gSh[lru].iH, gSh[lru].iS);
-				{
-				static TInt el;
-				if (el++ < 30)	// TEMP (O5 black frame hunt)
-					RDebug::Printf("PH: vg2 phvg budget EVICT #%d: %x %dx%d state %d for a %dx%d", el, (unsigned)gSh[lru].iCookie, gSh[lru].iW, gSh[lru].iH, gSh[lru].iState, aW, aH);
-				}
 				PhvgForget(gSh[lru].iCookie);
 				}
 			}
