@@ -277,7 +277,7 @@ namespace
 	// Does 4x MSAA in tile memory actually smooth edges? A diagonal edge into a 32 x 32 render-to-texture framebuffer, read
 	// back through a plain one: a driver that accepts the multisample attachment but renders 1 sample leaves no pixel
 	// between black and white (jagged shadows -- the icons once looked like that); then the shadows are supersampled.
-	TInt MsaaMixed(TUint32* aRow)
+	TInt MsaaMixed(TUint32* aErr)
 		{
 		const TInt N = 32;
 		GLuint tex = 0, fbo = 0, rd = 0;
@@ -332,7 +332,7 @@ namespace
 					const TInt want = in * 255 / 256, got = px[y * N + x] & 0xFF;
 					err += want > got ? want - got : got - want;
 					}
-			aRow[0] = err;
+			*aErr = err;
 			glDeleteFramebuffers(1, &rd);
 			}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -343,24 +343,11 @@ namespace
 
 	TBool MsaaSmooths()
 		{
-		// TEMP (msrtt resolve probe): lima's write-back mode for a 4-sample framebuffer on a 1-sample texture
-		void (*setMode)(TInt) = (void (*)(TInt))eglGetProcAddress("symLimaWbMode");
-		TInt best = -1;
-		TUint bestErr = 0;
-		for (TInt m = 0; m < 8 && (m == 0 || setMode); m++)
-			{
-			if (setMode)
-				setMode(m);
-			TUint32 row[4] = { 0, 0, 0, 0 };
-			const TInt mixed = MsaaMixed(row);
-			RDebug::Printf("PH: vg2 phvg MSAA edge check, write-back mode %d: %d partly covered pixels, error vs exact coverage %u",
-				m, mixed, row[0]);
-			if (mixed > 0 && (best < 0 || row[0] < bestErr))
-				best = m, bestErr = row[0];
-			}
-		if (setMode)
-			setMode(best > 0 ? best : 0);
-		return best >= 0;
+		TUint32 err = 0;
+		const TInt mixed = MsaaMixed(&err);
+		RDebug::Printf("PH: vg2 phvg MSAA edge check: %d partly covered pixels (0 = no anti-aliasing, -1 = incomplete), error vs exact coverage %u",
+			mixed, err);
+		return mixed > 0;
 		}
 
 	TBool GlInit()
