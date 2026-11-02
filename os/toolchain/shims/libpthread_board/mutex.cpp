@@ -121,7 +121,7 @@ int _mutexCreate (pthread_mutex_t * mutex,
     pMutex->iSemaphoreCreated = false;
 
     ++gPhMutexCreates;
-    TInt phErr = pMutex->iSignalSemaphore.CreateLocal(1);
+    TInt phErr = pMutex->iSignalSemaphore.CreateLocal(0);	// Phorepoc: waiters only (the lock is iWord)
     if(phErr != KErrNone)
     {
         RDebug::Printf("[pthread] mutex #%d: RSemaphore::CreateLocal %d", gPhMutexCreates, phErr);
@@ -142,8 +142,51 @@ int _mutexCreate (pthread_mutex_t * mutex,
     pMutex->iCount = 0;
     pMutex->iSemaphoreState = SEM_FREE;
     pMutex->iLockingThread = 0;
+    pMutex->iWord = 0;
+    __e32_memory_barrier();		// Phorepoc: the fields above are visible before another thread can see _EInitialized
     mutex->iState = _EInitialized;
     return 0;
+}
+
+/*
+Phorepoc (2026-11-02): the lock word. 0 = free, 1 = held, 2 = held and a thread may be waiting on iSignalSemaphore.
+A locker takes 0 -> 1 with one atomic (no exec). Under contention it sets 2 and waits on the semaphore; the unlocker
+swaps 0 in and signals the semaphore only if it took a 2 out. A woken waiter sets 2 again before re-trying, so a
+release can never be missed, and a stray semaphore count (a timed waiter that gave up after its wake was signalled)
+only costs a later waiter one extra round.
+*/
+TBool _phTryLock(_pthread_mutex_t* aMutex)
+{
+    TUint32 expected = 0;
+    return __e32_atomic_cas_acq32(&aMutex->iWord, &expected, 1);
+}
+
+static int _phLock(_pthread_mutex_t* aMutex, const struct timespec* abstime)
+{
+    if (_phTryLock(aMutex))
+    {
+        return 0;
+    }
+    for (;;)
+    {
+        if (__e32_atomic_swp_acq32(&aMutex->iWord, 2) == 0)
+        {
+            return 0;
+        }
+        int r = _doWait(&aMutex->iSignalSemaphore, abstime);
+        if (r != 0)
+        {
+            return r;		// ETIMEDOUT / EINVAL: iWord stays 2, the next unlock signals once (harmless)
+        }
+    }
+}
+
+void _phUnlock(_pthread_mutex_t* aMutex)
+{
+    if (__e32_atomic_swp_rel32(&aMutex->iWord, 0) == 2)
+    {
+        aMutex->iSignalSemaphore.Signal();
+    }
 }
 
 
@@ -254,122 +297,53 @@ int _internalMutexLock(pthread_mutex_t * mutex,const struct timespec *abstime)
 
     _pthread_mutex_t* pMutex = mutex->iPtr;
 
-
+    // Phorepoc (2026-11-02): the lock is pMutex->iWord (_phLock above); the data lock and the semaphore are no longer
+    // taken on the uncontended path. A NORMAL mutex keeps no owner (POSIX leaves unlocking one you do not hold
+    // undefined; this saves pthread_self's TLS exec on every lock and unlock). RECURSIVE / ERRORCHECK track it.
     int retval = 0;
-    pthread_t self;
     switch(pMutex->iMutexType)
     {
         case  PTHREAD_MUTEX_NORMAL:
-        	{
-        	  self = pthread_self();          
-        	  pMutex->iDataLock.Wait();
-        	  if(mutex->iState == _EDestroyed)
-        	  {
-        	     pMutex->iDataLock.Signal();
-        	     return EINVAL;
-        	  }
-        	  pMutex->iSemaphoreState++;   
-        	  pMutex->iDataLock.Signal();
-        	           
-        	  retval = _doWait(&pMutex->iSignalSemaphore,abstime);
-        	  if(retval == 0)
-        	  {
-        	     pMutex->iDataLock.Wait();
-        	     if(mutex->iState == _EDestroyed)
-        	     {
-        	        pMutex->iDataLock.Signal();
-        	        return EINVAL;
-        	     }
-        	     pMutex->iLockingThread  = self;
-        	     pMutex->iDataLock.Signal();
-               }
-        	   break;
-        	 }
+            retval = _phLock(pMutex, abstime);
+            break;
 
         case  PTHREAD_MUTEX_RECURSIVE:
-        	
         {
-            self = pthread_self();
+            pthread_t self = pthread_self();
             if(pMutex->iLockingThread == self)
             {
-                pMutex->iDataLock.Wait();
-                if(mutex->iState == _EDestroyed)
-                {
-                   pMutex->iDataLock.Signal();
-                   return EINVAL;
-                }
-                pMutex->iCount++;
-                pMutex->iDataLock.Signal();
+                pMutex->iCount++;		// only the holder gets here
+                break;
             }
-            else
+            retval = _phLock(pMutex, abstime);
+            if(retval == 0)
             {
-                pMutex->iDataLock.Wait();
-                if(mutex->iState == _EDestroyed)
-                {
-                   pMutex->iDataLock.Signal();
-                   return EINVAL;
-                }
-                pMutex->iSemaphoreState++;   
-                pMutex->iDataLock.Signal();
-                
-                retval = _doWait(&pMutex->iSignalSemaphore,abstime);
-                if(retval == 0)
-                {
-                    pMutex->iDataLock.Wait();
-                    if(mutex->iState == _EDestroyed)
-                    {
-                      pMutex->iDataLock.Signal();
-                      return EINVAL;
-                    }
-                    pMutex->iCount = 1;
-                    pMutex->iLockingThread = self;
-                    pMutex->iDataLock.Signal();
-                }
+                pMutex->iCount = 1;
+                pMutex->iLockingThread = self;
             }
             break;
-        }                          
+        }
 
         case  PTHREAD_MUTEX_ERRORCHECK:
         {
-            self = pthread_self();
+            pthread_t self = pthread_self();
             if(pMutex->iLockingThread == self)
             {
                 return EDEADLK;
             }
-            else
+            retval = _phLock(pMutex, abstime);
+            if(retval == 0)
             {
-                pMutex->iDataLock.Wait();
-                if(mutex->iState == _EDestroyed)
-                {
-                   pMutex->iDataLock.Signal();
-                   return EINVAL;
-                }
-                pMutex->iSemaphoreState++;     
-                pMutex->iDataLock.Signal();
-                
-                retval = _doWait(&pMutex->iSignalSemaphore,abstime);
-                if(retval == 0)
-                {
-                  pMutex->iDataLock.Wait();
-                  if(mutex->iState == _EDestroyed)
-                  {
-                     pMutex->iDataLock.Signal();
-                     return EINVAL;
-                  }
-                  pMutex->iLockingThread  = self;
-                  pMutex->iDataLock.Signal();
-                }
+                pMutex->iLockingThread = self;
             }
             break;
         }
 
         default:
-        retval = ENOSYS;
-        break;
-
+            retval = ENOSYS;
+            break;
     }
     return retval;
-
 }
 
 //End of File

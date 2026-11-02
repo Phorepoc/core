@@ -438,7 +438,7 @@ COMPONENTS = {
                     drop=["ftable.cpp"], extra=["toolchain/shims/backend_board/ftable.cpp"]),
     # mutex.cpp + condvar.cpp: OURS copies fixing the static-initializer race (_InitOnce / _staticCondInit read the state
     "libpthread": dict(mmp=_OENV + "libpthread/group/libpthread.mmp", cdriver=True, allow_wsd=True, static_ctors=True, defs=["__SOFTFP="],
-                       drop=["mutex.cpp", "condvar.cpp"], extra=["toolchain/shims/libpthread_board/mutex.cpp", "toolchain/shims/libpthread_board/condvar.cpp"],
+                       drop=["mutex.cpp", "condvar.cpp", "pthread_mutex_unlock.cpp", "pthread_mutex_trylock.cpp", "pthread_mutex_destroy.cpp"], extra=["toolchain/shims/libpthread_board/" + f for f in ("mutex.cpp", "condvar.cpp", "pthread_mutex_unlock.cpp", "pthread_mutex_trylock.cpp", "pthread_mutex_destroy.cpp")],
                        # mutextypes.h: the per-mutex data lock is an RFastLock (no exec uncontended); every TU must see it
                        incs_first=["toolchain/shims/libpthread_board/inc"], arm_incs_first=True),
     # Open C++ (STLport; ossrv/stdcpp): the STL for release code that uses it -- first user the Symbian^4 system tone

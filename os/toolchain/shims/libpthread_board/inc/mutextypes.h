@@ -29,6 +29,8 @@
 * contended, and an RFastLock takes and releases it with one atomic each (an exec only when another thread holds it).
 * The RMutex cost two execs per Wait/Signal pair, four per pthread_mutex_lock + unlock; Mesa's mutexes made that
 * ~11 % of WSERV's GL worker while scrolling the app grid.
+* The mutex itself (iWord, same date) is a lock word with the semaphore behind it for waiters only: an uncontended
+* pthread_mutex_lock + unlock takes no exec at all (it was a semaphore Wait + Signal, plus pthread_self's TLS read).
 */
 
 
@@ -67,6 +69,9 @@ struct _pthread_mutex_t
     int iCount; //for recursive mutexes
     int iSemaphoreState;
     pthread_t iLockingThread;
+    // the lock itself (Phorepoc, 2026-11-02): 0 free, 1 held, 2 held with waiters. Taken and released with one atomic
+    // each; iSignalSemaphore (count 0 at creation) is only waited on / signalled under contention (mutex.cpp _phLock)
+    volatile TUint32 iWord;
 	/*******************************************************************
 	Overloading new and delete operators so that they will
 	allocate and deallocare memory from/to the private heap of backend
@@ -134,6 +139,10 @@ extern int _doWait(RSemaphore* aLock, const struct timespec *abstime);
 extern bool _InitOnce(pthread_mutex_t* mutex);
 
 extern int _internalMutexLock(pthread_mutex_t * mutex,const struct timespec *abstime);
+
+// the lock word (mutex.cpp): trylock = 0 -> 1; unlock = -> 0, signalling the semaphore when there were waiters
+extern TBool _phTryLock(_pthread_mutex_t* aMutex);
+extern void _phUnlock(_pthread_mutex_t* aMutex);
 
 extern void _closeMutex(pthread_mutex_t* mutex);
 
