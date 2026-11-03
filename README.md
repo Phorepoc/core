@@ -1,6 +1,6 @@
 # core
 
-This is the Phorepoc operating system. It holds everything that's the same on every device: our changes to the
+This is Phorepoc OS, the operating system. It holds everything that's the same on every device: our changes to the
 Symbian source, the components we've written ourselves, and the list of every Symbian component together with how to
 build it. The Symbian source itself isn't stored here. `fetch.sh` downloads it at the exact commits listed in
 `sources.lock`.
