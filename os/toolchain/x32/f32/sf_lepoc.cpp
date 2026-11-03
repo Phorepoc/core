@@ -1,7 +1,8 @@
 // PHOREPOC board delta (X4.87): the release loader file with these changes -- svRelocateSection applies relocation
 // type 0x4000 (KX32PcRelRelocType, x32 %rip displacements to statics) as += (data delta - code delta), so an
 // x32 image with writable statics can be LOADED FROM RAM (installed from a SIS). Compiled instead of sfile's.
-// Second change: E32Image::LoadProcess hands an EXE built for another CPU to its handler (ForeignCpuRedirect), and
+// Second change: E32Image::LoadProcess hands an EXE built for another CPU to its handler (ForeignCpuRedirect) -- the process
+// keeps the program's SecureId, VendorId and declared capabilities --, and
 // GetInfoFromHeader reads an ARM image's header when that handler is installed (the software installer checks its capabilities).
 // Copyright (c) 1995-2009 Nokia Corporation and/or its subsidiary(-ies).
 // All rights reserved.
@@ -1299,7 +1300,7 @@ E32Image* RImageArray::Find(const TRomImageHeader* a) const
 	}
 
 
-static TInt ForeignCpuRedirect(RLdrReq& aReq);
+static TInt ForeignCpuRedirect(RLdrReq& aReq, SSecurityInfo& aForeign);
 
 TInt E32Image::LoadProcess(const RLdrReq& aReq)
 	{
@@ -1310,11 +1311,14 @@ TInt E32Image::LoadProcess(const RLdrReq& aReq)
 	if (r == KErrNone)
 		r = finder.Search();
 	// PHOREPOC: no native image of that name -- an EXE built for another CPU with a handler installed? (ForeignCpuRedirect)
+	TBool foreign = EFalse;
+	SSecurityInfo foreignS;
 	if (r!=KErrNone && r!=KErrNoMemory)
 		{
 		const TInt notFound = r;
-		if (ForeignCpuRedirect(const_cast<RLdrReq&>(aReq)) == KErrNone)
+		if (ForeignCpuRedirect(const_cast<RLdrReq&>(aReq), foreignS) == KErrNone)
 			{
+			foreign = ETrue;
 			finder.Close();
 			new (&finder) RImageFinder;
 			r = finder.Set(aReq);
@@ -1337,6 +1341,52 @@ TInt E32Image::LoadProcess(const RLdrReq& aReq)
 		}
 	if (iIsDll)
 		return KErrNotSupported;
+	// PHOREPOC: a handler's code segment carries the identity of the process that created it -- a foreign program's (below), so
+	// every handler process starts from the identity the handler's own image declares, not the code segment's
+	TBuf8<KMaxFileName> root;
+	aReq.iFileNameInfo.GetName(root, TFileNameInfo::EIncludeBaseExt);
+	if (root.Length() >= 11 && root.Left(11).CompareF(_L8("cpuhandler_")) == 0)
+		{
+		if (iRomImageHeader)
+			iS = iRomImageHeader->iS;
+		else if (iHeader)
+			iS = ((const E32ImageHeaderV*)iHeader)->iS;
+		else
+			{
+			// already loaded: the code segment gives neither header -- read the file's (XIP in ROM, or its E32Image header)
+			TFileName name;
+			name.Copy(iFileName);
+			const TRomImageHeader* rh = (const TRomImageHeader*)gTheLoaderFs.IsFileInRom(name);
+			if (rh)
+				iS = rh->iS;
+			else
+				{
+				RFile f;
+				E32ImageHeaderV h;
+				r = f.Open(gTheLoaderFs, name, EFileRead | EFileShareReadersOnly);
+				if (r == KErrNone)
+					{
+					TPtr8 hp((TUint8*)&h, sizeof(h));
+					r = f.Read(0, hp, sizeof(h));
+					if (r == KErrNone && hp.Length() != sizeof(h))
+						r = KErrCorrupt;
+					f.Close();
+					}
+				if (r != KErrNone)
+					return r;
+				iS = h.iS;
+				}
+			}
+		}
+	if (foreign)
+		{
+		// PHOREPOC: the process is the foreign program's, run by its handler: its SecureId and VendorId, and the capabilities it
+		// declares as far as the handler holds them -- every server checks the program, not the handler (ForeignCpuRedirect)
+		iS.iSecureId = foreignS.iSecureId;
+		iS.iVendorId = foreignS.iVendorId;
+		for (TInt i = 0; i < SCapabilitySet::ENCapW; ++i)
+			iS.iCaps.iCaps[i] &= foreignS.iCaps.iCaps[i];
+		}
 	r = aReq.iMsg->Client((RThread&)aReq.iClientThread);
 	if (r!=KErrNone)
 		{
@@ -1683,8 +1733,9 @@ TInt FileRead(RFile& aFile, TUint8* aDest, TInt aSize)
 // is installed (\sys\bin\cpuhandler_<family>.exe, today only "arm"), the process is started from the handler instead, with
 // the foreign file's full path (UTF-16) put in front of the command line. The handler (an ARM interpreter, say) runs it.
 // Without a handler nothing changes: the request fails as before.
-// Only \sys\bin\ is searched: only the software installer writes there, so a file dropped anywhere else never gets the
-// handler's capabilities. The handler is responsible for holding the foreign program to what it declares.
+// The process has the foreign program's identity, not the handler's: its SecureId, VendorId, and the capabilities it declares
+// as far as the handler holds them (E32Image::LoadProcess) -- servers check the program as they would a native one.
+// Only \sys\bin\ is searched: only the software installer writes there (and checks what a package may declare).
 _LIT8(KCpuHandlerArm, "cpuhandler_arm.exe");
 
 // an ARM handler in \sys\bin\ of any drive (GetInfoFromHeader: the software installer may only accept ARM programs that can run)
@@ -1708,7 +1759,7 @@ static TBool ArmHandlerInstalled()
 	return EFalse;
 	}
 
-static TInt ForeignCpuRedirect(RLdrReq& aReq)
+static TInt ForeignCpuRedirect(RLdrReq& aReq, SSecurityInfo& aForeign)
 	{
 	const TFileNameInfo& fi = aReq.iFileNameInfo;
 	if (!aReq.iFileName || aReq.iFileName->Length() >= KMaxFileName)
@@ -1751,6 +1802,7 @@ static TInt ForeignCpuRedirect(RLdrReq& aReq)
 		const TCpu cpu = (TCpu)h.iCpuIdentifier;
 		if (!(cpu == ECpuArmV4 || cpu == ECpuArmV5 || cpu == ECpuArmV6))
 			continue;
+		aForeign = h.iS;		// what the program declares (E32Image::LoadProcess gives the process this identity)
 		// the new command line: "<path> <old command line>" as 16-bit data in an 8-bit buffer
 		const TInt oldLen = aReq.iCmd ? aReq.iCmd->Length() : 0;
 		HBufC8* cmd = HBufC8::New(full.Size() + 2 + oldLen);
