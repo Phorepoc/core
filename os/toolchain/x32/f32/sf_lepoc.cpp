@@ -1,7 +1,8 @@
-// PHOREPOC board delta (X4.87): the release loader file with two changes -- svRelocateSection applies relocation
+// PHOREPOC board delta (X4.87): the release loader file with these changes -- svRelocateSection applies relocation
 // type 0x4000 (KX32PcRelRelocType, x32 %rip displacements to statics) as += (data delta - code delta), so an
 // x32 image with writable statics can be LOADED FROM RAM (installed from a SIS). Compiled instead of sfile's.
-// Second change: E32Image::LoadProcess hands an EXE built for another CPU to its handler (ForeignCpuRedirect).
+// Second change: E32Image::LoadProcess hands an EXE built for another CPU to its handler (ForeignCpuRedirect), and
+// GetInfoFromHeader reads an ARM image's header when that handler is installed (the software installer checks its capabilities).
 // Copyright (c) 1995-2009 Nokia Corporation and/or its subsidiary(-ies).
 // All rights reserved.
 // This component and the accompanying materials are made available
@@ -1685,6 +1686,27 @@ TInt FileRead(RFile& aFile, TUint8* aDest, TInt aSize)
 // Only \sys\bin\ is searched: only the software installer writes there, so a file dropped anywhere else never gets the
 // handler's capabilities. The handler is responsible for holding the foreign program to what it declares.
 _LIT8(KCpuHandlerArm, "cpuhandler_arm.exe");
+
+// an ARM handler in \sys\bin\ of any drive (GetInfoFromHeader: the software installer may only accept ARM programs that can run)
+static TBool ArmHandlerInstalled()
+	{
+	TBuf<32> name;
+	name.Copy(KCpuHandlerArm);
+	for (TInt d = EDriveZ; d >= EDriveA; --d)
+		{
+		TChar c;
+		if (RFs::DriveToChar(d, c) != KErrNone)
+			continue;
+		TBuf<48> full;
+		full.Append(c);
+		full.Append(_L(":\\sys\\bin\\"));
+		full.Append(name);
+		TEntry e;
+		if (gTheLoaderFs.Entry(full, e) == KErrNone)
+			return ETrue;
+		}
+	return EFalse;
+	}
 
 static TInt ForeignCpuRedirect(RLdrReq& aReq)
 	{
@@ -3572,6 +3594,12 @@ TInt GetInfoFromHeader(const RLoaderMsg& aMsg)
 			{
 			TUint32 uncompressedSize;
 			r = header->ValidateHeader(-1,uncompressedSize);
+			// PHOREPOC: an ARM image when an ARM handler is installed (the software installer reads its capabilities like a native one's)
+			if (r==KErrNotSupported && ArmHandlerInstalled())
+				{
+				r = header->ValidateHeader(-1,uncompressedSize,ETrue);
+				RDebug::Printf("PH: loader: GetInfoFromHeader of an ARM image (uid3 %08x) -> %d", header->iUid3, r);
+				}
 			}
 		if(r==KErrNone)
 			{

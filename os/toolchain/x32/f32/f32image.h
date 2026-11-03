@@ -1,5 +1,5 @@
-// PHOREPOC board delta (X4.87): the release header with one change -- ValidateRelocations accepts relocation type
-// 0x4000 (KX32PcRelRelocType) in x86 images. Picked up by EFILE's compile ahead of fileserver/inc
+// PHOREPOC board delta (X4.87): the release header with two changes -- ValidateRelocations accepts relocation type
+// 0x4000 (KX32PcRelRelocType) in x86 images; E32ImageHeaderV::ValidateHeader can accept an ARM image (aForeignCpu). Picked up by EFILE's compile ahead of fileserver/inc
 // (toolchain/x32/efile_census_x32.sh).
 // Copyright (c) 1996-2009 Nokia Corporation and/or its subsidiary(-ies).
 // All rights reserved.
@@ -226,7 +226,7 @@ public:
 	TUint8	iExportDesc[1];			///< Description of holes in export table, size given by iExportDescSize..
 public:
 	TInt ValidateWholeImage(TAny* aBufferStart, TUint aBufferSize) const;
-	TInt ValidateHeader(TInt aFileSize, TUint32& aUncompressedSize) const;
+	TInt ValidateHeader(TInt aFileSize, TUint32& aUncompressedSize, TBool aForeignCpu=EFalse) const;
 	TInt ValidateExportDescription() const;
 	TInt ValidateRelocations(TAny* aBufferStart, TUint aBufferSize, TUint aRelocationInfoOffset, TUint aRelocatedSectionSize, E32RelocSection*& aRelocationSection) const;
 	TInt ValidateImports(TAny* aBufferStart, TUint aBufferSize, TUint& aBiggestImportCount) const;
@@ -616,8 +616,9 @@ Validate this image header.
 @return KErrNone if no errors detected;
 		KErrCorrupt if errors found;
 		KErrNotSupported if image format not supported on this platform.
+PHOREPOC: aForeignCpu = an ARM image is valid too (the loader's GetInfoFromHeader when an ARM handler is installed).
 */
-TInt E32ImageHeaderV::ValidateHeader(TInt aFileSize, TUint32& aUncompressedSize) const
+TInt E32ImageHeaderV::ValidateHeader(TInt aFileSize, TUint32& aUncompressedSize, TBool aForeignCpu) const
 	{
 	const TUint KMaxDesSize = 0x0fffffffu; // maximum size of descriptor
 	if(aFileSize==-1)
@@ -650,7 +651,7 @@ TInt E32ImageHeaderV::ValidateHeader(TInt aFileSize, TUint32& aUncompressedSize)
 	if(!isARM)
 		RETURN_FAILURE(KErrNotSupported);
 #elif defined(__CPU_X86)
-	if(cpu!=ECpuX86)
+	if(cpu!=ECpuX86 && !(aForeignCpu && isARM))
 		RETURN_FAILURE(KErrNotSupported);
 #endif
 	TUint32 pointerAlignMask = isARM ? 3 : 0;	// mask of bits which must be zero for aligned pointers/offsets
@@ -710,6 +711,14 @@ TInt E32ImageHeaderV::ValidateHeader(TInt aFileSize, TUint32& aUncompressedSize)
 		{
 		if((iFlags&KImageEptMask)!=KImageEpt_Eka2)
 			RETURN_FAILURE(KErrNotSupported);
+		if(aForeignCpu)
+			{
+			// PHOREPOC: a foreign ARM image is an ARM EABI one, whatever this build's own ABI
+			if((iFlags&KImageABIMask)!=KImageABI_EABI)
+				RETURN_FAILURE(KErrNotSupported);
+			}
+		else
+			{
 		#if defined(__EABI__)
 			if((iFlags&KImageABIMask)!=KImageABI_EABI)
 				RETURN_FAILURE(KErrNotSupported);
@@ -717,6 +726,7 @@ TInt E32ImageHeaderV::ValidateHeader(TInt aFileSize, TUint32& aUncompressedSize)
 			if((iFlags&KImageABIMask)!=KImageABI_GCC98r2)
 				RETURN_FAILURE(KErrNotSupported);
 		#endif
+			}
 		}
 	else
 		{
