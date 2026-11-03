@@ -17,6 +17,8 @@
 #include <eikspane.h>
 #include <eikenv.h>
 #include <utf.h>
+#include <aknquerydialog.h>
+#include <badesca.h>
 #include <avkon.rsg>
 #include <phestore.rsg>
 #include "phestore.hrh"
@@ -62,12 +64,14 @@ public:
 		iLoader = CPheIconLoader::NewL(*iView);
 		iRefreshJob = CPheJob::NewL(*this);
 		iWork = CIdle::NewL(CActive::EPriorityIdle);
+		iAddSource = new (ELeave) CAsyncCallBack(TCallBack(AddSourceCb, this), CActive::EPriorityStandard);
 		iPhase = EPhaseCache;
 		iView->SetLoad(CPheCatalogueView::ELoading, KNullDesC);
 		}
 	~CPheStoreAppUi()
 		{
 		delete iExitTimer;
+		delete iAddSource;
 		delete iWork;
 		delete iRefreshJob;
 		delete iLoader;
@@ -112,6 +116,11 @@ public:
 	void UiOpen(TInt aRow) { TRAP_IGNORE(OpenDetailsL(aRow)); }
 	void UiBack()
 		{
+		if (iView->Mode() == CPheCatalogueView::ESources)
+			{
+			CloseSources();
+			return;
+			}
 		iView->ShowList();
 		TRAP_IGNORE(Cba()->SetCommandSetL(R_AVKON_SOFTKEYS_OPTIONS_EXIT));   // (hidden behind the view: the framework's exit sequence wants a real softkey set)
 		if (iRebuildPending)
@@ -144,6 +153,140 @@ public:
 		return 0;
 		}
 	void UiOptions() { TRAP_IGNORE(ProcessCommandL(EAknSoftkeyOptions)); }
+
+	// ---- software sources: the Sources page over the engine's indexes.txt (pheget.h); changes take effect on leaving it
+	void UiSourceToggleDefault()
+		{
+		TBool on = EFalse;
+		TRAPD(err, on = iGet->DefaultIndexEnabledL());
+		if (err == KErrNone)
+			TRAP(err, iGet->SetDefaultIndexL(!on));
+		if (err == KErrNotSupported)
+			{
+			ShowSourcesStatus(_L("Add another source before switching this one off"), ETrue);
+			return;
+			}
+		SourcesChanged(err, on ? _L("Phorepoc index switched off") : _L("Phorepoc index switched on"));
+		}
+	void UiSourceRemove(TInt aSource)
+		{
+		TInt err = KErrNone;
+		TRAP(err, iGet->RemoveSourceL(aSource));
+		SourcesChanged(err, _L("Source removed"));
+		}
+	void UiSourceAdd()
+		{
+		if (!iAddSource->IsActive())
+			iAddSource->CallBack();                        // out of the pointer event: the dialog runs a nested loop
+		}
+	static TInt AddSourceCb(TAny* aSelf)
+		{
+		static_cast<CPheStoreAppUi*>(aSelf)->AddSourceDialog();
+		return 0;
+		}
+	void AddSourceDialog()
+		{
+		if (iView->Mode() != CPheCatalogueView::ESources)
+			return;
+		TBuf<256> address(_L("https://"));
+		CAknTextQueryDialog* dlg = NULL;
+		TRAPD(err, dlg = CAknTextQueryDialog::NewL(address));
+		if (err != KErrNone)
+			return;
+		if (!dlg->ExecuteLD(R_PHESTORE_ADD_SOURCE_QUERY))
+			return;                                        // cancelled
+		address.Trim();
+		if (address.Length() == 0 || address.CompareF(_L("https://")) == 0)
+			return;
+		TRAP(err, iGet->AddSourceL(address));
+		if (err == KErrArgument)
+			{
+			ShowSourcesStatus(_L("Not an index address: use http(s)://host/... or a path like c:\\data\\index.json"), ETrue);
+			return;
+			}
+		if (err == KErrAlreadyExists)
+			{
+			ShowSourcesStatus(_L("That source is already there"), ETrue);
+			return;
+			}
+		SourcesChanged(err, _L("Source added"));
+		}
+	void ShowSourcesStatus(const TDesC& aText, TBool aError)
+		{
+		iView->SetSourcesStatus(aText, aError);
+		}
+	// after a change to indexes.txt (err = its result): rebuild the rows, say what happened
+	void SourcesChanged(TInt aErr, const TDesC& aOk)
+		{
+		if (aErr == KErrNone)
+			iSourcesChanged = ETrue;
+		FillSources();
+		if (aErr == KErrNone)
+			ShowSourcesStatus(aOk, EFalse);
+		else
+			{
+			TBuf<48> msg;
+			msg.Format(_L("Could not save the sources (%d)"), aErr);
+			ShowSourcesStatus(msg, ETrue);
+			}
+		}
+	void OpenSources()
+		{
+		if (iBusy || iPhase == EPhaseBuild || iPhase == EPhaseCache || iView->Mode() != CPheCatalogueView::EList || iView->Tab() != 0)
+			return;
+		iSourcesChanged = EFalse;
+		FillSources();
+		iView->SetSourcesStatus(KNullDesC, EFalse);
+		iView->ShowSources();
+		}
+	void FillSources()
+		{
+		iView->ClearSources();
+		CDesCArrayFlat* sources = new CDesCArrayFlat(4);
+		if (!sources)
+			return;
+		TBool def = ETrue;
+		TRAP_IGNORE(iGet->SourcesL(*sources));
+		TRAP_IGNORE(def = iGet->DefaultIndexEnabledL());
+		TBool other = sources->Count() > 0;
+		_LIT(KTitle, "Phorepoc index");
+		TBuf<160> info;
+		if (!other)
+			info.Copy(_L("The only source: add another to switch it off"));
+		else if (!def)
+			info.Copy(_L("Switched off"));
+		else
+			info.Copy(KPheGetDefaultIndex);
+		TRAP_IGNORE(iView->AddSourceRowL(TPheSrc::EDefault, KTitle, info, def, other));
+		for (TInt i = 0; i < sources->Count(); ++i)
+			TRAP_IGNORE(iView->AddSourceRowL(TPheSrc::EUser, (*sources)[i], (*sources)[i].Left(4).CompareF(_L("http")) == 0 ? _L("Web index") : _L("File on this device"), ETrue, ETrue));
+		TRAP_IGNORE(iView->AddSourceRowL(TPheSrc::EAdd, _L("Add source"), _L("An index address: http(s) URL or a file path"), EFalse, ETrue));
+		delete sources;
+		iView->Redraw();
+		}
+	// back from the Sources page: if it changed anything, show the indexes as they now are and refresh them
+	void CloseSources()
+		{
+		iView->ShowList();
+		if (iRebuildPending)                               // an index changed while this page was open
+			{
+			iRebuildPending = EFalse;
+			iSourcesChanged = ETrue;
+			}
+		if (!iSourcesChanged)
+			return;
+		iSourcesChanged = EFalse;
+		Rebuild();                                         // from the caches (iPhase = build on success)
+		if (iPhase == EPhaseBuild)
+			iNextAfterBuild = EPhaseRefresh;
+		else
+			{
+			iView->ClearRows();                            // nothing cached for the sources now in use: the spinner until the network answers
+			iPhase = EPhaseRefresh;
+			iView->SetLoad(CPheCatalogueView::ELoading, KNullDesC);
+			}
+		Schedule();
+		}
 
 private:
 	enum TPhase { EPhaseIdle, EPhaseCache, EPhaseBuild, EPhaseRefresh };
@@ -195,7 +338,10 @@ private:
 		{
 		iPhase = EPhaseIdle;
 		if (iRefreshJob->Busy())
+			{
+			iRefreshAgain = ETrue;                     // the running one may not know of a source added meanwhile: once more when it ends
 			return;
+			}
 		TInt r = iRefreshJob->Start(1, CPheJob::ERefresh, KNullDesC, KNullDesC);
 		if (r != KErrNone)
 			JobDone(1, r);
@@ -203,6 +349,19 @@ private:
 
 	// MPheJobObserver
 	void JobDone(TInt /*aId*/, TInt aResult)
+		{
+		JobResult(aResult);
+		if (iRefreshAgain)
+			{
+			iRefreshAgain = EFalse;
+			if (iPhase == EPhaseBuild)
+				iNextAfterBuild = EPhaseRefresh;       // (the rows are being rebuilt: refresh after)
+			else
+				iPhase = EPhaseRefresh;
+			Schedule();
+			}
+		}
+	void JobResult(TInt aResult)
 		{
 		TInt err = aResult < 0 ? aResult : KErrNone;
 		TBool changed = aResult == 1;
@@ -212,7 +371,7 @@ private:
 		if (err == KErrNone && (changed || iItems.Count() == 0))
 			{
 			iFresh = ETrue;
-			if (iView->Mode() == CPheCatalogueView::EDetails)
+			if (iView->Mode() != CPheCatalogueView::EList)
 				{
 				iRebuildPending = ETrue;               // the details page stays as it is until back
 				iView->SetLoad(CPheCatalogueView::EReady, KNullDesC);
@@ -442,6 +601,9 @@ private:
 		case EPheStoreCmdInstall:
 			UiAction(0);
 			break;
+		case EPheStoreCmdSources:
+			OpenSources();
+			break;
 		case EPheStoreCmdRefresh:
 			if (!iBusy && iView->Mode() == CPheCatalogueView::EList)
 				{
@@ -451,7 +613,7 @@ private:
 				}
 			break;
 		case EAknSoftkeyBack:
-			if (iView->Mode() == CPheCatalogueView::EDetails)
+			if (iView->Mode() != CPheCatalogueView::EList)
 				UiBack();
 			break;
 		case EAknSoftkeyExit:
@@ -478,6 +640,9 @@ private:
 	TBool iExitPending;
 	TBool iFresh;
 	TBool iRebuildPending;
+	TBool iRefreshAgain;
+	TBool iSourcesChanged;
+	CAsyncCallBack* iAddSource;
 	TInt iKeepOffset;
 	TInt iLastProgress;
 	HBufC8* iDetailId;

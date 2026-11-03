@@ -9,7 +9,8 @@ enum TPheStoreCommand
 	{
 	EPheStoreCmdInstall = 0x7000,
 	EPheStoreCmdDetails,
-	EPheStoreCmdRefresh
+	EPheStoreCmdRefresh,
+	EPheStoreCmdSources
 	};
 
 #endif

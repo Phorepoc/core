@@ -7,6 +7,9 @@
 //   pheget list [-all] [-index <url|path>] [-no-default]      the items that fit this device (-all: every item)
 //   pheget install <id> [-drive <c|e>] [-index ...] [-no-default]
 //   pheget device                                               the board / architecture the device reports
+//   pheget sources                                              the default index (on/off) and the added sources
+//   pheget add <url|path>  |  remove <n|url|path>               add / remove a software source (indexes.txt)
+//   pheget default on|off                                       the default Phorepoc index (off needs another source)
 #include <e32base.h>
 #include <e32debug.h>
 #include "pheget.h"
@@ -65,6 +68,53 @@ static TInt RunL()
 		{
 		RDebug::Printf("PH: [pheget] device board=%S arch=%S", &get->Board(), &get->Arch());
 		}
+	else if (verb == _L("sources"))
+		{
+		CDesCArrayFlat* sources = new (ELeave) CDesCArrayFlat(4);
+		CleanupStack::PushL(sources);
+		get->SourcesL(*sources);
+		TBool on = get->DefaultIndexEnabledL();
+		TBuf8<128> def;
+		def.Copy(KPheGetDefaultIndex);
+		RDebug::Printf("PH: [pheget] source default %S %s", &def, on ? "on" : "off");
+		for (TInt i = 0; i < sources->Count(); ++i)
+			{
+			TBuf8<256> s;
+			s.Copy((*sources)[i].Left(256));
+			RDebug::Printf("PH: [pheget] source %d %S", i, &s);
+			}
+		RDebug::Printf("PH: [pheget] %d added sources", sources->Count());
+		CleanupStack::PopAndDestroy(sources);
+		}
+	else if (verb == _L("add") && id.Length())
+		{
+		TRAP(result, get->AddSourceL(id));
+		RDebug::Printf("PH: [pheget] add: %d", result);
+		}
+	else if (verb == _L("remove") && id.Length())
+		{
+		// by number (as "pheget sources" lists them) or by the source's text
+		TInt n = -1;
+		TLex lexId(id);
+		if (lexId.Val(n) != KErrNone || !lexId.Eos())
+			{
+			n = -1;
+			CDesCArrayFlat* sources = new (ELeave) CDesCArrayFlat(4);
+			CleanupStack::PushL(sources);
+			get->SourcesL(*sources);
+			for (TInt i = 0; i < sources->Count() && n < 0; ++i)
+				if ((*sources)[i].CompareF(id) == 0)
+					n = i;
+			CleanupStack::PopAndDestroy(sources);
+			}
+		TRAP(result, get->RemoveSourceL(n));
+		RDebug::Printf("PH: [pheget] remove: %d", result);
+		}
+	else if (verb == _L("default") && (id == _L("on") || id == _L("off")))
+		{
+		TRAP(result, get->SetDefaultIndexL(id == _L("on")));
+		RDebug::Printf("PH: [pheget] default %s: %d", id == _L("on") ? "on" : "off", result);
+		}
 	else if (verb == _L("list"))
 		{
 		get->LoadIndexesL(index, noDefault);
@@ -99,7 +149,7 @@ static TInt RunL()
 		}
 	else
 		{
-		RDebug::Printf("PH: [pheget] usage: pheget list [-all] | install <id> [-drive c] | device  [-index <url|path>] [-no-default]");
+		RDebug::Printf("PH: [pheget] usage: pheget list [-all] | install <id> [-drive c] | device | sources | add <url|path> | remove <n|url> | default on|off  [-index <url|path>] [-no-default]");
 		result = KErrArgument;
 		}
 	CleanupStack::PopAndDestroy(get);

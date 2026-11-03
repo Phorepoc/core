@@ -994,7 +994,10 @@ COMPONENTS = {
     # adaptation adds z:\resource\phorepoc\device.txt (board + arch) through EXTEND.
     "pheget": dict(mmp=os.path.join(OS_ROOT, "src/pheget/pheget.mmp")),
     # ... and its UI ("Catalogue" in the launcher): the same engine
-    "phestore": dict(mmp=os.path.join(OS_ROOT, "src/phestore/phestore.mmp")),
+    "phestore": dict(mmp=os.path.join(OS_ROOT, "src/phestore/phestore.mmp"),
+                     rom_data=["resource\\apps\\phestore_icon.mbm=" + os.path.join(OS_ROOT, "src/phestore/data/phestore_icon.mbm")]),
+    # the engine's software-source tests (add / remove / default off / per-source caches); TESTEXE=phegettest runs them
+    "phegettest": dict(mmp=os.path.join(OS_ROOT, "src/phegettest/phegettest.mmp"), test=True),
     # start an app through apparc like the launcher does (tests): phestart <uid-hex | exe name>
     "phestart": dict(mmp=os.path.join(OS_ROOT, "src/phestart/phestart.mmp")),
     # the process's own capabilities on the log (proves the header capabilities of an installed package): SIS test, not in the ROM

@@ -58,6 +58,7 @@ RESOURCE MENU_PANE r_phestore_menu
 	items =
 		{
 		MENU_ITEM { command = EPheStoreCmdRefresh; txt = "Refresh"; },
+		MENU_ITEM { command = EPheStoreCmdSources; txt = "Sources"; },
 		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
 		};
 	}
@@ -88,4 +89,31 @@ RESOURCE LOCALISABLE_APP_INFO r_phestore_localisable_app_info
 	{
 	short_caption = "Catalogue";
 	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Catalogue"; number_of_icons = 1; icon_file = "\\resource\\apps\\phestore_icon.mbm"; };
+	}
+
+// "Add source": the address of an index (an http/https URL, or a path on a drive)
+RESOURCE DIALOG r_phestore_add_source_query
+	{
+	flags = EGeneralQueryFlags;
+	buttons = R_AVKON_SOFTKEYS_OK_CANCEL;
+	items =
+		{
+		DLG_LINE
+			{
+			type = EAknCtQuery;
+			id = EGeneralQuery;
+			control = AVKON_DATA_QUERY
+				{
+				layout = EDataLayout;
+				label = "Index address";
+				control = EDWIN
+					{
+					flags = EEikEdwinNoHorizScrolling | EEikEdwinResizable;
+					width = 8;
+					maxlength = 255;
+					lines = 3;
+					};
+				};
+			}
+		};
 	}

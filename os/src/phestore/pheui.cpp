@@ -72,6 +72,9 @@ CPheCatalogueView::~CPheCatalogueView()
 	delete iTimer;
 	ClearRows();
 	iRows.Close();
+	ClearSources();
+	iSrc.Close();
+	delete iSrcStatus;
 	delete iLoadMsg;
 	delete iDTitle;
 	delete iDMeta;
@@ -119,6 +122,8 @@ void CPheCatalogueView::LayoutL()
 	iHeaderH = Sc(64);
 	iBarH = Sc(56);
 	iRowH = Sc(83);
+	iSrcRowH = Sc(68);
+	iSrcZoneW = Sc(100);
 	iIconPx = Sc(66);
 	iMargin = Sc(12);
 	CWsScreenDevice* dev = CEikonEnv::Static()->ScreenDevice();
@@ -299,12 +304,74 @@ void CPheCatalogueView::ShowList()
 	iUi.UiIconWanted();
 	}
 
+// ---- the Sources page data
+
+void CPheCatalogueView::ClearSources()
+	{
+	for (TInt i = 0; i < iSrc.Count(); ++i)
+		{
+		delete iSrc[i]->iTitle;
+		delete iSrc[i]->iInfo;
+		delete iSrc[i];
+		}
+	iSrc.Reset();
+	iFlash = EFalse;             // (a press on a row that is gone)
+	iPressRow = -1;
+	}
+
+void CPheCatalogueView::AddSourceRowL(TPheSrc::TKind aKind, const TDesC& aTitle, const TDesC& aInfo, TBool aOn, TBool aEnabled)
+	{
+	TPheSrc* s = new (ELeave) TPheSrc;
+	Mem::FillZ(s, sizeof(TPheSrc));
+	TRAPD(err,
+		s->iKind = aKind;
+		s->iTitle = aTitle.AllocL();
+		s->iInfo = aInfo.AllocL();
+		s->iOn = aOn;
+		s->iEnabled = aEnabled;
+		iSrc.AppendL(s));
+	if (err != KErrNone)
+		{
+		delete s->iTitle;
+		delete s->iInfo;
+		delete s;
+		User::Leave(err);
+		}
+	}
+
+void CPheCatalogueView::SetSourcesStatus(const TDesC& aStatus, TBool aError)
+	{
+	delete iSrcStatus;
+	iSrcStatus = aStatus.Length() ? aStatus.Alloc() : NULL;
+	iSrcStatusError = aError;
+	if (iMode == ESources)
+		Redraw();
+	}
+
+// Shows the page; coming from the list it remembers the list's place (ShowList returns there). The rows are the
+// application's to keep current (ClearSources / AddSourceRowL, then Redraw).
+void CPheCatalogueView::ShowSources()
+	{
+	if (iMode == EList)
+		iListOffset = iOffset;
+	iMode = ESources;
+	iFling = EFalse;
+	iTab = 0;
+	iSel = -1;
+	iSelShown = EFalse;
+	iOffsetF = 0;
+	iOffset = 0;
+	Redraw();
+	}
+
 // ---- geometry
 
 TInt CPheCatalogueView::ContentHeight() const
 	{
 	if (iMode == EDetails)
 		return iDContentH;
+	if (iMode == ESources)
+		return iSrc.Count() * iSrcRowH + Sc(40);      // (room for the status line)
 	return iRows.Count() * iRowH + Sc(8);
 	}
 
@@ -327,6 +394,13 @@ void CPheCatalogueView::ScrollTo(TInt aOffset)
 
 TInt CPheCatalogueView::RowAt(TInt aY) const
 	{
+	if (iMode == ESources)
+		{
+		if (aY < iHeaderH || aY >= ViewH() || iSrcRowH <= 0)
+			return -1;
+		TInt s = (aY - iHeaderH + iOffset) / iSrcRowH;
+		return (s >= 0 && s < iSrc.Count()) ? s : -1;
+		}
 	if (iMode != EList || iTab != 0 || aY < iHeaderH || aY >= ViewH() || iRowH <= 0)
 		return -1;
 	TInt r = (aY - iHeaderH + iOffset) / iRowH;
@@ -335,12 +409,12 @@ TInt CPheCatalogueView::RowAt(TInt aY) const
 
 void CPheCatalogueView::EnsureVisible(TInt aRow)
 	{
-	TInt top = aRow * iRowH;
+	TInt top = aRow * Stride();
 	TInt viewH = ViewH() - iHeaderH;
 	if (top < iOffset)
 		ScrollTo(top);
-	else if (top + iRowH > iOffset + viewH)
-		ScrollTo(top + iRowH - viewH);
+	else if (top + Stride() > iOffset + viewH)
+		ScrollTo(top + Stride() - viewH);
 	}
 
 // ---- icons
@@ -532,6 +606,8 @@ void CPheCatalogueView::Render()
 	iFrameGc->SetBrushStyle(CGraphicsContext::ENullBrush);
 	if (iMode == EDetails)
 		RenderDetails();
+	else if (iMode == ESources)
+		RenderSources();
 	else if (iTab != 0)
 		RenderSoon();
 	else
@@ -652,7 +728,7 @@ void CPheCatalogueView::BarAction(TInt aCell)
 	{
 	if (aCell == 0)                                 // back on a details page / a tab, exit on the root
 		{
-		if (iMode == EDetails)
+		if (iMode != EList)
 			iUi.UiBack();
 		else if (iTab != 0)
 			SetTab(0);
@@ -665,7 +741,7 @@ void CPheCatalogueView::BarAction(TInt aCell)
 		iUi.UiOptions();
 		return;
 		}
-	if (iMode == EDetails)
+	if (iMode != EList)
 		iUi.UiBack();
 	if (iTab == aCell - 1 && iTab == 0)
 		{
@@ -777,7 +853,7 @@ void CPheCatalogueView::DrawBar()
 		TInt x0 = i * w / 6, x1 = (i + 1) * w / 6;
 		TRect cell(x0, top + 2, x1, bottom);
 		TBool pressed = (iBarDown == i);
-		TBool active = (i > 0 && i < 5 && i - 1 == iTab);
+		TBool active = (i > 0 && i < 5 && i - 1 == iTab && iMode == EList);
 		if (pressed)
 			FillGradient(cell, TRgb(0x30, 0x91, 0xe2), TRgb(0x1a, 0x85, 0xde));
 		else if (active)
@@ -788,7 +864,7 @@ void CPheCatalogueView::DrawBar()
 			iFrameGc->DrawLine(TPoint(x0, top + 3), TPoint(x1, top + 3));
 			iFrameGc->SetPenSize(TSize(1, 1));
 			}
-		TInt kind = i == 0 ? ((iMode == EDetails || iTab != 0) ? EIconBack : EIconExit) : (i == 5 ? EIconOptions : EIconHome + (i - 1));
+		TInt kind = i == 0 ? ((iMode != EList || iTab != 0) ? EIconBack : EIconExit) : (i == 5 ? EIconOptions : EIconHome + (i - 1));
 		DrawBarIcon(kind, TPoint((x0 + x1) / 2, top + 2 + (bottom - top - 2) / 2),
 			pressed ? KWhite : (active ? KBarActive : KBarIcon));
 		}
@@ -874,6 +950,135 @@ void CPheCatalogueView::RenderList()
 		}
 	_LIT(KTitle, "Catalogue");
 	DrawHeader(KTitle);
+	}
+
+// ---- the Sources page: the Phorepoc index with its switch, one row per added source (Remove), "Add source"
+
+void CPheCatalogueView::DrawSwitch(const TRect& aRect, TBool aOn, TBool aEnabled, TBool aPressed)
+	{
+	TRgb track = aPressed ? KWhite : (aOn ? (aEnabled ? KBlue : TRgb(0xa9, 0xc7, 0xe6)) : (aEnabled ? TRgb(0xb4, 0xb4, 0xb4) : TRgb(0xd8, 0xd8, 0xd8)));
+	TRgb knob = aPressed ? KPressed : KWhite;
+	iFrameGc->SetBrushStyle(CGraphicsContext::ESolidBrush);
+	iFrameGc->SetPenStyle(CGraphicsContext::ENullPen);
+	iFrameGc->SetBrushColor(track);
+	iFrameGc->DrawRoundRect(aRect, TSize(aRect.Height() / 2, aRect.Height() / 2));
+	TInt d = aRect.Height() - Sc(6);
+	TInt kx = aOn ? aRect.iBr.iX - Sc(3) - d : aRect.iTl.iX + Sc(3);
+	iFrameGc->SetBrushColor(knob);
+	iFrameGc->DrawEllipse(TRect(TPoint(kx, aRect.iTl.iY + Sc(3)), TSize(d, d)));
+	iFrameGc->SetBrushStyle(CGraphicsContext::ENullBrush);
+	iFrameGc->SetPenStyle(CGraphicsContext::ESolidPen);
+	}
+
+void CPheCatalogueView::DrawSourceRow(TInt aRow, TInt aY, TBool aPressed)
+	{
+	const TPheSrc& s = *iSrc[aRow];
+	TInt w = Rect().Width();
+	TRect zone(w - iSrcZoneW, aY, w, aY + iSrcRowH);
+	if (aPressed)
+		{
+		iFrameGc->SetBrushStyle(CGraphicsContext::ESolidBrush);
+		iFrameGc->SetBrushColor(KPressed);
+		iFrameGc->SetPenStyle(CGraphicsContext::ENullPen);
+		iFrameGc->DrawRect(s.iKind == TPheSrc::EUser ? zone : TRect(0, aY, w, aY + iSrcRowH));
+		iFrameGc->SetBrushStyle(CGraphicsContext::ENullBrush);
+		iFrameGc->SetPenStyle(CGraphicsContext::ESolidPen);
+		}
+	TBool all = aPressed && s.iKind != TPheSrc::EUser;       // (an added source's row only lights its Remove zone)
+	TRgb tc = all ? KWhite : KText;
+	TRgb sc = all ? KWhite : KText2;
+	TInt rx = w - iMargin;
+	if (s.iKind == TPheSrc::EDefault)
+		rx -= Sc(52) + Sc(12);
+	else if (s.iKind == TPheSrc::EUser)
+		rx = zone.iTl.iX - Sc(10);
+	else
+		rx -= Sc(24);
+	TInt titleTop = aY + Sc(9);
+	TextClipped(*s.iTitle, *iFTitle, iMargin, titleTop + iAscTitle, rx - iMargin, tc);
+	TInt infoTop = titleTop + iFTitle->HeightInPixels() + Sc(2);
+	TextClipped(*s.iInfo, *iFInfo, iMargin, infoTop + iAscInfo, rx - iMargin, sc);
+	switch (s.iKind)
+		{
+	case TPheSrc::EDefault:
+		{
+		TInt sw = Sc(52), sh = Sc(28);
+		DrawSwitch(TRect(TPoint(w - iMargin - sw, aY + (iSrcRowH - sh) / 2), TSize(sw, sh)), s.iOn, s.iEnabled, all);
+		break;
+		}
+	case TPheSrc::EUser:
+		{
+		_LIT(KRemove, "Remove");
+		TInt tw = iFInfo->TextWidthInPixels(KRemove);
+		iFrameGc->SetPenColor(aPressed ? KWhite : KDivider);
+		iFrameGc->DrawLine(TPoint(zone.iTl.iX, aY + Sc(10)), TPoint(zone.iTl.iX, aY + iSrcRowH - Sc(10)));
+		Text(KRemove, *iFInfo, zone.iTl.iX + (zone.Width() - tw) / 2, aY + (iSrcRowH + iAscInfo) / 2 - Sc(2), aPressed ? KWhite : KRed);
+		break;
+		}
+	default:
+		{
+		// the chevron of a pivot row
+		TInt cx = w - iMargin - Sc(6), cy = aY + iSrcRowH / 2, ch = Sc(8);
+		iFrameGc->SetPenColor(all ? KWhite : KText2);
+		iFrameGc->SetPenSize(TSize(Max(1, Sc(2)), Max(1, Sc(2))));
+		iFrameGc->DrawLine(TPoint(cx - Sc(5), cy - ch), TPoint(cx + Sc(2), cy));
+		iFrameGc->DrawLine(TPoint(cx + Sc(2), cy), TPoint(cx - Sc(5), cy + ch));
+		iFrameGc->SetPenSize(TSize(1, 1));
+		break;
+		}
+		}
+	}
+
+void CPheCatalogueView::RenderSources()
+	{
+	TInt w = Rect().Width();
+	TInt h = ViewH();
+	TInt n = iSrc.Count();
+	iRetryRect = TRect();
+	TInt first = Max(0, iOffset / iSrcRowH);
+	TInt last = Min(n - 1, (iOffset + h - iHeaderH) / iSrcRowH);
+	for (TInt i = first; i <= last; ++i)
+		{
+		TInt y = iHeaderH + i * iSrcRowH - iOffset;
+		TBool touch = (iDown && iShowPressed && !iDragging && i == iPressRow) || (iFlash && i == iPressRow);
+		if (touch && iSrc[i]->iKind == TPheSrc::EUser && !InRemoveZone(iDownPos.iX))
+			touch = EFalse;
+		TBool pressed = touch || (iSelShown && i == iSel);
+		DrawSourceRow(i, y, pressed);
+		if (i != n - 1 && !pressed)
+			{
+			iFrameGc->SetPenColor(KDivider);
+			iFrameGc->DrawLine(TPoint(0, y + iSrcRowH - 1), TPoint(w, y + iSrcRowH - 1));
+			}
+		}
+	if (iSrcStatus)
+		{
+		TInt y = iHeaderH + n * iSrcRowH - iOffset + Sc(10);
+		if (y + iFInfo->HeightInPixels() > iHeaderH && y < h)
+			TextClipped(*iSrcStatus, *iFInfo, iMargin, y + iAscInfo, w - 2 * iMargin, iSrcStatusError ? KRed : KText2);
+		}
+	_LIT(KTitle, "Sources");
+	DrawHeader(KTitle);
+	}
+
+// A tap (aX = its x) or the Enter key (aX < 0) on a row of the Sources page. The application may rebuild the rows.
+void CPheCatalogueView::SourceAction(TInt aRow, TInt aX)
+	{
+	if (aRow < 0 || aRow >= iSrc.Count())
+		return;
+	switch (iSrc[aRow]->iKind)
+		{
+	case TPheSrc::EDefault:
+		iUi.UiSourceToggleDefault();
+		break;
+	case TPheSrc::EUser:
+		if (aX < 0 || InRemoveZone(aX))
+			iUi.UiSourceRemove(aRow - 1);              // (row 0 is the default index)
+		break;
+	default:
+		iUi.UiSourceAdd();
+		break;
+		}
 	}
 
 void CPheCatalogueView::RenderDetails()
@@ -1246,6 +1451,27 @@ void CPheCatalogueView::PointerUp(const TPoint& aPos)
 			return;
 			}
 		}
+	else if (iMode == ESources)
+		{
+		if (!caught && row >= 0 && row == iPressRow)
+			{
+			if (iSrc[row]->iKind != TPheSrc::EUser || InRemoveZone(aPos.iX))
+				{
+				iFlash = ETrue;
+				iFlashUntil = NowMs() + 120;
+				}
+			iShowPressed = EFalse;
+			Redraw();
+			StartTicking();
+			SourceAction(row, aPos.iX);
+			return;
+			}
+		if (aPos.iY < iHeaderH && !caught)
+			{
+			iUi.UiBack();
+			return;
+			}
+		}
 	else
 		{
 		if (iDButtonDown && iDButtonOn && iDButtonRect.Contains(aPos))
@@ -1300,6 +1526,40 @@ TKeyResponse CPheCatalogueView::OfferKeyEventL(const TKeyEvent& aKey, TEventCode
 		return EKeyWasConsumed;
 	default:
 		break;
+		}
+	if (iMode == ESources)
+		{
+		TInt count = iSrc.Count();
+		switch (code)
+			{
+		case EKeyUpArrow:
+		case EKeyDownArrow:
+			if (count == 0)
+				return EKeyWasConsumed;
+			if (!iSelShown)
+				{
+				iSelShown = ETrue;
+				iSel = Max(0, Min(iSel, count - 1));
+				}
+			else
+				iSel = Max(0, Min(count - 1, iSel + (code == EKeyUpArrow ? -1 : 1)));
+			EnsureVisible(iSel);
+			Redraw();
+			return EKeyWasConsumed;
+		case EKeyEnter:
+		case EKeyDevice3:
+			if (iSelShown && iSel >= 0 && iSel < count)
+				SourceAction(iSel, -1);
+			else if (count > 0)
+				{
+				iSelShown = ETrue;
+				iSel = Max(0, Min(iSel, count - 1));
+				Redraw();
+				}
+			return EKeyWasConsumed;
+		default:
+			return EKeyWasNotConsumed;
+			}
 		}
 	if (iMode != EDetails && iTab != 0)
 		return EKeyWasNotConsumed;

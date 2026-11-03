@@ -27,6 +27,22 @@ public:
 	virtual void UiIconWanted() = 0;             // an icon may be loaded now (the list stopped, rows were added)
 	virtual void UiExit() = 0;                   // the toolbar's exit button / right softkey on the root page
 	virtual void UiOptions() = 0;                // the toolbar's options button / left softkey: the Options menu
+	// the Sources page
+	virtual void UiSourceToggleDefault() = 0;    // the Phorepoc index's switch
+	virtual void UiSourceRemove(TInt aSource) = 0;   // Remove on an added source (0-based among the added ones)
+	virtual void UiSourceAdd() = 0;              // "Add source"
+	};
+
+// One row of the Sources page.
+class TPheSrc
+	{
+public:
+	enum TKind { EDefault, EUser, EAdd };
+	TKind iKind;
+	HBufC* iTitle;
+	HBufC* iInfo;
+	TBool iOn;              // EDefault: the switch
+	TBool iEnabled;         // EDefault: the switch can be turned (there is another source)
 	};
 
 class TPheRow
@@ -47,7 +63,7 @@ public:
 class CPheCatalogueView : public CCoeControl
 	{
 public:
-	enum TMode { EList, EDetails };
+	enum TMode { EList, EDetails, ESources };
 	enum TLoad { ELoading, EReady, EFailed };
 
 	static CPheCatalogueView* NewL(const TRect& aRect, MPheCatalogueUi& aUi);
@@ -70,6 +86,12 @@ public:
 	void SetDetailsButton(const TDesC& aButton, TBool aEnabled);
 	void ShowList();
 	TMode Mode() const { return iMode; }
+
+	// ---- the Sources page (the application fills the rows, then shows it; ShowSources keeps the list's place for ShowList)
+	void ClearSources();
+	void AddSourceRowL(TPheSrc::TKind aKind, const TDesC& aTitle, const TDesC& aInfo, TBool aOn, TBool aEnabled);
+	void ShowSources();
+	void SetSourcesStatus(const TDesC& aStatus, TBool aError);   // one line under the rows ("" = none)
 	TInt Tab() const { return iTab; }
 	TInt DetailsRow() const { return iDetailRow; }
 
@@ -101,11 +123,18 @@ private:
 	TInt RowAt(TInt aY) const;                      // the row under a view y, or -1
 	void ScrollTo(TInt aOffset);
 	void EnsureVisible(TInt aRow);
+	TInt Stride() const { return iMode == ESources ? iSrcRowH : iRowH; }   // the row height of the page shown
 
 	// drawing
 	void Render();
 	void RenderList();
 	void RenderDetails();
+	void RenderSources();
+	void DrawSourceRow(TInt aRow, TInt aY, TBool aPressed);
+	void DrawSwitch(const TRect& aRect, TBool aOn, TBool aEnabled, TBool aPressed);
+	void SourceAction(TInt aRow, TInt aX);         // a tap (aX >= 0) or the Enter key (aX < 0) on a row
+	TBool InRemoveZone(TInt aX) const { return aX >= Rect().Width() - iSrcZoneW; }
+	TInt SrcCount() const { return iSrc.Count(); }
 	void DrawHeader(const TDesC& aTitle);
 	void RenderSoon();
 	void DrawBar();
@@ -136,6 +165,10 @@ private:
 
 	MPheCatalogueUi& iUi;
 	RPointerArray<TPheRow> iRows;
+	RPointerArray<TPheSrc> iSrc;
+	HBufC* iSrcStatus;
+	TBool iSrcStatusError;
+	TInt iSrcRowH, iSrcZoneW;   // the Sources page's row height and the width of its Remove zone
 	TInt iGeneration;
 	TMode iMode;
 	TLoad iLoad;

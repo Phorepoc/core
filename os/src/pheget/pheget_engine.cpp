@@ -46,6 +46,7 @@ void CPheGet::ConstructL()
 	iFs.MkDirAll(KPheGetDir);
 	iFs.MkDirAll(KPheGetDownloads);
 	ReadDeviceL();
+	PruneCaches();
 	}
 
 CPheGet::~CPheGet()
@@ -131,37 +132,214 @@ static TBool IsUrl(const TDesC& aLocation)
 	return aLocation.Left(7).CompareF(_L("http://")) == 0 || aLocation.Left(8).CompareF(_L("https://")) == 0;
 	}
 
+// ---- software sources: the default index (unless switched off) + the ones in indexes.txt
+//
+// indexes.txt: one index URL or local path per line ('#' starts a comment). One comment is a setting:
+// "#default=off" switches the default Phorepoc index off. It is honoured only while another source exists, so the
+// device can never be left without a source. Written atomically (temporary file, then replace).
+
+_LIT(KPheGetIndexesFile, "indexes.txt");
+_LIT8(KPheGetDefaultOffLine, "default=off");
+
+static void TrimLine(TPtrC8& aLine)
+	{
+	while (aLine.Length() && (aLine[0] == ' ' || aLine[0] == '\t' || aLine[0] == '\r'))
+		aLine.Set(aLine.Mid(1));
+	while (aLine.Length() && (aLine[aLine.Length() - 1] == ' ' || aLine[aLine.Length() - 1] == '\t' || aLine[aLine.Length() - 1] == '\r'))
+		aLine.Set(aLine.Left(aLine.Length() - 1));
+	}
+
+static TBool HasLocation(const CDesCArray& aList, const TDesC& aLocation)
+	{
+	for (TInt i = 0; i < aList.Count(); ++i)
+		if (aList[i].CompareF(aLocation) == 0)
+			return ETrue;
+	return EFalse;
+	}
+
+// Reads indexes.txt: the added sources in order (no duplicates), and the default-off setting.
+// A missing file is an empty list; any other read error leaves.
+void CPheGet::ReadSourcesL(CDesCArray& aSources, TBool& aDefaultOff)
+	{
+	aDefaultOff = EFalse;
+	TFileName list(KPheGetDir);
+	list.Append(KPheGetIndexesFile);
+	HBufC8* text = NULL;
+	TRAPD(err, text = ReadFileL(iFs, list));
+	if (err == KErrNotFound || err == KErrPathNotFound)
+		return;
+	User::LeaveIfError(err);
+	CleanupStack::PushL(text);
+	TPtrC8 rest(*text);
+	while (rest.Length())
+		{
+		TInt nl = rest.Locate('\n');
+		TPtrC8 line = nl >= 0 ? rest.Left(nl) : rest;
+		rest.Set(nl >= 0 ? rest.Mid(nl + 1) : TPtrC8());
+		TrimLine(line);
+		if (line.Length() == 0)
+			continue;
+		if (line[0] == '#')
+			{
+			TPtrC8 c = line.Mid(1);
+			TrimLine(c);
+			if (c.CompareF(KPheGetDefaultOffLine) == 0)
+				aDefaultOff = ETrue;
+			continue;
+			}
+		TLex8 lex(line);
+		for (TPtrC8 tok = lex.NextToken(); tok.Length() && tok[0] != '#'; tok.Set(lex.NextToken()))
+			{
+			HBufC* loc = HBufC::NewLC(tok.Length());
+			loc->Des().Copy(tok);
+			if (!HasLocation(aSources, *loc))
+				aSources.AppendL(*loc);
+			CleanupStack::PopAndDestroy(loc);
+			}
+		}
+	CleanupStack::PopAndDestroy(text);
+	}
+
+void CPheGet::WriteSourcesL(const CDesCArray& aSources, TBool aDefaultOff)
+	{
+	TInt need = 256;
+	for (TInt i = 0; i < aSources.Count(); ++i)
+		need += aSources[i].Length() + 1;
+	HBufC8* out = HBufC8::NewLC(need);
+	TPtr8 o = out->Des();
+	o.Append(_L8("# Catalogue software sources: one index URL or local path per line.\n"));
+	if (aDefaultOff)
+		o.Append(_L8("#default=off\n"));
+	for (TInt i = 0; i < aSources.Count(); ++i)
+		{
+		TBuf8<KMaxFileName> line;
+		line.Copy(aSources[i]);
+		o.Append(line);
+		o.Append('\n');
+		}
+	TFileName target(KPheGetDir);
+	target.Append(KPheGetIndexesFile);
+	TFileName tmp(target);
+	tmp.Append(_L(".tmp"));
+	RFile f;
+	User::LeaveIfError(f.Replace(iFs, tmp, EFileWrite));
+	TInt r = f.Write(o);
+	if (r == KErrNone)
+		r = f.Flush();
+	f.Close();
+	if (r == KErrNone)
+		r = iFs.Replace(tmp, target);
+	if (r != KErrNone)
+		iFs.Delete(tmp);
+	CleanupStack::PopAndDestroy(out);
+	User::LeaveIfError(r);
+	}
+
+TBool CPheGet::ValidSource(const TDesC& aLocation)
+	{
+	TInt n = aLocation.Length();
+	if (n == 0 || n > KMaxFileName)
+		return EFalse;
+	for (TInt i = 0; i < n; ++i)
+		if (aLocation[i] <= ' ' || aLocation[i] > '~' || aLocation[i] == '#')   // (the file format: one token per entry)
+			return EFalse;
+	if (IsUrl(aLocation))
+		{
+		TInt start = aLocation.Locate(':') + 3;               // past "://"
+		TPtrC hostAndPath = aLocation.Mid(start);
+		TInt end = hostAndPath.Locate('/');
+		TPtrC host = end >= 0 ? hostAndPath.Left(end) : hostAndPath;
+		return host.Length() > 0 && host[0] != ':' && host[0] != '@' && host[0] != '?';
+		}
+	// a local path: a drive and a path ("c:\data\index.json", '/' accepted), naming a file
+	if (n < 4 || !TChar(aLocation[0]).IsAlpha() || aLocation[1] != ':' || (aLocation[2] != '\\' && aLocation[2] != '/'))
+		return EFalse;
+	TChar last(aLocation[n - 1]);
+	return last != '\\' && last != '/';
+	}
+
+void CPheGet::SourcesL(CDesCArray& aSources)
+	{
+	TBool off;
+	ReadSourcesL(aSources, off);
+	}
+
+TBool CPheGet::DefaultIndexEnabledL()
+	{
+	CDesCArrayFlat* sources = new (ELeave) CDesCArrayFlat(4);
+	CleanupStack::PushL(sources);
+	TBool off;
+	ReadSourcesL(*sources, off);
+	TBool on = !off || sources->Count() == 0;
+	CleanupStack::PopAndDestroy(sources);
+	return on;
+	}
+
+void CPheGet::AddSourceL(const TDesC& aLocation)
+	{
+	if (!ValidSource(aLocation))
+		User::Leave(KErrArgument);
+	CDesCArrayFlat* sources = new (ELeave) CDesCArrayFlat(4);
+	CleanupStack::PushL(sources);
+	TBool off;
+	ReadSourcesL(*sources, off);
+	if (HasLocation(*sources, aLocation) || aLocation.CompareF(KPheGetDefaultIndex) == 0)
+		User::Leave(KErrAlreadyExists);
+	sources->AppendL(aLocation);
+	WriteSourcesL(*sources, off);
+	CleanupStack::PopAndDestroy(sources);
+	}
+
+// Removes the aIndex-th added source and its cache. With the last one gone the default index is on again.
+void CPheGet::RemoveSourceL(TInt aIndex)
+	{
+	CDesCArrayFlat* sources = new (ELeave) CDesCArrayFlat(4);
+	CleanupStack::PushL(sources);
+	TBool off;
+	ReadSourcesL(*sources, off);
+	if (aIndex < 0 || aIndex >= sources->Count())
+		User::Leave(KErrNotFound);
+	TFileName cache;
+	IndexCachePath(cache, (*sources)[aIndex]);
+	sources->Delete(aIndex);
+	if (sources->Count() == 0)
+		off = EFalse;
+	WriteSourcesL(*sources, off);
+	iFs.Delete(cache);
+	CleanupStack::PopAndDestroy(sources);
+	}
+
+// Switches the default Phorepoc index on or off. Off needs another source (KErrNotSupported without one).
+void CPheGet::SetDefaultIndexL(TBool aOn)
+	{
+	CDesCArrayFlat* sources = new (ELeave) CDesCArrayFlat(4);
+	CleanupStack::PushL(sources);
+	TBool off;
+	ReadSourcesL(*sources, off);
+	if (!aOn && sources->Count() == 0)
+		User::Leave(KErrNotSupported);
+	WriteSourcesL(*sources, !aOn);
+	CleanupStack::PopAndDestroy(sources);
+	}
+
+// The locations to load: aExtra, the default index (unless aNoDefault, or switched off while another source exists),
+// the added sources. Each once.
 CDesCArray* CPheGet::LocationsL(const TDesC& aExtra, TBool aNoDefault)
 	{
 	CDesCArrayFlat* locations = new (ELeave) CDesCArrayFlat(4);
 	CleanupStack::PushL(locations);
+	CDesCArrayFlat* sources = new (ELeave) CDesCArrayFlat(4);
+	CleanupStack::PushL(sources);
+	TBool off = EFalse;
+	TRAP_IGNORE(ReadSourcesL(*sources, off));
 	if (aExtra.Length())
 		locations->AppendL(aExtra);
-	if (!aNoDefault)
+	if (!aNoDefault && (!off || sources->Count() == 0) && !HasLocation(*locations, KPheGetDefaultIndex))
 		locations->AppendL(KPheGetDefaultIndex);
-	TFileName list(KPheGetDir);
-	list.Append(_L("indexes.txt"));
-	HBufC8* text = NULL;
-	TRAPD(err, text = ReadFileL(iFs, list));
-	if (err == KErrNone)
-		{
-		CleanupStack::PushL(text);
-		TLex8 lex(*text);
-		for (TPtrC8 tok = lex.NextToken(); tok.Length(); tok.Set(lex.NextToken()))
-			{
-			if (tok[0] == '#')
-				{
-				while (!lex.Eos() && lex.Peek() != '\n')
-					lex.Inc();
-				continue;
-				}
-			HBufC* loc = HBufC::NewLC(tok.Length());
-			loc->Des().Copy(tok);
-			locations->AppendL(*loc);
-			CleanupStack::PopAndDestroy(loc);
-			}
-		CleanupStack::PopAndDestroy(text);
-		}
+	for (TInt i = 0; i < sources->Count(); ++i)
+		if (!HasLocation(*locations, (*sources)[i]))
+			locations->AppendL((*sources)[i]);
+	CleanupStack::PopAndDestroy(sources);
 	CleanupStack::Pop(locations);
 	return locations;
 	}
@@ -172,7 +350,7 @@ void CPheGet::LoadIndexesL(const TDesC& aExtra, TBool aNoDefault, TBool aCachedO
 	CleanupStack::PushL(locations);
 	for (TInt i = 0; i < locations->Count(); ++i)
 		{
-		TRAPD(r, LoadIndexL((*locations)[i], i, aCachedOnly));
+		TRAPD(r, LoadIndexL((*locations)[i], aCachedOnly));
 		TBuf8<200> loc8;
 		loc8.Copy((*locations)[i].Left(200));
 		if (r != KErrNone)
@@ -185,7 +363,7 @@ void CPheGet::LoadIndexesL(const TDesC& aExtra, TBool aNoDefault, TBool aCachedO
 		User::Leave(KErrNotFound);
 	}
 
-// Downloads every URL index into its cache file (c:\data\pheget\index<n>.json) without parsing it; ETrue when one
+// Downloads every URL index into its cache file (c:\data\pheget\ix<hash>.json) without parsing it; ETrue when one
 // differs from the copy cached before (the caller then reloads). A download that fails leaves the cache as it was.
 TBool CPheGet::RefreshIndexesL(const TDesC& aExtra, TBool aNoDefault)
 	{
@@ -193,12 +371,14 @@ TBool CPheGet::RefreshIndexesL(const TDesC& aExtra, TBool aNoDefault)
 	CleanupStack::PushL(locations);
 	TBool changed = EFalse;
 	TInt fetched = 0;
+	TInt urls = 0;
 	for (TInt i = 0; i < locations->Count(); ++i)
 		{
 		if (!IsUrl((*locations)[i]))
 			continue;
+		++urls;
 		TFileName file, tmp;
-		IndexCachePath(file, i);
+		IndexCachePath(file, (*locations)[i]);
 		tmp = file;
 		tmp.Append(_L(".tmp"));
 		TRAPD(r, FetchL((*locations)[i], tmp));
@@ -224,23 +404,71 @@ TBool CPheGet::RefreshIndexesL(const TDesC& aExtra, TBool aNoDefault)
 		delete old;
 		}
 	CleanupStack::PopAndDestroy(locations);
-	if (fetched == 0)
-		User::Leave(KErrCouldNotConnect);
+	if (urls > 0 && fetched == 0)
+		User::Leave(KErrCouldNotConnect);          // (only local sources: nothing to download)
 	return changed;
 	}
 
-void CPheGet::IndexCachePath(TDes& aFile, TInt aSlot)
+// The cache of a source is named after the source itself (two 32-bit FNV-1a style hashes of its text, case-folded),
+// not its position: removing or reordering sources can never show one source's cache as another's.
+void CPheGet::IndexCachePath(TDes& aFile, const TDesC& aLocation)
 	{
+	TUint32 h1 = 2166136261u, h2 = 0x9747b28cu;
+	for (TInt i = 0; i < aLocation.Length(); ++i)
+		{
+		TChar folded(aLocation[i]);
+		folded.Fold();
+		TUint32 c = folded;
+		h1 = (h1 ^ c) * 16777619u;
+		h2 = (h2 ^ c) * 0x01000193u + 0x9e3779b9u;
+		}
 	aFile = KPheGetDir;
-	aFile.AppendFormat(_L("index%d.json"), aSlot);
+	aFile.AppendFormat(_L("ix%08x%08x.json"), h1, h2);
 	}
 
-void CPheGet::LoadIndexL(const TDesC& aLocation, TInt aSlot, TBool aCachedOnly)
+// Deletes the cache files no current source owns (a removed source, the old numbered caches). Best effort.
+void CPheGet::PruneCaches()
+	{
+	TBool off;
+	CDesCArrayFlat* sources = new CDesCArrayFlat(4);
+	if (sources)
+		{
+		TRAP_IGNORE(ReadSourcesL(*sources, off));       // (a disabled default's cache stays: switching it on again needs no wait)
+		TRAP_IGNORE(sources->AppendL(KPheGetDefaultIndex));
+		}
+	TFileName pattern(KPheGetDir);
+	pattern.Append(_L("*.json"));
+	CDir* dir = NULL;
+	if (iFs.GetDir(pattern, KEntryAttNormal, ESortNone, dir) == KErrNone)
+		{
+		for (TInt i = 0; i < dir->Count(); ++i)
+			{
+			TBool owned = EFalse;
+			const TDesC& name = (*dir)[i].iName;
+			for (TInt k = 0; sources && k < sources->Count() && !owned; ++k)
+				{
+				TFileName cache;
+				IndexCachePath(cache, (*sources)[k]);
+				owned = cache.Mid(KPheGetDir().Length()).CompareF(name) == 0;
+				}
+			if (!owned && (name.Left(5).CompareF(_L("index")) == 0 || name.Left(2).CompareF(_L("ix")) == 0))
+				{
+				TFileName path(KPheGetDir);
+				path.Append(name);
+				iFs.Delete(path);
+				}
+			}
+		}
+	delete dir;
+	delete sources;
+	}
+
+void CPheGet::LoadIndexL(const TDesC& aLocation, TBool aCachedOnly)
 	{
 	TFileName file;
 	if (IsUrl(aLocation))
 		{
-		IndexCachePath(file, aSlot);
+		IndexCachePath(file, aLocation);
 		if (!aCachedOnly)
 			{
 			TFileName tmp(file);

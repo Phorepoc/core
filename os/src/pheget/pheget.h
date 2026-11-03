@@ -53,10 +53,11 @@ public:
 	const TDesC8& Board() const { return iBoard; }
 	const TDesC8& Arch() const { return iArch; }
 
-	// Loads the default index (unless aNoDefault), the ones in c:\data\pheget\indexes.txt and aExtra (may be empty).
+	// Loads aExtra (may be empty), the default index (unless aNoDefault, or switched off while another source exists)
+	// and the sources in c:\data\pheget\indexes.txt.
 	// An index that fails is logged and skipped; leaves only if none loaded.
-	// With aCachedOnly the URL indexes are read from their cache files (c:\data\pheget\index<n>.json) and nothing is
-	// downloaded: the instant start; RefreshIndexesL then updates the caches over the network.
+	// With aCachedOnly the URL indexes are read from their cache files (c:\data\pheget\ix<hash of the source>.json) and
+	// nothing is downloaded: the instant start; RefreshIndexesL then updates the caches over the network.
 	void LoadIndexesL(const TDesC& aExtra, TBool aNoDefault, TBool aCachedOnly = EFalse);
 	// Downloads the URL indexes into their cache files; ETrue when one changed (reload then). Leaves when none could be fetched.
 	TBool RefreshIndexesL(const TDesC& aExtra, TBool aNoDefault);
@@ -72,6 +73,19 @@ public:
 	// The installed tag of an item (recorded by InstallL), or empty.
 	void InstalledTagL(const TDesC8& aId, TDes8& aTag);
 
+	// ---- software sources: c:\data\pheget\indexes.txt (the default Phorepoc index is not in it; "#default=off" there
+	// switches it off). Files are written atomically; the caches are named after their source, so removing a source
+	// can never show its cache as another's.
+	// ValidSource: an http(s) URL with a host, or a local path with a drive; ASCII, no spaces.
+	static TBool ValidSource(const TDesC& aLocation);
+	void SourcesL(CDesCArray& aSources);                  // the added sources, in order
+	// EFalse when the default index is switched off. Off is honoured only while another source exists.
+	TBool DefaultIndexEnabledL();
+	void AddSourceL(const TDesC& aLocation);              // KErrArgument (not valid), KErrAlreadyExists
+	void RemoveSourceL(TInt aIndex);                      // KErrNotFound; the last one gone puts the default index back on
+	void SetDefaultIndexL(TBool aOn);                     // KErrNotSupported: off with no other source
+	static void IndexCachePath(TDes& aFile, const TDesC& aLocation);   // the cache file of a source (URLs only)
+
 	// MHTTPTransactionCallback
 	void MHFRunL(RHTTPTransaction aTransaction, const THTTPEvent& aEvent);
 	TInt MHFRunError(TInt aError, RHTTPTransaction aTransaction, const THTTPEvent& aEvent);
@@ -81,8 +95,10 @@ private:
 	void ConstructL();
 	void ReadDeviceL();
 	CDesCArray* LocationsL(const TDesC& aExtra, TBool aNoDefault);
-	static void IndexCachePath(TDes& aFile, TInt aSlot);
-	void LoadIndexL(const TDesC& aLocation, TInt aSlot, TBool aCachedOnly);
+	void PruneCaches();
+	void ReadSourcesL(CDesCArray& aSources, TBool& aDefaultOff);
+	void WriteSourcesL(const CDesCArray& aSources, TBool aDefaultOff);
+	void LoadIndexL(const TDesC& aLocation, TBool aCachedOnly);
 	void FetchL(const TDesC& aLocation, const TDesC& aFile);  // URL or local path -> aFile
 	void HttpGetL(const TDesC8& aUrl, const TDesC& aFile);
 	void OpenNetworkL();
