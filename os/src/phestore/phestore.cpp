@@ -252,7 +252,7 @@ public:
 		_LIT(KTitle, "Phorepoc index");
 		TBuf<160> info;
 		if (!other)
-			info.Copy(_L("The only source: add another to switch it off"));
+			info.Copy(_L("Add another source to switch it off"));
 		else if (!def)
 			info.Copy(_L("Switched off"));
 		else
