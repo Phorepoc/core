@@ -137,6 +137,7 @@ void CPheIconLoader::RunL()
 		return;                                         // nothing to do until the next Kick
 		}
 	iRow = row;
+	iTries = 0;
 	iGeneration = iView.Generation();
 	if (iDone < 3 || iDone == 12)
 		RDebug::Printf("PH: [phestore] icon: row %d picked (%d done) at %d ms", row, iDone, PheStoreSince());
@@ -193,6 +194,18 @@ void CPheIconLoader::JobDone(TInt /*aId*/, TInt aResult)
 		}
 	if (aResult != KErrNone)
 		{
+		// one more try on a fresh connection: a single failed handshake (a stale cached TLS session, a link that was
+		// still coming up) must not leave the row without its icon until the app is restarted
+		if (++iTries < 2)
+			{
+			TFileName loc;
+			loc.Copy(iView.RowIconUrl(row).Left(256));
+			RDebug::Printf("PH: [phestore] icon: row %d fetch failed (%d), trying again", row, aResult);
+			iState = EFetch;
+			if (iJob->Start(0, CPheJob::EFetch, loc, iPath) == KErrNone)
+				return;
+			iState = EBusy;
+			}
 		TBuf8<8> head(iView.RowIconUrl(row).Left(8));
 		if (IsUrl(head))
 			iNetDown = ETrue;

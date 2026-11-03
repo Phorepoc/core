@@ -48,6 +48,7 @@ private:
 	TInt iRow;
 	TInt iGeneration;
 	TBool iNetDown;
+	TInt iTries;                // fetch attempts for the row being loaded
 	TInt iDone;
 	};
 
