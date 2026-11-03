@@ -24,7 +24,7 @@ LINK="${LINK:-0}"; OBJ="$OUT/obj"; [ "$LINK" = 1 ] && { rm -rf "$OBJ"; mkdir -p 
 
 # User side: SSE is allowed (no -mgeneral-regs-only), red zone is fine, still freestanding.
 CXX="gcc -mx32 -ffreestanding -fno-pic -fno-stack-protector -nostdinc -std=gnu++03 \
-     -fno-exceptions -fno-rtti -fno-lifetime-dse -fstack-reuse=named_vars -fno-strict-aliasing -fno-delete-null-pointer-checks -w -masm=intel -O2 -fno-builtin -fno-tree-loop-distribute-patterns -fshort-wchar"
+     -fno-exceptions -fno-rtti -fno-lifetime-dse -fstack-reuse=named_vars -fno-strict-aliasing -fno-delete-null-pointer-checks -fcheck-new -w -masm=intel -O2 -fno-builtin -fno-tree-loop-distribute-patterns -fshort-wchar"
 # SYMBIAN_DISTINCT_LOCALE_MODEL (X4.72): variant-wide on S^3 (Symbian_OS.hrh) -- every other component compiles with
 # it; without it euser's three-DLL TExtendedLocale::LoadLocale is a stub returning KErrNotSupported and SSM's
 # language selection (ssmlangselcmd) failed the boot
