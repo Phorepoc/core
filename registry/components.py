@@ -1622,7 +1622,11 @@ COMPONENTS = {
     "mgfetch": dict(mmp="oss.FCL.sf.mw.metadatasrv/mediamanagementutilities/mediafetch/group/mediafetch.mmp"),   # <- clockapp
     "psmclient": dict(mmp="oss.FCL.sf.os.devicesrv/psmservices/psmserver/group/psmclient.mmp"),
     "psmserver": dict(mmp="oss.FCL.sf.os.devicesrv/psmservices/psmserver/group/psmserver.mmp"),   # <- clockapp
-    "iaupdateapi": dict(mmp="oss.FCL.sf.mw.appinstall/iaupdateapi_stub/group/iaupdateapi.mmp"),   # <- clockapp
+    # the real IAD client, not the 2010 stub: the stub's CIAUpdate::NewL leaves and its CheckUpdates never calls the observer back,
+    # so an app that checks for updates and waits (PyS60's script shell) waits forever; the real one completes CheckUpdatesComplete
+    # with the error when the IAD app is not there
+    "iaupdateapi": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/iaupdate/IAD/api/group/iaupdateapi.mmp"),   # <- clockapp
+    "iaupdatetools": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/iaupdate/IAD/tools/group/iaupdatetools.mmp"),   # <- iaupdateapi
     "thumbnailmanager": dict(mmp="oss.FCL.sf.mw.imghandling/imagehandlingutilities/thumbnailmanager/thumbnailclient/group/thumbnailmanager.mmp", flags=OST_OFF),   # <- clockapp
     "ihl": dict(mmp="oss.FCL.sf.mw.imghandling/imagehandlinglib/Group/IHL.mmp"),   # <- thumbnailserver
     "iclextjpegapi": dict(mmp="oss.FCL.sf.os.mmimaging/imagingextensions/imageadaptationextensions/iclextjpegapi/group/IclExtJpegApi.mmp"),   # <- ihl
