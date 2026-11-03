@@ -384,6 +384,9 @@ TBool CPheGet::RefreshIndexesL(const TDesC& aExtra, TBool aNoDefault)
 		TRAPD(r, FetchL((*locations)[i], tmp));
 		if (r != KErrNone)
 			{
+			TBuf8<256> loc8;
+			loc8.Copy((*locations)[i].Left(256));
+			Log(_L8("index %S: download failed (%d)"), &loc8, r);
 			iFs.Delete(tmp);
 			continue;
 			}
@@ -642,8 +645,13 @@ void CPheGet::OpenNetworkL()
 		{
 		User::LeaveIfError(iSockServ.Connect());
 		TInt r = iConnection.Open(iSockServ);
+		if (r != KErrNone)
+			Log(_L8("network: RConnection::Open failed (%d)"), r);
 		if (r == KErrNone)
+			{
 			r = StartConnection();         // the default connection (the "Internet" destination)
+			Log(_L8("network: RConnection::Start -> %d"), r);
+			}
 		if (r != KErrNone)
 			{
 			iConnection.Close();
