@@ -39,6 +39,7 @@ namespace
 		// NGA surface path
 		TBool iSurfaceTried, iSurfaceOk;
 		RSurfaceManager iSm;
+		TBool iSmOpen;					// iSm.Open() succeeded: Close() of one that never opened (a non-NGA ROM) panics KERN-EXEC 0
 		RChunk iChunk;
 		TSurfaceId iSurfaceId;
 		TSize iSurfaceSize;
@@ -50,6 +51,7 @@ namespace
 		// the presenter thread: the app queues buffer numbers (iQueue, single producer / single consumer), iWork counts them;
 		// iFree counts the buffers the app may render into (KNbuf - 1 at start; +1 per displayed submit)
 		RThread iPresenter;
+		TBool iPresenterOn;				// the presenter thread exists (a default RThread is the CURRENT thread: StopPresenter used to Logon on itself)
 		RSemaphore iWork, iFree;
 		volatile TInt iQueue[KNbuf];
 		volatile TUint iQHead, iQTail;
@@ -162,8 +164,9 @@ namespace
 
 	void StopPresenter(TWinState& aSt)
 		{
-		if (aSt.iPresenter.Handle() == KNullHandle)
+		if (!aSt.iPresenterOn)
 			return;
+		aSt.iPresenterOn = EFalse;
 		TRequestStatus dead;
 		aSt.iPresenter.Logon(dead);
 		aSt.iQuit = ETrue;
@@ -183,6 +186,7 @@ namespace
 			r = aSt.iPresenter.Create(KNullDesC, PresenterMain, 0x2000, &User::Allocator(), &aSt);
 		if (r != KErrNone)
 			return r;
+		aSt.iPresenterOn = ETrue;
 		TRequestStatus started;
 		aSt.iPresenter.Rendezvous(started);
 		aSt.iPresenter.SetPriority(EPriorityMore);
@@ -205,7 +209,9 @@ namespace
 		aSt.iChunk.Close();
 		if (!aSt.iSurfaceId.IsNull())
 			aSt.iSm.CloseSurface(aSt.iSurfaceId);
-		aSt.iSm.Close();
+		if (aSt.iSmOpen)
+			aSt.iSm.Close();
+		aSt.iSmOpen = EFalse;
 		aSt.iSurfaceId = TSurfaceId::CreateNullId();
 		aSt.iSurfaceOk = EFalse;
 		}
@@ -216,6 +222,7 @@ namespace
 		TInt r = aSt.iSm.Open();
 		if (r != KErrNone)
 			return r;
+		aSt.iSmOpen = ETrue;
 		RSurfaceManager::TSurfaceCreationAttributesBuf buf;
 		RSurfaceManager::TSurfaceCreationAttributes& a = buf();
 		a.iSize = aSize;

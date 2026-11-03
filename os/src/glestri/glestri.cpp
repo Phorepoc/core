@@ -63,6 +63,7 @@ static void MainL()
 	const TSize scr = screen->SizeInPixels();
 	win.SetExtent(TPoint(0, 0), scr);
 	win.Activate();
+	group.SetOrdinalPosition(0, 1000);		// in front of the launcher (the always-at-front priority)
 	ws.Flush();
 
 	EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
