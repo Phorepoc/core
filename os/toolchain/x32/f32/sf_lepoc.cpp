@@ -1,6 +1,7 @@
-// PHOREPOC board delta (X4.87): the release loader file with one change -- svRelocateSection applies relocation
+// PHOREPOC board delta (X4.87): the release loader file with two changes -- svRelocateSection applies relocation
 // type 0x4000 (KX32PcRelRelocType, x32 %rip displacements to statics) as += (data delta - code delta), so an
 // x32 image with writable statics can be LOADED FROM RAM (installed from a SIS). Compiled instead of sfile's.
+// Second change: E32Image::LoadProcess hands an EXE built for another CPU to its handler (ForeignCpuRedirect).
 // Copyright (c) 1995-2009 Nokia Corporation and/or its subsidiary(-ies).
 // All rights reserved.
 // This component and the accompanying materials are made available
@@ -1297,6 +1298,8 @@ E32Image* RImageArray::Find(const TRomImageHeader* a) const
 	}
 
 
+static TInt ForeignCpuRedirect(RLdrReq& aReq);
+
 TInt E32Image::LoadProcess(const RLdrReq& aReq)
 	{
 	__LDRTRACE(aReq.Dump("E32Image::LoadProcess"));
@@ -1305,6 +1308,21 @@ TInt E32Image::LoadProcess(const RLdrReq& aReq)
 	TInt r = finder.Set(aReq);
 	if (r == KErrNone)
 		r = finder.Search();
+	// PHOREPOC: no native image of that name -- an EXE built for another CPU with a handler installed? (ForeignCpuRedirect)
+	if (r!=KErrNone && r!=KErrNoMemory)
+		{
+		const TInt notFound = r;
+		if (ForeignCpuRedirect(const_cast<RLdrReq&>(aReq)) == KErrNone)
+			{
+			finder.Close();
+			new (&finder) RImageFinder;
+			r = finder.Set(aReq);
+			if (r == KErrNone)
+				r = finder.Search();
+			if (r!=KErrNone)
+				r = notFound;	// no handler installed: the original answer
+			}
+		}
 	if (r!=KErrNone)
 		{
 		finder.Close();
@@ -1658,6 +1676,90 @@ TInt FileRead(RFile& aFile, TUint8* aDest, TInt aSize)
 	return r;
 	}
 
+
+// PHOREPOC: executables built for another CPU (like Linux's binfmt_misc). The release loader rejects an E32Image whose
+// iCpuIdentifier is not this CPU's. When the name the caller asked for is such an EXE, and a handler for that CPU family
+// is installed (\sys\bin\cpuhandler_<family>.exe, today only "arm"), the process is started from the handler instead, with
+// the foreign file's full path (UTF-16) put in front of the command line. The handler (an ARM interpreter, say) runs it.
+// Without a handler nothing changes: the request fails as before.
+// Only \sys\bin\ is searched: only the software installer writes there, so a file dropped anywhere else never gets the
+// handler's capabilities. The handler is responsible for holding the foreign program to what it declares.
+_LIT8(KCpuHandlerArm, "cpuhandler_arm.exe");
+
+static TInt ForeignCpuRedirect(RLdrReq& aReq)
+	{
+	const TFileNameInfo& fi = aReq.iFileNameInfo;
+	if (!aReq.iFileName || aReq.iFileName->Length() >= KMaxFileName)
+		return KErrNotFound;
+	TBuf8<KMaxFileName> root;
+	fi.GetName(root, TFileNameInfo::EIncludeBaseExt);
+	if (root.Length() >= 11 && root.Left(11).CompareF(_L8("cpuhandler_")) == 0)
+		return KErrNotFound;			// never redirect a handler to itself
+	_LIT8(KSysBin, "\\sys\\bin\\");
+	if (fi.PathLen() && fi.Path().CompareF(KSysBin) != 0)
+		return KErrNotFound;			// a path outside \sys\bin\ is never searched
+	TInt first = EDriveZ, last = EDriveA;	// drive search order: Z: first (ROM), then Y: ... A:
+	if (fi.DriveLen())
+		{
+		TInt d;
+		if (RFs::CharToDrive(TChar((*aReq.iFileName)[0]), d) != KErrNone)
+			return KErrNotFound;
+		first = last = d;
+		}
+	for (TInt d = first; d >= last; --d)
+		{
+		TChar c;
+		if (RFs::DriveToChar(d, c) != KErrNone)
+			continue;
+		TBuf<KMaxFileName> full;
+		full.Append(c);
+		full.Append(':');
+		for (TInt i = 0; i < KSysBin().Length(); ++i)
+			full.Append(TChar(KSysBin()[i]));
+		for (TInt i = 0; i < root.Length(); ++i)
+			full.Append(TChar(root[i]));
+		RFile f;
+		if (f.Open(gTheLoaderFs, full, EFileRead | EFileShareReadersOnly) != KErrNone)
+			continue;
+		E32ImageHeaderV h;
+		TInt r = FileRead(f, (TUint8*)&h, sizeof(h));
+		f.Close();
+		if (r != KErrNone || h.iSignature != 0x434f5045 || (h.iFlags & KImageDll) || h.iUid1 != KExecutableImageUidValue)
+			continue;
+		const TCpu cpu = (TCpu)h.iCpuIdentifier;
+		if (!(cpu == ECpuArmV4 || cpu == ECpuArmV5 || cpu == ECpuArmV6))
+			continue;
+		// the new command line: "<path> <old command line>" as 16-bit data in an 8-bit buffer
+		const TInt oldLen = aReq.iCmd ? aReq.iCmd->Length() : 0;
+		HBufC8* cmd = HBufC8::New(full.Size() + 2 + oldLen);
+		HBufC8* name = HBufC8::New(KCpuHandlerArm().Length());
+		if (!cmd || !name)
+			{
+			delete cmd;
+			delete name;
+			return KErrNoMemory;
+			}
+		cmd->Des().Append((const TUint8*)full.Ptr(), full.Size());
+		if (oldLen)
+			{
+			const TUint16 sp = ' ';
+			cmd->Des().Append((const TUint8*)&sp, 2);
+			cmd->Des().Append(*aReq.iCmd);
+			}
+		name->Des().Copy(KCpuHandlerArm);
+		delete aReq.iCmd;
+		aReq.iCmd = cmd;
+		delete aReq.iFileName;
+		aReq.iFileName = name;
+		if (aReq.iFileNameInfo.Set(*aReq.iFileName, TFileNameInfo::EAllowDecimalVersion) != KErrNone)
+			return KErrBadName;
+		TBuf8<KMaxFileName> full8;
+		full8.Copy(full);
+		RDebug::Printf("PH: loader: %S is an ARM program -> cpuhandler_arm.exe", &full8);
+		return KErrNone;
+		}
+	return KErrNotFound;
+	}
 
 /**
 Construct a new image header by reading a file. File must not be XIP.
