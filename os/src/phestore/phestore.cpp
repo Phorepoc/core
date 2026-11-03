@@ -12,6 +12,7 @@
 #include <aknapp.h>
 #include <akndoc.h>
 #include <aknappui.h>
+#include <eikmenup.h>
 #include <avkon.hrh>
 #include <eikbtgpc.h>
 #include <eikspane.h>
@@ -152,7 +153,7 @@ public:
 		self->HideInBackground();
 		return 0;
 		}
-	void UiOptions() { TRAP_IGNORE(ProcessCommandL(EAknSoftkeyOptions)); }
+	void UiOptions() { RDebug::Printf("PH: [phestore] ui: options"); TRAP_IGNORE(ProcessCommandL(EAknSoftkeyOptions)); }
 
 	// ---- software sources: the Sources page over the engine's indexes.txt (pheget.h); changes take effect on leaving it
 	void UiSourceToggleDefault()
@@ -193,6 +194,7 @@ public:
 		TRAPD(err, dlg = CAknTextQueryDialog::NewL(address));
 		if (err != KErrNone)
 			return;
+		RDebug::Printf("PH: [phestore] ui: add-source dialog");
 		if (!dlg->ExecuteLD(R_PHESTORE_ADD_SOURCE_QUERY))
 			return;                                        // cancelled
 		address.Trim();
@@ -218,6 +220,9 @@ public:
 	// after a change to indexes.txt (err = its result): rebuild the rows, say what happened
 	void SourcesChanged(TInt aErr, const TDesC& aOk)
 		{
+		TBuf8<64> ok8;
+		ok8.Copy(aOk.Left(64));
+		RDebug::Printf("PH: [phestore] ui: sources changed (%d): %S", aErr, &ok8);
 		if (aErr == KErrNone)
 			iSourcesChanged = ETrue;
 		FillSources();
@@ -237,7 +242,9 @@ public:
 		iSourcesChanged = EFalse;
 		FillSources();
 		iView->SetSourcesStatus(KNullDesC, EFalse);
+		TRAP_IGNORE(Cba()->SetCommandSetL(R_AVKON_SOFTKEYS_OPTIONS_BACK));   // the right softkey leaves this page, not the app
 		iView->ShowSources();
+		RDebug::Printf("PH: [phestore] ui: sources page open");
 		}
 	void FillSources()
 		{
@@ -267,6 +274,8 @@ public:
 	// back from the Sources page: if it changed anything, show the indexes as they now are and refresh them
 	void CloseSources()
 		{
+		RDebug::Printf("PH: [phestore] ui: sources closed (changed %d)", iSourcesChanged ? 1 : 0);
+		TRAP_IGNORE(Cba()->SetCommandSetL(R_AVKON_SOFTKEYS_OPTIONS_EXIT));   // (Options / Exit again)
 		iView->ShowList();
 		if (iRebuildPending)                               // an index changed while this page was open
 			{
@@ -592,6 +601,12 @@ private:
 		CAknAppUi::HandleResourceChangeL(aType);
 		if (aType == KEikDynamicLayoutVariantSwitch && iView)
 			iView->SetRect(FullRect());
+		}
+
+	void DynInitMenuPaneL(TInt aResourceId, CEikMenuPane* aMenuPane)
+		{
+		CAknAppUi::DynInitMenuPaneL(aResourceId, aMenuPane);
+		RDebug::Printf("PH: [phestore] ui: options");
 		}
 
 	void HandleCommandL(TInt aCommand)
