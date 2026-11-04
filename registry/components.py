@@ -814,6 +814,7 @@ COMPONENTS = {
     "flextimerengine": dict(mmp="oss.FCL.sf.mw.ipconnmgmt/keepalive/flextimer/server/engine/group/flextimerengine.mmp"),
     "flextimerserver": dict(mmp="oss.FCL.sf.mw.ipconnmgmt/keepalive/flextimer/server/group/flextimerserver.mmp"),
     "netcfgextnhotspot": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.wirelessacc/hotspotfw/hsclient/group/NetCfgExtnHotSpot.mmp"),
+    "hssscanlist": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.wirelessacc/hotspotfw/hsserver/group/hssscanlist.mmp"),   # STATICLIBRARY: HssScanList / HssScanInfo <- hotspotclient, hssmgmtimpl
     "hotspotclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.wirelessacc/hotspotfw/hsclient/group/hotspotclient.mmp"),
     "hssmgmtimpl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.wirelessacc/hotspotfw/hsclient/group/hssmgmtimpl.mmp"),
     "wlanagthotspotimpl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.wirelessacc/hotspotfw/hspluginforagent/group/wlanagthotspotimpl.mmp"),
