@@ -30,6 +30,9 @@ typedef struct {
 /* the window's current size in pixels; 0 if aWindow is not usable */
 int symgl_window_size(void *native_window, unsigned *width, unsigned *height);
 
+/* the window covers the whole screen of w x h pixels (its size, and its position (0,0)); window server round trips: call it rarely */
+int symgl_window_fullscreen(void *native_window, unsigned w, unsigned h);
+
 /* the window's presentation surface of that size (created, or re-created after a resize); 0 = no SurfaceManager
  * on this ROM: use symgl_window_present_pixels instead */
 int symgl_window_surface(void *native_window, unsigned width, unsigned height, symgl_surface *out);
@@ -49,6 +52,9 @@ void symgl_window_release(void *native_window);
 
 /* debug output (RDebug) */
 void symgl_log(const char *msg);
+
+/* a clock in microseconds with the system tick (1 ms) as resolution; only differences mean anything */
+unsigned symgl_now_us(void);
 
 /* G6: the committed size of a chunk handle of this process (an EGLImage source), 0 = not a chunk */
 unsigned symgl_chunk_size(int chunk_handle);

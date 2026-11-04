@@ -297,6 +297,7 @@ namespace
 				return;
 				}
 			}
+		const TUint32 pt0 = User::NTickCount();
 		CFbsBitmap& bmp = *aSt.iBitmap;
 		bmp.BeginDataAccess();
 		TUint8* dst = reinterpret_cast<TUint8*>(bmp.DataAddress());
@@ -304,6 +305,7 @@ namespace
 		for (TInt y = 0; y < aH; ++y)
 			Mem::Copy(dst + y * dstStride, aSrc + y * aSrcStride, aW * 4);
 		bmp.EndDataAccess();
+		const TUint32 pt1 = User::NTickCount();
 		CWindowGc& gc = *aSt.iGc;
 		// The frame is window drawing, so it follows the window server's redraw convention and belongs to the window's owner.
 		// Inside the owner's BeginRedraw..EndRedraw (a Qt GL widget paints, and swaps, from its paint event) the frame joins that
@@ -315,7 +317,17 @@ namespace
 		gc.Activate(win);
 		gc.BitBlt(TPoint(0, 0), &bmp);
 		gc.Deactivate();
+		const TUint32 pt2 = User::NTickCount();
 		win.Session()->Flush();
+		const TUint32 pt3 = User::NTickCount();
+		// where a bitmap present spends its time (ms per 600 frames: copy into the bitmap / gc calls / Flush)
+		static TUint32 sCopy = 0, sGc = 0, sFlush = 0, sN = 0;
+		sCopy += pt1 - pt0; sGc += pt2 - pt1; sFlush += pt3 - pt2;
+		if (++sN == 600)
+			{
+			RDebug::Printf("[symgl] bitmap present per 600 frames: copy %u ms, gc activate+BitBlt+deactivate %u ms, RWsSession::Flush %u ms", sCopy, sGc, sFlush);
+			sCopy = sGc = sFlush = sN = 0;
+			}
 		}
 	}
 
@@ -329,6 +341,35 @@ extern "C" int symgl_window_size(void* aNative, unsigned* aWidth, unsigned* aHei
 	*aWidth = s.iWidth;
 	*aHeight = s.iHeight;
 	return 1;
+	}
+
+// The window covers the whole screen and the focused window group is this process's. A note or another application
+// on top takes the focus; what is drawn over it later is the display driver's to notice (xk_vmwsvga.cpp).
+extern "C" int symgl_window_fullscreen(void* aNative, unsigned aW, unsigned aH)
+	{
+	if (!aNative)
+		return 0;
+	RWindow* win = static_cast<RWindow*>(aNative);
+	const TSize size = win->Size();
+	const TPoint pos = win->AbsPosition();
+	if (size.iWidth != (TInt)aW || size.iHeight != (TInt)aH || pos.iX != 0 || pos.iY != 0)
+		return 0;
+	// the window group that has the keys belongs to this process (a note or another application on top takes the focus)
+	TThreadId owner;
+	if (win->Session()->GetWindowGroupClientThreadId(win->Session()->GetFocusWindowGroup(), owner) != KErrNone)
+		return 0;
+	RThread thread;
+	if (thread.Open(owner) != KErrNone)
+		return 0;
+	RProcess process;
+	TInt mine = 0;
+	if (thread.Process(process) == KErrNone)
+		{
+		mine = process.Id() == RProcess().Id();
+		process.Close();
+		}
+	thread.Close();
+	return mine;
 	}
 
 extern "C" int symgl_window_surface(void* aNative, unsigned aWidth, unsigned aHeight, symgl_surface* aOut)
@@ -428,6 +469,13 @@ extern "C" void symgl_window_release(void* aNative)
 extern "C" void symgl_log(const char* aMsg)
 	{
 	RDebug::Printf("%s", aMsg);
+	}
+
+extern "C" unsigned symgl_now_us()
+	{
+	// (User::FastCounter is per CPU here, and the CPUs' counters are not in step: a thread that moves between CPUs measured
+	// negative and huge times. The system tick is global: 1 ms, so only sums over many frames mean anything.)
+	return (unsigned)User::NTickCount() * 1000u;
 	}
 
 // G6 (egl_symbian.c, EGLImage from a chunk): the committed size of a chunk handle of this process, 0 if not a chunk.

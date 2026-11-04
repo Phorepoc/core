@@ -522,6 +522,8 @@ COMPONENTS = {
     "glestri": dict(mmp=os.path.join(OS_ROOT, "src/glestri/glestri.mmp"), vfp=True, test=True, defs=["__declspec(x)="]),
     # the OpenGL ES 1.1 (fixed-function) twin: libGLESv1_CM.dll
     "gles1tri": dict(mmp=os.path.join(OS_ROOT, "src/gles1tri/gles1tri.mmp"), vfp=True, test=True, defs=["__declspec(x)="]),
+    # an RSgImage as an EGL pixmap surface: GL draws into it, the CPU sees it, the CPU writes it, GL sees that (EGL 1.4 3.9)
+    "glpixmaptest": dict(mmp=os.path.join(OS_ROOT, "src/glpixmaptest/glpixmaptest.mmp"), vfp=True, test=True, defs=["__declspec(x)="]),
     # --- system servers the UI framework talks to ------------------------------------
     "baksrv": dict(mmp=f"{OSSRV}/lowlevellibsandfws/apputils/group/Baksrv.mmp"),
     "baksrvs": dict(mmp=f"{OSSRV}/lowlevellibsandfws/apputils/group/Baksrvs.mmp"),

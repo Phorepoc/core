@@ -27,6 +27,7 @@ typedef struct {
    uint32_t caps, cap2;               /* SVGA_REG_CAPABILITIES / CAP2 */
    uint32_t devcap_3d, devcap_dx, devcap_sm41, devcap_sm5, devcap_gl43, max_texture;
    uint32_t mob_max_kb;               /* the device's largest MOB */
+   uint32_t display_w, display_h;     /* the display mode the kernel driver set through the SVGA registers (0 = it does not drive the display) */
    uint32_t mob_memory;               /* bytes of guest memory this process may pin for the device: the pool, within the free RAM */
    void *pool_base;                   /* CPU address of pool offset 0 */
    uint32_t pool_bytes;               /* address space of the pool (pages are committed on demand) */
@@ -46,6 +47,11 @@ int symvmw_devcaps(symvmw_t *v, uint32_t *caps, unsigned count);
 int symvmw_pool_commit(symvmw_t *v, uint32_t offset, uint32_t size);   /* page aligned */
 int symvmw_mob_define(symvmw_t *v, uint32_t mobid, uint32_t offset, uint32_t size);
 int symvmw_mob_destroy(symvmw_t *v, uint32_t mobid);
+/* Scan-out takeover (a full-screen GL window): the window's render target becomes a screen target, i.e. what the host shows, with no read-back
+   and no window server. op 1 = the client defined a screen target, 0 = it took it down, 2 = ask. Returns 1 while it is the display and 0 once
+   it is not: the display driver takes it down itself the moment the window server draws anything (a note, a pointer, another window), see
+   the kernel driver's ScanoutDrop. */
+int symvmw_scanout(symvmw_t *v, int op);
 /* one command buffer: arena [offset, offset + length) on queue context `context` (0 = 3D); flags bit 1 = DX context `dx_context`.
    surf_high / ctx_high: how many surface / DX context ids of this process's windows are in use (for the cleanup at exit).
    status = SVGACBStatus (1 = completed) */

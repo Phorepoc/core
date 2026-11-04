@@ -110,24 +110,31 @@ static void MainL()
 
 	TUint32 t0 = User::NTickCount();
 	TInt frames = 0;
+	TUint32 tGl = 0, tSwap = 0, tAfter = 0;
 	for (TInt f = 0; ; ++f)
 		{
+		const TUint32 a0 = User::NTickCount();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glLoadIdentity();
 		glTranslatef(0.0f, 0.0f, -6.0f);
 		glRotatef(f * 0.9f, 1.0f, 0.0f, 0.0f);
 		glRotatef(f * 1.3f, 0.0f, 1.0f, 0.0f);
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, KIndices);
+		const TUint32 a1 = User::NTickCount();
 		eglSwapBuffers(dpy, surf);
 		++frames;
 		const TUint32 now = User::NTickCount();
+		tGl += a1 - a0;
+		tSwap += now - a1;
 		if (now - t0 >= 2000)
 			{
-			RDebug::Printf("[gles1tri] %d frames in %u ms (glGetError 0x%x)", frames, now - t0, glGetError());
+			RDebug::Printf("[gles1tri] %d frames in %u ms (glGetError 0x%x); GL calls %u ms, eglSwapBuffers %u ms, After(0) %u ms", frames, now - t0, glGetError(), tGl, tSwap, tAfter);
 			frames = 0;
+			tGl = tSwap = tAfter = 0;
 			t0 = now;
 			}
 		User::After(0);
+		tAfter += User::NTickCount() - now;
 		}
 	}
 
