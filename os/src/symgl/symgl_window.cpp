@@ -305,13 +305,13 @@ namespace
 			Mem::Copy(dst + y * dstStride, aSrc + y * aSrcStride, aW * 4);
 		bmp.EndDataAccess();
 		CWindowGc& gc = *aSt.iGc;
-		// The frame is window drawing, so it follows the window server's redraw convention and belongs to the window's owner:
-		// the application swaps from inside its own BeginRedraw..EndRedraw (a Qt GL widget paints, and swaps, from its paint
-		// event), and a bracket of our own would nest in it -- the server panics the client (WSERV 69,
-		// EWservPanicDrawCommandsInvalidState, CWsRedrawMsgWindow::BeginRedraw). So no bracket here: drawn inside the
-		// application's, the frame joins its redraw. The NGA window server ignores drawing outside a bracket and invalidates
-		// the window instead (CWsRedrawMsgWindow::StoreDrawCommandL), which asks the owner for a redraw event: an application
-		// that swaps outside a redraw has to bracket the swap itself, as gles1tri does.
+		// The frame is window drawing, so it follows the window server's redraw convention and belongs to the window's owner.
+		// Inside the owner's BeginRedraw..EndRedraw (a Qt GL widget paints, and swaps, from its paint event) the frame joins that
+		// redraw; a bracket of our own would nest in it and the server panics the client (WSERV 69,
+		// EWservPanicDrawCommandsInvalidState, CWsRedrawMsgWindow::BeginRedraw). Outside a redraw (a game that swaps from a timer or
+		// an idle loop) the window server stores the drawing as a non-redraw segment of the window and adds the window's visible
+		// region to the screen's redraw regions (CWsRedrawMsgWindow::StoreDrawCommandL -> HandleNonRedrawCommand), so the frame still
+		// reaches the screen and is kept for exposure. Either way no bracket here.
 		gc.Activate(win);
 		gc.BitBlt(TPoint(0, 0), &bmp);
 		gc.Deactivate();
