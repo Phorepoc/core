@@ -1234,10 +1234,12 @@ COMPONENTS = {
     # the WRT runtime: WidgetUi (the widget host app, on the S60 WebKit engine), the widget JS objects
     # (widgetengine: `widget.*`, `menu.*`), the launcher apparc runs for a widget's UID, and the first-boot
     # pre-installer (z:\data\WidgetPreInstall\<bundle id>\<root>\ -> c:\private\10282822\, once)
-    "widgetui": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/widgets/widgetapp/group/WidgetUi.mmp", x32_flags=WEBKIT_NOT_UNIX),
-    "widgetengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/widgetengine/group/WidgetEngine.mmp", x32_flags=WEBKIT_NOT_UNIX),
-    "jsdevice": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/device/group/Device.mmp", x32_flags=WEBKIT_NOT_UNIX),
-    "widgetlauncher": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/widgets/widgetlauncher/group/WidgetLauncher.mmp"),
+    # needs="s60web": the S60 WebKit engine and what only runs on it (BrowserNG, the WRT widget runtime). No board lists an
+    # s60web layer, so no image carries them -- no browser engine goes into an image; engines are Catalogue packages
+    "widgetui": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/widgets/widgetapp/group/WidgetUi.mmp", x32_flags=WEBKIT_NOT_UNIX),
+    "widgetengine": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/widgetengine/group/WidgetEngine.mmp", x32_flags=WEBKIT_NOT_UNIX),
+    "jsdevice": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/device/group/Device.mmp", x32_flags=WEBKIT_NOT_UNIX),
+    "widgetlauncher": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/widgets/widgetlauncher/group/WidgetLauncher.mmp"),
     # Indication/Loading messages in Messaging's "Service messages" (PushMtm.iby, PushMtmResources.iby)
     # the Symbian WAP-push framework under it (wappush.iby: pushwatcher is a messaging watcher; the app handler,
     # security and SI/SL content handlers are ECom plug-ins no import reaches) + what the push MTM links
@@ -1834,7 +1836,9 @@ COMPONENTS = {
     # (RCL_3 mw.web: WebCore, JavaScriptCore, the browser control) + download manager, connection manager ...
     # rsc_incs: BrowserNG.rss includes <iaupdate.loc>, which no bld.inf in the release exports (a localisation
     # pack did): read it from the appinstall package
-    "browserng": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.webuis/browserui/browser/Group/BrowserNG.mmp", rsc_incs=["src/browserng-loc", "baseline/symbian-2010/oss.FCL.sf.mw.appinstall/iaupdate/IAD/loc"]),   # the root
+    # needs="s60web": the S60 WebKit engine and what only runs on it (BrowserNG, the WRT widget runtime). No board lists an
+    # s60web layer, so no image carries them -- no browser engine goes into an image; engines are Catalogue packages
+    "browserng": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.app.webuis/browserui/browser/Group/BrowserNG.mmp", rsc_incs=["src/browserng-loc", "baseline/symbian-2010/oss.FCL.sf.mw.appinstall/iaupdate/IAD/loc"]),   # the root
     "browserlauncher": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.webuis/browserui/browser/Launcher2/group/BrowserLauncher.mmp"),   # the root
     # resolved by the S60 MCPR + MPM; plain Symbian ESOCK picked IAP 0 -> TierManagerUtils 4
     "mpmclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/bearermanagement/mpm/group/mpmclient.mmp"),   # the Mobility Policy Manager client
@@ -1852,16 +1856,16 @@ COMPONENTS = {
         extra=["toolchain/shims/cookiemanager_board/CookieArray.cpp", "toolchain/shims/cookiemanager_board/CookieClientData.cpp"]),   # the HTTP cookie filter's manager (regsuggest had picked the httpexamples one: same TARGET)   # <- BrowserNG.mmp
     "browserdialogsprovider": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/browserutilities/browserdialogsprovider/Group/browserdialogsprovider.mmp"),   # <- BrowserNG.mmp
     "feedsserverapi": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/browserutilities/feedsengine/FeedsServer/Api/group/FeedsServerApi.mmp"),   # <- BrowserNG.mmp
-    "browserengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/browserengine/browserengine.mmp", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h")], x32_flags=WEBKIT_NOT_UNIX),   # <- BrowserNG.mmp
+    "browserengine": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/browserengine/browserengine.mmp", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h")], x32_flags=WEBKIT_NOT_UNIX),   # <- BrowserNG.mmp
     # the S60 WebKit browserengine, shipped NEXT TO phebrctl under another name: WidgetUi needs its CreateWidgetExtensionL (the WRT
-    "browserengine_s60": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/browserengine/browserengine.mmp", rom="browserengine_s60.dll", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h")], x32_flags=WEBKIT_NOT_UNIX),
-    "webkitutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/webkitutils/group/WebKitUtils.mmp", cdriver=True,   # SqliteSymbian/*.c are C   # <- browserengine
+    "browserengine_s60": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/browserengine/browserengine.mmp", rom="browserengine_s60.dll", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h")], x32_flags=WEBKIT_NOT_UNIX),
+    "webkitutils": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/webkitutils/group/WebKitUtils.mmp", cdriver=True,   # SqliteSymbian/*.c are C   # <- browserengine
                         # the sliced ?: in HistoryEntry.h (toolchain/shims/webkitutils_gcc: the header + its two users)
                         flags=["-iquote", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.web/webengine/webkitutils/HistoryProvider")],
                         drop=["HistoryController.cpp", "HistoryView.cpp"],
                         extra=["toolchain/shims/webkitutils_gcc/HistoryController.cpp", "toolchain/shims/webkitutils_gcc/HistoryView.cpp"]),
-    "pagescaler": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/pagescaler/group/minimap.mmp"),   # <- browserengine
-    "javascriptcore": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/JavaScriptCore/JavaScriptCore.mmp", x32_flags=WEBKIT_NOT_UNIX,
+    "pagescaler": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/pagescaler/group/minimap.mmp"),   # <- browserengine
+    "javascriptcore": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/JavaScriptCore/JavaScriptCore.mmp", x32_flags=WEBKIT_NOT_UNIX,
                            # GCC delta: static definitions after non-static declarations (toolchain/shims/jsc_gcc)
                            drop=["snprintf.c"], extra=["toolchain/shims/jsc_gcc/snprintf.c"]),   # <- browserengine
     # by name, so the closure never found them; without them RHTTPSession::OpenL -> KEComErrNoInterfaceIdentified
@@ -1900,27 +1904,27 @@ COMPONENTS = {
                          extra=["toolchain/shims/stmgesturefw_gcc/stateengine.cpp",
                                 "toolchain/shims/stmgesturefw_gcc/statemachine.cpp"]),   # <- browserengine (RCL_3 replaced rt_gesturehelper)
     "browsercache": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/cache/group/BrowserCache.mmp"),   # <- browserengine
-    "webkit": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webkit/webkit.mmp", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h")], x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcorederivedsources": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/DerivedSources/DerivedSources.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcorebindings": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/bindings/bindings.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcorecss": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/webcorecss/webcorecss.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcoredom": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/dom/dom.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcoreediting": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/editing/editing.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcorehistory": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/history/history.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcorehtml": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/html/html.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcoreloader": dict(defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/loader/loader.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcorepage": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/page/page.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcorerendering": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/rendering/rendering.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcorexml": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/xml/xml.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcorebridge": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/bridge/bridge.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcoreplatform": dict(defs=["__declspec(x)="], arm_flags=UNRELEASED_INC,   # WebKitIcons_gcce.mbg (OURS)
+    "webkit": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webkit/webkit.mmp", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h")], x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcorederivedsources": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/DerivedSources/DerivedSources.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcorebindings": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/bindings/bindings.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcorecss": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/webcorecss/webcorecss.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcoredom": dict(needs="s60web", defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/dom/dom.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcoreediting": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/editing/editing.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcorehistory": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/history/history.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcorehtml": dict(needs="s60web", defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/html/html.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcoreloader": dict(needs="s60web", defs=["__declspec(x)="], mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/loader/loader.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcorepage": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/page/page.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcorerendering": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/rendering/rendering.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcorexml": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/xml/xml.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcorebridge": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/bridge/bridge.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcoreplatform": dict(needs="s60web", defs=["__declspec(x)="], arm_flags=UNRELEASED_INC,   # WebKitIcons_gcce.mbg (OURS)
                             mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/platform/platform.mmp", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h"), "-iquote", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebCore/platform/symbian"), "-iquote", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebCore/platform/network/symbian")],
                             # deltas (toolchain/shims/webcore_gcc): a member-fn pointer without &Class::, a backslash include,
                             # HttpConnUtils: the sliced ?: (toolchain/shims/aifw_board)
                             drop=["FormFillController.cpp", "StaticObjectsContainer.cpp", "HttpConnUtils.cpp"],
                             extra=["toolchain/shims/webcore_gcc/FormFillController.cpp", "toolchain/shims/webcore_gcc/StaticObjectsContainer.cpp", "toolchain/shims/webcore_gcc/HttpConnUtils.cpp"], x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "webcore_xmlparser": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/libxml2/libxml2.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
-    "plugins": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/plugins/plugins.mmp", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h")], x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "webcore_xmlparser": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/libxml2/libxml2.mmp", x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
+    "plugins": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/plugins/plugins.mmp", flags=["-include", os.path.join(OS_ROOT, "toolchain/shims/npapi_gcc/npapi_force.h")], x32_flags=WEBKIT_NOT_UNIX),   # <- browserengine
     # content control, widget manager (RCL_3 app.homescreen + mw.homescreensrv)
     "aicontainer": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.homescreen/idlehomescreen/exths/group/aicontainer.mmp"),   # the root
     "hscontentcontrol": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.homescreen/idlehomescreen/hscontentcontrol/group/hscontentcontrol.mmp"),   # the root
