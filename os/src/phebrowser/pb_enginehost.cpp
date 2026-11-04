@@ -75,7 +75,9 @@ void CPbEngines::ListL()
 		n.iVersion = infos[i]->Version();
 		n.iName.Copy(infos[i]->DisplayName().Left(32));
 		ParseData(infos[i]->DataType(), n.iCaps, n.iApi);
-		RDebug::Printf("PH: [phebrowser] engine %x '%S' v%d caps %x api %d", n.iUid.iUid, &n.iName, n.iVersion, n.iCaps, n.iApi);
+		TBuf8<40> name8;                  // RDebug::Printf's %S is an 8-bit descriptor
+		name8.Copy(n.iName);
+		RDebug::Printf("PH: [phebrowser] engine %x '%S' v%d caps %x api %d", n.iUid.iUid, &name8, n.iVersion, n.iCaps, n.iApi);
 		iList.AppendL(n);
 		}
 	CleanupStack::PopAndDestroy();
