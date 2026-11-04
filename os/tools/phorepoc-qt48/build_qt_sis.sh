@@ -61,6 +61,10 @@ stage_host() {
       -no-accessibility -no-sql-sqlite -no-exceptions -silent -platform linux-g++ > configure.log 2>&1 \
       || { tail -30 configure.log; exit 1; }
   fi
+  # uic's XML reader loops over a widget's attributes with foreach: with GCC >= 9 the original Q_FOREACH ends the loop at the first
+  # `continue`, so every widget name was lost (Ui_QFileDialog without treeView...). qt-patches/0002 fixes the macro, and it has to be in
+  # before the host tools are built, not only when the sources are staged for the device build.
+  ( cd "$SRC" && patch -p1 -N -s -r - < "$HERE/qt-patches/0002-foreach-modern-gcc.patch" >/dev/null ) || true
   # Qt 4 relies on `this`-may-be-null checks and object lifetimes that GCC >= 6 optimises away: the guard flags
   local QFIX='CXXFLAGS=-pipe -O2 -w -std=gnu++98 -fno-delete-null-pointer-checks -fno-lifetime-dse -fno-strict-aliasing $(DEFINES)'
   # configure already built the tools without the guard flags: a uic that drops custom widgets (QFileDialogTreeView) -> clean, rebuild
@@ -105,21 +109,45 @@ stage_configure_full() {
   mkdir -p "$SRC/src/testlib/.moc/release-shared"; cp -ru "$d/.moc/." "$SRC/src/testlib/.moc/"
 }
 
+# The directories whose mmps this script builds -- the MODULES, the PLUGINS and IMPORTS (and s60main, the Qt program glue) -- each
+# with the qmake tree its mmp comes from (stage_stage: the full tree's where it has one, else the minimal tree's).
+mmp_dirs() {
+  local t m p n
+  for t in "$SYMF" "$SYM"; do
+    [ -d "$t/src" ] || continue
+    for m in s60main $MODULES; do
+      [ "$m" = core ] && m=corelib
+      ls "$t/src/$m"/*.mmp >/dev/null 2>&1 && echo "${t##*/} src/$m"
+    done
+    for p in $PLUGINS $IMPORTS; do
+      n=${p%%:*}
+      (cd "$t" && find src -name "${n}_dll.mmp" -printf '%h\n') | sed "s|^|${t##*/} |"
+    done
+  done | sort -k2,2 -s | awk '!seen[$2]++'
+}
+
 stage_mocables() {
   epocroot
-  mkdir -p "$SYM/bin"
-  for t in moc rcc uic; do cp -f "$HOST/bin/$t" "$SYM/bin/$t"; done
+  for t in "$SYM" "$SYMF"; do
+    [ -d "$t" ] || continue
+    mkdir -p "$t/bin"; for x in moc rcc uic; do cp -f "$HOST/bin/$x" "$t/bin/$x"; done
+  done
   [ -e "$SRC/include" ] || ln -s "$SYM/include" "$SRC/include"
-  for m in corelib gui network svg sql xml s60main; do
-    local d="$SYM/src/$m"
-    [ -f "$d/Makefile" ] || { echo "$m: no Makefile"; continue; }
-    mkdir -p "$SRC/src/$m/.moc/release-shared" "$SRC/src/$m/.rcc/release-shared" "$SRC/src/$m/.uic/release-shared"
-    mkdir -p "$d/.moc/release-shared" "$d/.rcc/release-shared" "$d/.uic/release-shared"
-    ( cd "$d" && make -s mocables > mocables.log 2>&1 ) || { echo "$m: mocables FAILED"; tail -5 "$d/mocables.log"; continue; }
+  local tree rel t d g
+  rm -f "$Q/mocables.failed"
+  mmp_dirs | while read -r tree rel; do
+    t="$Q/$tree"; d="$t/$rel"
+    [ -f "$d/Makefile" ] || { echo "$rel: no Makefile in $tree"; echo "$rel" >> "$Q/mocables.failed"; continue; }
+    grep -q '^mocables:' "$d/Makefile" || continue   # nothing generated here (the host tools' own mmps, a driver with no Q_OBJECT)
+    mkdir -p "$SRC/$rel" "$d/.moc/release-shared" "$d/.rcc/release-shared" "$d/.uic/release-shared"
+    ( cd "$d" && make -s mocables > mocables.log 2>&1 ) || { echo "$rel ($tree): mocables FAILED"; tail -5 "$d/mocables.log"; echo "$rel" >> "$Q/mocables.failed"; continue; }
     ( cd "$d" && make -s compiler_rcc_make_all >> mocables.log 2>&1 ) || true
     ( cd "$d" && make -s compiler_uic_make_all >> mocables.log 2>&1 ) || true
-    for g in .moc .rcc .uic; do [ -d "$SRC/src/$m/$g" ] && mkdir -p "$d/$g" && cp -ru "$SRC/src/$m/$g/." "$d/$g/"; done
+    for g in .moc .rcc .uic; do
+      [ -d "$d/$g" ] && { mkdir -p "$SRC/$rel/$g"; cp -ru "$d/$g/." "$SRC/$rel/$g/"; }
+    done
   done
+  if [ -s "$Q/mocables.failed" ]; then echo "mocables failed for: $(sort -u "$Q/mocables.failed" | tr '\n' ' ')"; rm -f "$Q/mocables.failed"; exit 1; fi
   # qfiledialog.cpp includes ui_qfiledialog_embedded.h, for which the Symbian Makefile has no uic rule
   local u="$SYM/src/gui/.uic/release-shared"; mkdir -p "$u" "$SRC/src/gui/.uic/release-shared"
   "$HOST/bin/uic" "$SRC/src/gui/dialogs/qfiledialog_embedded.ui" -o "$u/ui_qfiledialog_embedded.h"
@@ -133,7 +161,8 @@ stage_stage() {
   done
   # QtGui's application-framework resource (s60framework.pri) is a bld.inf extension in qmake's SBSv2 output, not in the mmp
   local G="$SRC/src/gui/QtGui_dll.mmp"
-  grep -q "s60main.rss" "$G" || printf '\nSOURCEPATH s60framework\nSTART RESOURCE s60main.rss\nTARGET s60main\nHEADER\nTARGETPATH /resource/apps\nEND\n' >> "$G"
+  local GUI_RSS='\nSOURCEPATH s60framework\nSTART RESOURCE s60main.rss\nTARGET s60main\nHEADER\nTARGETPATH /resource/apps\nEND\n'
+  grep -q "s60main.rss" "$G" || printf "$GUI_RSS" >> "$G"
   # the generated mmps' SYSTEMINCLUDE ../../include is qt-src/include: use configure's own include/ tree and qconfig.h/.cpp
   cp -rf "$SYM/include/." "$SRC/include/"
   cp -f "$SYM/src/corelib/global/qconfig.h" "$SYM/src/corelib/global/qconfig.cpp" "$SRC/src/corelib/global/"
@@ -146,7 +175,9 @@ stage_stage() {
       printf '#ifndef QT_DECLARATIVE\n#define QT_DECLARATIVE\n#endif\n#ifndef QT_SCRIPT\n#define QT_SCRIPT\n#endif\n'
       cat "$SYMF/src/corelib/global/qconfig.h"; } > "$SRC/src/corelib/global/qconfig.h"
     cp -f "$SRC/src/corelib/global/qconfig.h" "$SRC/include/QtCore/qconfig.h"
-    for f in $(cd "$SYMF" && find src -name "*.mmp"); do [ -f "$SRC/$f" ] || { mkdir -p "$SRC/$(dirname "$f")"; cp -f "$SYMF/$f" "$SRC/$f"; }; done
+    # the full configuration also configures QtNetwork with SSL (qsslsocket*): its mmps replace the minimal ones (the others are identical)
+    for f in $(cd "$SYMF" && find src -name "*.mmp"); do mkdir -p "$SRC/$(dirname "$f")"; cp -f "$SYMF/$f" "$SRC/$f"; done
+    grep -q "s60main.rss" "$G" || printf "$GUI_RSS" >> "$G"
     # QtGui WITH EGL (the minimal configuration stubs qegl*): the same sources, libEGL, no QT_NO_EGL -- what QtOpenGL/OpenVG and the
     # graphics-system plug-ins need. The .def is the frozen one, so the ordinals do not move.
     python3 - "$G" <<'PYEOF'
@@ -160,8 +191,17 @@ if "libEGL.lib" not in s:
 open(p, "w", newline="\n").write(s)
 PYEOF
   fi
-  for d in $(cd "$SYM" && find src -type d \( -name .moc -o -name .rcc -o -name .uic \)); do
-    mkdir -p "$SRC/$d" && cp -ru "$SYM/$d/." "$SRC/$d/"
+  # a plug-in mmp says DEFFILE ./plugin_common.def: qmake writes plugin_commonu.def (the one qt_plugin_instance/qt_plugin_query_verification_data
+  # export table every Qt plug-in has) next to the mmp in its own tree, not into the source tree the mmp is staged to
+  for t in "$SYM" "$SYMF"; do
+    [ -d "$t/src" ] || continue
+    for f in $(cd "$t" && find src -name plugin_commonu.def); do mkdir -p "$SRC/$(dirname "$f")"; cp -f "$t/$f" "$SRC/$f"; done
+  done
+  for t in "$SYM" "$SYMF"; do
+    [ -d "$t/src" ] || continue
+    for d in $(cd "$t" && find src -type d \( -name .moc -o -name .rcc -o -name .uic \)); do
+      mkdir -p "$SRC/$d" && cp -ru "$t/$d/." "$SRC/$d/"
+    done
   done
 }
 
