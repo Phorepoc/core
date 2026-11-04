@@ -33,6 +33,19 @@
 #define PHMIX_LOG(...) do {} while (0)
 #endif
 
+#ifdef PHMIX_TRACE
+// one summary line a second (the A0 measurement): what the clients submitted, how the quanta were filled, how often the sink ran dry
+struct TMixStats
+	{
+	TUint iLast;
+	TInt iReqs, iBytes, iPeak, iMaxReq, iQuanta, iPartial, iFill, iUnderflow, iCloses, iRate, iChans;
+	};
+TMixStats gStats;
+#define PHMIX_STAT(x) (x)
+#else
+#define PHMIX_STAT(x) do {} while (0)
+#endif
+
 namespace
 {
 const TInt KQuantum = 480;						// output frames per mix cycle (10 ms @ 48 kHz)
@@ -377,6 +390,7 @@ void CPhMixer::CloseSink()
 	iSinkChunk.Close();
 	iSink.Close();
 	iSinkOpen = EFalse;
+	PHMIX_STAT(gStats.iCloses++);
 	PHMIX_LOG("[phmix] real sink closed (idle)");
 	}
 
@@ -437,6 +451,19 @@ TBool CPhMixer::MixQuantum(TInt aSlot)
 			}
 		}
 	iLock.Signal();
+#ifdef PHMIX_TRACE
+	if (any)
+		{
+		gStats.iQuanta++;
+		TInt filled = 0;
+		for (TInt i = 0; i < KQuantum * 2; i += 2)
+			if (iAcc[i] || iAcc[i + 1])
+				filled = i / 2 + 1;
+		gStats.iFill += filled;
+		if (filled < KQuantum)
+			gStats.iPartial++;
+		}
+#endif
 	if (any)
 		{
 		TUint8* base = iSinkChunk.Base() + iSinkCfg.iOffsets[aSlot];
@@ -469,6 +496,8 @@ void CPhMixer::Service()
 			{
 			iSlotBusy[i] = EFalse;
 			TInt r = iSlot[i].Int();
+			if (r == KErrUnderflow)
+				PHMIX_STAT(gStats.iUnderflow++);
 			if (r != KErrNone && r != KErrUnderflow)
 				{
 				FailAll(r);
@@ -482,6 +511,21 @@ void CPhMixer::Service()
 		iTimerArmed = EFalse;
 		timerFired = ETrue;
 		}
+#ifdef PHMIX_TRACE
+	{
+	const TUint now = User::NTickCount();
+	if (now - gStats.iLast >= 1000)
+		{
+		if (gStats.iReqs || gStats.iQuanta || gStats.iCloses)
+			RDebug::Printf("[phmix] 1s: reqs %d bytes %d (max %d) peak %d fmt %d/%d quanta %d partial %d avgfill %d underflow %d closes %d",
+				gStats.iReqs, gStats.iBytes, gStats.iMaxReq, gStats.iPeak, gStats.iRate, gStats.iChans, gStats.iQuanta, gStats.iPartial,
+				gStats.iQuanta ? gStats.iFill / gStats.iQuanta : 0, gStats.iUnderflow, gStats.iCloses);
+		const TUint keep = now;
+		Mem::FillZ(&gStats, sizeof(gStats));
+		gStats.iLast = keep;
+		}
+	}
+#endif
 	// 4. what is there to play
 	iLock.Wait();
 	ReapDead();
@@ -784,6 +828,20 @@ void RMixSoundSc::PlayData(TRequestStatus& aStatus, TInt aBufferOffset, TInt aLe
 	rq.iPos = 0;
 	rq.iStatus = st;
 	++ch->iCount;
+#ifdef PHMIX_TRACE
+	gStats.iReqs++;
+	gStats.iBytes += aLength;
+	if (aLength > gStats.iMaxReq)
+		gStats.iMaxReq = aLength;
+	gStats.iRate = ch->iRate;
+	gStats.iChans = ch->iChannels;
+	for (const TInt16* q = rq.iPtr, *e = rq.iPtr + (aLength / 2); q < e; ++q)
+		{
+		TInt v = *q < 0 ? -*q : *q;
+		if (v > gStats.iPeak)
+			gStats.iPeak = v;
+		}
+#endif
 	m->iLock.Signal();
 	m->Wake();
 	}
