@@ -1096,6 +1096,10 @@ COMPONENTS = {
     "3gpextparser": dict(mmp="oss.FCL.sf.mw.mmmw/mmserv/metadatautility/3GPExtParserLib/group/3GPExtParser.mmp"),   # C3GPExtParser <- metadatautility
     "mobilitypolicyprovider": dict(mmp="oss.FCL.sf.app.messaging/email/pop3andsmtpmtm/servermtmutils/mobilitypolicyprovider/group/mobilitypolicyprovider.mmp"),
     "ostuser": dict(mmp="oss.FCL.sf.os.kernelhwsrv/kernel/eka/debug/ost/group/ostuser.mmp", incs_first=["toolchain/shims/ostuser_gcc"], arm_incs_first=True),   # OstPrintf + the user-side trace points (its GET_PC is RVCT-only: the shim) <- comsdbgsvr
+    # (-include Parser.h: this Parser.h and the XML framework's xml/parser.h share the include guard __PARSER_H__; whichever comes
+    # first hides the other, and the MP4 parser's base class CParser was the XML header's victim)
+    "tneengine": dict(mmp="oss.FCL.sf.mw.mmmw/mmserv/thumbnailengine/Group/TNEEngine.mmp",
+                      flags=["-include", os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.mw.mmmw/mmserv/thumbnailengine/TneProcessorInc/Parser.h")]),   # CTNEVideoClipInfo <- glxthumbnailcreator
     "flogger": dict(mmp="oss.FCL.sf.os.persistentdata/loggingservices/filelogger/group/FLOGGER.MMP"),
     # <- flogger (RFileLogger::Connect starts it; without it Connect fails and the CreateLog that apps call next, ignoring
     # that, is a SendReceive on a null session = KERN-EXEC 0; the platform flogger.iby ships it)
