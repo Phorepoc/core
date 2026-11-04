@@ -413,6 +413,9 @@ COMPONENTS = {
     # transparent window background it was created with -- the opaque toolbar colour showed white around its frames
     "eikcoctl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/EikStd/coctlsrc/EIKCOCTL.MMP",
                      drop=["eikcba.cpp"], extra=["toolchain/shims/eikcba_fix/eikcba.cpp"],
+                     # (-fkeep-inline-functions: CTextListItemDrawer::Font is `EXPORT_C inline` -- RVCT emitted the out-of-line body the
+                     # .def exports, GCC only where something calls it, so ordinal 486 was the unimplemented-export stub)
+                     flags=["-fkeep-inline-functions"],
                      x32_flags=["-Dabs(x)=__builtin_abs(x)"]),
     "eikctl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/eikctl/group/eikctl.mmp"),
     "eikdlg": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/EikStd/dlgsrc/EIKDLG.MMP"),
