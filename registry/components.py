@@ -1073,12 +1073,9 @@ COMPONENTS = {
                        libs=["estlib.lib", "libopenvg_sw.lib", "libopenvgu_sw.lib"], noinc=["stdapis"],
                        defs=["__declspec(x)="],
                        flags=["-I" + os.path.join(EPOC32_ROOT, "include/libc")]),
-    # imut = the messaging MTM utilities; svgengine only wants its base64 codec (embedded
-    # data: images) -> build the codec TU alone, the other 251 ordinals stay unimpl stubs
-    "imut": dict(mmp="oss.FCL.sf.app.messaging/email/pop3andsmtpmtm/servermtmutils/group/IMUT.mmp",
-                 drop=["imutdll.cpp", "imcvutil.cpp", "imcvsend.cpp", "imcvrecv.cpp", "imsk.cpp",
-                       "imskscr.cpp", "imutcon.cpp", "cimsocketidletimer.cpp", "cimcaf.cpp",
-                       "cmsvplainbodytextentry.cpp", "cimmobilitymanager.cpp"]),
+    # imut = the messaging MTM utilities (svgengine wants its base64 codec: embedded data: images); built whole -- the sources
+    # an earlier toolchain could not compile (now all do) were once dropped, leaving 194 of its ordinals unimplemented stubs
+    "imut": dict(mmp="oss.FCL.sf.app.messaging/email/pop3andsmtpmtm/servermtmutils/group/IMUT.mmp"),
     "libzcore": dict(mmp="oss.FCL.sf.os.ossrv/compressionlibs/ziplib/group/libz/libzcore.mmp", cdriver=True),
     "ezlib": dict(mmp="oss.FCL.sf.os.ossrv/compressionlibs/ziplib/group/ezlib.mmp"),
     "cxmlparser": dict(mmp="oss.FCL.sf.os.xmlsrv/xml/cxmllibrary/group/cXmlParser.mmp", cdriver=True),
@@ -1094,6 +1091,7 @@ COMPONENTS = {
     "drmrightsinfoimpl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.drm/commondrm/drmutility/group/DrmRightsInfoImpl.mmp"),   # <- drmrightsinfo
     "3gpextparser": dict(mmp="oss.FCL.sf.mw.mmmw/mmserv/metadatautility/3GPExtParserLib/group/3GPExtParser.mmp"),   # C3GPExtParser <- metadatautility
     "mobilitypolicyprovider": dict(mmp="oss.FCL.sf.app.messaging/email/pop3andsmtpmtm/servermtmutils/mobilitypolicyprovider/group/mobilitypolicyprovider.mmp"),
+    "ostuser": dict(mmp="oss.FCL.sf.os.kernelhwsrv/kernel/eka/debug/ost/group/ostuser.mmp", incs_first=["toolchain/shims/ostuser_gcc"], arm_incs_first=True),   # OstPrintf + the user-side trace points (its GET_PC is RVCT-only: the shim) <- comsdbgsvr
     "flogger": dict(mmp="oss.FCL.sf.os.persistentdata/loggingservices/filelogger/group/FLOGGER.MMP"),
     # <- flogger (RFileLogger::Connect starts it; without it Connect fails and the CreateLog that apps call next, ignoring
     # that, is a SendReceive on a null session = KERN-EXEC 0; the platform flogger.iby ships it)
