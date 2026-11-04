@@ -187,6 +187,7 @@ struct TPbTab
 	TInt iSecurity;
 	TBool iBack, iFwd, iLoading;
 	TBool iPrivate;
+	TInt iFailCode;            // the engine's last PHE_EV_FAILED code for this tab (0 = none): the error page is drawn instead of the stale page
 	CFbsBitmap* iThumb;        // KThumbW x KThumbH snapshot for the tab grid
 	};
 
@@ -457,6 +458,7 @@ public:
 		t.iTitle.Zero();
 		t.iProgress = 0; t.iSecurity = 0; t.iBack = t.iFwd = EFalse; t.iLoading = aUrl.Length() > 0;
 		t.iPrivate = aPrivate;
+		t.iFailCode = 0;
 		t.iThumb = NULL;
 		iTabs.AppendL(t);
 		iCur = iTabs.Count() - 1;
@@ -745,6 +747,7 @@ private:
 			{ DrawDeferred(); return; }       // the engine could not be loaded: the new-tab page says so
 		iTabs[iCur].iUrl.Copy(u.Left(Min(u.Length(), 200)));
 		iTabs[iCur].iLoading = ETrue;
+		iTabs[iCur].iFailCode = 0;
 		iApi->load(iTabs[iCur].iView, u.Ptr(), u.Length());
 		}
 	void SearchUrl(TDes& aQuery)
@@ -786,6 +789,25 @@ private:
 		const TInt n = iApi->get_str(aV, aWhich, tmp, 256);
 		aOut.Copy(tmp, Min(Min(n, 256), aOut.MaxLength()));
 		}
+	// page-load start / commit / finish / failure on the serial log, named and with the URL (the numeric event line above is the raw record)
+	void TraceLoad(const PheEvent& aE)
+		{
+		const char* name = NULL;
+		switch (aE.kind)
+			{
+		case PHE_EV_START:    name = "load start"; break;
+		case PHE_EV_COMMIT:   name = "load commit"; break;
+		case PHE_EV_FINISHED: name = "load finished"; break;
+		case PHE_EV_FAILED:   name = "load FAILED"; break;
+		case PHE_EV_CRASHED:  name = "engine CRASHED"; break;
+		default: return;
+			}
+		TBuf<160> url;
+		FetchStr(aE.view, aE.kind == PHE_EV_FAILED ? PHE_STR_ERROR : PHE_STR_URL, url);
+		TBuf8<160> url8;
+		url8.Copy(url);                       // RDebug::Printf's %S is an 8-bit descriptor
+		PbTrace("PH: [phebrowser] %s view %d code %d: %S", name, aE.view, aE.a, &url8);
+		}
 	void DrainEvents()
 		{
 		PheEvent e;
@@ -794,6 +816,7 @@ private:
 			{
 			if (e.kind != PHE_EV_REPAINT && e.kind != PHE_EV_PROGRESS)
 				PbTrace("PH: [phebrowser] event %d view %d a %d b %d", e.kind, e.view, e.a, e.b);
+			TraceLoad(e);
 			const TInt t = IndexOf(e.view);
 			if (t < 0)
 				continue;
@@ -803,7 +826,16 @@ private:
 			tab.iBack = st.can_back; tab.iFwd = st.can_forward; tab.iLoading = st.loading; tab.iProgress = st.progress;
 			switch (e.kind)
 				{
+			case PHE_EV_START:
+				tab.iFailCode = 0;
+				page = ETrue;
+				break;
+			case PHE_EV_FAILED:
+				tab.iFailCode = e.a ? e.a : -1;
+				page = ETrue;
+				break;
 			case PHE_EV_COMMIT:
+				tab.iFailCode = 0;
 				tab.iSecurity = e.b;
 				FetchStr(e.view, PHE_STR_URL, tab.iUrl);
 				break;
@@ -948,7 +980,9 @@ private:
 		const TPbTab* t = iCur >= 0 ? &iTabs[iCur] : NULL;
 		// page area
 		Fill(gc, R(l.iPage), Rgb(tk.iPage));
-		if (t && t->iUrl.Length() && iPageBmp)
+		if (t && t->iUrl.Length() && t->iFailCode)
+			DrawLoadError(gc, R(l.iPage), tk, t->iFailCode);
+		else if (t && t->iUrl.Length() && iPageBmp)
 			gc.BitBlt(TPoint(l.iPage.iX, l.iPage.iY), iPageBmp);
 		else
 			DrawNewTab(gc, R(l.iPage), tk);
@@ -964,6 +998,35 @@ private:
 		if (iMode == EModeNav) DrawNav(gc, tk);
 		if (iMode == EModeSheet) DrawSheet(gc);
 		if (iMode == EModeSearchPick) DrawSearchPick(gc);
+		}
+
+	// the page failed to load (PHE_EV_FAILED): say so and offer Try again, instead of leaving the previous page on screen.
+	// The codes are the engine's (libcurl's CURLcode for the WebKit engine; other engines pass their own, shown as a number).
+	static const TDesC& FailText(TInt aCode, TBuf<64>& aBuf)
+		{
+		switch (aCode)
+			{
+		case 6: aBuf = _L("The server name was not found"); break;
+		case 5: aBuf = _L("The proxy name was not found"); break;
+		case 7: aBuf = _L("The server refused the connection"); break;
+		case 28: aBuf = _L("The connection timed out"); break;
+		case 35: case 51: case 58: case 60: case 77: case 82: case 83: aBuf = _L("A secure connection could not be made"); break;
+		default: aBuf = _L("The page could not be loaded (error "); aBuf.AppendNum(aCode); aBuf.Append(')'); break;
+			}
+		return aBuf;
+		}
+	TRect RetryButtonRect(const TRect& aR) const { return StoreButtonRect(aR); }
+	void DrawLoadError(CWindowGc& gc, const TRect& aR, const TPbTokens& tk, TInt aCode) const
+		{
+		TRect a = aR;
+		a.iBr.iY = aR.iTl.iY + aR.Height() / 2 - 28;
+		Txt(gc, _L("Can't open this page"), a, CGraphicsContext::ECenter, Rgb(tk.iInk));
+		TRect b = aR;
+		b.iTl.iY = a.iBr.iY;
+		b.iBr.iY = b.iTl.iY + 28;
+		TBuf<64> m;
+		Txt(gc, FailText(aCode, m), b, CGraphicsContext::ECenter, Rgb(tk.iDim));
+		Button(gc, RetryButtonRect(aR), _L("Try again"), Rgb(tk.iAccent), Rgb(Dark() ? 0x101114 : 0xFFFFFF));
 		}
 
 	// the new-tab page: loosely coupled hand-off -- if no engine is installed it offers "Get a browser engine" (the store)
@@ -1427,6 +1490,11 @@ private:
 				{
 				if ((!iEngines || iEngines->Count() == 0) && StoreButtonRect(R(l.iPage)).Contains(aE.iPosition))
 					iEikonEnv->EikAppUi()->HandleCommandL(EPheBrCmdGetEngine);
+				else if (iApi && iCur >= 0 && iTabs[iCur].iView && iTabs[iCur].iFailCode && !iMoved)
+					{                              // the error page: Try again = reload (the engine retries the failed URL)
+					if (RetryButtonRect(R(l.iPage)).Contains(aE.iPosition))
+						{ iTabs[iCur].iFailCode = 0; iTabs[iCur].iLoading = ETrue; iApi->cmd(iTabs[iCur].iView, PHE_CMD_RELOAD); DrawDeferred(); }
+					}
 				else if (iApi && iCur >= 0 && iTabs[iCur].iView && iTabs[iCur].iUrl.Length() && !iMoved)
 					{                              // a tap on the page: the engine gets a press + release (page coordinates)
 					const TInt x = aE.iPosition.iX - l.iPage.iX, y = aE.iPosition.iY - l.iPage.iY;
