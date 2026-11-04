@@ -420,7 +420,8 @@ COMPONENTS = {
     # own AknEcs.cpp stem targets a newer classicui): no phone server here and the real phoneclient
     # panics 'PhSrvStartUp' -- run the emergency-call detector with a null CPhCltEmergencyCall
     "avkon": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/group/avkon.mmp",
-                  drop=["aknecs.cpp", "AknAppUi.cpp"], extra=["toolchain/shims/stems/AknEcs.cpp", "src/phorepoc/avkon_trace/AknAppUi.cpp"],
+                  drop=["aknecs.cpp", "AknAppUi.cpp", "AknAdaptiveSearchGrid.cpp"],
+                  extra=["toolchain/shims/stems/AknEcs.cpp", "src/phorepoc/avkon_trace/AknAppUi.cpp", "src/phorepoc/avkon_layout/AknAdaptiveSearchGrid.cpp"],
                   import_typeinfo=True),   # the AppUi typeinfo chain: CEikAppUi's real typeinfo from eikcore (see eikcore)
     "akntransitionutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/AknTransitionUtils/group/akntransitionutils.mmp"),
     # Open Dynamics Engine (in classicui!): aknphysics -- every Avkon menu/list kinetic scroll -- creates
