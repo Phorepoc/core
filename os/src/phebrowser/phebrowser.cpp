@@ -1498,8 +1498,22 @@ private:
 				else if (iApi && iCur >= 0 && iTabs[iCur].iView && iTabs[iCur].iUrl.Length() && !iMoved)
 					{                              // a tap on the page: the engine gets a press + release (page coordinates)
 					const TInt x = aE.iPosition.iX - l.iPage.iX, y = aE.iPosition.iY - l.iPage.iY;
-					iApi->pointer(iTabs[iCur].iView, PHE_PTR_DOWN, x, y);
-					iApi->pointer(iTabs[iCur].iView, PHE_PTR_UP, x, y);
+					const TUint now = User::NTickCount();
+					const TBool dbl = (iApi->caps & PHE_CAP_ZOOM) && iLastTapTick && (now - iLastTapTick) < 400
+						&& Abs(aE.iPosition.iX - iLastTapPos.iX) < 30 && Abs(aE.iPosition.iY - iLastTapPos.iY) < 30;
+					iLastTapTick = dbl ? 0 : (now ? now : 1);
+					iLastTapPos = aE.iPosition;
+					if (dbl)
+						{                          // double-tap: zoom in about the tap to 100% (text readable), or back out to the fit-width page
+						PheViewState st;
+						iApi->get_state(iTabs[iCur].iView, &st);
+						iApi->zoom(iTabs[iCur].iView, st.zoom_permille < 900 ? 1000 : 250, x, y);
+						}
+					else
+						{
+						iApi->pointer(iTabs[iCur].iView, PHE_PTR_DOWN, x, y);
+						iApi->pointer(iTabs[iCur].iView, PHE_PTR_UP, x, y);
+						}
 				}
 				break;
 				}
@@ -1670,6 +1684,8 @@ private:
 	TInt iPinchD0 = 1, iPinchZ0 = 1000;
 	TPoint iDownPos;
 	TBool iDragging = EFalse, iMoved = EFalse;
+	TUint iLastTapTick = 0;                    // double-tap zoom: the previous page tap
+	TPoint iLastTapPos;
 	};
 
 // ---- application ------------------------------------------------------------------------------------------------------------
