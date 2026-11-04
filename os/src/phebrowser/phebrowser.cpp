@@ -1382,7 +1382,7 @@ private:
 			if (aE.iType == TPointerEvent::EButton1Up)
 				{
 				if (ClearRect(el).Contains(aE.iPosition))
-					{ iEdit->SetTextL(&KNullDesC); iEdit->SetFocus(ETrue); DrawDeferred(); }
+					{ iEdit->SetTextL(&KNullDesC); iEdit->SetCursorPosL(0, EFalse); iEdit->SetFocus(ETrue); DrawDeferred(); }   // (SelectAllL left the caret and the selection anchor past the now empty text: the next key panicked ETEXT 12)
 				else if (!FieldRect(el).Contains(aE.iPosition))
 					EndEditL(EFalse);                                   // tap outside = cancel
 				}
