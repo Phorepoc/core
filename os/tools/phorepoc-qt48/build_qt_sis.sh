@@ -94,7 +94,10 @@ stage_configure() {
 stage_configure_full() {
   [ -f "$SYMF/src/openvg/QtOpenVG_dll.mmp" ] && return 0
   epocroot; mkdir -p "$SYMF"; cd "$SYMF"
-  CXXFLAGS="-std=gnu++98 -fpermissive -w" CFLAGS="-w" "$SRC/configure" -opensource -confirm-license -xplatform symbian-sbsv2 -platform linux-g++ \n    -no-webkit -phonon -multimedia -no-audio-backend -openssl -openvg -opengl es2 -graphicssystem raster \n    -no-qt3support -xmlpatterns -svg -nomake examples -nomake demos -nomake tools -nomake docs -nomake translations \n    -no-stl -fast -release > configure.log 2>&1 || { tail -40 configure.log; exit 1; }
+  CXXFLAGS="-std=gnu++98 -fpermissive -w" CFLAGS="-w" "$SRC/configure" -opensource -confirm-license -xplatform symbian-sbsv2 -platform linux-g++ \
+    -no-webkit -phonon -multimedia -no-audio-backend -openssl -openvg -opengl es2 -graphicssystem raster \
+    -no-qt3support -xmlpatterns -svg -nomake examples -nomake demos -nomake tools -nomake docs -nomake translations \
+    -no-stl -fast -release > configure.log 2>&1 || { tail -40 configure.log; exit 1; }
   # moc output the added modules compile (testlib: QtTest)
   mkdir -p "$SYMF/bin"; for t in moc rcc uic; do cp -f "$HOST/bin/$t" "$SYMF/bin/$t"; done
   local d="$SYMF/src/testlib"; mkdir -p "$d/.moc/release-shared" "$d/.rcc/release-shared" "$d/.uic/release-shared"
