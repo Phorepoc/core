@@ -112,6 +112,10 @@ static void MainL()
 	TInt frames = 0;
 	for (TInt f = 0; ; ++f)
 		{
+		// the EGL swap draws the frame into the window (the bitmap path, without a SurfaceManager), and the window server
+		// takes window drawing only inside the owner's redraw bracket
+		win.Invalidate();
+		win.BeginRedraw();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glLoadIdentity();
 		glTranslatef(0.0f, 0.0f, -6.0f);
@@ -119,6 +123,8 @@ static void MainL()
 		glRotatef(f * 1.3f, 0.0f, 1.0f, 0.0f);
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, KIndices);
 		eglSwapBuffers(dpy, surf);
+		win.EndRedraw();
+		ws.Flush();
 		++frames;
 		const TUint32 now = User::NTickCount();
 		if (now - t0 >= 2000)
