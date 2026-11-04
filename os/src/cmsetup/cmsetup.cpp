@@ -84,6 +84,7 @@ static TInt AddWlanMethodsL(RCmManagerExt& aCm, RCmDestinationExt& aDest)
 		TRAP(e, id = m.GetIntAttributeL(CMManager::ECmId));
 		if (e == KErrNone)
 			members.Append(id);
+		RDebug::Printf("PH: [cmsetup]   destination member: cm %u (%d)", id, e);
 		m.Close();
 		}
 	RArray<TUint32> cms;
@@ -102,6 +103,7 @@ static TInt AddWlanMethodsL(RCmManagerExt& aCm, RCmDestinationExt& aDest)
 		CleanupClosePushL(m);
 		TUint32 bearer = 0;
 		TRAP(e, bearer = m.GetIntAttributeL(CMManager::ECmBearerType));
+		RDebug::Printf("PH: [cmsetup]   cm %u: bearer 0x%x (%d)", cms[i], bearer, e);
 		if (e == KErrNone && bearer == KUidWlanBearerType)
 			{
 			TRAP(e, aDest.AddConnectionMethodL(m));
