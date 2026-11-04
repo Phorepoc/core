@@ -20,6 +20,7 @@ Q="$B/qt48"
 SRC="$Q/qtm12-src"
 SYM="$Q/qt-symbian"
 TAG="${QTM_TAG:-v1.2.0}"
+COMMIT="${QTM_COMMIT:-fb3e9bc2d941462f1244aaf0ea79425a307f883d}"   # the commit tag v1.2.0 names (a tag can move; the commit is checked)
 # module DLLs first (link order), then the plug-ins. qtmessaging needs the commonemail client API headers (email_plat inc dirs),
 # (fixed: the public headers incl. subdirectories must sit beside the syncheaders forwarders for the host moc).
 KEYS="${QTM_KEYS:-qt48_multimediakit qtmessaging qtsensors qtbearer qtserviceframework qtpublishsubscribe qtsysteminfo qtlocation qtcontacts qtversit qtorganizer qtversitorganizer qtfeedback qtgallery qtsensors_generic qtfeedback_mmk qtfeedback_symbian qtgeoservices_nokia qtorganizer_symbian qtcontacts_serviceactionmanager qtversit_backuphandler qtversit_vcardpreserver qtsensors_sym qtcontacts_symbian qtlandmarks_symbian qtmultimediakit_ecamengine qtmultimediakit_mmfengine qtmultimediakit_m3u declarative_multimedia declarative_messaging declarative_sensors declarative_systeminfo declarative_publishsubscribe declarative_serviceframework declarative_location declarative_contacts declarative_organizer declarative_feedback declarative_gallery}"
@@ -27,6 +28,8 @@ KEYS="${QTM_KEYS:-qt48_multimediakit qtmessaging qtsensors qtbearer qtservicefra
 stage_fetch() {
   [ -d "$Q/qtm12-git/src" ] && return 0
   git clone -q --depth 1 --branch "$TAG" https://github.com/qtproject/qt-mobility "$Q/qtm12-git"
+  local got; got=$(git -C "$Q/qtm12-git" rev-parse HEAD)
+  [ "$got" = "$COMMIT" ] || { echo "qt-mobility $TAG is $got, expected $COMMIT"; rm -rf "$Q/qtm12-git"; exit 1; }
 }
 
 stage_configure() {
