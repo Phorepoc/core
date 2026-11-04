@@ -3,7 +3,7 @@
 
 // phebrowser.mmp -- OURS: the browser frontend (custom-drawn CONE UI) over any engine implementing
 // The seam header comes from the webengine repository (a layer: its os/inc is laid over this tree).
-// phorepoc/phewebengine.h. PHEBROWSER_DUMMY compiles in the placeholder engine (pb_dummy.cpp) for development;
+// phorepoc/phewebengine.h. PHEBROWSER_DUMMY (not defined in an image) compiles in the placeholder engine (pb_dummy.cpp) for UI development;
 // real engines (WebKit, NetSurf) are separate packages found at runtime.
 #include <platform_paths.hrh>
 
@@ -17,7 +17,7 @@ CAPABILITY		NetworkServices LocalServices ReadUserData WriteUserData UserEnviron
 VENDORID		0
 EPOCHEAPSIZE	0x10000 0x1000000
 
-MACRO			PHEBROWSER_DUMMY
+// (a development build adds:  MACRO PHEBROWSER_DUMMY  -- the "Developer engine" is a test double, not part of an image)
 
 SOURCEPATH		.
 SOURCE			phebrowser.cpp pb_dummy.cpp pb_enginehost.cpp

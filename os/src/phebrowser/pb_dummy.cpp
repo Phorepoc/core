@@ -5,6 +5,7 @@
 // "loads" any URL in a few timer ticks (progress, title, security from the scheme), keeps a real back/forward history per
 // view and draws a placeholder page into a BGRA buffer (colour from the URL, text-line stripes, scrollable). It lets the UI
 // run without WebKit or NetSurf; a real engine implements the same table in its own repo.
+#ifdef PHEBROWSER_DUMMY   // development builds only: no image carries the placeholder engine
 #include <e32base.h>
 #include <e32std.h>
 #include "pb_engines.h"
@@ -442,3 +443,4 @@ extern "C" const PheWebEngineApi* PheDummyGetApi(unsigned aWantedVersion)
 	{
 	return aWantedVersion == PHE_WEBENGINE_VERSION ? &KApi : NULL;
 	}
+#endif // PHEBROWSER_DUMMY
