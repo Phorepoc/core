@@ -1,10 +1,10 @@
 /* Copyright The Phorepoc Authors
  * SPDX-License-Identifier: MIT -- a seam header GPU drivers of any licence (Mesa's: MIT) compile against */
 
-/* symvmw.h -- OURS (S3): the C seam between Mesa's svga driver (its DRM shim, drm_symbian_vmw.c, in mesa-symbian) and the Symbian driver
- * channel to the VMware SVGA II / SVGA3D kernel driver (VirtualBox VMSVGA with 3D, VMware). A board that has that device brings the
- * implementation (adaptation-pc: src/symgl/symvmw.cpp, RVmwSvgaChannel); a board without it needs none, because only the PC build of Mesa
- * calls these. Errors are Symbian codes (negative).
+/* symvmw.h -- OURS (S3): the C seam between Mesa's svga driver (its DRM shim, drm_symbian_vmw.c, in the Mesa port) and the Symbian driver
+ * channel to the VMware SVGA II / SVGA3D kernel driver (any hypervisor that emulates that device with 3D). A board that has that device
+ * brings the implementation (its src/symgl/symvmw.cpp over its driver channel); a board without it needs none, because only a Mesa build with
+ * the svga driver calls these. Errors are Symbian codes (negative).
  *
  * The model is the kernel half of vmwgfx in small: guest memory is a POOL (one shared chunk of this process, committed page by page); a range of
  * it becomes a MOB (the device's guest-backed object memory) with symvmw_mob_define; command buffers are staged in the ARENA (a small physically
@@ -37,7 +37,7 @@ typedef struct {
    uint32_t ctx_base, ctx_count;
 } symvmw_info_t;
 
-/* NULL: no VMware SVGA II device in this kernel, 3D is off (VirtualBox: --accelerate3d off) or it has no guest-backed objects / DX contexts */
+/* NULL: no VMware SVGA II device in this kernel, 3D is off in the hypervisor or it has no guest-backed objects / DX contexts */
 symvmw_t *symvmw_open(void);
 void symvmw_close(symvmw_t *v);
 void symvmw_info(symvmw_t *v, symvmw_info_t *out);
