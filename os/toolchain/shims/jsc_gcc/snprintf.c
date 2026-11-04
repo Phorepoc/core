@@ -96,6 +96,11 @@
  * the version here does not include floating point. (now it does ... tgl)
  **************************************************************/
 
+/* the exports are C functions (a C++ translation unit: JavaScriptCore is built as C++) */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Prevent recursion */
 #undef  vsnprintf
 #undef  snprintf
@@ -1050,3 +1055,7 @@ trailing_pad(int *padlen, PrintfTarget *target)
         ++(*padlen);
     }
 }
+
+#ifdef __cplusplus
+}
+#endif

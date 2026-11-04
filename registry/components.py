@@ -463,7 +463,7 @@ COMPONENTS = {
                         static_ctors=True, rtti=True, defs=["__SOFTFP="], own_new=True,
                         # the stream classes' typeinfo/vtables/VTTs (STLport's GCC config skips the library's forced
                         # instantiations; SDK apps import them -- std::stringstream died EUSRNIMP)
-                        extra=["toolchain/shims/stdcpp_board/stream_instantiate.cpp"]),
+                        extra=["toolchain/shims/stdcpp_board/stream_instantiate.cpp", "toolchain/shims/stdcpp_board/typeinfo_ne.cpp"]),
     "sqlite3": dict(mmp="oss.FCL.sf.os.persistentdata/persistentstorage/sqlite3api/GROUP/sqlite3.mmp", cdriver=True, allow_wsd=True,
                     defs=["__SOFTFP="]),
     "libc": dict(mmp=_OENV + "libc/group/libc.mmp", cdriver=True, allow_wsd=True, static_ctors=True, defs=["__SOFTFP="],
@@ -1088,6 +1088,12 @@ COMPONENTS = {
                       defs=["__SOFTFP=", "__declspec(x)="], x32_flags=["-Dnan(x)=__builtin_nan(x)"]),
     "xmlengineutils": dict(mmp="oss.FCL.sf.os.xmlsrv/xml/libxml2libs/group/xmlengineutils.mmp", defs=["__SOFTFP=", "__declspec(x)="]),
     "xmlenginedom": dict(mmp="oss.FCL.sf.os.xmlsrv/xml/xmldomandxpath/group/xmlenginedom.mmp", defs=["__SOFTFP=", "__declspec(x)="]),
+    # providers some images' LIBRARY lists name that were never built (their imports were link stubs; tools/stub_audit.py)
+    "redircli": dict(mmp="oss.FCL.sf.os.ossrv/genericopenlibs/cstdlib/RedirCli/REDIRCLI.MMP"),   # RRedirSession <- estlib
+    "drmrightsinfo": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.drm/commondrm/drmutility/group/DrmRightsInfo.mmp"),   # DRM::CDrmRightsInfo <- mcsmenu, metadatautility
+    "drmrightsinfoimpl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.drm/commondrm/drmutility/group/DrmRightsInfoImpl.mmp"),   # <- drmrightsinfo
+    "3gpextparser": dict(mmp="oss.FCL.sf.mw.mmmw/mmserv/metadatautility/3GPExtParserLib/group/3GPExtParser.mmp"),   # C3GPExtParser <- metadatautility
+    "mobilitypolicyprovider": dict(mmp="oss.FCL.sf.app.messaging/email/pop3andsmtpmtm/servermtmutils/mobilitypolicyprovider/group/mobilitypolicyprovider.mmp"),
     "flogger": dict(mmp="oss.FCL.sf.os.persistentdata/loggingservices/filelogger/group/FLOGGER.MMP"),
     # <- flogger (RFileLogger::Connect starts it; without it Connect fails and the CreateLog that apps call next, ignoring
     # that, is a SendReceive on a null session = KERN-EXEC 0; the platform flogger.iby ships it)
@@ -1253,7 +1259,7 @@ COMPONENTS = {
     "sl1_0stringdict00": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/wappushfw/plugins/group/Sl1_0StringDict00.mmp"),
     "httpresponse": dict(mmp="oss.FCL.sf.mw.netprotocols/applayerprotocols/wappushsupport/mmpfiles/HTTPResponse.mmp"),
     "provisioningengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotemgmt/omaprovisioning/provisioning/ProvisioningEngine/Group/ProvisioningEngine.mmp"),
-    "provisioningparser": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotemgmt/omaprovisioning/provisioning/ProvisioningParser/Group/ProvisioningParser.mmp"),
+    "provisioningparser": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotemgmt/omaprovisioning/provisioning/ProvisioningParser/Group/ProvisioningParser.mmp", cdriver=True, defs=["__SOFTFP="]),   # (cdriver: its WBXML dictionary is a C const object)
     # Messaging's error watcher (SMS/MMS error notes, message-store garbage collection -> the Push MTM's
     "msgerrorwatcher": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/msgerrorwatcher/group/MsgErrorWatcher.mmp"),
     "pushmtmclisrv": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.webuis/pushmtm/Group/PushMtmCliSrv.mmp"),
@@ -1301,7 +1307,8 @@ COMPONENTS = {
     "mcsprovider": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.homescreensrv/homescreensrv_plat/sapi_menucontent/group/mcsprovider.mmp", flags=[_KEEPNULL]),
     "mmfolderuiextensionplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.homescreen/menufw/menufwui/mmextensions/mmfolderuiextension/group/mmfolderuiextensionplugin.mmp", **_XDOM),
     "foldersuite": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.homescreen/menufw/menusuites/foldersuite/group/foldersuite.mmp", rsc_only=True),   # TARGETTYPE none: data only
-    "xmlinterface": dict(mmp="oss.FCL.sf.os.xmlsrv/xml/xmlparser/group/XMLInterface.mmp"),
+    # cdriver: the WBXML dictionaries (wml_*_dict.c) are C `const` objects -- as C++ they have internal linkage and nothing exports them
+    "xmlinterface": dict(mmp="oss.FCL.sf.os.xmlsrv/xml/xmlparser/group/XMLInterface.mmp", cdriver=True, defs=["__SOFTFP="]),
     # DBMS (Notepad keeps its notes in a DBMS database): client + server
     "edbms": dict(mmp=f"{PDATA}/persistentstorage/dbms/bmake/EDBMS.MMP",
                   x32_flags=["-DPORT_FOFF_DYNAMIC"]),      # D32DBAS.INL: _FOFF(TDbBlob, iInline[IsInline() ? Size() : 0])
@@ -1668,7 +1675,8 @@ COMPONENTS = {
     "vpbkengutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.contacts/phonebookengines/VirtualPhonebook/group/VPbkEngUtils.mmp"),   # vpbkeng
     "pbk2uicontrols": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Phonebook2/group/Pbk2UIControls.mmp",
                            flags=UNRELEASED_INC + ["-idirafter", os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.app.commonemail/email_plat/email_client_api/inc")]),   # mailbox check: the Email client API (inline ECOM factory; no mail plug-in here)   # Phonebook2.mmp
-    # OURS: null VoIP profile registry (never released; every lookup is empty) -- toolchain/shims/rcse_null
+    # OURS: null VoIP profile registry -- toolchain/shims/rcse_null. (The real engine is RCL_3 sf.app.iptelephony/richcallsettingsengine/rcse2: it
+    # builds 56/56, but needs sipprofilecli, its two CenRep files in the ROM and the settings DB: docs/stub-audit.md, reason R10)
     "rcse": dict(mmp=os.path.join(OS_ROOT, "toolchain/shims/rcse_null/rcse_null.mmp"),
                  **{"def": os.path.join(OS_ROOT, "toolchain/shims/rcse_null/rcseu.def")}),   # pbk2uicontrols
     "aknjapanesereading": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uiutils/AknJapaneseReading/group/AknJapaneseReading.mmp"),   # pbk2uicontrols
@@ -2591,6 +2599,33 @@ COMPONENTS = {
     "stereowideningeffect": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/StereoWidening/StereoWideningEffect/Group/StereoWideningEffect.mmp"),   # <- stereowideningproxy
     "bassboostproxy": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/BassBoost/BassBoostProxy/Group/BassBoostProxy.mmp"),   # <- custominterfaceproxyfactory
     "bassboosteffect": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/BassBoost/BassBoostEffect/Group/BassBoostEffect.mmp"),   # <- bassboostproxy
+    # the audio effect and custom-interface message handlers (mmaudio devsoundextensions): the DLLs MessageHandlerFactory
+    # links; each hands a custom-interface message to the effect class it names (their .lib imports were unresolved link stubs)
+    "audioequalizermessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/AudioEqualizer/AudioEqualizerMessageHandler/Group/AudioEqualizerMessageHandler.mmp"),   # <- messagehandlerfactory
+    "environmentalreverbmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/EnvReverb/EnvironmentalReverbMessageHandler/Group/EnvironmentalReverbMessageHandler.mmp"),   # <- messagehandlerfactory
+    "stereowideningmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/StereoWidening/StereoWideningMessageHandler/Group/StereoWideningMessageHandler.mmp"),   # <- messagehandlerfactory
+    "bassboostmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/BassBoost/BassBoostMessageHandler/Group/BassBoostMessageHandler.mmp"),   # <- messagehandlerfactory
+    "listenerdopplermessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/ListDoppler/ListenerDopplerMessageHandler/Group/ListenerDopplerMessageHandler.mmp"),   # <- messagehandlerfactory
+    "listenerlocationmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/ListLocation/ListenerLocationMessageHandler/Group/ListenerLocationMessageHandler.mmp"),   # <- messagehandlerfactory
+    "listenerorientationmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/ListOrient/ListenerOrientationMessageHandler/Group/ListenerOrientationMessageHandler.mmp"),   # <- messagehandlerfactory
+    "sourcedopplermessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/SrcDoppler/SourceDopplerMessageHandler/Group/SourceDopplerMessageHandler.mmp"),   # <- messagehandlerfactory
+    "sourcelocationmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/SrcLocation/SourceLocationMessageHandler/Group/SourceLocationMessageHandler.mmp"),   # <- messagehandlerfactory
+    "sourceorientationmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/SrcOrientation/SourceOrientationMessageHandler/Group/SourceOrientationMessageHandler.mmp"),   # <- messagehandlerfactory
+    "distanceattenuationmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/DistAtten/DistanceAttenuationMessageHandler/Group/DistanceAttenuationMessageHandler.mmp"),   # <- messagehandlerfactory
+    "loudnessmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/Loudness/LoudnessMessageHandler/Group/LoudnessMessageHandler.mmp"),   # <- messagehandlerfactory
+    "roomlevelmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/RoomLevel/RoomLevelMessageHandler/Group/RoomLevelMessageHandler.mmp"),   # <- messagehandlerfactory
+    "restrictedaudiooutputmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/restrictedaudiooutput/RestrictedAudioOutputMessageHandler/Group/RestrictedAudioOutputMessageHandler.mmp"),   # <- messagehandlerfactory
+    "audioinputmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/audiorouting/Input/AudioInputMessageHandler/Group/AudioInputMessageHandler.mmp"),   # <- messagehandlerfactory
+    "audiooutputmessagehandler": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/audiorouting/Output/AudioOutputMessageHandler/Group/AudioOutputMessageHandler.mmp"),   # <- messagehandlerfactory
+    "speechencoderconfigmsghdlr": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/mmfcustominterfaces/SpeechEncoderConfig/SpeechEncoderConfigMsgHdlr/Group/SpeechEncoderConfigMsgHdlr.mmp"),   # <- messagehandlerfactory
+    "errorconcealmentintfcmsghdlr": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/mmfcustominterfaces/ErrConcealmentIntfc/ErrorConcealmentIntfcMsgHdlr/Group/ErrorConcealmentIntfcMsgHdlr.mmp"),   # <- messagehandlerfactory
+    "g711decoderintfcmsghdlr": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/mmfcustominterfaces/G711DecoderIntfc/G711DecoderIntfcMsgHdlr/Group/G711DecoderIntfcMsgHdlr.mmp"),   # <- messagehandlerfactory
+    "g729decoderintfcmsghdlr": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/mmfcustominterfaces/G729DecoderIntfc/G729DecoderIntfcMsgHdlr/Group/G729DecoderIntfcMsgHdlr.mmp"),   # <- messagehandlerfactory
+    "ilbcdecoderintfcmsghdlr": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/mmfcustominterfaces/IlbcDecoderIntfc/IlbcDecoderIntfcMsgHdlr/Group/IlbcDecoderIntfcMsgHdlr.mmp"),   # <- messagehandlerfactory
+    "g711encoderintfcmsghdlr": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/mmfcustominterfaces/G711EncoderIntfc/G711EncoderIntfcMsgHdlr/Group/G711EncoderIntfcMsgHdlr.mmp"),   # <- messagehandlerfactory
+    "g729encoderintfcmsghdlr": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/mmfcustominterfaces/G729EncoderIntfc/G729EncoderIntfcMsgHdlr/Group/G729EncoderIntfcMsgHdlr.mmp"),   # <- messagehandlerfactory
+    "ilbcencoderintfcmsghdlr": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/mmfcustominterfaces/IlbcEncoderIntfc/IlbcEncoderIntfcMsgHdlr/Group/IlbcEncoderIntfcMsgHdlr.mmp"),   # <- messagehandlerfactory
+    "addeddevsoundcontrolmsghdlr": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/addeddevsoundcontrol/AddedDevSoundControlMsgHdlr/Group/AddedDevSoundControlMsgHdlr.mmp"),   # <- messagehandlerfactory
     "listenerdopplerproxy": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/ListDoppler/ListenerDopplerProxy/Group/ListenerDopplerProxy.mmp"),   # <- custominterfaceproxyfactory
     "dopplerbase": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/DopplerBase/Group/DopplerBase.mmp"),   # <- listenerdopplerproxy
     "listenerdopplereffect": dict(mmp="oss.FCL.sf.os.mmaudio/devsoundextensions/effects/ListDoppler/ListenerDopplerEffect/Group/ListenerDopplerEffect.mmp"),   # <- listenerdopplerproxy
