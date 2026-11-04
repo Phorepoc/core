@@ -50,6 +50,36 @@ NET = "oss.FCL.sf.os.networkingsrv"
 from paths import OS_ROOT, SYMBIAN, BUILD, EPOC32_ROOT  # noqa: E402
 from paths import resolve as _resolve_src  # noqa: E402  ("baseline/..." -> the Symbian source)
 
+
+def extended_def(release_def: str, extra_def: str, out_name: str) -> str:
+    """The .def of a component whose later releases exported more than the frozen one: the release's `release_def` (a path
+    under the Symbian source) followed by the exports of `extra_def` (a file of this tree, written like a .def), written to
+    <build>/defs/<out_name>. The numbers of `extra_def` start after the release's last. Without the source (a machine that
+    only reads the registry) the extra file stands alone."""
+    base = os.path.join(SYMBIAN, release_def)
+    extra = os.path.join(OS_ROOT, extra_def)
+    out = os.path.join(BUILD, "defs", out_name)
+    try:
+        with open(base, encoding="utf-8", errors="replace") as f:     # text mode: CRLF -> LF
+            text = f.read().rstrip()
+    except OSError:
+        return extra
+    with open(extra, encoding="utf-8") as f:
+        lines = [ln for ln in f.read().splitlines()
+                 if ln.strip() and not ln.lstrip().startswith(";") and ln.strip() != "EXPORTS"]
+    new = text + "\n" + "\n".join(lines) + "\n"
+    try:
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        if not os.path.exists(out) or open(out, encoding="utf-8", errors="replace").read() != new:
+            tmp = f"{out}.{os.getpid()}"
+            with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+                f.write(new)
+            os.replace(tmp, out)
+    except OSError:
+        return extra
+    return out
+
+
 BUILTIN = {
     "euser": ("euser.dll", BE.DEF_PATH),
     "efsrv": ("efsrv.dll", devlink.EFSRV_DEF),
@@ -424,9 +454,13 @@ COMPONENTS = {
     # AknEcs.cpp = OURS one-line stem of this snapshot's file (toolchain/shims/stems; the stemkit's
     # own AknEcs.cpp stem targets a newer classicui): no phone server here and the real phoneclient
     # panics 'PhSrvStartUp' -- run the emergency-call detector with a null CPhCltEmergencyCall
+    # avkonu_later.def: the exports a later S60 release added after the RCL_3 .def's 4604 (CAknTasHook's performance markers, AknTasTimestamp.cpp)
     "avkon": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/group/avkon.mmp",
                   drop=["aknecs.cpp", "AknAppUi.cpp", "AknAdaptiveSearchGrid.cpp"],
-                  extra=["toolchain/shims/stems/AknEcs.cpp", "src/phorepoc/avkon_trace/AknAppUi.cpp", "src/phorepoc/avkon_layout/AknAdaptiveSearchGrid.cpp"],
+                  extra=["toolchain/shims/stems/AknEcs.cpp", "src/phorepoc/avkon_trace/AknAppUi.cpp", "src/phorepoc/avkon_layout/AknAdaptiveSearchGrid.cpp",
+                         "src/phorepoc/avkon_later/AknTasTimestamp.cpp"],
+                  **{"def": extended_def("symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/EABI/AVKONU.DEF",
+                                         "src/phorepoc/avkon_later/eabi/avkonu_later.def", "avkonu.def")},
                   import_typeinfo=True),   # the AppUi typeinfo chain: CEikAppUi's real typeinfo from eikcore (see eikcore)
     "akntransitionutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/AknTransitionUtils/group/akntransitionutils.mmp"),
     # Open Dynamics Engine (in classicui!): aknphysics -- every Avkon menu/list kinetic scroll -- creates

@@ -1,0 +1,16 @@
+; Copyright The Phorepoc Authors
+; SPDX-License-Identifier: Apache-2.0
+;
+; The exports a later S60 release added to avkon.dll, after the last ordinal of the RCL_3 AVKONU.DEF (4604). Only the ones
+; implemented here are listed; a number not listed stays the build's "not implemented" stub. registry/components.py appends this
+; file to the release .def (extended_def) when it builds avkon, so the numbers line up with the later avkon applications import by.
+; The names are reconstructed from what the code does; applications import by number.
+EXPORTS
+	_ZN11CAknTasHook13AddTimestampLE7TPtrC16 @ 4611 NONAME
+	_ZN11CAknTasHook13GetTimestampsEv @ 4612 NONAME
+	_ZNK20CAknTasTimestampInfo4NameEv @ 4613 NONAME
+	_ZNK20CAknTasTimestampInfo4TimeEv @ 4614 NONAME
+	_ZTI20CAknTasTimestampInfo @ 4615 NONAME ; #<TI>#
+	_ZTV20CAknTasTimestampInfo @ 4616 NONAME ; #<VT>#
+	_ZN11CAknTasHook15RemoveTimestampE7TPtrC16 @ 4630 NONAME
+	_ZN11CAknTasHook15ResetTimestampsEv @ 4631 NONAME
