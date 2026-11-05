@@ -76,6 +76,8 @@ CPheCatalogueView::~CPheCatalogueView()
 	iSrc.Close();
 	delete iSrcStatus;
 	delete iLoadMsg;
+	delete iPageTitle;
+	delete iPageEmpty;
 	delete iDTitle;
 	delete iDMeta;
 	delete iDBody;
@@ -401,7 +403,7 @@ TInt CPheCatalogueView::RowAt(TInt aY) const
 		TInt s = (aY - iHeaderH + iOffset) / iSrcRowH;
 		return (s >= 0 && s < iSrc.Count()) ? s : -1;
 		}
-	if (iMode != EList || iTab != 0 || aY < iHeaderH || aY >= ViewH() || iRowH <= 0)
+	if (iMode != EList || aY < iHeaderH || aY >= ViewH() || iRowH <= 0)
 		return -1;
 	TInt r = (aY - iHeaderH + iOffset) / iRowH;
 	return (r >= 0 && r < iRows.Count()) ? r : -1;
@@ -426,7 +428,7 @@ TBool CPheCatalogueView::Moving() const
 
 TInt CPheCatalogueView::PickIconRow() const
 	{
-	if (iMode != EList || iTab != 0 || iRows.Count() == 0 || iRowH <= 0)
+	if (iMode != EList || iRows.Count() == 0 || iRowH <= 0)
 		return -1;
 	TInt viewH = ViewH() - iHeaderH;
 	TInt first = iOffset / iRowH;
@@ -608,8 +610,6 @@ void CPheCatalogueView::Render()
 		RenderDetails();
 	else if (iMode == ESources)
 		RenderSources();
-	else if (iTab != 0)
-		RenderSoon();
 	else
 		RenderList();
 	DrawBar();
@@ -624,14 +624,14 @@ void CPheCatalogueView::DrawHeader(const TDesC& aTitle)
 	iFrameGc->SetPenColor(TRgb(0xcf, 0xcf, 0xcf));
 	iFrameGc->DrawLine(TPoint(0, 0), TPoint(w, 0));
 	TInt rightReserve = iMargin;
-	if (iMode == EList && iTab == 0)
+	if (iMode == EList)
 		{
-		if (iLoad == ELoading && iRows.Count() > 0)
+		if (iTab == 0 && iLoad == ELoading && iRows.Count() > 0)
 			{
 			DrawSpinner(TPoint(w - iMargin - Sc(12), iHeaderH / 2), Sc(11));
 			rightReserve = iMargin + Sc(34);
 			}
-		else if (iLoad == EReady && iRows.Count() > 0)
+		else if (iLoad == EReady && iRows.Count() > 0 && iRows[0]->iState != TPheRow::EPlain)
 			{
 			TBuf<24> n;
 			n.Format(_L("%d"), iRows.Count());
@@ -657,6 +657,22 @@ void CPheCatalogueView::DrawRow(TInt aRow, TInt aY, TBool aPressed)
 		iFrameGc->DrawRect(TRect(0, aY, w, aY + iRowH));
 		iFrameGc->SetBrushStyle(CGraphicsContext::ENullBrush);
 		iFrameGc->SetPenStyle(CGraphicsContext::ESolidPen);
+		}
+	if (row.iState == TPheRow::EPlain)
+		{
+		// a group row (a category): the name, how many, a chevron
+		TInt mid = aY + iRowH / 2;
+		TInt cx = w - iMargin - Sc(8);
+		iFrameGc->SetPenColor(aPressed ? KWhite : KText2);
+		iFrameGc->SetPenSize(TSize(Max(2, Sc(2)), Max(2, Sc(2))));
+		iFrameGc->DrawLine(TPoint(cx - Sc(5), mid - Sc(9)), TPoint(cx + Sc(3), mid));
+		iFrameGc->DrawLine(TPoint(cx + Sc(3), mid), TPoint(cx - Sc(5), mid + Sc(9)));
+		iFrameGc->SetPenSize(TSize(1, 1));
+		TInt rxp = cx - Sc(20);
+		TInt top = aY + Sc(14);
+		TextClipped(*row.iName, *iFTitle, iMargin, top + iAscTitle, rxp - iMargin, tc);
+		TextClipped(*row.iInfo, *iFInfo, iMargin, top + iFTitle->HeightInPixels() + Sc(2) + iAscInfo, rxp - iMargin, sc);
+		return;
 		}
 	// icon (or its placeholder)
 	TPoint ip(Sc(8), aY + (iRowH - iIconPx) / 2);
@@ -719,9 +735,27 @@ void CPheCatalogueView::SetTab(TInt aTab)
 	iFling = EFalse;
 	iTab = aTab;
 	iSelShown = EFalse;
+	iUi.UiTab(aTab);                                // (the application fills the rows for it)
 	Redraw();
 	if (aTab == 0)
 		iUi.UiIconWanted();
+	}
+
+void CPheCatalogueView::SelectTab(TInt aTab)
+	{
+	iTab = aTab;
+	iSelShown = EFalse;
+	Redraw();
+	}
+
+void CPheCatalogueView::SetPage(const TDesC& aTitle, const TDesC& aEmpty)
+	{
+	HBufC* t = aTitle.Alloc();
+	HBufC* e = aEmpty.Alloc();
+	delete iPageTitle;
+	iPageTitle = t;
+	delete iPageEmpty;
+	iPageEmpty = e;
 	}
 
 void CPheCatalogueView::BarAction(TInt aCell)
@@ -731,7 +765,7 @@ void CPheCatalogueView::BarAction(TInt aCell)
 		if (iMode != EList)
 			iUi.UiBack();
 		else if (iTab != 0)
-			SetTab(0);
+			iUi.UiTabBack();
 		else
 			iUi.UiExit();
 		return;
@@ -748,6 +782,8 @@ void CPheCatalogueView::BarAction(TInt aCell)
 		ScrollTo(0);
 		Redraw();
 		}
+	else if (iTab == aCell - 1)
+		iUi.UiTab(iTab);                            // the same tab again: its start (the categories, a new search)
 	else
 		SetTab(aCell - 1);
 	}
@@ -874,20 +910,6 @@ void CPheCatalogueView::DrawBar()
 	iFrameGc->DrawLine(TPoint(5 * w / 6, top + 4), TPoint(5 * w / 6, bottom));
 	}
 
-void CPheCatalogueView::RenderSoon()
-	{
-	_LIT(KCat, "Categories");
-	_LIT(KSearch, "Search");
-	_LIT(KMine, "My apps");
-	_LIT(KSoon, "Coming soon");
-	iRetryRect = TRect();
-	TInt w = Rect().Width();
-	TInt cy = iHeaderH + (ViewH() - iHeaderH) / 2;
-	TInt tw = iFTitle->TextWidthInPixels(KSoon);
-	Text(KSoon, *iFTitle, (w - tw) / 2, cy + iAscTitle / 2, KText2);
-	DrawHeader(iTab == 1 ? static_cast<const TDesC&>(KCat) : iTab == 2 ? static_cast<const TDesC&>(KSearch) : static_cast<const TDesC&>(KMine));
-	}
-
 void CPheCatalogueView::DrawEmpty(const TDesC& aMessage, TBool aError, TBool aButton)
 	{
 	TInt w = Rect().Width();
@@ -946,10 +968,10 @@ void CPheCatalogueView::RenderList()
 	else
 		{
 		_LIT(KNone, "No apps for this device");
-		DrawEmpty(KNone, EFalse, EFalse);
+		DrawEmpty(iPageEmpty && iPageEmpty->Length() ? *iPageEmpty : static_cast<const TDesC&>(KNone), EFalse, EFalse);
 		}
 	_LIT(KTitle, "Catalogue");
-	DrawHeader(KTitle);
+	DrawHeader(iPageTitle && iPageTitle->Length() ? *iPageTitle : static_cast<const TDesC&>(KTitle));
 	}
 
 // ---- the Sources page: the Phorepoc index with its switch, one row per added source (Remove), "Add source"
@@ -1561,8 +1583,6 @@ TKeyResponse CPheCatalogueView::OfferKeyEventL(const TKeyEvent& aKey, TEventCode
 			return EKeyWasNotConsumed;
 			}
 		}
-	if (iMode != EDetails && iTab != 0)
-		return EKeyWasNotConsumed;
 	if (iMode == EDetails)
 		{
 		switch (code)

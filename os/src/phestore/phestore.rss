@@ -91,6 +91,33 @@ RESOURCE LOCALISABLE_APP_INFO r_phestore_localisable_app_info
 	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Catalogue"; number_of_icons = 1; icon_file = "\\resource\\apps\\phestore_icon.mbm"; };
 	}
 
+// "Search": words that must all appear in an app's name, summary, id, category or tags
+RESOURCE DIALOG r_phestore_search_query
+	{
+	flags = EGeneralQueryFlags;
+	buttons = R_AVKON_SOFTKEYS_OK_CANCEL;
+	items =
+		{
+		DLG_LINE
+			{
+			type = EAknCtQuery;
+			id = EGeneralQuery;
+			control = AVKON_DATA_QUERY
+				{
+				layout = EDataLayout;
+				label = "Search";
+				control = EDWIN
+					{
+					flags = EEikEdwinNoHorizScrolling | EEikEdwinResizable;
+					width = 8;
+					maxlength = 64;
+					lines = 1;
+					};
+				};
+			}
+		};
+	}
+
 // "Add source": the address of an index (an http/https URL, or a path on a drive)
 RESOURCE DIALOG r_phestore_add_source_query
 	{

@@ -66,6 +66,7 @@ public:
 		iRefreshJob = CPheJob::NewL(*this);
 		iWork = CIdle::NewL(CActive::EPriorityIdle);
 		iAddSource = new (ELeave) CAsyncCallBack(TCallBack(AddSourceCb, this), CActive::EPriorityStandard);
+		iSearch = new (ELeave) CAsyncCallBack(TCallBack(SearchCb, this), CActive::EPriorityStandard);
 		iPhase = EPhaseCache;
 		iView->SetLoad(CPheCatalogueView::ELoading, KNullDesC);
 		}
@@ -73,6 +74,11 @@ public:
 		{
 		delete iExitTimer;
 		delete iAddSource;
+		delete iSearch;
+		delete iTagFilter;
+		iVisible.Close();
+		iTagNames.ResetAndDestroy();
+		iTagCounts.Close();
 		delete iWork;
 		delete iRefreshJob;
 		delete iLoader;
@@ -114,7 +120,246 @@ public:
 		iView->SetLoad(CPheCatalogueView::ELoading, KNullDesC);
 		Schedule();
 		}
-	void UiOpen(TInt aRow) { TRAP_IGNORE(OpenDetailsL(aRow)); }
+	void UiOpen(TInt aRow)
+		{
+		if (iScope == EScopeCategories)                // a category row: show its apps
+			{
+			if (aRow < 0 || aRow >= iTagNames.Count())
+				return;
+			HBufC8* tag = iTagNames[aRow]->Alloc();
+			if (!tag)
+				return;
+			delete iTagFilter;
+			iTagFilter = tag;
+			SetScope(EScopeTag);
+			return;
+			}
+		TRAP_IGNORE(OpenDetailsL(aRow));
+		}
+
+	// ---- the toolbar's tabs. Every tab is the same list over a different selection of the items (iScope): Home = all,
+	// Categories = the tags the listings carry (a tap on one lists its apps), Search = the items matching the words typed
+	// into the Search dialog (name, summary, id, category, tags), My apps = the items that are installed
+	enum TScope { EScopeAll, EScopeCategories, EScopeTag, EScopeSearch, EScopeMine };
+	static TInt TabOfScope(TInt aScope)
+		{
+		return aScope == EScopeAll ? 0 : (aScope == EScopeCategories || aScope == EScopeTag) ? 1 : aScope == EScopeSearch ? 2 : 3;
+		}
+	void UiTab(TInt aTab)
+		{
+		switch (aTab)
+			{
+		case 0: SetScope(EScopeAll); break;
+		case 1: SetScope(EScopeCategories); break;
+		case 2:
+			if (!iSearch->IsActive())
+				iSearch->CallBack();                   // out of the pointer event: the dialog runs a nested loop
+			break;
+		default: SetScope(EScopeMine); break;
+			}
+		}
+	void UiTabBack()
+		{
+		if (iScope == EScopeTag)
+			{
+			SetScope(EScopeCategories);
+			return;
+			}
+		SetScope(EScopeAll);
+		}
+	static TInt SearchCb(TAny* aSelf)
+		{
+		static_cast<CPheStoreAppUi*>(aSelf)->SearchDialog();
+		return 0;
+		}
+	void SearchDialog()
+		{
+		if (iView->Mode() != CPheCatalogueView::EList)
+			return;
+		TBuf<64> q(iQuery);
+		CAknTextQueryDialog* dlg = NULL;
+		TRAPD(err, dlg = CAknTextQueryDialog::NewL(q));
+		TBool ok = EFalse;
+		if (err == KErrNone)
+			ok = dlg->ExecuteLD(R_PHESTORE_SEARCH_QUERY);
+		q.Trim();
+		if (!ok || q.Length() == 0)
+			{
+			iView->SelectTab(TabOfScope(iScope));      // cancelled: back to the tab that was showing
+			return;
+			}
+		iQuery = q;
+		iQuery8.Zero();
+		CnvUtfConverter::ConvertFromUnicodeToUtf8(iQuery8, iQuery);
+		RDebug::Printf("PH: [phestore] ui: search");
+		SetScope(EScopeSearch);
+		}
+	void SetPageText()
+		{
+		TBuf<80> title;
+		TPtrC empty(_L("No apps for this device"));
+		switch (iScope)
+			{
+		case EScopeCategories:
+			title.Copy(_L("Categories"));
+			empty.Set(_L("No categories yet"));
+			break;
+		case EScopeTag:
+			if (iTagFilter)
+				TagName(title, *iTagFilter);
+			empty.Set(_L("No apps in this category"));
+			break;
+		case EScopeSearch:
+			title.Copy(_L("Search: "));
+			title.Append(iQuery.Left(title.MaxLength() - title.Length()));
+			empty.Set(_L("No apps match your search"));
+			break;
+		case EScopeMine:
+			title.Copy(_L("My apps"));
+			empty.Set(_L("Nothing installed from Catalogue yet"));
+			break;
+		default:
+			title.Copy(_L("Catalogue"));
+			break;
+			}
+		iView->SetPage(title, empty);
+		}
+	static void TagName(TDes& aOut, const TDesC8& aTag)       // a tag as the list shows it: the first letter capital
+		{
+		aOut.Zero();
+		CnvUtfConverter::ConvertToUnicodeFromUtf8(aOut, aTag.Left(40));
+		if (aOut.Length())
+			aOut[0] = TChar(aOut[0]).GetUpperCase();
+		}
+	// show the items of a scope: the rows are rebuilt from the loaded indexes (BeginBuild reads iScope)
+	void SetScope(TInt aScope)
+		{
+		iScope = aScope;
+		iView->SelectTab(TabOfScope(aScope));
+		SetPageText();
+		if (iPhase == EPhaseCache || iItems.Count() == 0)
+			{
+			iView->ClearRows();                        // (the first load builds the list for this scope when it finishes)
+			iView->Redraw();
+			return;
+			}
+		TInt next = iPhase == EPhaseBuild ? iNextAfterBuild : (iPhase == EPhaseRefresh ? EPhaseRefresh : EPhaseIdle);
+		iKeepOffset = 0;
+		BeginBuild();
+		iNextAfterBuild = next;
+		iPhase = EPhaseBuild;
+		iView->Redraw();
+		Schedule();
+		}
+	static TBool HasTag(const TPheGetItem& aItem, const TDesC8& aTag)
+		{
+		if (aItem.Category().CompareF(aTag) == 0)
+			return ETrue;
+		const CPheJson* t = aItem.iItem->Get(_L8("tags"));
+		if (t && t->Type() == CPheJson::EArray)
+			for (TInt i = 0; i < t->Count(); ++i)
+				if (t->At(i).Str().CompareF(aTag) == 0)
+					return ETrue;
+		return EFalse;
+		}
+	TBool SearchMatch(const TPheGetItem& aItem)       // every word of the query is somewhere in the item
+		{
+		TLex8 lex(iQuery8);
+		for (;;)
+			{
+			lex.SkipSpace();
+			TPtrC8 w = lex.NextToken();
+			if (w.Length() == 0)
+				return ETrue;
+			TBool found = aItem.Name().FindF(w) >= 0 || aItem.Id().FindF(w) >= 0 || aItem.Summary().FindF(w) >= 0
+				|| aItem.Category().FindF(w) >= 0;
+			const CPheJson* t = aItem.iItem->Get(_L8("tags"));
+			if (!found && t && t->Type() == CPheJson::EArray)
+				for (TInt i = 0; i < t->Count() && !found; ++i)
+					found = t->At(i).Str().FindF(w) >= 0;
+			if (!found)
+				return EFalse;
+			}
+		}
+	void AddTag(const TDesC8& aTag)                   // the sorted tag list with its counts
+		{
+		if (aTag.Length() == 0)
+			return;
+		TInt pos = 0;
+		for (; pos < iTagNames.Count(); ++pos)
+			{
+			TInt c = iTagNames[pos]->CompareF(aTag);
+			if (c == 0)
+				{
+				++iTagCounts[pos];
+				return;
+				}
+			if (c > 0)
+				break;
+			}
+		HBufC8* name = aTag.Alloc();
+		if (!name)
+			return;
+		if (iTagNames.Insert(name, pos) != KErrNone)
+			{
+			delete name;
+			return;
+			}
+		if (iTagCounts.Insert(1, pos) != KErrNone)
+			{
+			iTagNames.Remove(pos);
+			delete name;
+			}
+		}
+	// which items the current scope shows (iVisible), or for the categories the tags (iTagNames / iTagCounts)
+	void ComputeVisible()
+		{
+		iVisible.Reset();
+		iTagNames.ResetAndDestroy();
+		iTagCounts.Reset();
+		if (iScope == EScopeCategories)
+			{
+			for (TInt i = 0; i < iItems.Count(); ++i)
+				{
+				AddTag(iItems[i].Category());
+				const CPheJson* t = iItems[i].iItem->Get(_L8("tags"));
+				if (t && t->Type() == CPheJson::EArray)
+					for (TInt k = 0; k < t->Count(); ++k)
+						if (t->At(k).Str().CompareF(iItems[i].Category()) != 0)
+							AddTag(t->At(k).Str());
+				}
+			for (TInt i = 0; i < iTagNames.Count(); ++i)
+				iVisible.Append(i);
+			return;
+			}
+		for (TInt i = 0; i < iItems.Count(); ++i)
+			{
+			TBool in = ETrue;
+			switch (iScope)
+				{
+			case EScopeTag: in = iTagFilter && HasTag(iItems[i], *iTagFilter); break;
+			case EScopeSearch: in = SearchMatch(iItems[i]); break;
+			case EScopeMine:
+				{
+				TBuf8<32> installed;
+				TRAPD(err, iGet->InstalledTagL(iItems[i].Id(), installed));
+				in = err == KErrNone && installed.Length() > 0;
+				break;
+				}
+			default: break;
+				}
+			if (in)
+				iVisible.Append(i);
+			}
+		}
+	void AddTagRowL(TInt aTag)
+		{
+		TBuf<48> name;
+		TagName(name, *iTagNames[aTag]);
+		TBuf<32> info;
+		info.Format(iTagCounts[aTag] == 1 ? _L("%d app") : _L("%d apps"), iTagCounts[aTag]);
+		iView->AddRowL(name, info, KNullDesC, TPheRow::EPlain, KNullDesC8);
+		}
 	void UiBack()
 		{
 		if (iView->Mode() == CPheCatalogueView::ESources)
@@ -127,8 +372,15 @@ public:
 		if (iRebuildPending)
 			{
 			iRebuildPending = EFalse;
+			iMineDirty = EFalse;
 			Rebuild();
 			Schedule();
+			}
+		else if (iMineDirty)                               // something was installed: My apps has one more
+			{
+			iMineDirty = EFalse;
+			if (iScope == EScopeMine)
+				SetScope(EScopeMine);
 			}
 		}
 	void UiAction(TInt /*aRow*/) { TRAP_IGNORE(InstallL()); }
@@ -423,6 +675,7 @@ private:
 		TRAPD(err, iGet->ItemsL(iItems, EFalse));
 		if (err != KErrNone)
 			iItems.Reset();
+		ComputeVisible();
 		iView->ClearRows();
 		iBuilt = 0;
 		}
@@ -431,21 +684,29 @@ private:
 	TBool BuildSlice()
 		{
 		TInt64 start = NowUs();
-		while (iBuilt < iItems.Count())
+		while (iBuilt < iVisible.Count())
 			{
-			TRAPD(err, AddRowL(iItems[iBuilt]));
+			TInt err = KErrNone;
+			if (iScope == EScopeCategories)
+				{
+				TRAP(err, AddTagRowL(iVisible[iBuilt]));
+				}
+			else
+				{
+				TRAP(err, AddRowL(iItems[iVisible[iBuilt]]));
+				}
 			if (err != KErrNone)
 				{
-				iBuilt = iItems.Count();
+				iBuilt = iVisible.Count();
 				break;
 				}
 			++iBuilt;
 			if (NowUs() - start > 8000)
 				break;
 			}
-		if (iBuilt == 1 || iBuilt >= iItems.Count() || iBuilt % 8 == 0)
+		if (iBuilt == 1 || iBuilt >= iVisible.Count() || iBuilt % 8 == 0)
 			iView->Redraw();
-		if (iBuilt >= iItems.Count())
+		if (iBuilt >= iVisible.Count())
 			{
 			if (iKeepOffset)
 				iView->SetOffset(iKeepOffset);
@@ -488,9 +749,9 @@ private:
 
 	void OpenDetailsL(TInt aRow)
 		{
-		if (aRow < 0 || aRow >= iItems.Count() || iBusy)
+		if (aRow < 0 || aRow >= iVisible.Count() || iBusy)
 			return;
-		const TPheGetItem& it = iItems[aRow];
+		const TPheGetItem& it = iItems[iVisible[aRow]];
 		const CPheJson& j = *it.iItem;
 		delete iDetailId;
 		iDetailId = NULL;
@@ -586,6 +847,7 @@ private:
 			iView->SetDetailsStatus(_L("Installed"), EFalse, -1);
 			iView->SetDetailsButton(_L("Installed"), EFalse);
 			iView->UpdateRow(row, TPheRow::EInstalled);
+			iMineDirty = ETrue;
 			}
 		else
 			{
@@ -658,6 +920,15 @@ private:
 	TBool iRefreshAgain;
 	TBool iSourcesChanged;
 	CAsyncCallBack* iAddSource;
+	CAsyncCallBack* iSearch;
+	TInt iScope;                                       // which items the list shows (TScope)
+	RArray<TInt> iVisible;                             // the items of the scope: indexes into iItems (the categories: into iTagNames)
+	RPointerArray<HBufC8> iTagNames;                   // the categories page: every tag / category of the items, sorted
+	RArray<TInt> iTagCounts;
+	HBufC8* iTagFilter;                                // the category whose apps are listed
+	TBuf<64> iQuery;                                   // the last search
+	TBuf8<192> iQuery8;
+	TBool iMineDirty;                                  // an install changed what My apps lists
 	TInt iKeepOffset;
 	TInt iLastProgress;
 	HBufC8* iDetailId;

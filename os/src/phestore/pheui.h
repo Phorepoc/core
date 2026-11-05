@@ -31,6 +31,9 @@ public:
 	virtual void UiSourceToggleDefault() = 0;    // the Phorepoc index's switch
 	virtual void UiSourceRemove(TInt aSource) = 0;   // Remove on an added source (0-based among the added ones)
 	virtual void UiSourceAdd() = 0;              // "Add source"
+	// the toolbar's tabs: the application decides which rows each one shows (all / categories / search / installed)
+	virtual void UiTab(TInt aTab) = 0;           // a tab was chosen (0 Home, 1 Categories, 2 Search, 3 My apps); chosen again = its start
+	virtual void UiTabBack() = 0;                // back on a tab page (a category's apps -> the categories, anything else -> Home)
 	};
 
 // One row of the Sources page.
@@ -48,7 +51,7 @@ public:
 class TPheRow
 	{
 public:
-	enum TState { EFree, EInstalled, EUpdate };
+	enum TState { EFree, EInstalled, EUpdate, EPlain };   // EPlain: a group row (a category): the name, a count, a chevron
 	enum TIcon { ENone, ELoading, EReady, EFailed };
 	HBufC* iName;
 	HBufC* iInfo;
@@ -74,6 +77,8 @@ public:
 	void AddRowL(const TDesC& aName, const TDesC& aInfo, const TDesC& aTag, TInt aState, const TDesC8& aIconUrl);
 	void UpdateRow(TInt aRow, TInt aState);
 	TInt RowCount() const { return iRows.Count(); }
+	void SetPage(const TDesC& aTitle, const TDesC& aEmpty);   // the list's header and what it says with no rows
+	void SelectTab(TInt aTab);                      // light a tab without asking the application (it already switched)
 	void SetLoad(TLoad aLoad, const TDesC& aMessage);   // ELoading with rows = the small header spinner
 	void Redraw();
 	TInt Generation() const { return iGeneration; }
@@ -136,7 +141,6 @@ private:
 	TBool InRemoveZone(TInt aX) const { return aX >= Rect().Width() - iSrcZoneW; }
 	TInt SrcCount() const { return iSrc.Count(); }
 	void DrawHeader(const TDesC& aTitle);
-	void RenderSoon();
 	void DrawBar();
 	void DrawBarIcon(TInt aKind, const TPoint& aCentre, TRgb aColour);
 	TInt BarCell(const TPoint& aPos) const;         // 0 = back/exit, 1..4 = the tabs, 5 = options, -1 = not on the bar
@@ -173,6 +177,8 @@ private:
 	TMode iMode;
 	TLoad iLoad;
 	HBufC* iLoadMsg;
+	HBufC* iPageTitle;          // the list's header ("Catalogue" when unset)
+	HBufC* iPageEmpty;          // the list's text when it has no rows
 
 	// geometry (pixels)
 	TInt iScale;                // x256
