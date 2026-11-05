@@ -1847,21 +1847,6 @@ void CAlfBridge::HandleVisualVisibility( TInt aScreenNumber )
                 iTempRegion.Tidy();
                 fullscreenCovered = fullscreenCoveredBeforeGroup;
                 }
-            else if (!layout->Effect() && iFSFxData && iFSFxData->State() == EWaitEndFullScreen)
-                {
-                // OURS: the effect still waits for the app to draw its screen (GfxTriggerEffectWhenFullScreenDrawn:
-                // not covered yet). Until then the new windows hold only their default white background, and
-                // showing them flashed a white frame before the app. Hide the windows (not the layout: the trigger
-                // refuses an inactive layout) and keep the screen below visible. Redone every pass: the next
-                // visibility pass recomputes the flags, and EndFullScreen / the timeout / the effect end the wait.
-                for (TInt i = 0; i < layout->Count(); i++)
-                    {
-                    layout->Visual(i).SetFlag(EHuiVisualFlagInactive);
-                    }
-                iTempRegion.Copy(regionBeforeGroup);
-                iTempRegion.Tidy();
-                fullscreenCovered = fullscreenCoveredBeforeGroup;
-                }
             regionBeforeGroup.Close();
             }
 
