@@ -14,7 +14,8 @@ COMPONENTS = {
     # eshell (the real etshell sources) with its console redirected to a phettyd tty (macro Console=PheConsole)
     "pheshell": dict(mmp=os.path.join(OS_ROOT, "src/pheshell/pheshell.mmp")),
     # the on-screen terminal (an Avkon app in the launcher grid = the Menu key's menu; Options lists the ttys)
-    "pheterm": dict(mmp=os.path.join(OS_ROOT, "src/pheterm/pheterm.mmp")),
+    "pheterm": dict(mmp=os.path.join(OS_ROOT, "src/pheterm/pheterm.mmp"),
+                    rom_data=["resource\\apps\\pheterm_icon.mbm=" + os.path.join(OS_ROOT, "src/pheterm/data/pheterm_icon.mbm")]),
     # headless self-test client (SSM_TEST=phettyctl; not in the default ROM)
     "phettyctl": dict(mmp=os.path.join(OS_ROOT, "src/phetty/phettyctl.mmp"), test=True),
     # the Open C stdio server (stdioserver.exe): a program a phetty shell started writes/reads that tty

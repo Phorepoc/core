@@ -7,6 +7,7 @@ NAME PHTM
 #include <eikon.rh>
 #include <avkon.rh>
 #include <avkon.rsg>
+#include <appinfo.rh>
 #include "pheterm.hrh"
 
 RESOURCE RSS_SIGNATURE { }
@@ -40,4 +41,11 @@ RESOURCE MENU_PANE r_pheterm_menu
 		MENU_ITEM { command = EPheCmdTty8; txt = "Switch to tty 8"; },
 		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
 		};
+	}
+
+// the launcher's entry: the caption and the icon (pheterm_icon.mbm, drawn by data/make_icon.py)
+RESOURCE LOCALISABLE_APP_INFO r_pheterm_localisable_app_info
+	{
+	short_caption = "Terminal";
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Terminal"; number_of_icons = 1; icon_file = "\\resource\\apps\\pheterm_icon.mbm"; };
 	}
