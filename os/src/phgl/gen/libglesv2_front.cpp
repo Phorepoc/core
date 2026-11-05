@@ -34,7 +34,6 @@ void glActiveTexture(GLenum texture)
 	if (!f)
 		return;
 	f(texture);
-	PhglTraceArgs("glActiveTexture", texture, 0, 0, 0);
 	}
 
 void glAttachShader(GLuint program, GLuint shader)
@@ -65,7 +64,6 @@ void glBindBuffer(GLenum target, GLuint buffer)
 	if (!f)
 		return;
 	f(target, buffer);
-	PhglTraceArgs("glBindBuffer", target, buffer, 0, 0);
 	}
 
 void glBindFramebuffer(GLenum target, GLuint framebuffer)
@@ -96,7 +94,6 @@ void glBindTexture(GLenum target, GLuint texture)
 	if (!f)
 		return;
 	f(target, texture);
-	PhglTraceArgs("glBindTexture", target, texture, 0, 0);
 	}
 
 void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) __SOFTFP
@@ -137,7 +134,6 @@ void glBlendFunc(GLenum sfactor, GLenum dfactor)
 	if (!f)
 		return;
 	f(sfactor, dfactor);
-	PhglTraceArgs("glBlendFunc", sfactor, dfactor, 0, 0);
 	}
 
 void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
@@ -188,7 +184,6 @@ void glClear(GLbitfield mask)
 	if (!f)
 		return;
 	f(mask);
-	PhglTraceProbe("glClear", mask);
 	}
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) __SOFTFP
@@ -199,7 +194,6 @@ void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) _
 	if (!f)
 		return;
 	f(red, green, blue, alpha);
-	PhglTraceArgs("glClearColor", (unsigned)(int)(red*255), (unsigned)(int)(green*255), (int)(blue*255), (int)(alpha*255));
 	}
 
 void glClearDepthf(GLclampf depth) __SOFTFP
@@ -230,7 +224,6 @@ void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha
 	if (!f)
 		return;
 	f(red, green, blue, alpha);
-	PhglTraceArgs("glColorMask", red, green, (int)blue, (int)alpha);
 	}
 
 void glCompileShader(GLuint shader)
@@ -252,7 +245,6 @@ void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, G
 	if (!f)
 		return;
 	f(target, level, internalformat, width, height, border, imageSize, data);
-	PhglTraceArgs("glCompressedTexImage2D", internalformat, level, width, height);
 	}
 
 void glCompressedTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void* data)
@@ -313,7 +305,6 @@ void glCullFace(GLenum mode)
 	if (!f)
 		return;
 	f(mode);
-	PhglTraceArgs("glCullFace", mode, 0, 0, 0);
 	}
 
 void glDeleteBuffers(GLsizei n, const GLuint* buffers)
@@ -384,7 +375,6 @@ void glDepthFunc(GLenum func)
 	if (!f)
 		return;
 	f(func);
-	PhglTraceArgs("glDepthFunc", func, 0, 0, 0);
 	}
 
 void glDepthMask(GLboolean flag)
@@ -395,7 +385,6 @@ void glDepthMask(GLboolean flag)
 	if (!f)
 		return;
 	f(flag);
-	PhglTraceArgs("glDepthMask", flag, 0, 0, 0);
 	}
 
 void glDepthRangef(GLclampf zNear, GLclampf zFar) __SOFTFP
@@ -426,7 +415,6 @@ void glDisable(GLenum cap)
 	if (!f)
 		return;
 	f(cap);
-	PhglTraceArgs("glDisable", cap, 0, 0, 0);
 	}
 
 void glDisableVertexAttribArray(GLuint index)
@@ -447,7 +435,6 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	if (!f)
 		return;
 	f(mode, first, count);
-	PhglTraceArgs("glDrawArrays", mode, 0, first, count);
 	}
 
 void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices)
@@ -458,8 +445,6 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices
 	if (!f)
 		return;
 	f(mode, count, type, indices);
-	PhglTraceProbe("glDrawElements", count);
-	PhglTraceArgs("glDrawElements", mode, type, count, (int)(TUint)indices);
 	}
 
 void glEnable(GLenum cap)
@@ -470,7 +455,6 @@ void glEnable(GLenum cap)
 	if (!f)
 		return;
 	f(cap);
-	PhglTraceArgs("glEnable", cap, 0, 0, 0);
 	}
 
 void glEnableVertexAttribArray(GLuint index)
@@ -531,7 +515,6 @@ void glFrontFace(GLenum mode)
 	if (!f)
 		return;
 	f(mode);
-	PhglTraceArgs("glFrontFace", mode, 0, 0, 0);
 	}
 
 void glGenBuffers(GLsizei n, GLuint* buffers)
@@ -632,8 +615,6 @@ void glGetBooleanv(GLenum pname, GLboolean* params)
 	if (!f)
 		return;
 	f(pname, params);
-	if (params)
-		PhglTraceArgs("glGetBooleanv", pname, 0, params[0], 0);
 	}
 
 void glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params)
@@ -663,8 +644,6 @@ void glGetFloatv(GLenum pname, GLfloat* params)
 	if (!f)
 		return;
 	f(pname, params);
-	if (params)
-		PhglTraceArgs("glGetFloatv", pname, 0, (int)(params[0] * 1000), (int)(params[1] * 1000));
 	}
 
 void glGetFramebufferAttachmentParameteriv(GLenum target, GLenum attachment, GLenum pname, GLint* params)
@@ -685,8 +664,6 @@ void glGetIntegerv(GLenum pname, GLint* params)
 	if (!f)
 		return;
 	f(pname, params);
-	if (params)
-		PhglTraceArgs("glGetIntegerv", pname, 0, params[0], 0);
 	}
 
 void glGetProgramInfoLog(GLuint program, GLsizei bufsize, GLsizei* length, char* infolog)
@@ -1012,10 +989,10 @@ void glSampleCoverage(GLclampf value, GLboolean invert) __SOFTFP
 
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 	{
-	PhglTraceCall("glScissor");
 	static TInt traced;
 	if (traced < 16)
 		{ ++traced; RDebug::Printf("PH: libGLESv2.dll glScissor(%d,%d,%d,%d)", (TInt)x, (TInt)y, (TInt)width, (TInt)height); }
+	PhglTraceCall("glScissor");
 	typedef void (*F)(GLint, GLint, GLsizei, GLsizei);
 	F f = (F)Fn(96, 198, "glScissor");
 	if (!f)
@@ -1041,7 +1018,6 @@ void glShaderSource(GLuint shader, GLsizei count, const char** string, const GLi
 	if (!f)
 		return;
 	f(shader, count, string, length);
-	PhglTraceSource(shader, count, string, length);
 	}
 
 void glStencilFunc(GLenum func, GLint ref, GLuint mask)
@@ -1112,7 +1088,6 @@ void glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei wid
 	if (!f)
 		return;
 	f(target, level, internalformat, width, height, border, format, type, pixels);
-	PhglTraceArgs("glTexImage2D", internalformat, format, width, height);
 	}
 
 void glTexParameterf(GLenum target, GLenum pname, GLfloat param) __SOFTFP
@@ -1123,7 +1098,6 @@ void glTexParameterf(GLenum target, GLenum pname, GLfloat param) __SOFTFP
 	if (!f)
 		return;
 	f(target, pname, param);
-	PhglTraceArgs("glTexParameterf", target, pname, (int)param, 0);
 	}
 
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params)
@@ -1194,7 +1168,6 @@ void glUniform1i(GLint location, GLint x)
 	if (!f)
 		return;
 	f(location, x);
-	PhglTraceArgs("glUniform1i", (unsigned)location, 0, x, 0);
 	}
 
 void glUniform1iv(GLint location, GLsizei count, const GLint* v)
@@ -1355,9 +1328,6 @@ void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, cons
 	if (!f)
 		return;
 	f(location, count, transpose, value);
-	PhglTraceArgs("glUniformMatrix4fv", (unsigned)location, transpose, value ? (int)(value[0] * 1000) : -1, value ? (int)(value[15] * 1000) : -1);
-	if (value)
-		PhglTraceMatrix(location, value, (TUint32)__builtin_return_address(0));
 	}
 
 void glUseProgram(GLuint program)
@@ -1368,7 +1338,6 @@ void glUseProgram(GLuint program)
 	if (!f)
 		return;
 	f(program);
-	PhglTraceArgs("glUseProgram", program, 0, 0, 0);
 	}
 
 void glValidateProgram(GLuint program)
@@ -1469,15 +1438,14 @@ void glVertexAttribPointer(GLuint indx, GLint size, GLenum type, GLboolean norma
 	if (!f)
 		return;
 	f(indx, size, type, normalized, stride, ptr);
-	PhglTraceArgs("glVertexAttribPointer", indx, size, type, (int)stride);
 	}
 
 void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 	{
-	PhglTraceCall("glViewport");
 	static TInt traced;
 	if (traced < 16)
 		{ ++traced; RDebug::Printf("PH: libGLESv2.dll glViewport(%d,%d,%d,%d)", (TInt)x, (TInt)y, (TInt)width, (TInt)height); }
+	PhglTraceCall("glViewport");
 	typedef void (*F)(GLint, GLint, GLsizei, GLsizei);
 	F f = (F)Fn(141, 243, "glViewport");
 	if (!f)
