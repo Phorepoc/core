@@ -1,0 +1,13 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// qttest_loc.rss -- OURS: the launcher entry (caption + icon) of the Qt start-up probe
+NAME QTTS
+
+#include <appinfo.rh>
+
+RESOURCE LOCALISABLE_APP_INFO r_qttest_localisable_app_info
+	{
+	short_caption = "Qt test";
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Qt test"; number_of_icons = 1; icon_file = "\\resource\\apps\\qttest_icon.mbm"; };
+	}

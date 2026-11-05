@@ -16,6 +16,11 @@ OS_LAYER_LIBC_SYSTEMINCLUDE
 SOURCEPATH		.
 SOURCE			qttest.cpp
 
+START RESOURCE	qttest_loc.rss
+HEADER
+TARGETPATH		/resource/apps
+END
+
 START RESOURCE	qttest_reg.rss
 TARGETPATH		/private/10003a3f/apps
 END

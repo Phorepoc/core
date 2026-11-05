@@ -235,8 +235,8 @@ public:
 	void SetScope(TInt aScope)
 		{
 		iScope = aScope;
+		SetPageText();                                 // (the page first: its title and scroll reset, then the tab)
 		iView->SelectTab(TabOfScope(aScope));
-		SetPageText();
 		if (iPhase == EPhaseCache || iItems.Count() == 0)
 			{
 			iView->ClearRows();                        // (the first load builds the list for this scope when it finishes)

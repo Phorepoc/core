@@ -2084,9 +2084,11 @@ COMPONENTS = {
     "about": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.utils/extras/about/group/about.mmp"),
     "sysversioninfo": dict(mmp="oss.FCL.sf.os.devicesrv/commonservices/PlatformEnv/sysversioninfo/group/sysversioninfo.mmp"),
     # OURS: minimal S60 Avkon application (app/document/appui/view + .rss)
-    "aknapp": dict(mmp=os.path.join(OS_ROOT, "src/aknapp/aknapp.mmp"), rtti=True),
+    "aknapp": dict(mmp=os.path.join(OS_ROOT, "src/aknapp/aknapp.mmp"), rtti=True,
+                   rom_data=["resource\\apps\\aknapp_icon.mbm=" + os.path.join(OS_ROOT, "src/aknapp/data/aknapp_icon.mbm")]),
     # OURS: interim S60 launcher -- a real Avkon list of the AppList server's apps (src/aknmenu)
-    "aknmenu": dict(mmp=os.path.join(OS_ROOT, "src/aknmenu/aknmenu.mmp"), rtti=True),
+    "aknmenu": dict(mmp=os.path.join(OS_ROOT, "src/aknmenu/aknmenu.mmp"), rtti=True,
+                    rom_data=["resource\\apps\\aknmenu_icon.mbm=" + os.path.join(OS_ROOT, "src/aknmenu/data/aknmenu_icon.mbm")]),
     # OURS: minimal CONE application (CCoeEnv/CCoeAppUi/CCoeControl)
     "coneapp": dict(mmp=os.path.join(OS_ROOT, "src/coneapp/coneapp.mmp")),
     "econs": dict(mmp="oss.FCL.sf.os.kernelhwsrv/kernel/eka/ewsrv/econs.mmp"),
@@ -2101,6 +2103,9 @@ COMPONENTS = {
     "ekdata": dict(mmp="oss.FCL.sf.adapt.Qemu/baseport/syborg/keymap/keymap.mmp", rom="ekdata.dll",
                    **{"def": "oss.FCL.sf.os.kernelhwsrv/kernel/eka/eabi/ekdata.def"}),
     "eshell": dict(mmp="oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/etshell/eshell.mmp"),
+    # OURS: eshell's apparc registration + caption/icon (data only: the real eshell has none)
+    "eshellreg": dict(mmp=os.path.join(OS_ROOT, "src/eshellreg/eshellreg.mmp"), rsc_only=True,
+                      rom_data=["resource\\apps\\eshell_icon.mbm=" + os.path.join(OS_ROOT, "src/eshellreg/data/eshell_icon.mbm")]),
     "elocal": dict(mmp="oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/sfat/elocal.mmp",
                    rom="elocal.fsy"),
     "efat32": dict(mmp="oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/sfat32/efat32.mmp",

@@ -284,6 +284,17 @@ GLYPHS = {
     # a tray with a down arrow: get something onto the device (Catalogue)
     "download": [("line", [(12, 3), (12, 14)]), ("line", [(7.5, 9.5), (12, 14), (16.5, 9.5)]),
                  ("line", [(4, 14.5), (4, 20), (20, 20), (20, 14.5)])],
+    # a window with a title bar: a sample application
+    "window": [("rrect", 3, 4, 18, 16, 2.5), ("line", [(3, 9), (21, 9)]), ("dot", 6.2, 6.5), ("dot", 9, 6.5),
+               ("line", [(7, 13), (14, 13)]), ("line", [(7, 16.5), (11, 16.5)])],
+    # a list: a menu
+    "list": [("dot", 5, 6.5), ("line", [(9, 6.5), (20, 6.5)]), ("dot", 5, 12), ("line", [(9, 12), (20, 12)]),
+             ("dot", 5, 17.5), ("line", [(9, 17.5), (20, 17.5)])],
+    # a bare prompt and cursor (no window frame, a comment line over it): the command shell
+    "shell": [("line", [(4, 8), (9.5, 12.5), (4, 17)]), ("line", [(12, 18), (20, 18)]), ("line", [(12, 6.5), (17, 6.5)])],
+    # a flask with a check mark: a test
+    "flask": [("poly", [(9.5, 3), (9.5, 9.5), (4.5, 18.5), (19.5, 18.5), (14.5, 9.5), (14.5, 3)]), ("line", [(8, 3), (16, 3)]),
+              ("line", [(9, 14), (11.2, 16), (15, 12.2)])],
     # a prompt: the terminal
     "prompt": [("rrect", 3, 4, 18, 16, 2.5), ("line", [(7, 9.5), (10.5, 12.5), (7, 15.5)]), ("line", [(12.5, 15.5), (17, 15.5)])],
 }

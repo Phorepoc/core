@@ -198,8 +198,16 @@ void CPheCatalogueView::ClearRows()
 		ClearRow(iRows[i]);
 	iRows.Reset();
 	++iGeneration;
-	iOffset = 0;
+	ResetScroll();
 	iSel = -1;
+	}
+
+// the list starts at its top: the integer and the float offset together (the fling/drag code runs from the float one,
+// so a stale value would put the first frame of the new page at the old scroll position), no fling left over
+void CPheCatalogueView::ResetScroll()
+	{
+	iOffset = 0;
+	iOffsetF = 0;
 	iFling = EFalse;
 	}
 
@@ -756,6 +764,11 @@ void CPheCatalogueView::SetPage(const TDesC& aTitle, const TDesC& aEmpty)
 	iPageTitle = t;
 	delete iPageEmpty;
 	iPageEmpty = e;
+	// a new page (a category, a search, My apps): scroll to its top and repaint the whole view, header included, now --
+	// the rows of the page it replaces are gone with their offset, and the next frame is the first of the new page
+	ResetScroll();
+	iListOffset = 0;
+	Redraw();
 	}
 
 void CPheCatalogueView::BarAction(TInt aCell)

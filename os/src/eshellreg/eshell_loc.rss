@@ -1,0 +1,13 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// eshell_loc.rss -- OURS: the launcher entry (caption + icon) of the command shell, eshell.exe
+NAME ESHL
+
+#include <appinfo.rh>
+
+RESOURCE LOCALISABLE_APP_INFO r_eshell_localisable_app_info
+	{
+	short_caption = "Shell";
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Shell"; number_of_icons = 1; icon_file = "\\resource\\apps\\eshell_icon.mbm"; };
+	}

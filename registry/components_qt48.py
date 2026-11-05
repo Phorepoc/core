@@ -57,6 +57,7 @@ COMPONENTS = {
     # OURS: logs each Qt start-up step (find where a Qt app stops)
     "qt48_test": dict(mmp=os.path.join(OS_ROOT, "src", "qt48", "qttest", "qttest.mmp"), rom="qttest.exe", defs=_QTDEFS, rtti=True,
                       cdriver=True, vfp=True,
+                      rom_data=["resource\\apps\\qttest_icon.mbm=" + os.path.join(OS_ROOT, "src/qt48/qttest/data/qttest_icon.mbm")],
                       flags=_MKSPECS + ["-I" + QTINC] + ["-I" + os.path.join(QTINC, m) for m in ("QtCore", "QtGui")]),
     # OURS: a minimal Qt hello (QApplication + QLabel + QPushButton)
     "qt48_hello": dict(mmp=os.path.join(OS_ROOT, "src", "qt48", "qthello", "qthello.mmp"), rom="qthello.exe", defs=_QTDEFS, rtti=True,

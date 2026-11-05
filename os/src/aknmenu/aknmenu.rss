@@ -6,6 +6,7 @@ NAME AKNM
 #include <eikon.rh>
 #include <avkon.rh>
 #include <avkon.rsg>
+#include <appinfo.rh>
 #include "aknmenu.hrh"
 RESOURCE RSS_SIGNATURE { }
 RESOURCE TBUF r_default_document_name { buf = ""; }
@@ -26,4 +27,11 @@ RESOURCE MENU_PANE r_aknmenu_menu
 		MENU_ITEM { command = EAknMenuCmdRefresh; txt = "Refresh"; },
 		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
 		};
+	}
+
+// the launcher's entry: the caption and the icon (aknmenu_icon.mbm, drawn by data/make_icon.py)
+RESOURCE LOCALISABLE_APP_INFO r_aknmenu_localisable_app_info
+	{
+	short_caption = "Menu test";
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Menu test"; number_of_icons = 1; icon_file = "\\resource\\apps\\aknmenu_icon.mbm"; };
 	}

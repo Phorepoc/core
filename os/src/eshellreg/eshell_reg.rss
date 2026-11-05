@@ -1,0 +1,17 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// eshell_reg.rss -- OURS: registration of the real eshell.exe (UID3 0x101F7AE7) with apparc, so the launcher shows it
+// with a caption and an icon
+#include <appinfo.rh>
+#include <eshell_loc.rsg>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0x101F7AE7
+
+RESOURCE APP_REGISTRATION_INFO
+	{
+	app_file = "eshell";
+	localisable_resource_file = "\\resource\\apps\\eshell_loc";
+	localisable_resource_id = R_ESHELL_LOCALISABLE_APP_INFO;
+	}

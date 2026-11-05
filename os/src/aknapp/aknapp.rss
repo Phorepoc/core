@@ -7,6 +7,7 @@ NAME AKNA
 #include <eikon.rh>
 #include <avkon.rh>
 #include <avkon.rsg>
+#include <appinfo.rh>
 #include "aknapp.hrh"
 
 RESOURCE RSS_SIGNATURE { }
@@ -33,3 +34,10 @@ RESOURCE MENU_PANE r_aknapp_menu
 	}
 
 RESOURCE TBUF r_aknapp_hello { buf = "Hello from a from-source Symbian UI"; }
+
+// the launcher's entry: the caption and the icon (aknapp_icon.mbm, drawn by data/make_icon.py)
+RESOURCE LOCALISABLE_APP_INFO r_aknapp_localisable_app_info
+	{
+	short_caption = "Sample app";
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Sample app"; number_of_icons = 1; icon_file = "\\resource\\apps\\aknapp_icon.mbm"; };
+	}

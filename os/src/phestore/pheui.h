@@ -74,6 +74,7 @@ public:
 
 	// ---- the list's data (filled by the application, a few rows at a time)
 	void ClearRows();
+	void ResetScroll();                             // offset (int + float), list place and fling back to the top
 	void AddRowL(const TDesC& aName, const TDesC& aInfo, const TDesC& aTag, TInt aState, const TDesC8& aIconUrl);
 	void UpdateRow(TInt aRow, TInt aState);
 	TInt RowCount() const { return iRows.Count(); }

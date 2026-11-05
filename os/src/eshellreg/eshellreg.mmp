@@ -1,0 +1,20 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// eshellreg.mmp -- OURS: data only: the apparc registration of eshell.exe + its caption/icon resource
+#include <platform_paths.hrh>
+
+TARGET			eshellreg
+TARGETTYPE		none
+
+START RESOURCE	eshell_loc.rss
+HEADER
+TARGETPATH		/resource/apps
+END
+
+START RESOURCE	eshell_reg.rss
+TARGETPATH		/private/10003a3f/apps
+END
+
+USERINCLUDE		.
+APP_LAYER_SYSTEMINCLUDE
