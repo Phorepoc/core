@@ -67,14 +67,8 @@ baseline/symbian-rcl3/oss.FCL.sf.mw.classicui/psln/PslnGSPlugin/group
 # SysAp
 baseline/symbian-rcl3/oss.FCL.sf.mw.appsupport/coreapplicationuis/SysAp/Group
 baseline/symbian-rcl3/oss.FCL.sf.mw.appsupport/coreapplicationuis/powersaveutilities/group
-# the S60 browser
+# the connection dialogs (the S60 engine's webkit/webkitutils icons and BrowserNG's are in no image: registry needs="s60web")
 baseline/symbian-rcl3/oss.FCL.sf.mw.web/browserutilities/connectionmanager/Group
-baseline/symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webkit
-baseline/symbian-rcl3/oss.FCL.sf.mw.web/webengine/webkitutils/group
-baseline/symbian-rcl3/oss.FCL.sf.app.webuis/browserui/browser/Group
-baseline/symbian-rcl3/oss.FCL.sf.app.webuis/browserui/browser/group
-# mmp START BITMAP targets (bmconv .mbm files)
-baseline/symbian-rcl3/oss.FCL.sf.mw.web/webengine/osswebengine/WebKit/s60/group/webcore/platform/platform.mmp
 # the Phone app: bubble/call-status icons, dialer, Settings > Call
 baseline/symbian-rcl3/oss.FCL.sf.app.phone/phoneapp/phoneui/group
 baseline/symbian-rcl3/oss.FCL.sf.app.phone/phoneuis/BubbleManager/Group
