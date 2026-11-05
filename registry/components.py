@@ -164,10 +164,12 @@ COMPONENTS = {
     # ordinals (the shared BITGDI2.DEF); staged as bitgdi.dll in an NGA=1 ROM (NGA_TWINS "bitgdi").
     "bitgdi_nga": dict(mmp=f"{G}/graphicsdeviceinterface/bitgdi/group/bitgdi_gce.mmp", nga=True,
                        rom="bitgdi_nga.dll", rom_as="bitgdi.dll"),
-    # OURS: null provider (real ordinal table) -- see toolchain/shims/sgresource_null.cpp
+    # the REAL software sgresource (RSgImage in shared chunks of the sgdevice LDD, which every board's kernel carries:
+    # x86 xk_sgresource.cpp, ARM ekern_nga_glue.cpp), as the NGA twin below -- the null provider it replaces made
+    # RSgDriver::Open answer KErrNotSupported, so no RSgImage (EGL pixmap surfaces, EGLImage) existed in a non-NGA image
     "sgresource": dict(
         mmp=f"{G}/graphicsresourceservices/graphicsresourceimplementation/group/sgresource_sw.mmp",
-        rom="sgresource.dll", nosrc=True, extra=["toolchain/shims/sgresource_null.cpp"],
+        rom="sgresource.dll",
         **{"def": f"{G}/graphicsresourceservices/graphicsresourceinterface/eabi/sgresourceu.def"}),
     # OURS: null provider -- see toolchain/shims/surfaceupdateclient_null.cpp
     "surfaceupdateclient": dict(
@@ -281,7 +283,7 @@ COMPONENTS = {
         mmp=f"{G}/graphicsresourceservices/graphicsresourceadaptation/group/graphicsresourceadapter_sw.mmp", nga=True,
         rom="graphicsresourceadapter.dll",
         **{"def": f"{G}/graphicsresourceservices/graphicsresource/eabi/graphicsresourceadapteru.def"}),
-    # the REAL software sgresource (RSgImage over SurfaceManager chunks), retiring toolchain/shims/sgresource_null.cpp
+    # the REAL software sgresource in an NGA=1 ROM (the same build as "sgresource"; NGA_TWINS pairs them)
     "sgresource_nga": dict(
         mmp=f"{G}/graphicsresourceservices/graphicsresourceimplementation/group/sgresource_sw.mmp", nga=True,
         rom="sgresource_nga.dll", rom_as="sgresource.dll",
