@@ -1256,6 +1256,9 @@ COMPONENTS = {
                                           "resource\\effects\\phe_disappear.fxml=" + os.path.join(OS_ROOT, "data/effects/phe_disappear.fxml"),
                                           "resource\\effects\\phe_folder_open.fxml=" + os.path.join(OS_ROOT, "data/effects/phe_folder_open.fxml"),
                                           "resource\\effects\\phe_folder_close.fxml=" + os.path.join(OS_ROOT, "data/effects/phe_folder_close.fxml"),
+                                          # Photos sets it by file name on opening an image; missing, SetEffectL leaves -1 out of the
+                                          # view activation and the half-activated view panics (KERN-EXEC 3) on deactivation
+                                          "resource\\effects\\photos_fullscreen_open.fxml=" + os.path.join(OS_ROOT, "data/effects/photos_fullscreen_open.fxml"),
                                           "resource\\skins\\101f84b9\\101f84b9.sel=" + os.path.join(OS_ROOT, "data/effects/phorepoc.sel")]),
     "huirenderpluginvg": dict(mmp=_ALF + "coretoolkit/rendervg10/group/huirendervg10.mmp", alf=2, vfp=True, defs=["__SOFTFP="],
                           allow_wsd=True, libs=["surfacemanager.lib", "surfaceupdateclient.lib", "hal.lib"],   # phvgwindow.h (the alf window surface)
