@@ -1765,7 +1765,19 @@ void CAlfBridge::HandleVisualVisibility( TInt aScreenNumber )
         TBool hasLayers = EFalse;
         
         TBool hasActiveVisualsInVisualTree(EFalse);
-        
+
+        // OURS: the full-screen effect for this group is triggered further down in this same pass, AFTER its windows
+        // were counted as covering. Keep the covered region from before them: if the trigger attaches a non-opaque
+        // effect (it starts at opacity 0) the group does not cover anything this frame, and the groups below must stay
+        // visible (without this the first frame of every app/menu open effect came out black)
+        const TBool fsEffectTarget = iFSFxData && iFSFxData->iToSecureId == controlgroup.SecureId() && !layout->Effect();
+        RRegionBuf<KAlfBridgeRegionGranularity> regionBeforeGroup;
+        if (fsEffectTarget)
+            {
+            regionBeforeGroup.Copy(iTempRegion);
+            }
+        const TBool fullscreenCoveredBeforeGroup = fullscreenCovered;
+
         // native alf application assumes that it should cover whole screen with alfcontent
         // it makes alfeventwindowgroup as inactive and fading is not done on alf content
         // this call is exculsive for alfeventwindowgroup 
@@ -1825,6 +1837,17 @@ void CAlfBridge::HandleVisualVisibility( TInt aScreenNumber )
                     GfxTriggerEffectWhenFullScreenDrawn(&controlgroup);
                     }
                 }
+            }
+
+        if (fsEffectTarget)
+            {
+            if (IsNonFadeEffect(layout->Effect()) && !IsOpaqueEffect(layout->Effect()))
+                {
+                iTempRegion.Copy(regionBeforeGroup);
+                iTempRegion.Tidy();
+                fullscreenCovered = fullscreenCoveredBeforeGroup;
+                }
+            regionBeforeGroup.Close();
             }
 
         // If root visuals effect is marked as opaque, then add whole screen area as covered.
