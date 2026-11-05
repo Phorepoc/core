@@ -2893,9 +2893,13 @@ PHT("PH: alf: CAlfBridge::HandleNewWindowL L2794 switch (windowAttributes->iWind
 			// faster lookups later...
 			if (windowAttributes->iClientHandle == iAlfWindowGroupId)
 				{
-				iAlfWindowGroupNodeId = windowGroupNodeId;    
+				iAlfWindowGroupNodeId = windowGroupNodeId;
+				// OURS: SetAlfWindowGroupId registers the event window only when the group already exists; when
+				// the id arrives first (no groups yet) nothing did, the roster never drew the ALF apps'
+				// content (DrawNativeAppsContent) and Photos' full screen stayed empty
+				iAlfScreens[0]->iDisplay->Roster().SetAlfEventWindow(&controlGroup.Control(0).Visual(0));
 				}
-			break;    
+			break;
 			}
 		case EAlfWinTreeNodeClient:
 		case EAlfWinTreeNodeRoot: // TODO: Root window receives drawing commands too
