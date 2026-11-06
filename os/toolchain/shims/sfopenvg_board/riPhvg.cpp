@@ -609,6 +609,9 @@ void PhvgForget(const Surface* aS)
 // The image is being destroyed (Image::~Image).
 void PhvgForgetImage(const Image* aImg)
 	{
+	// a new Image of the same size can be allocated at this address next: move the slot's generation so ri_fastblit's
+	// hash record of the dead image (address, size, format, generation) cannot be taken for the new image's pixels
+	PhvgImgWritten(aImg);
 	if (gLoad == 1 && gPhvgLive && *gPhvgLive)
 		gT.Forget((TAny*)aImg);
 	}
