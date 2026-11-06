@@ -1376,6 +1376,36 @@ TInt CAlfBridge::ResolveScreenNumber( CHuiDisplay& aDisplay )
         }
     
 
+// OURS: hides the windows of an app whose open effect is pending (HandleVisualVisibility), for at most the server's
+// app-start timeout per effect: a wait that never ends cannot keep the app hidden. The next pass that does not hide
+// recomputes the windows' flags (HandleLayoutVisualVisibility: a re-activated window is marked changed and redrawn).
+// ETrue = hidden in this pass.
+static TInt gPhHideHandle = KErrNotFound;
+static TInt64 gPhHideStart = 0;
+static TBool gPhHidden = EFalse;      // hidden in the last pass: keep the passes coming until it is not
+static TBool PhHidePendingTarget(CHuiLayout& aLayout, TInt aHandle, CHuiDisplay& aDisplay)
+    {
+    const TInt64 KPhHideMaxUs = 800000;     // KAlfAppStartEffectTimeout (alfserverdrawer.cpp), the longer of its two values
+    TTime now;
+    now.UniversalTime();
+    if (aHandle != gPhHideHandle)
+        {
+        gPhHideHandle = aHandle;
+        gPhHideStart = now.Int64();
+        }
+    if (now.Int64() - gPhHideStart >= KPhHideMaxUs)
+        {
+        return EFalse;
+        }
+    for (TInt i = 0; i < aLayout.Count(); i++)
+        {
+        aLayout.Visual(i).SetFlag(EHuiVisualFlagInactive);
+        }
+    gPhHidden = ETrue;
+    aDisplay.SetDirty();        // the layout's own flags do not change: the bridge's layout signature would not repaint
+    return ETrue;
+    }
+
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // 
@@ -1419,7 +1449,7 @@ void CAlfBridge::NotifyDisplayRefreshStarted(CHuiDisplay& aDisplay)
                 phsig = (phsig ^ (TUint)(TInt)(phr.iBr.iX * 8)) * 16777619u; phsig = (phsig ^ (TUint)(TInt)(phr.iBr.iY * 8)) * 16777619u; } }
             static TUint phlast; static TUint phchanged, phsame; if (phsig != phlast) { phlast = phsig; ++phchanged; phd->SetDirty(); } else { ++phsame; }
             if (((phchanged + phsame) & 31) == 1) RDebug::Printf("PH: alf: bridge visibility pass: layout changed %u times (display set dirty), unchanged %u times (no repaint)", phchanged, phsame); }    
-            iAlfScreens[0]->SetVisualTreeVisibilityChanged(EFalse);
+            iAlfScreens[0]->SetVisualTreeVisibilityChanged(gPhHidden);   // OURS: a hidden pending app is re-checked next refresh (PhHidePendingTarget)
             }
         }
     }
@@ -1567,6 +1597,7 @@ TBool CAlfBridge::IsRectCoveredByRegion(TRect aRect, TRegion& aCoveringRegion)
 // 
 void CAlfBridge::HandleVisualVisibility( TInt aScreenNumber )
     {
+    gPhHidden = EFalse;
     if (!iAlfScreens.Count())
         return;
             
@@ -1843,6 +1874,23 @@ void CAlfBridge::HandleVisualVisibility( TInt aScreenNumber )
             {
             if (IsNonFadeEffect(layout->Effect()) && !IsOpaqueEffect(layout->Effect()))
                 {
+                iTempRegion.Copy(regionBeforeGroup);
+                iTempRegion.Tidy();
+                fullscreenCovered = fullscreenCoveredBeforeGroup;
+                }
+            else if (!layout->Effect() && !(layout->Flags() & EHuiVisualFlagInactive) &&
+                     iFSFxData->State() == EWaitEndFullScreen &&
+                     iFSFxData->iEffectType != CFullScreenEffectState::ENotDefinedEffect &&
+                     iFSFxData->iTwoPhaseEffect <= CFullScreenEffectState::ESecondPartActive &&
+                     iFSFxData->iToWg == FindClientWindowGroupId(controlgroup) &&
+                     PhHidePendingTarget(*layout, iFSFxData->iHandle, *iAlfScreens[0]->iDisplay))
+                {
+                // OURS: the new app's open effect is pending -- exactly the wait GfxTriggerEffectWhenFullScreenDrawn
+                // ends (it re-checks on every buffer the app posts and starts the effect once the app has drawn its
+                // screen). Until then the app's windows hold only their default white background: showing them flashed
+                // a white frame before the app. They are hidden and the screen below stays visible, for at most the
+                // server's app-start timeout. A wait with no defined effect is never re-checked and is not hidden
+                // (ad70ee9 hid it too: the app then stayed hidden until the next effect and the UI fell minutes behind).
                 iTempRegion.Copy(regionBeforeGroup);
                 iTempRegion.Tidy();
                 fullscreenCovered = fullscreenCoveredBeforeGroup;
