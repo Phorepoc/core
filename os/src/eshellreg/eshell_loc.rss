@@ -4,7 +4,11 @@
 // eshell_loc.rss -- OURS: the launcher entry (caption + icon) of the command shell, eshell.exe
 NAME ESHL
 
+#include <uikon.rh>
 #include <appinfo.rh>
+
+// apparc checks the signature before it reads the registration's hidden flag and the rest
+RESOURCE RSS_SIGNATURE { }
 
 RESOURCE LOCALISABLE_APP_INFO r_eshell_localisable_app_info
 	{

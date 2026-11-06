@@ -1033,14 +1033,8 @@ COMPONENTS = {
     # OURS: ADM.exe, installs the application a Smart Installer wrapper leaves in \private\2002CCCE\import\ (the
     # wrapper's bootstrap starts it once package 0x2002CCCE is registered: make_phorepoc_rom.sh adm_stub.sis)
     "pheadm": dict(mmp=os.path.join(OS_ROOT, "src/pheadm/pheadm.mmp"), rom_as="ADM.exe"),
-    # OURS: the download app (engine + command line): indexes -> download -> SHA-256 -> silent install. The board
-    # adaptation adds z:\resource\phorepoc\device.txt (board + arch) through EXTEND.
-    "pheget": dict(mmp=os.path.join(OS_ROOT, "src/pheget/pheget.mmp")),
-    # ... and its UI ("Catalogue" in the launcher): the same engine
-    "phestore": dict(mmp=os.path.join(OS_ROOT, "src/phestore/phestore.mmp"),
-                     rom_data=["resource\\apps\\phestore_icon.mbm=" + os.path.join(OS_ROOT, "src/phestore/data/phestore_icon.mbm")]),
-    # the engine's software-source tests (add / remove / default off / per-source caches); TESTEXE=phegettest runs them
-    "phegettest": dict(mmp=os.path.join(OS_ROOT, "src/phegettest/phegettest.mmp"), test=True),
+    # (The download app -- pheget.exe, phestore.exe "Catalogue", phegettest -- moved to its own layer repository, catalogue,
+    # 2026-11-06: boards name it in REPOS; its keys are catalogue, catalogue_get and catalogue_gettest.)
     # start an app through apparc like the launcher does (tests): phestart <uid-hex | exe name>
     "phestart": dict(mmp=os.path.join(OS_ROOT, "src/phestart/phestart.mmp")),
     # the process's own capabilities on the log (proves the header capabilities of an installed package): SIS test, not in the ROM
