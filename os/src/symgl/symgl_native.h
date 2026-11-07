@@ -33,6 +33,10 @@ int symgl_window_size(void *native_window, unsigned *width, unsigned *height);
 /* the window covers the whole screen of w x h pixels (its size, and its position (0,0)); window server round trips: call it rarely */
 int symgl_window_fullscreen(void *native_window, unsigned w, unsigned h);
 
+/* the rotation of the window server's current screen mode in degrees (0, 90, 180, 270): 90 = an application's (x, y) is the
+ * display's (width - 1 - y, x); window server round trips: call it rarely */
+int symgl_window_display_rotation(void *native_window);
+
 /* the window's presentation surface of that size (created, or re-created after a resize); 0 = no SurfaceManager
  * on this ROM: use symgl_window_present_pixels instead */
 int symgl_window_surface(void *native_window, unsigned width, unsigned height, symgl_surface *out);

@@ -389,6 +389,39 @@ extern "C" int symgl_window_fullscreen(void* aNative, unsigned aW, unsigned aH)
 	return mine;
 	}
 
+// The rotation of the screen mode the window server is in (wsini.txt: SCR_ROTATIONn), in degrees: how the window server
+// turns what applications draw onto the display (the screen driver's DeOrientate: 90 = logical (x, y) at physical
+// (width - 1 - y, x)). A window server round trip: call it rarely.
+extern "C" int symgl_window_display_rotation(void* aNative)
+	{
+	if (!aNative)
+		return 0;
+	if (RFbsSession::GetSession() == NULL && RFbsSession::Connect() != KErrNone)		// (a screen device needs one, as PresentBitmap's)
+		return 0;
+	CWsScreenDevice* device = new CWsScreenDevice(*static_cast<RWindow*>(aNative)->Session());
+	if (!device)
+		return 0;
+	TInt degrees = 0;
+	const TInt r = device->Construct();
+	if (r != KErrNone)
+		RDebug::Printf("[symgl] screen device for the rotation -> %d", r);
+	else
+		{
+		TPixelsTwipsAndRotation mode;
+		device->GetScreenModeSizeAndRotation(device->CurrentScreenMode(), mode);
+		degrees = (TInt)mode.iRotation * 90;		// CFbsBitGc::TGraphicsOrientation: 0, 90, 180, 270
+		static TInt said = -1;
+		const TInt m = device->CurrentScreenMode();
+		if (m * 1000 + degrees != said)
+			{
+			said = m * 1000 + degrees;
+			RDebug::Printf("[symgl] screen mode %d: %dx%d, rotation %d", m, mode.iPixelSize.iWidth, mode.iPixelSize.iHeight, degrees);
+			}
+		}
+	delete device;
+	return degrees;
+	}
+
 extern "C" int symgl_window_surface(void* aNative, unsigned aWidth, unsigned aHeight, symgl_surface* aOut)
 	{
 	TWinState* st = Find(aNative, ETrue);
