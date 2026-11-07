@@ -1,0 +1,15 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// phelooptest.mmp -- OURS: loopback sockets with no connection up (see phelooptest.cpp)
+TARGET			phelooptest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE701578C
+CAPABILITY		all -tcb
+VENDORID		0
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+OS_LAYER_LIBC_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phelooptest.cpp
+LIBRARY			euser.lib libc.lib
+SMPSAFE

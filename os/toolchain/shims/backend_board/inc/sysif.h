@@ -598,6 +598,8 @@ public:
 	
 	//Get the default connection (RConnection) instance 
 	RConnection& GetDefaultConnection();
+	// OURS (Phorepoc): whether the default connection is up, WITHOUT starting it (GetDefaultConnection brings it up).
+	TBool DefConnectionUp() { return iDefConnection.SubSessionHandle() != 0; }
 	
 	//Get the saved session path of the file server session
 	TInt GetSessionPath(TDes& aPath);
