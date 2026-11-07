@@ -11,11 +11,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 static int gOk, gFail;
 #define CHECK(c, what) do { errno = 0; if (c) { gOk++; RDebug::Printf("[phelooptest] ok: %s", what); } else { gFail++; RDebug::Printf("[phelooptest] FAIL: %s (errno %d)", what, errno); } } while (0)
@@ -30,6 +32,9 @@ static void Tcp()
 	socklen_t len = sizeof a;
 	CHECK(getsockname(ls, (sockaddr*)&a, &len) == 0 && a.sin_port != 0, "getsockname gives a port");
 	RDebug::Printf("[phelooptest] listening on 127.0.0.1:%d", ntohs(a.sin_port));
+	{ char serv[16] = {0}; int r = getnameinfo((sockaddr*)&a, len, NULL, 0, serv, sizeof serv, NI_NUMERICHOST | NI_NUMERICSERV);
+	  RDebug::Printf("[phelooptest] getnameinfo(getsockname, len %d) -> %d (%s), service %s", (int)len, r, r ? gai_strerror(r) : "ok", serv);
+	  CHECK(r == 0 && atoi(serv) == ntohs(a.sin_port), "getnameinfo of the getsockname address gives the port"); }
 	CHECK(listen(ls, 4) == 0, "listen");
 	int cs = socket(AF_INET, SOCK_STREAM, 0);
 	{ errno = 0; int r = setsockopt(cs, IPPROTO_TCP, 1 /* TCP_NODELAY */, &one, sizeof one); RDebug::Printf("[phelooptest] info: setsockopt(TCP_NODELAY) -> %d errno %d", r, errno); }
@@ -76,12 +81,34 @@ static void Other()
 	close(s);
 	}
 
+// getaddrinfo with no connection: a numeric address and "localhost" must resolve without one (libdbus asks AF_UNSPEC + AI_ADDRCONFIG | AI_PASSIVE)
+static void Resolve()
+	{
+	static const struct { const char* host; int family; int flags; } t[] = {
+		{ "127.0.0.1", AF_UNSPEC, AI_ADDRCONFIG | AI_PASSIVE },
+		{ "127.0.0.1", AF_UNSPEC, AI_PASSIVE },
+		{ "127.0.0.1", AF_INET, AI_PASSIVE },
+		{ "127.0.0.1", AF_INET, AI_NUMERICHOST },
+		{ "localhost", AF_INET, 0 },
+		{ "localhost", AF_UNSPEC, AI_ADDRCONFIG },
+		{ "::1", AF_UNSPEC, AI_NUMERICHOST } };
+	for (unsigned i = 0; i < sizeof t / sizeof t[0]; i++)
+		{
+		struct addrinfo hints, *res = 0;
+		memset(&hints, 0, sizeof hints); hints.ai_family = t[i].family; hints.ai_flags = t[i].flags; hints.ai_socktype = SOCK_STREAM;
+		int r = getaddrinfo(t[i].host, "0", &hints, &res);
+		RDebug::Printf("[phelooptest] getaddrinfo(%s, family %d, flags 0x%x) -> %d (%s)", t[i].host, t[i].family, t[i].flags, r, r ? gai_strerror(r) : "ok");
+		if (res) freeaddrinfo(res);
+		}
+	}
+
 GLDEF_C TInt E32Main()
 	{
 	RDebug::Printf("[phelooptest] start: loopback with no connection");
 	Tcp();
 	Udp();
 	Other();
+	Resolve();
 	RDebug::Printf("[phelooptest] done: %d passed, %d failed", gOk, gFail);
 	return gFail ? 1 : 0;
 	}
