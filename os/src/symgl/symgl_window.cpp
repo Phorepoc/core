@@ -518,7 +518,9 @@ extern "C" void symgl_window_release(void* aNative)
 
 extern "C" void symgl_log(const char* aMsg)
 	{
-	RDebug::Printf("%s", aMsg);
+	// (the "PH:" prefix: the phone's kernel seam forwards only those lines to PhoneLab -- without it Mesa's own lines,
+	// eglInitialize's renderer and the frame profile, never left the phone)
+	RDebug::Printf("PH: %s", aMsg);
 	}
 
 extern "C" unsigned symgl_now_us()
