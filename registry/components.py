@@ -510,6 +510,8 @@ COMPONENTS = {
                  # memset()'s own loop into a memset call (infinite recursion), and builtin folding
                  # turned calloc()'s malloc+memset body into a calloc call (infinite loop)
                  flags=["-fno-tree-loop-distribute-patterns", "-fno-builtin"],
+                 # x32 only: arith.h without Sudden_Underflow (x86 has gradual underflow; the ARM one flushes subnormals) -- dtoa() of subnormals
+                 incs_first=["toolchain/shims/libc_gdtoa_x32"],
                  # (ARM) getenv.c's `inline __findenv` is never emitted by GCC -> the libc export slot is an unimpl stub and
                  # setenv() dies EUSRNIMP: toolchain/shims/libc_findenv/getenv.c compiles it with `inline` defined away
                  drop=["getenv.c"], extra=["toolchain/shims/libc_findenv/getenv.c"],

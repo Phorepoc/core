@@ -49,7 +49,7 @@ static const TInt KMinFds = 8;
 static const TInt KMinConnections = 8;
 static const TInt KPopen3Fds = 3;
 
-static const TInt KDefaultPipeSz = 512;
+static const TInt KDefaultPipeSz = 65536;	// PHOREPOC: was 512 -- GLib pushes 128 MiB through a pipe (/mainloop/unix-fd); the pipe LDD allocates any size, Linux uses 64 KiB
 static const TInt KPipeReadHandle = 0;
 static const TInt KPipeWriteHandle = 1;
 
