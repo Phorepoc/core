@@ -345,6 +345,19 @@ extern "C" int symgl_window_size(void* aNative, unsigned* aWidth, unsigned* aHei
 
 // The window covers the whole screen and the focused window group is this process's. A note or another application
 // on top takes the focus; what is drawn over it later is the display driver's to notice (xk_vmwsvga.cpp).
+// Why a window is not the display, said once per change of reason (scan-out is decided again every 120 frames).
+static void SayFullscreen(TInt aReason, const TSize& aSize, const TPoint& aPos, unsigned aW, unsigned aH)
+	{
+	static TInt last = -1;
+	if (aReason == last)
+		return;
+	last = aReason;
+	if (aReason == 1)
+		RDebug::Printf("[symgl] scan-out: not full-screen (window %dx%d at %d,%d, display %ux%u)", aSize.iWidth, aSize.iHeight, aPos.iX, aPos.iY, aW, aH);
+	else if (aReason == 2)
+		RDebug::Printf("[symgl] scan-out: the focused window group is another process's");
+	}
+
 extern "C" int symgl_window_fullscreen(void* aNative, unsigned aW, unsigned aH)
 	{
 	if (!aNative)
@@ -353,7 +366,10 @@ extern "C" int symgl_window_fullscreen(void* aNative, unsigned aW, unsigned aH)
 	const TSize size = win->Size();
 	const TPoint pos = win->AbsPosition();
 	if (size.iWidth != (TInt)aW || size.iHeight != (TInt)aH || pos.iX != 0 || pos.iY != 0)
+		{
+		SayFullscreen(1, size, pos, aW, aH);
 		return 0;
+		}
 	// the window group that has the keys belongs to this process (a note or another application on top takes the focus)
 	TThreadId owner;
 	if (win->Session()->GetWindowGroupClientThreadId(win->Session()->GetFocusWindowGroup(), owner) != KErrNone)
@@ -369,6 +385,7 @@ extern "C" int symgl_window_fullscreen(void* aNative, unsigned aW, unsigned aH)
 		process.Close();
 		}
 	thread.Close();
+	SayFullscreen(mine ? 0 : 2, size, pos, aW, aH);
 	return mine;
 	}
 
