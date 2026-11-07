@@ -475,7 +475,7 @@ COMPONENTS = {
     # ftable.cpp + inc/sysif.h: OURS copies -- the fd table as a flat, pre-reserved array (the segmented one's unlocked
     "backend": dict(mmp=_OENV + "backend/group/backend.mmp", cdriver=True, allow_wsd=True, static_ctors=True, defs=["__SOFTFP="],
                     incs_first=["toolchain/shims/backend_board/inc"], arm_incs_first=True,   # (ftable.cpp needs its sysif.h on ARM too)
-                    drop=["ftable.cpp"], extra=["toolchain/shims/backend_board/ftable.cpp"]),
+                    drop=["ftable.cpp", "fdesc.cpp"], extra=["toolchain/shims/backend_board/ftable.cpp", "toolchain/shims/backend_board/fdesc.cpp"]),   # (fdesc.cpp: /dev/null = the null device, whose write() reports the bytes taken)
     # mutex.cpp + condvar.cpp: OURS copies fixing the static-initializer race (_InitOnce / _staticCondInit read the state
     "libpthread": dict(mmp=_OENV + "libpthread/group/libpthread.mmp", cdriver=True, allow_wsd=True, static_ctors=True, defs=["__SOFTFP="],
                        drop=["mutex.cpp", "condvar.cpp", "pthread_mutex_unlock.cpp", "pthread_mutex_trylock.cpp", "pthread_mutex_destroy.cpp"], extra=["toolchain/shims/libpthread_board/" + f for f in ("mutex.cpp", "condvar.cpp", "pthread_mutex_unlock.cpp", "pthread_mutex_trylock.cpp", "pthread_mutex_destroy.cpp")],
