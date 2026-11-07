@@ -514,11 +514,14 @@ COMPONENTS = {
                  incs_first=["toolchain/shims/libc_gdtoa_x32"],
                  # (ARM) getenv.c's `inline __findenv` is never emitted by GCC -> the libc export slot is an unimpl stub and
                  # setenv() dies EUSRNIMP: toolchain/shims/libc_findenv/getenv.c compiles it with `inline` defined away
-                 drop=["getenv.c"], extra=["toolchain/shims/libc_findenv/getenv.c"],
-                 x32_drop=["jmp_marm.cia", "vfscanf.c", "getenv.c"],
+                 # ualloc.cpp: malloc() rounds every request to a multiple of 8 (RHybridHeap's slab cells come in 4-byte
+                 # steps, so small blocks were 4 mod 8; GLib keeps lock bits in a pointer's low three bits)
+                 drop=["getenv.c", "ualloc.cpp"], extra=["toolchain/shims/libc_findenv/getenv.c", "toolchain/shims/libc_alloc8/ualloc.cpp"],
+                 x32_drop=["jmp_marm.cia", "vfscanf.c", "getenv.c", "ualloc.cpp"],
                  x32_extra=["toolchain/x32/x64user/xu_setjmp.cpp",
                             "toolchain/x32/x64user/libc_vfscanf_x32.c",
-                            "toolchain/shims/libc_findenv/getenv.c"]),
+                            "toolchain/shims/libc_findenv/getenv.c",
+                            "toolchain/shims/libc_alloc8/ualloc.cpp"]),
     # the comms/time client DLLs backend + libc import (thin RSessionBase clients: their servers
     # are absent, so Connect() fails cleanly instead of hitting a loud unimpl stub)
     "rpipe": dict(mmp="oss.FCL.sf.os.kernelhwsrv/kernel/eka/euser/rpipe.mmp"),
