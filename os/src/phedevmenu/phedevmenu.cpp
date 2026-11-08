@@ -25,6 +25,7 @@
 #include <phedevmenu.rsg>
 #include "phedevmenu.hrh"
 #include "phedevmenu.h"
+#include "pheshells.h"
 
 class CPheDevList : public CAknSettingItemList
 	{
@@ -44,16 +45,55 @@ public:
 	// the item is hidden (and key 1 keeps the ROM default for that shell)
 	void HideShellIfFixedL()
 		{
-		if (PheShellsInRom() == (KPheShellsS3 | KPheShellsS4))   // the ROM, not key 6 (persisted to C:)
+		if (iShells.Count() > 1)
 			return;
 		for (TInt i = 0; i < SettingItemArray()->Count(); i++)
 			if ((*SettingItemArray())[i]->Identifier() == EPheItemShell)
 				(*SettingItemArray())[i]->SetHidden(ETrue);
 		HandleChangeInItemArrayOrVisibilityL();
 		}
+	~CPheDevList() { iShells.Close(); }
+	// the UI shell item lists every shell there is (pheshells.h: built in + installed); the item's value is the index
+	void ListShellsL()
+		{
+		RFs fs;
+		User::LeaveIfError(fs.Connect());
+		PheListShells(fs, iShells);
+		fs.Close();
+		}
+	void FillShellItemL()
+		{
+		for (TInt i = 0; i < SettingItemArray()->Count(); i++)
+			{
+			CAknSettingItem* it = (*SettingItemArray())[i];
+			if (it->Identifier() != EPheItemShell)
+				continue;
+			CAknEnumeratedTextPopupSettingItem* e = static_cast<CAknEnumeratedTextPopupSettingItem*>(it);
+			e->EnumeratedTextArray()->ResetAndDestroy();
+			e->PoppedUpTextArray()->ResetAndDestroy();
+			for (TInt k = 0; k < iShells.Count(); k++)
+				{
+				HBufC* t1 = iShells[k].iName.AllocLC();
+				CAknEnumeratedText* et = new (ELeave) CAknEnumeratedText(k, t1);
+				CleanupStack::Pop(t1);
+				CleanupStack::PushL(et);
+				e->EnumeratedTextArray()->AppendL(et);
+				CleanupStack::Pop(et);
+				HBufC* t2 = iShells[k].iName.AllocLC();
+				e->PoppedUpTextArray()->AppendL(t2);
+				CleanupStack::Pop(t2);
+				}
+			e->LoadL();
+			}
+		}
 	void LoadValues()
 		{
-		iShell = Get(KPheDevKeyShell, KPheShellS3);
+		TBuf<24> id;
+		PheSelectedShellId(&iRepo, id);
+		iShell = 0;
+		for (TInt i = 0; i < iShells.Count(); i++)
+			if (iShells[i].iId.CompareF(id) == 0)
+				iShell = i;
 		iCp = Get(KPheDevKeyCpShortcut, 0);
 		iGuard = Get(KPheDevKeyGuardTimeout, KPheGuardDefault);
 		iRender = Get(KPheDevKeyRenderer, KPheRendererClassic);
@@ -95,7 +135,15 @@ private:
 		}
 	void Save()
 		{
-		TInt e1 = iRepo.Set(KPheDevKeyShell, iShell);
+		TInt e1 = KErrNone;
+		if (iShell >= 0 && iShell < iShells.Count())
+			{
+			TBuf<24> was;
+			PheSelectedShellId(&iRepo, was);
+			PheStoreShellId(&iRepo, iShells[iShell].iId);
+			if (was.CompareF(iShells[iShell].iId) != 0)
+				iRepo.Set(KPheDevKeyShellTries, 0);	// a new choice starts the failure count afresh
+			}
 		TInt e2 = iRepo.Set(KPheDevKeyCpShortcut, iCp);
 		TInt e3 = iRepo.Set(KPheDevKeyGuardTimeout, iGuard);
 		TInt e4 = iRepo.Set(KPheDevKeyRenderer, iRender);
@@ -106,6 +154,7 @@ private:
 		RDebug::Printf("[phedevmenu] saved: shell=%d cpshortcut=%d guard=%d (%d %d %d)", iShell, iCp, iGuard, e1, e2, e3);
 		}
 	CRepository& iRepo;
+	RArray<TPheShell> iShells;
 	TInt iShell, iCp, iGuard, iRender, iAa, iGpu, iCompose;
 	};
 
@@ -124,7 +173,10 @@ public:
 		iList->SetContainerWindowL(*this);
 		iList->SetMopParent(this);
 		iList->ConstructFromResourceL(R_PHEDEVMENU_ITEMS);
+		iList->ListShellsL();
 		iList->LoadValues();
+		iList->LoadSettingsL();
+		iList->FillShellItemL();
 		iList->LoadSettingsL();
 		iList->HideRendererIfFixedL();
 		iList->HideShellIfFixedL();

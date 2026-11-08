@@ -13,3 +13,5 @@ COMPONENTS = {
     # the Control Panel (Device) entry "Developer menu", visible while the shortcut setting is on
     "gsphedevmenu": dict(mmp=os.path.join(OS_ROOT, "src/phedevmenu/gsphedevmenu.mmp")),
 }
+
+COMPONENTS["gsphshell"] = dict(mmp=os.path.join(OS_ROOT, "src/phedevmenu/gsphshell.mmp"))   # Control Panel (Device) "UI shell": the shells there are + a restart
