@@ -809,8 +809,11 @@ TInt svElfDerivedGetImportInfo(TAny* aPtr)
 	TUint32* iol = info.iImportOffsetList;
 
 	TUint32* iolEnd = iol+count;
+	// PHOREPOC: the list holds ORDINALS (CheckRequiredImports compares them with the exporter's export count): a location's composite
+	// value is ordinal (low 16 bits) | adjustment (upper 16), so the adjustment is masked off. x32 code carries adjustments on
+	// function imports; unmasked, a RAM-loaded EXE failed RImageFinder's import check (KErrNotSupported, -5)
 	while(iol<iolEnd)
-		*dest++ = *(TUint32*)(code + *iol++);
+		*dest++ = (*(TUint32*)(code + *iol++)) & 0xffff;
 		
 	return 0;
 	}
