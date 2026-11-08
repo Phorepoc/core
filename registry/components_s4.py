@@ -47,6 +47,10 @@ _QTINC = os.path.join(QTB, "qt-symbian", "include")
 _HBFLAGS = _MKSPECS + ["-I" + _QTINC] + ["-I" + os.path.join(_QTINC, m) for m in
                                         ("QtCore", "QtGui", "QtNetwork", "QtSvg", "QtXml", "QtSql")]
 
+# The S^4 build's own include path, ahead of .epoc32 (per-path configuration): the S^4 platform header syslangutil.h (Hb's
+# locale code uses SysLangUtil::ChangeLanguage / GetInstalledRegions / ChangeRegion, which the S^3 header does not declare)
+_HBFLAGS = ["-I" + os.path.join(OS_ROOT, "toolchain", "shims", "hb_board", "include")] + _HBFLAGS
+
 
 def _hb(sub: str, mmp: str, deffile=None, **kw) -> dict:
     """An Orbit (hb) component: its qmake-generated mmp, staged into hb-src/src/<sub> (hb_configure_symbian.sh)."""

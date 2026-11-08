@@ -918,10 +918,8 @@ COMPONENTS = {
     "oommonitor": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appsupport/sysresmonitoring/oommonitor/group/oommonitor.mmp",
                        rom_data=["private\\10207218\\oomconfig.xml=baseline/symbian-rcl3/oss.FCL.sf.mw.appsupport/sysresmonitoring/oommonitor/data/oomconfig.xml"]),
     # OURS: null provider (real ordinal table) -- see toolchain/shims/goommonitor_null/
-    # OURS: null Orbit core -- eiksrvui reports a dead app through CHbDeviceDialogSymbian (S^4
-    # migration); as unimpl stubs that turned any app crash into an eiksrvs panic + kernel fault
-    "hbcore": dict(mmp=os.path.join(OS_ROOT, "toolchain/shims/hbcore_null/hbcore_null.mmp"),
-                   **{"def": "oss.FCL.sf.mw.hb/src/hbcore/defs/eabi/HbCoreu.def"}),
+    # (no null HbCore here any more, 2026-11-08: the RCL_3 eiksrvui does not use Orbit -- nothing in an S^3 image imports
+    # HbCore -- and a ROM file of that name would eclipse-block the Orbit package, whose HbCore is the real one)
     "goommonitor": dict(mmp=os.path.join(OS_ROOT, "toolchain/shims/goommonitor_null/goommonitor_null.mmp"),
                         **{"def": "oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/goommonitor/eabi/goommonitoru.DEF"}),
     "bitmaptransforms": dict(mmp="oss.FCL.sf.os.mmimaging/imaging/imagingfws/BitmapTransform/MmpFiles/BitmapTransforms.mmp"),
