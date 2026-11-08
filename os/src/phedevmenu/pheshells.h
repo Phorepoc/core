@@ -40,11 +40,12 @@ _LIT(KPheShellsDir, "\resource\phe\shells\\");
 class TPheShell
 	{
 public:
-	TBuf<24> iId;
-	TBuf<40> iName;
-	TBuf<KMaxFileName> iStart;		// start list ("" = none)
-	TBuf<KMaxFileName> iLauncher;
-	TBuf<KMaxFileName> iIcon;
+	// small on purpose: RArray<TPheShell> panics (USER 129) with an entry over 640 bytes
+	TBuf<16> iId;
+	TBuf<32> iName;
+	TBuf<80> iStart;		// start list ("" = none)
+	TBuf<80> iLauncher;
+	TBuf<48> iIcon;
 	TBool iBuiltin;
 	};
 
@@ -73,9 +74,9 @@ inline void PheShellParse(const TDesC8& aText, TChar aDrive, TPheShell& aShell)
 			}
 		if (key.CompareF(_L("id")) == 0) aShell.iId.Copy(val.Left(aShell.iId.MaxLength()));
 		else if (key.CompareF(_L("name")) == 0) aShell.iName.Copy(val.Left(aShell.iName.MaxLength()));
-		else if (key.CompareF(_L("start")) == 0) aShell.iStart.Copy(val);
-		else if (key.CompareF(_L("launcher")) == 0) aShell.iLauncher.Copy(val);
-		else if (key.CompareF(_L("icon")) == 0) aShell.iIcon.Copy(val);
+		else if (key.CompareF(_L("start")) == 0) aShell.iStart.Copy(val.Left(aShell.iStart.MaxLength()));
+		else if (key.CompareF(_L("launcher")) == 0) aShell.iLauncher.Copy(val.Left(aShell.iLauncher.MaxLength()));
+		else if (key.CompareF(_L("icon")) == 0) aShell.iIcon.Copy(val.Left(aShell.iIcon.MaxLength()));
 		}
 	}
 
