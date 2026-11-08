@@ -374,3 +374,8 @@ if QT48:
     # (their mmps resolve into the 4.8 tree, where the 4.7-only ones -- qts60plugin_5_0 ... -- do not exist)
     for _k in [k for k, c in COMPONENTS.items() if os.path.normpath(c.get("mmp", "")).startswith(os.path.normpath(QT) + os.sep)]:
         del COMPONENTS[_k]
+
+# The S^4 set (Orbit: orbit-ui package) installs through the Catalogue, so its images are RAM-loaded: `sis` (build_mmp_x32.py:
+# exports inside the code, pcrel relocations, the mmp's capabilities -- what the installer's loader check wants)
+for _c in COMPONENTS.values():
+    _c.setdefault("sis", True)

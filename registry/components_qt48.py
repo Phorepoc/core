@@ -289,3 +289,9 @@ for _k, (_m, _f, _r) in _QPLUG.items():
     COMPONENTS["qt48_plug_" + _k] = _qt(_m, _f, rom=_r, allow_wsd=True, cdriver=True, rtti=True, sis=True,
                                         flags=_QINCS + (_PHINC if _k == "phonon_mmf" else []),
                                         **(_STLOFF_FIRST if _k == "phonon_mmf" else {}))
+
+# The Qt package (qt-symbian: qt48_* modules and plug-ins) installs through the Catalogue, so these images are RAM-loaded: `sis`
+# (build_mmp_x32.py: exports inside the code, pcrel relocations, the mmp's capabilities -- what the installer's loader check wants)
+for _k in "qt48_core qt48_gui qt48_network qt48_svg qt48_xml qt48_sql qt48_script qt48_declarative qt48_multimedia qt48_opengl qt48_openvg qt48_xmlpatterns qt48_phonon qt48_testlib qt48_plug_qgif qt48_plug_qtiff qt48_plug_qico qt48_plug_qjpeg qt48_plug_qmng qt48_plug_qsvg qt48_plug_qcncodecs qt48_plug_qjpcodecs qt48_plug_qkrcodecs qt48_plug_qtwcodecs qt48_plug_qsvgicon qt48_plug_qsymbianbearer qt48_plug_phonon_mmf qt48_plug_qvggraphicssystem qt48_plug_qglgraphicssystem qt48_plug_qmlfolderlistmodelplugin qt48_plug_qmlgesturesplugin qt48_plug_qmlparticlesplugin qt48_plug_qmlshadersplugin".split():
+    if _k in COMPONENTS:
+        COMPONENTS[_k]["sis"] = True
