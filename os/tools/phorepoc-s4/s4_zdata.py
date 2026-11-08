@@ -81,8 +81,8 @@ HS_DATA += [
     (r"resource\qt\plugins\activitytsplugin.qtplugin",
      f"{HSRVR}/taskswitcher/activitytsplugin/qmakepluginstubs/activitytsplugin.qtplugin"),
     (r"resource\taskswitcher\activitytsplugin.xml", f"{HSRVR}/taskswitcher/activitytsplugin/data/activitytsplugin.xml"),
-    (r"private\200267af\tstaskmonitorclient.qtplugin",
-     f"{HSRVR}/taskswitcher/client/qmakepluginstubs/tstaskmonitorclient.qtplugin"),
+    # (no stub for tstaskmonitorclient.dll: a linked DLL, not a Qt plug-in. qmake writes one anyway, but taskswitcher/rom/tstaskmonitor_core.iby
+    # and sis/taskmonitor.pkg ship only the DLL and nothing calls QPluginLoader on it)
     # Orbit's device dialog server finds its plug-ins in \resource\plugins\devicedialogs
     (r"resource\plugins\devicedialogs\tsdevicedialogplugin.qtplugin",
      f"{HSRVR}/taskswitcher/tsdevicedialogplugin/qmakepluginstubs/tsdevicedialogplugin.qtplugin"),
