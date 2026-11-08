@@ -325,7 +325,7 @@ namespace
 		sCopy += pt1 - pt0; sGc += pt2 - pt1; sFlush += pt3 - pt2;
 		if (++sN == 600)
 			{
-			RDebug::Printf("[symgl] bitmap present per 600 frames: copy %u ms, gc activate+BitBlt+deactivate %u ms, RWsSession::Flush %u ms", sCopy, sGc, sFlush);
+			RDebug::Printf("PH: [symgl] bitmap present per 600 frames: copy %u ms, gc activate+BitBlt+deactivate %u ms, RWsSession::Flush %u ms", sCopy, sGc, sFlush);
 			sCopy = sGc = sFlush = sN = 0;
 			}
 		}
@@ -353,9 +353,9 @@ static void SayFullscreen(TInt aReason, const TSize& aSize, const TPoint& aPos, 
 		return;
 	last = aReason;
 	if (aReason == 1)
-		RDebug::Printf("[symgl] scan-out: not full-screen (window %dx%d at %d,%d, display %ux%u)", aSize.iWidth, aSize.iHeight, aPos.iX, aPos.iY, aW, aH);
+		RDebug::Printf("PH: [symgl] scan-out: not full-screen (window %dx%d at %d,%d, display %ux%u)", aSize.iWidth, aSize.iHeight, aPos.iX, aPos.iY, aW, aH);
 	else if (aReason == 2)
-		RDebug::Printf("[symgl] scan-out: the focused window group is another process's");
+		RDebug::Printf("PH: [symgl] scan-out: the focused window group is another process's");
 	}
 
 extern "C" int symgl_window_fullscreen(void* aNative, unsigned aW, unsigned aH)
@@ -404,7 +404,7 @@ extern "C" int symgl_window_display_rotation(void* aNative)
 	TInt degrees = 0;
 	const TInt r = device->Construct();
 	if (r != KErrNone)
-		RDebug::Printf("[symgl] screen device for the rotation -> %d", r);
+		RDebug::Printf("PH: [symgl] screen device for the rotation -> %d", r);
 	else
 		{
 		TPixelsTwipsAndRotation mode;
@@ -415,7 +415,7 @@ extern "C" int symgl_window_display_rotation(void* aNative)
 		if (m * 1000 + degrees != said)
 			{
 			said = m * 1000 + degrees;
-			RDebug::Printf("[symgl] screen mode %d: %dx%d, rotation %d", m, mode.iPixelSize.iWidth, mode.iPixelSize.iHeight, degrees);
+			RDebug::Printf("PH: [symgl] screen mode %d: %dx%d, rotation %d", m, mode.iPixelSize.iWidth, mode.iPixelSize.iHeight, degrees);
 			}
 		}
 	delete device;
@@ -485,7 +485,7 @@ extern "C" void symgl_window_present(void* aNative, int aBuf)
 	st->iWork.Signal();
 	++st->iSubmitNo;
 	if (st->iSubmitNo % 120 == 0)
-		RDebug::Printf("[symgl] displayed: ok %u overflow %u notvisible %u uncomposed %u other %u (last other code %d; submits %u)",
+		RDebug::Printf("PH: [symgl] displayed: ok %u overflow %u notvisible %u uncomposed %u other %u (last other code %d; submits %u)",
 			gDispOk, gDispOverflow, gDispNotVisible, gDispUncomposed, gDispOther, gDispOtherCode, st->iSubmitNo);
 	// the swap interval runs from this present, or from the previous deadline when we are keeping up (no drift)
 	const TInt64 now = (TInt64)User::NTickCount() * 1000;
