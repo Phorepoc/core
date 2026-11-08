@@ -47,9 +47,10 @@ _QTINC = os.path.join(QTB, "qt-symbian", "include")
 _HBFLAGS = _MKSPECS + ["-I" + _QTINC] + ["-I" + os.path.join(_QTINC, m) for m in
                                         ("QtCore", "QtGui", "QtNetwork", "QtSvg", "QtXml", "QtSql")]
 
-# The S^4 build's own include path, ahead of .epoc32 (per-path configuration): the S^4 platform header syslangutil.h (Hb's
-# locale code uses SysLangUtil::ChangeLanguage / GetInstalledRegions / ChangeRegion, which the S^3 header does not declare)
-_HBFLAGS = ["-I" + os.path.join(OS_ROOT, "toolchain", "shims", "hb_board", "include")] + _HBFLAGS
+# The S^4 build's own header ahead of .epoc32 (per-path configuration): the S^4 platform header syslangutil.h (Hb's locale code uses
+# SysLangUtil::ChangeLanguage / GetInstalledRegions / ChangeRegion, which the S^3 header does not declare). A -I dir does not win over the
+# export tree on the compile line, so HbCore force-includes it (the header's guard then skips the S^3 one)
+_S4SYSLANG = ["-include", os.path.join(OS_ROOT, "toolchain", "shims", "hb_board", "include", "syslangutil.h")]
 
 
 def _hb(sub: str, mmp: str, deffile=None, **kw) -> dict:
@@ -285,7 +286,7 @@ COMPONENTS = {
                         "qtmobileextensions/src/eabi/xqkeycaptureu.def", rom="xqkeycapture.dll"),
     "xqsystemtoneservice": _qx(QTE, "qtmobileextensions/src/systemtoneservice/xqsystemtoneservice_dll.mmp",
                                "qtmobileextensions/src/eabi/xqsystemtoneserviceu.def", rom="xqsystemtoneservice.dll"),
-    "hbcore": _hb("hbcore", "HbCore_dll.mmp", "hbcore/defs/eabi/HbCoreu.def", rom="HbCore.dll"),
+    "hbcore": _hb("hbcore", "HbCore_dll.mmp", "hbcore/defs/eabi/HbCoreu.def", rom="HbCore.dll", x32_flags=_S4UNDEFS + _S4SYSLANG),
     "hbwidgets": _hb("hbwidgets", "HbWidgets_dll.mmp", "hbwidgets/defs/eabi/HbWidgetsu.def", rom="HbWidgets.dll"),
     "hbutils": _hb("hbutils", "HbUtils_dll.mmp", "hbutils/defs/eabi/HbUtilsu.def", rom="HbUtils.dll"),
     "hbinput": _hb("hbinput", "HbInput_dll.mmp", "hbinput/defs/eabi/HbInputu.def", rom="HbInput.dll"),
