@@ -359,6 +359,29 @@ static void SayFullscreen(TInt aReason, const TSize& aSize, const TPoint& aPos, 
 		RDebug::Printf("PH: [symgl] scan-out: the focused window group is another process's");
 	}
 
+// The pixel size of the window server's current screen mode (logical, as the applications see it); 0 on failure. A window server round trip.
+static TBool ScreenModeSize(RWindow* aWin, TSize& aSize)
+	{
+	if (RFbsSession::GetSession() == NULL && RFbsSession::Connect() != KErrNone)
+		return EFalse;
+	CWsScreenDevice* device = new CWsScreenDevice(*aWin->Session());
+	if (!device)
+		return EFalse;
+	TBool ok = EFalse;
+	if (device->Construct() == KErrNone)
+		{
+		TPixelsTwipsAndRotation mode;
+		device->GetScreenModeSizeAndRotation(device->CurrentScreenMode(), mode);
+		aSize = mode.iPixelSize;
+		ok = aSize.iWidth > 0 && aSize.iHeight > 0;
+		}
+	delete device;
+	return ok;
+	}
+
+// aW x aH is the display; the result is the factor k >= 1 by which the window's screen is blown up onto it (the kernel's pixel doubling of a
+// 2x display: SCREEN/SCALE of make_ekern.sh), or 0 when the window is not that screen. k > 1 needs the window to be the window server's
+// whole screen (a half-size window of a real 720x1280 screen is not a doubled display).
 extern "C" int symgl_window_fullscreen(void* aNative, unsigned aW, unsigned aH)
 	{
 	if (!aNative)
@@ -366,10 +389,24 @@ extern "C" int symgl_window_fullscreen(void* aNative, unsigned aW, unsigned aH)
 	RWindow* win = static_cast<RWindow*>(aNative);
 	const TSize size = win->Size();
 	const TPoint pos = win->AbsPosition();
-	if (size.iWidth != (TInt)aW || size.iHeight != (TInt)aH || pos.iX != 0 || pos.iY != 0)
+	TInt scale = 0;
+	for (TInt k = 1; k <= 4 && !scale; ++k)
+		if (size.iWidth * k == (TInt)aW && size.iHeight * k == (TInt)aH)
+			scale = k;
+	if (!scale || pos.iX != 0 || pos.iY != 0)
 		{
 		SayFullscreen(1, size, pos, aW, aH);
 		return 0;
+		}
+	if (scale > 1)
+		{
+		TSize screen;
+		if (!ScreenModeSize(win, screen) || screen != size)
+			{
+			RDebug::Printf("PH: [symgl] scan-out: a window of %dx%d on a %dx%d screen is not a %dx scaled display", size.iWidth, size.iHeight, screen.iWidth, screen.iHeight, scale);
+			SayFullscreen(1, size, pos, aW, aH);
+			return 0;
+			}
 		}
 	// the window group that has the keys belongs to this process (a note or another application on top takes the focus)
 	TThreadId owner;
@@ -387,7 +424,7 @@ extern "C" int symgl_window_fullscreen(void* aNative, unsigned aW, unsigned aH)
 		}
 	thread.Close();
 	SayFullscreen(mine ? 0 : 2, size, pos, aW, aH);
-	return mine;
+	return mine ? scale : 0;
 	}
 
 // The rotation of the screen mode the window server is in (wsini.txt: SCR_ROTATIONn), in degrees: how the window server

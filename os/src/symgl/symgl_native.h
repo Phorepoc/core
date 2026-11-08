@@ -30,7 +30,7 @@ typedef struct {
 /* the window's current size in pixels; 0 if aWindow is not usable */
 int symgl_window_size(void *native_window, unsigned *width, unsigned *height);
 
-/* the window covers the whole screen of w x h pixels (its size, and its position (0,0)); window server round trips: call it rarely */
+/* the window covers the whole screen; w x h is the display: the result is the factor (1..4) by which the window server's screen is blown up onto it (the kernel's pixel doubling), 0 = no; window server round trips: call it rarely */
 int symgl_window_fullscreen(void *native_window, unsigned w, unsigned h);
 
 /* the rotation of the window server's current screen mode in degrees (0, 90, 180, 270): 90 = an application's (x, y) is the
