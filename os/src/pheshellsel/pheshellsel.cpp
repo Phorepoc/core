@@ -237,6 +237,52 @@ static void StartListL(const TDesC& aList)
 	CleanupStack::PopAndDestroy(&fs);
 	}
 
+// The shell's CenRep initialisation files (description key cenrep=<folder>): the installer cannot write \private\10202be9\ for a
+// package, so the files travel in the package's own folder and are copied into the repository's install directory (the system
+// drive's \private\10202be9\) when the shell is started -- when absent or different from the packaged one
+static void ActivateCenRep(const TDesC& aDir)
+	{
+	if (aDir.Length() == 0)
+		return;
+	RFs fs;
+	if (fs.Connect() != KErrNone)
+		return;
+	CFileMan* fm = NULL;
+	TRAPD(err, fm = CFileMan::NewL(fs));
+	if (err == KErrNone)
+		{
+		TFileName dstDir;
+		dstDir.Append(TChar(fs.GetSystemDriveChar()));
+		dstDir.Append(_L(":\\private\\10202be9\\"));
+		fs.MkDirAll(dstDir);
+		TFileName pattern(aDir);
+		if (pattern.Length() && pattern[pattern.Length() - 1] != '\\')
+			pattern.Append('\\');
+		TFileName srcDir(pattern);
+		pattern.Append(_L("*.txt"));
+		CDir* list = NULL;
+		if (fs.GetDir(pattern, KEntryAttNormal, ESortByName, list) == KErrNone)
+			{
+			for (TInt i = 0; list && i < list->Count(); i++)
+				{
+				const TEntry& e = (*list)[i];
+				TFileName src(srcDir);
+				src.Append(e.iName);
+				TFileName dst(dstDir);
+				dst.Append(e.iName);
+				TEntry have;
+				if (fs.Entry(dst, have) == KErrNone && have.iSize == e.iSize)
+					continue;
+				const TInt r = fm->Copy(src, dst, CFileMan::EOverWrite);
+				RDebug::Print(_L("PH: [shellsel] cenrep %S: %d"), &e.iName, r);
+				}
+			}
+		delete list;
+		delete fm;
+		}
+	fs.Close();
+	}
+
 static void SetRepoInt(CRepository* aRepo, TUint32 aKey, TInt aVal)
 	{
 	if (aRepo)
@@ -287,6 +333,8 @@ static TInt RunShellL()
 	RDebug::Print(_L("PH: [shellsel] repo %d, starting %S (fallback %d)"), rerr, &shell->Id(), fellBack);
 	RProcess launcher;
 	TInt r = KErrNone;
+	if (!s3)
+		ActivateCenRep(shell->CenRep());
 	while (!s3)
 		{
 		if (shell->Start().Length())
