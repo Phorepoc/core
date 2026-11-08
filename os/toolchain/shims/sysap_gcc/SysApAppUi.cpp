@@ -204,7 +204,7 @@ static CAsyncCallBack* PhRestartCb = NULL;
 // from S^4, which has no S^3 dialer for the developer menu's secret code. Writes the dev menu's key 1, then restarts
 // (pheshellsel picks the shell at boot; src/phedevmenu/phedevmenu.h)
 static TInt PhShellSelection = KErrNotFound;
-static TBuf<24> PhShellTargetId;
+static HBufC* PhShellTargetId;
 static TInt PhDoRestart( TAny* aAppUi )
     {
     TRAP_IGNORE( static_cast<CSysApAppUi*>( aAppUi )->DoShutdownL( ETrue, RStarterSession::ELanguageSwitchReset ) );
@@ -3914,30 +3914,34 @@ void CSysApAppUi::ShowPowerKeyPopUpMenuL()
             }
         PhShellSelection = KErrNotFound;
         // 2026-11-08: every shell there is (built in + installed, pheshells.h): "Switch to <the next one>"
-        RArray<TPheShell> phShells;
+        RPheShells phShells;
         {
         RFs phFs;
-        if ( phFs.Connect() == KErrNone ) { PheListShells( phFs, phShells ); phFs.Close(); }
+        if ( phFs.Connect() == KErrNone ) { TRAP_IGNORE( PheListShellsL( phFs, phShells ) ); phFs.Close(); }
         }
         if ( !IsEncryptionOperationOngoingL() && phShells.Count() > 1 )
             {
-            TBuf<24> cur;
             CRepository* rep = NULL;
             TRAP_IGNORE( rep = CRepository::NewL( KPheDevMenuRepoUid ) );
-            PheSelectedShellId( rep, cur );
+            HBufC* cur = NULL;
+            TRAP_IGNORE( cur = PheSelectedShellIdL( rep ) );
             delete rep;
             TInt idx = 0;
-            for ( TInt i = 0; i < phShells.Count(); i++ )
-                if ( phShells[i].iId.CompareF( cur ) == 0 ) idx = i;
-            const TPheShell& next = phShells[( idx + 1 ) % phShells.Count()];
-            PhShellTargetId.Copy( next.iId );
-            TBuf<64> cap( _L("Switch to ") );
-            cap.Append( next.iName );
-            profileNameCDesCArray->InsertL( powerMenuItemIndex, cap );
+            for ( TInt i = 0; cur && i < phShells.Count(); i++ )
+                if ( phShells[i]->Id().CompareF( *cur ) == 0 ) idx = i;
+            delete cur;
+            const CPheShell& next = *phShells[( idx + 1 ) % phShells.Count()];
+            delete PhShellTargetId;
+            PhShellTargetId = next.Id().AllocL();
+            HBufC* cap = HBufC::NewLC( next.Name().Length() + 10 );
+            cap->Des().Copy( _L("Switch to ") );
+            cap->Des().Append( next.Name() );
+            profileNameCDesCArray->InsertL( powerMenuItemIndex, *cap );
+            CleanupStack::PopAndDestroy( cap );
             PhShellSelection = powerMenuItemIndex;
             powerMenuItemIndex++;
             }
-        phShells.Close();
+        PheShellsClose( phShells );
 
         iPowerkeyMenuLockKeypadShown     = EFalse;
         iPowerkeyMenuExitSapShown        = EFalse;
@@ -4145,7 +4149,7 @@ void CSysApAppUi::PowerKeyPopUpMenuSelectionDoneL( TInt aSelection )
             {
             CRepository* rep = NULL;
             TRAP_IGNORE( rep = CRepository::NewL( KPheDevMenuRepoUid ) );
-            if ( rep ) { PheStoreShellId( rep, PhShellTargetId ); rep->Set( KPheDevKeyShellTries, 0 ); delete rep; }
+            if ( rep ) { if ( PhShellTargetId ) PheStoreShellId( rep, *PhShellTargetId ); rep->Set( KPheDevKeyShellTries, 0 ); delete rep; }
             if ( !PhRestartCb )
                 {
                 PhRestartCb = new ( ELeave ) CAsyncCallBack( TCallBack( PhDoRestart, this ), CActive::EPriorityStandard );

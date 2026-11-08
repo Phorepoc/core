@@ -52,13 +52,13 @@ public:
 				(*SettingItemArray())[i]->SetHidden(ETrue);
 		HandleChangeInItemArrayOrVisibilityL();
 		}
-	~CPheDevList() { iShells.Close(); }
+	~CPheDevList() { PheShellsClose(iShells); }
 	// the UI shell item lists every shell there is (pheshells.h: built in + installed); the item's value is the index
 	void ListShellsL()
 		{
 		RFs fs;
 		User::LeaveIfError(fs.Connect());
-		PheListShells(fs, iShells);
+		TRAP_IGNORE(PheListShellsL(fs, iShells));
 		fs.Close();
 		}
 	void FillShellItemL()
@@ -73,13 +73,13 @@ public:
 			e->PoppedUpTextArray()->ResetAndDestroy();
 			for (TInt k = 0; k < iShells.Count(); k++)
 				{
-				HBufC* t1 = iShells[k].iName.AllocLC();
+				HBufC* t1 = iShells[k]->Name().AllocLC();
 				CAknEnumeratedText* et = new (ELeave) CAknEnumeratedText(k, t1);
 				CleanupStack::Pop(t1);
 				CleanupStack::PushL(et);
 				e->EnumeratedTextArray()->AppendL(et);
 				CleanupStack::Pop(et);
-				HBufC* t2 = iShells[k].iName.AllocLC();
+				HBufC* t2 = iShells[k]->Name().AllocLC();
 				e->PoppedUpTextArray()->AppendL(t2);
 				CleanupStack::Pop(t2);
 				}
@@ -88,12 +88,13 @@ public:
 		}
 	void LoadValues()
 		{
-		TBuf<24> id;
-		PheSelectedShellId(&iRepo, id);
+		HBufC* id = NULL;
+		TRAP_IGNORE(id = PheSelectedShellIdL(&iRepo));
 		iShell = 0;
-		for (TInt i = 0; i < iShells.Count(); i++)
-			if (iShells[i].iId.CompareF(id) == 0)
+		for (TInt i = 0; id && i < iShells.Count(); i++)
+			if (iShells[i]->Id().CompareF(*id) == 0)
 				iShell = i;
+		delete id;
 		iCp = Get(KPheDevKeyCpShortcut, 0);
 		iGuard = Get(KPheDevKeyGuardTimeout, KPheGuardDefault);
 		iRender = Get(KPheDevKeyRenderer, KPheRendererClassic);
@@ -138,11 +139,12 @@ private:
 		TInt e1 = KErrNone;
 		if (iShell >= 0 && iShell < iShells.Count())
 			{
-			TBuf<24> was;
-			PheSelectedShellId(&iRepo, was);
-			PheStoreShellId(&iRepo, iShells[iShell].iId);
-			if (was.CompareF(iShells[iShell].iId) != 0)
+			HBufC* was = NULL;
+			TRAP_IGNORE(was = PheSelectedShellIdL(&iRepo));
+			PheStoreShellId(&iRepo, iShells[iShell]->Id());
+			if (!was || was->CompareF(iShells[iShell]->Id()) != 0)
 				iRepo.Set(KPheDevKeyShellTries, 0);	// a new choice starts the failure count afresh
+			delete was;
 			}
 		TInt e2 = iRepo.Set(KPheDevKeyCpShortcut, iCp);
 		TInt e3 = iRepo.Set(KPheDevKeyGuardTimeout, iGuard);
@@ -154,7 +156,7 @@ private:
 		RDebug::Printf("[phedevmenu] saved: shell=%d cpshortcut=%d guard=%d (%d %d %d)", iShell, iCp, iGuard, e1, e2, e3);
 		}
 	CRepository& iRepo;
-	RArray<TPheShell> iShells;
+	RPheShells iShells;
 	TInt iShell, iCp, iGuard, iRender, iAa, iGpu, iCompose;
 	};
 
