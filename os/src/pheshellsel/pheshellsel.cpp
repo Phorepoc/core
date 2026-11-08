@@ -42,7 +42,8 @@ static TInt ChooseShellL(CRepository* aRepo, const RPheShells& aShells, TBool& a
 	return pick;
 	}
 
-// Menu key held at boot: a window group capturing the key sees its down event (or the keyboard's auto-repeat) at once
+// Menu key held at boot: a window group capturing the key (up and down events) sees its down event, or the keyboard's
+// auto-repeat, within the first moments; any other window server event (focus, group list changes ...) is not the key
 static TBool MenuKeyHeld()
 	{
 	RWsSession ws;
@@ -54,23 +55,28 @@ static TBool MenuKeyHeld()
 		{
 		grp.EnableReceiptOfFocus(EFalse);
 		const TInt kh = grp.CaptureKeyUpAndDowns(EStdKeyApplication0, 0, 0, 5000);
-		TRequestStatus st;
-		ws.EventReady(&st);
 		RTimer timer;
 		timer.CreateLocal();
 		TRequestStatus ts;
 		timer.After(ts, 1500000);
-		User::WaitForRequest(st, ts);
-		if (st == KRequestPending)
+		while (!held)
 			{
-			ws.EventReadyCancel();
-			User::WaitForRequest(st);
-			}
-		else
-			{
-			held = ETrue;
+			TRequestStatus st;
+			ws.EventReady(&st);
+			User::WaitForRequest(st, ts);
+			if (st == KRequestPending)
+				{
+				ws.EventReadyCancel();
+				User::WaitForRequest(st);
+				break;			// the time is up
+				}
 			TWsEvent ev;
 			ws.GetEvent(ev);
+			if (ev.Type() == EEventKeyDown && ev.Key()->iScanCode == EStdKeyApplication0)
+				held = ETrue;
+			}
+		if (held)
+			{
 			timer.Cancel();
 			User::WaitForRequest(ts);
 			}
