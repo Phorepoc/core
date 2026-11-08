@@ -482,6 +482,7 @@ struct SFixupImportAddressesInfo
 	// For ElfDerived...
 	TUint32 iCodeLoadAddress;
 	TUint32* iImportOffsetList;
+	TUint32 iCodeRunAddress;		// PHOREPOC: the importer's code run address (PC-relative imports)
 	};
 
 
@@ -695,8 +696,12 @@ TInt svElfDerivedFixupImportAddresses(TAny* aPtr)
 		TUint32 codeOffset = *iol;
 		TUint32* codePtr = (TUint32*)(codeBase+codeOffset);
 		TUint32 importInfo = *codePtr;
-		TUint32 ordinal = importInfo & 0xffff;
-		TUint32 adjustment = importInfo >> 16;
+		// PHOREPOC (x32): bit 15 of the ordinal field marks a PC-RELATIVE import: the location is the disp32 of a %rip-relative
+		// reference to an imported static (Qt's QVariant::handler ...); the upper 16 bits are the signed addend (S + A - P, A = -4 for a
+		// disp32 at the end of its instruction). The code word becomes  export + addend - (address of the location).
+		const TBool pcRel = (importInfo & 0x8000) != 0;
+		TUint32 ordinal = importInfo & 0x7fff;
+		TUint32 adjustment = pcRel ? (TUint32)(TInt32)(TInt16)(importInfo >> 16) : (importInfo >> 16);
 		if(ordinal > maxOrdinal)
 			return KErrNotSupported;
 
@@ -727,6 +732,8 @@ TInt svElfDerivedFixupImportAddresses(TAny* aPtr)
 			else
 				sectionDelta = dirDelta;			// unknown - assume nonpaged?
 			newValue = expAddr + sectionDelta + adjustment;
+			if (pcRel)
+				newValue -= info.iCodeRunAddress + codeOffset;
 			}
 
 		__LDRTRACE(svPrintf("svElfDerivedFixupImportAddresses: import[%d] (%08x:%08x) is export[%d] %08x+%08x => %08x",
@@ -810,10 +817,11 @@ TInt svElfDerivedGetImportInfo(TAny* aPtr)
 
 	TUint32* iolEnd = iol+count;
 	// PHOREPOC: the list holds ORDINALS (CheckRequiredImports compares them with the exporter's export count): a location's composite
-	// value is ordinal (low 16 bits) | adjustment (upper 16), so the adjustment is masked off. x32 code carries adjustments on
+	// value is ordinal (low 15 bits; bit 15 = PC-relative, see svElfDerivedFixupImportAddresses) | adjustment (upper 16), so the
+	// adjustment and the flag are masked off. x32 code carries adjustments on
 	// function imports; unmasked, a RAM-loaded EXE failed RImageFinder's import check (KErrNotSupported, -5)
 	while(iol<iolEnd)
-		*dest++ = (*(TUint32*)(code + *iol++)) & 0xffff;
+		*dest++ = (*(TUint32*)(code + *iol++)) & 0x7fff;
 		
 	return 0;
 	}
@@ -3385,6 +3393,7 @@ TInt E32Image::FixupDlls(RImageArray& aArray)
 		SFixupImportAddressesInfo info;
 		info.iIat = (TUint32*)(imp->iCodeLoadAddress + imp->iTextSize);
 		info.iCodeLoadAddress = imp->iCodeLoadAddress;
+		info.iCodeRunAddress = imp->iCodeRunAddress;
 
 		// fix up imports from each dependent DLL, building a table of all the imports for the binary
 		TInt depCount = imp->iDepCount;
