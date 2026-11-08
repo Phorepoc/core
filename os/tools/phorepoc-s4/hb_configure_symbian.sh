@@ -105,5 +105,7 @@ for mmp in $(find "$OUT/src" -name "*.mmp"); do
 done
 # 6. no C++ exceptions on this board (as Qt): Orbit's try/catch are out-of-memory guards
 python3 $HERE/hb_noexcept.py "$SRC/src"
+# 6b. Hb finds its typeface metrics on every drive, not only z: (they ship in the Catalogue package: hb_drives.py)
+python3 $HERE/hb_drives.py "$SRC/src"
 # 7. (was: the theme server's heap raised 10 -> 64 MB while it had no binary CSS. Since S4.4b the cssbin is made on
 # the target (make_cssbin.sh, ./ph s4 cssbin) and the server keeps the release's 10 MB)
