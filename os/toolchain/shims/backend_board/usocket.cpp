@@ -295,7 +295,7 @@ iRConnectionIndex(-1),
 iSockServPtr(NULL),
 iLocalOnly(EFalse),
 iNeedConn(EFalse),
-iSavedOptCount(0)
+iSavedOpts(4)
 		{
 
 		};
@@ -351,8 +351,20 @@ TInt CSocketDesc::Socket(RSocketServ& aSs, int family, int style, int protocol)
 	return err;
 	}
 
+void CSocketDesc::ClearSavedOpts()
+	{
+	RHeap* oheap = User::SwitchHeap(Backend()->Heap());
+	for (TInt i = 0; i < iSavedOpts.Count(); i++)
+		{
+		delete iSavedOpts[i].iValue;
+		}
+	iSavedOpts.Close();
+	User::SwitchHeap(oheap);
+	}
+
 TInt CSocketDesc::FinalClose()
 	{
+	ClearSavedOpts();
 	CLocalSystemInterface* backend = Backend();
 	backend->DefConnLock().Wait();
 	RHeap* oheap = User::SwitchHeap(backend->Heap());	
@@ -635,12 +647,24 @@ TInt CSocketDesc::SetSockOpt(TInt anOptionName, TInt anOptionLevel, TDesC8& anOp
 	    return ret;
 
 	// OURS: remember the options of a socket opened without a connection, to replay them if it has to be reopened
-	if (iLocalOnly && iSavedOptCount < 8 && anOption.Length() <= 32)
+	// (every option, whatever its size: the list and the copies live on the backend's heap, where FinalClose frees them)
+	if (iLocalOnly)
 		{
-		iSavedOpts[iSavedOptCount].iName = anOptionName;
-		iSavedOpts[iSavedOptCount].iLevel = anOptionLevel;
-		iSavedOpts[iSavedOptCount].iValue.Copy(anOption);
-		iSavedOptCount++;
+		RHeap* oheap = User::SwitchHeap(Backend()->Heap());
+		TSavedOpt opt;
+		opt.iName = anOptionName;
+		opt.iLevel = anOptionLevel;
+		opt.iValue = anOption.Alloc();
+		TInt err = opt.iValue ? iSavedOpts.Append(opt) : KErrNoMemory;
+		if (err != KErrNone)
+			{
+			delete opt.iValue;
+			}
+		User::SwitchHeap(oheap);
+		if (err != KErrNone)
+			{
+			return err;
+			}
 		}
 
 	switch(anOptionLevel)
@@ -1784,16 +1808,16 @@ TInt CSocketDesc::EnsureConnectionFor(const TSockAddr& aAddr)
 		iNeedConn = ETrue;
 		ret = OpenUsingPreference();
 		iNeedConn = EFalse;
-		TInt count = iSavedOptCount;
-		iSavedOptCount = 0;
-		for (TInt i = 0; ret == KErrNone && i < count; i++)
+		for (TInt i = 0; ret == KErrNone && i < iSavedOpts.Count(); i++)
 			{
-			TInt r = SetSockOpt(iSavedOpts[i].iName, iSavedOpts[i].iLevel, iSavedOpts[i].iValue);
+			TPtr8 value = iSavedOpts[i].iValue->Des();
+			TInt r = SetSockOpt(iSavedOpts[i].iName, iSavedOpts[i].iLevel, value);
 			if (r != KErrNone && r != KErrNotSupported)
 				{
 				ret = r;
 				}
 			}
+		ClearSavedOpts();
 		}
 	iReadLock.Signal();
 	return ret;

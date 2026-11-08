@@ -745,9 +745,9 @@ private:
 	RSocketServ *iSockServPtr;
 	TBool iLocalOnly;      // opened without a connection
 	TBool iNeedConn;       // reopen goes through the connection preferences
-	struct TSavedOpt { TInt iName; TInt iLevel; TBuf8<32> iValue; };
-	TSavedOpt iSavedOpts[8];
-	TInt iSavedOptCount;
+	struct TSavedOpt { TInt iName; TInt iLevel; HBufC8* iValue; };   // (on the backend's heap, like this object)
+	RArray<TSavedOpt> iSavedOpts;
+	void ClearSavedOpts();
 	void *iFids;
 
 	};
