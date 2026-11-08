@@ -23,7 +23,8 @@
 
 // INCLUDES
 
-#include "../../../src/phedevmenu/phedevmenu.h"	// PHOREPOC: UI shell keys + PheShellsInRom()
+#include "../../../src/phedevmenu/phedevmenu.h"
+#include "../../../src/phedevmenu/pheshells.h"	// PHOREPOC: UI shell keys + PheShellsInRom()
 #include<akndiscreetpopup.h>
 #include <avkon.hrh>
 #include <avkon.rsg>
@@ -203,7 +204,7 @@ static CAsyncCallBack* PhRestartCb = NULL;
 // from S^4, which has no S^3 dialer for the developer menu's secret code. Writes the dev menu's key 1, then restarts
 // (pheshellsel picks the shell at boot; src/phedevmenu/phedevmenu.h)
 static TInt PhShellSelection = KErrNotFound;
-static TInt PhShellTarget = 0;
+static TBuf<24> PhShellTargetId;
 static TInt PhDoRestart( TAny* aAppUi )
     {
     TRAP_IGNORE( static_cast<CSysApAppUi*>( aAppUi )->DoShutdownL( ETrue, RStarterSession::ELanguageSwitchReset ) );
@@ -3912,18 +3913,31 @@ void CSysApAppUi::ShowPowerKeyPopUpMenuL()
             powerMenuItemIndex++;
             }
         PhShellSelection = KErrNotFound;
-        if ( !IsEncryptionOperationOngoingL() && PheShellsInRom() == ( KPheShellsS3 | KPheShellsS4 ) )
+        // 2026-11-08: every shell there is (built in + installed, pheshells.h): "Switch to <the next one>"
+        RArray<TPheShell> phShells;
+        {
+        RFs phFs;
+        if ( phFs.Connect() == KErrNone ) { PheListShells( phFs, phShells ); phFs.Close(); }
+        }
+        if ( !IsEncryptionOperationOngoingL() && phShells.Count() > 1 )
             {
-            TInt shell = KPheShellS3;
+            TBuf<24> cur;
             CRepository* rep = NULL;
             TRAP_IGNORE( rep = CRepository::NewL( KPheDevMenuRepoUid ) );
-            if ( rep ) { rep->Get( KPheDevKeyShell, shell ); delete rep; }
-            PhShellTarget = shell == KPheShellS4 ? KPheShellS3 : KPheShellS4;
-            profileNameCDesCArray->InsertL( powerMenuItemIndex,
-                PhShellTarget == KPheShellS4 ? _L("Switch to Symbian^4") : _L("Switch to Symbian^3") );
+            PheSelectedShellId( rep, cur );
+            delete rep;
+            TInt idx = 0;
+            for ( TInt i = 0; i < phShells.Count(); i++ )
+                if ( phShells[i].iId.CompareF( cur ) == 0 ) idx = i;
+            const TPheShell& next = phShells[( idx + 1 ) % phShells.Count()];
+            PhShellTargetId.Copy( next.iId );
+            TBuf<64> cap( _L("Switch to ") );
+            cap.Append( next.iName );
+            profileNameCDesCArray->InsertL( powerMenuItemIndex, cap );
             PhShellSelection = powerMenuItemIndex;
             powerMenuItemIndex++;
             }
+        phShells.Close();
 
         iPowerkeyMenuLockKeypadShown     = EFalse;
         iPowerkeyMenuExitSapShown        = EFalse;
@@ -4131,7 +4145,7 @@ void CSysApAppUi::PowerKeyPopUpMenuSelectionDoneL( TInt aSelection )
             {
             CRepository* rep = NULL;
             TRAP_IGNORE( rep = CRepository::NewL( KPheDevMenuRepoUid ) );
-            if ( rep ) { rep->Set( KPheDevKeyShell, PhShellTarget ); delete rep; }
+            if ( rep ) { PheStoreShellId( rep, PhShellTargetId ); rep->Set( KPheDevKeyShellTries, 0 ); delete rep; }
             if ( !PhRestartCb )
                 {
                 PhRestartCb = new ( ELeave ) CAsyncCallBack( TCallBack( PhDoRestart, this ), CActive::EPriorityStandard );

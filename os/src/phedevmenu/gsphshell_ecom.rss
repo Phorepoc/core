@@ -1,0 +1,28 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// gsphshell_ecom.rss -- OURS: ECOM registration of the Control Panel UI shell entry
+#include <ecom/registryinfo.rh>
+
+RESOURCE REGISTRY_INFO theInfo
+	{
+	dll_uid     = 0xE7015A04;
+	interfaces  =
+		{
+		INTERFACE_INFO
+			{
+			interface_uid   = 0x10207236;   // CGSPluginInterface
+			implementations =
+				{
+				IMPLEMENTATION_INFO
+					{
+					implementation_uid  = 0xE7015A05;
+					version_no          = 1;
+					display_name        = "UI shell";
+					default_data        = "0x10283317";   // parent: Device (KGSDeviceManagementPluginUid, as the RFS plug-in)
+					opaque_data         = "85";           // order number: last
+					}
+				};
+			}
+		};
+	}
