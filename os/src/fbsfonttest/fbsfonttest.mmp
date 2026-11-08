@@ -1,0 +1,13 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+// fbsfonttest: asks the font and bitmap server for fonts of size 0 (and tiny sizes) and rasterises text with them, then a
+// healthy font -- the platform's behaviour for a zero-size request (any client can send one), checked for heap damage.
+TARGET			fbsfonttest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE5510010
+CAPABILITY		NONE
+VENDORID		0
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+SOURCEPATH		.
+SOURCE			fbsfonttest.cpp
+LIBRARY			euser.lib fbscli.lib bitgdi.lib gdi.lib
