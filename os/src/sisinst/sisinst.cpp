@@ -110,9 +110,18 @@ static TInt Run()
 		ls.Close();
 		}
 
+	// The first Connect starts the installer UI server through apparc and can fail (-1, KErrNotFound) while apparc is still
+	// building its application list or the server is slow to come up: a later try succeeds (seen on a loaded host). Retry.
 	SwiUI::RSWInstSilentLauncher launcher;
-	TInt err = launcher.Connect();
-	RDebug::Printf("PH: [sisinst] %S: connect %d", &f8, err);
+	TInt err = KErrNone;
+	for (TInt attempt = 0; attempt < 12; attempt++)
+		{
+		err = launcher.Connect();
+		RDebug::Printf("PH: [sisinst] %S: connect %d (try %d)", &f8, err, attempt + 1);
+		if (err == KErrNone)
+			break;
+		User::After(5000000);
+		}
 	if (err == KErrNone)
 		{
 		err = launcher.SilentInstall(file, pckg);
