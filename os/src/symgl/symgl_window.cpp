@@ -96,6 +96,7 @@ namespace
 	// 120 submits)
 	TUint gDispOk, gDispOverflow, gDispNotVisible, gDispUncomposed, gDispOther;
 	TInt gDispOtherCode;
+	TUint32 gFreeWaitMs, gPaceMs;		// (per 120 submits: acquire's wait for a free buffer, present's swap-interval wait)
 
 	void CountDisplayed(TInt r)
 		{
@@ -468,10 +469,9 @@ extern "C" int symgl_window_acquire(void* aNative)
 	TWinState* st = Find(aNative, EFalse);
 	if (!st || !st->iSurfaceOk)
 		return 0;
+	const TUint32 t0 = User::NTickCount();
 	st->iFree.Wait();
-	const TInt64 now = (TInt64)User::NTickCount() * 1000;
-	if (st->iNextPresentUs > now)
-		User::After((TInt)(st->iNextPresentUs - now));
+	gFreeWaitMs += User::NTickCount() - t0;
 	return st->iSubmitNo % KNbuf;
 	}
 
@@ -480,6 +480,14 @@ extern "C" void symgl_window_present(void* aNative, int aBuf)
 	TWinState* st = Find(aNative, EFalse);
 	if (!st || !st->iSurfaceOk)
 		return;
+	// the swap interval: this present waits for the deadline the previous one set. (It was waited for in acquire, AFTER
+	// the present and BEFORE the next frame's rendering, so the sleep added to every frame instead of overlapping its
+	// rendering: Mesa's "acquire" = 22-29 ms in every game at 10-21 fps, 2026-11-08.)
+	const TUint32 p0 = User::NTickCount();
+	const TInt64 due = (TInt64)p0 * 1000;
+	if (st->iNextPresentUs > due)
+		User::After((TInt)(st->iNextPresentUs - due));
+	gPaceMs += User::NTickCount() - p0;
 	st->iQueue[st->iQHead % KNbuf] = aBuf;
 	++st->iQHead;
 	st->iWork.Signal();
@@ -487,6 +495,11 @@ extern "C" void symgl_window_present(void* aNative, int aBuf)
 	if (st->iSubmitNo % 120 == 0)
 		RDebug::Printf("PH: [symgl] displayed: ok %u overflow %u notvisible %u uncomposed %u other %u (last other code %d; submits %u)",
 			gDispOk, gDispOverflow, gDispNotVisible, gDispUncomposed, gDispOther, gDispOtherCode, st->iSubmitNo);
+	if (st->iSubmitNo % 120 == 0)
+		{
+		RDebug::Printf("PH: [symgl] per 120 submits: acquire's free-buffer wait %u ms, present's swap-interval wait %u ms", gFreeWaitMs, gPaceMs);
+		gFreeWaitMs = gPaceMs = 0;
+		}
 	// the swap interval runs from this present, or from the previous deadline when we are keeping up (no drift)
 	const TInt64 now = (TInt64)User::NTickCount() * 1000;
 	st->iNextPresentUs = (st->iNextPresentUs + KSwapIntervalUs > now ? st->iNextPresentUs : now) + KSwapIntervalUs;
