@@ -14,6 +14,9 @@
 //   launcher=!:\sys\bin\hsapplicationlauncher.exe the shell's launcher: started last; it rendezvouses when the shell is up,
 //                                                 and the shell lives as long as it does
 //   icon=!:\resource\phe\shells\orbit.mif         optional
+//   cenrep=!:\resource\phe\shells\orbit\cenrep   optional: a folder of Central Repository initialisation files (*.txt) the shell needs.
+//                                                 SWI lets a package write only its own \private\<SID>\ folders and other processes' import folders, so the
+//                                                 package cannot put them into \private\10202be9\ itself: the selector copies them there when the shell is started
 // No field has a length limit of ours: a shell is a heap object with a heap buffer per field.
 // The selection is CenRep key 10 of the developer-menu repository (the id; CenRep's own text limit is 1024 characters); key 1
 // (0 = S^3, 1 = S^4) is kept in step for the readers that only know the two built-in shells.
@@ -43,12 +46,13 @@ _LIT(KPheShellsDir, "\\resource\\phe\\shells\\");
 class CPheShell : public CBase
 	{
 public:
-	~CPheShell() { delete iId; delete iName; delete iStart; delete iLauncher; delete iIcon; }
+	~CPheShell() { delete iId; delete iName; delete iStart; delete iLauncher; delete iIcon; delete iCenRep; }
 	TPtrC Id() const { return iId ? TPtrC(*iId) : TPtrC(); }
 	TPtrC Name() const { return iName ? TPtrC(*iName) : TPtrC(); }
 	TPtrC Start() const { return iStart ? TPtrC(*iStart) : TPtrC(); }
 	TPtrC Launcher() const { return iLauncher ? TPtrC(*iLauncher) : TPtrC(); }
 	TPtrC Icon() const { return iIcon ? TPtrC(*iIcon) : TPtrC(); }
+	TPtrC CenRep() const { return iCenRep ? TPtrC(*iCenRep) : TPtrC(); }
 	static void SetL(HBufC*& aField, const TDesC& aText)
 		{
 		HBufC* n = aText.AllocL();
@@ -73,6 +77,7 @@ public:
 	HBufC* iStart;		// start list (NULL = none)
 	HBufC* iLauncher;
 	HBufC* iIcon;
+	HBufC* iCenRep;		// folder of CenRep initialisation files (NULL = none)
 	TBool iBuiltin;
 	};
 
@@ -116,6 +121,7 @@ inline CPheShell* PheShellParseLC(const TDesC8& aText, TChar aDrive)
 			else if (k->CompareF(_L("start")) == 0) CPheShell::SetL(s->iStart, *v);
 			else if (k->CompareF(_L("launcher")) == 0) CPheShell::SetL(s->iLauncher, *v);
 			else if (k->CompareF(_L("icon")) == 0) CPheShell::SetL(s->iIcon, *v);
+			else if (k->CompareF(_L("cenrep")) == 0) CPheShell::SetL(s->iCenRep, *v);
 			CleanupStack::PopAndDestroy(2, k);		// v, k
 			}
 		CleanupStack::PopAndDestroy(l);
