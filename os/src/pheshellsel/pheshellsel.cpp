@@ -276,18 +276,40 @@ static TInt RunShellL()
 		}
 	if (forced)
 		pick = 0;
-	const CPheShell& shell = *shells[pick];
-	const TBool s3 = pick == 0;
-	RDebug::Print(_L("PH: [shellsel] repo %d, starting %S (fallback %d)"), rerr, &shell.Id(), fellBack);
+	const CPheShell* shell = shells[pick];
+	TBool s3 = pick == 0;
+	RDebug::Print(_L("PH: [shellsel] repo %d, starting %S (fallback %d)"), rerr, &shell->Id(), fellBack);
 	RProcess launcher;
-	TInt r;
-	if (!s3)
+	TInt r = KErrNone;
+	while (!s3)
 		{
-		if (shell.Start().Length())
-			StartListL(shell.Start());
-		r = StartAndRendezvous(shell.Launcher(), KNullDesC, launcher);
+		if (shell->Start().Length())
+			StartListL(shell->Start());
+		r = StartAndRendezvous(shell->Launcher(), KNullDesC, launcher);
+		if (r == KErrNone)
+			break;
+		// The shell did not come up. A failed start never reaches SSM's restart monitor (nothing was running), so the
+		// "twice in a row" rule is applied here: key 11 was counted before this start; at the limit the shell is given up
+		launcher.Close();
+		TInt t = 0;
+		if (repo) repo->Get(KPheDevKeyShellTries, t);
+		RDebug::Print(_L("PH: [shellsel] %S did not come up (%d), unconfirmed starts %d"), &shell->Id(), r, t);
+		if (t >= KPheShellMaxTries)
+			{
+			RDebug::Print(_L("PH: [shellsel] %S given up after %d starts, S^3"), &shell->Name(), t);
+			if (repo)
+				{
+				PheStoreShellId(repo, KPheShellIdS3);
+				repo->Set(KPheDevKeyShellNote, shell->Name().Left(KPheCenRepTextMax));
+				}
+			SetRepoInt(repo, KPheDevKeyShellTries, 0);
+			shell = shells[0];
+			s3 = ETrue;
+			}
+		else
+			SetRepoInt(repo, KPheDevKeyShellTries, t + 1);
 		}
-	else
+	if (s3)
 		{
 		r = StartAndRendezvous(KAiLaunch, KNullDesC, launcher);
 		if (r == KErrNone)
