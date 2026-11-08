@@ -25,24 +25,21 @@
 _LIT(KAiLaunch, "z:\\sys\\bin\\ailaunch.exe");
 _LIT(KMatrixMenu, "z:\\sys\\bin\\matrixmenu.exe");
 
-// the chosen shell. aFellBack: the choice was not honoured (not installed any more)
-static void ChooseShell(RFs& aFs, CRepository* aRepo, TPheShell& aShell, TBool& aFellBack)
+// the index of the chosen shell in aShells (0 = S^3 when the choice is not there: aFellBack)
+static TInt ChooseShellL(CRepository* aRepo, const RPheShells& aShells, TBool& aFellBack)
 	{
-	RArray<TPheShell> shells;
-	PheListShells(aFs, shells);
-	TBuf<24> id;
-	PheSelectedShellId(aRepo, id);
+	HBufC* id = PheSelectedShellIdL(aRepo);
 	TInt pick = 0;
 	aFellBack = ETrue;
-	for (TInt i = 0; i < shells.Count(); i++)
-		if (shells[i].iId.CompareF(id) == 0)
+	for (TInt i = 0; i < aShells.Count(); i++)
+		if (aShells[i]->Id().CompareF(*id) == 0)
 			{
 			pick = i;
 			aFellBack = EFalse;
 			}
-	aShell = shells[pick];
-	RDebug::Print(_L("PH: [shellsel] %d shells, wanted %S, chosen %S"), shells.Count(), &id, &aShell.iId);
-	shells.Close();
+	RDebug::Print(_L("PH: [shellsel] %d shells, wanted %S, chosen %S"), aShells.Count(), id, &aShells[pick]->Id());
+	delete id;
+	return pick;
 	}
 
 // Menu key held at boot: a window group capturing the key sees its down event (or the keyboard's auto-repeat) at once
@@ -88,24 +85,27 @@ static TBool MenuKeyHeld()
 	}
 
 // the note after a shell was given up: the standard text notifier, from its own thread (it blocks until dismissed)
-static TBuf<80> NoteText;
+static HBufC* NoteText;
 static TInt NoteThread(TAny*)
 	{
 	RNotifier n;
-	if (n.Connect() == KErrNone)
+	if (NoteText && n.Connect() == KErrNone)
 		{
 		TInt button;
 		TRequestStatus st;
-		n.Notify(NoteText, _L("Back to Symbian^3."), _L("OK"), KNullDesC, button, st);
+		n.Notify(*NoteText, _L("Back to Symbian^3."), _L("OK"), KNullDesC, button, st);
 		User::WaitForRequest(st);
 		n.Close();
 		}
 	return KErrNone;
 	}
 
-static void ShowNote(const TDesC& aCaption)
+static void ShowNoteL(const TDesC& aCaption)
 	{
-	NoteText.Format(_L("%S did not start twice in a row."), &aCaption);
+	_LIT(KFmt, "%S did not start twice in a row.");
+	delete NoteText;
+	NoteText = HBufC::NewL(aCaption.Length() + KFmt().Length());
+	NoteText->Des().Format(KFmt, &aCaption);
 	RThread t;
 	if (t.Create(_L("pheshellnote"), NoteThread, 8192, NULL, NULL) == KErrNone)
 		{
@@ -165,6 +165,39 @@ static void StartMatrixMenuInBackground()
 	RDebug::Printf("PH: [shellsel] matrixmenu (background): %d", r);
 	}
 
+// one line of a start list
+static void StartListLine(RFs& aFs, const TDesC& aLine)
+	{
+	_LIT(KWait, "wait ");
+	_LIT(KWaitDir, "waitdir ");
+	if (aLine.Length() == 0 || aLine[0] == '#')
+		return;
+	if (aLine.Left(KWaitDir().Length()).CompareF(KWaitDir) == 0)
+		{
+		// the DRM Rights Server makes c:\system\temp\ at start-up and never rendezvouses; Qt's QDir::tempPath()
+		// lock files need it (the Hb theme server)
+		TPtrC rest = aLine.Mid(KWaitDir().Length());
+		const TInt sp = rest.Locate(' ');
+		TPtrC dir = sp < 0 ? rest : rest.Left(sp);
+		TInt ms = 3000;
+		if (sp >= 0) { TLex lex(rest.Mid(sp + 1)); lex.Val(ms); }
+		TInt waited = 0;
+		TEntry e;
+		while (aFs.Entry(dir, e) != KErrNone && waited < ms) { User::After(50000); waited += 50; }
+		RDebug::Print(_L("PH: [shellsel] waitdir %S: %d ms, %S"), &dir, waited, waited < ms ? &KNullDesC : &dir);
+		}
+	else if (aLine.Left(KWait().Length()).CompareF(KWait) == 0)
+		{
+		// master's WaitForSignal: hbthemeserver before the homescreen
+		TPtrC exe = aLine.Mid(KWait().Length());
+		RProcess p;
+		StartAndRendezvous(exe, KNullDesC, p);
+		p.Close();
+		}
+	else
+		StartFireAndForget(aLine);
+	}
+
 // a start list: one line each -- an exe (fire-and-forget), "wait <exe>" (start, wait for its rendezvous),
 // "waitdir <dir> <ms>" (wait until a directory exists), '#' = comment
 static void StartListL(const TDesC& aList)
@@ -176,48 +209,24 @@ static void StartListL(const TDesC& aList)
 	if (f.Open(fs, aList, EFileRead | EFileShareReadersOnly) == KErrNone)
 		{
 		CleanupClosePushL(f);
-		TBuf8<4096> buf;
-		User::LeaveIfError(f.Read(buf));
-		TPtrC8 rest(buf);
+		TInt size = 0;
+		f.Size(size);
+		HBufC8* buf = HBufC8::NewLC(size);
+		TPtr8 bp = buf->Des();
+		User::LeaveIfError(f.Read(bp));
+		TPtrC8 rest(*buf);
 		while (rest.Length())
 			{
 			TInt nl = rest.Locate('\n');
 			TPtrC8 line = nl < 0 ? rest : rest.Left(nl);
 			rest.Set(nl < 0 ? TPtrC8() : rest.Mid(nl + 1));
-			TBuf<KMaxFileName> name;
-			name.Copy(line.Left(Min(line.Length(), KMaxFileName)));
-			name.Trim();
-			_LIT(KWait, "wait ");
-			_LIT(KWaitDir, "waitdir ");
-			if (name.Length() && name[0] != '#')
-				{
-				if (name.Left(KWaitDir().Length()).CompareF(KWaitDir) == 0)
-					{
-					// the DRM Rights Server makes c:\system\temp\ at start-up and never rendezvouses; Qt's QDir::tempPath()
-					// lock files need it (the Hb theme server)
-					TPtrC rest = name.Mid(KWaitDir().Length());
-					const TInt sp = rest.Locate(' ');
-					TPtrC dir = sp < 0 ? rest : rest.Left(sp);
-					TInt ms = 3000;
-					if (sp >= 0) { TLex lex(rest.Mid(sp + 1)); lex.Val(ms); }
-					TInt waited = 0;
-					TEntry e;
-					while (fs.Entry(dir, e) != KErrNone && waited < ms) { User::After(50000); waited += 50; }
-					RDebug::Print(_L("PH: [shellsel] waitdir %S: %d ms, %S"), &dir, waited, waited < ms ? &KNullDesC : &dir);
-					}
-				else if (name.Left(KWait().Length()).CompareF(KWait) == 0)
-					{
-					// master's WaitForSignal: hbthemeserver before the homescreen
-					TPtrC exe = name.Mid(KWait().Length());
-					RProcess p;
-					StartAndRendezvous(exe, KNullDesC, p);
-					p.Close();
-					}
-				else
-					StartFireAndForget(name);
-				}
+			HBufC* name = HBufC::NewLC(line.Length());
+			name->Des().Copy(line);
+			name->Des().Trim();
+			StartListLine(fs, *name);
+			CleanupStack::PopAndDestroy(name);
 			}
-		CleanupStack::PopAndDestroy(&f);
+		CleanupStack::PopAndDestroy(2, &f);		// buf, f
 		}
 	CleanupStack::PopAndDestroy(&fs);
 	}
@@ -233,16 +242,17 @@ static TInt RunShellL()
 	RFs fs;
 	User::LeaveIfError(fs.Connect());
 	CleanupClosePushL(fs);
+	RPheShells shells;
+	CleanupClosePushL(shells);
+	PheListShellsL(fs, shells);
 	CRepository* repo = NULL;
 	TRAPD(rerr, repo = CRepository::NewL(KPheDevMenuRepoUid));
-	TPheShell shell;
 	TBool fellBack;
-	ChooseShell(fs, repo, shell, fellBack);
-	const TBool wanted3 = shell.iId.CompareF(KPheShellIdS3) == 0;
+	TInt pick = ChooseShellL(repo, shells, fellBack);
 	TBool forced = EFalse;
-	if (!wanted3)
+	if (pick != 0)
 		{
-		// the safety rules, for a shell other than S^3
+		// the safety rules, for a shell other than S^3 (index 0)
 		TInt tries = 0;
 		if (repo) repo->Get(KPheDevKeyShellTries, tries);
 		if (MenuKeyHeld())
@@ -252,11 +262,11 @@ static TInt RunShellL()
 			}
 		else if (tries >= KPheShellMaxTries)
 			{
-			RDebug::Print(_L("PH: [shellsel] %d unconfirmed starts of %S: given up, S^3"), tries, &shell.iName);
+			RDebug::Print(_L("PH: [shellsel] %d unconfirmed starts of %S: given up, S^3"), tries, &shells[pick]->Name());
 			if (repo)
 				{
 				PheStoreShellId(repo, KPheShellIdS3);
-				repo->Set(KPheDevKeyShellNote, shell.iName);
+				repo->Set(KPheDevKeyShellNote, shells[pick]->Name().Left(KPheCenRepTextMax));
 				}
 			SetRepoInt(repo, KPheDevKeyShellTries, 0);
 			forced = ETrue;
@@ -265,20 +275,17 @@ static TInt RunShellL()
 			SetRepoInt(repo, KPheDevKeyShellTries, tries + 1);
 		}
 	if (forced)
-		{
-		shell = TPheShell();
-		shell.iId.Copy(KPheShellIdS3);
-		shell.iBuiltin = ETrue;
-		}
-	const TBool s3 = shell.iId.CompareF(KPheShellIdS3) == 0;
-	RDebug::Print(_L("PH: [shellsel] repo %d, starting %S (fallback %d)"), rerr, &shell.iId, fellBack);
+		pick = 0;
+	const CPheShell& shell = *shells[pick];
+	const TBool s3 = pick == 0;
+	RDebug::Print(_L("PH: [shellsel] repo %d, starting %S (fallback %d)"), rerr, &shell.Id(), fellBack);
 	RProcess launcher;
 	TInt r;
 	if (!s3)
 		{
-		if (shell.iStart.Length())
-			StartListL(shell.iStart);
-		r = StartAndRendezvous(shell.iLauncher, KNullDesC, launcher);
+		if (shell.Start().Length())
+			StartListL(shell.Start());
+		r = StartAndRendezvous(shell.Launcher(), KNullDesC, launcher);
 		}
 	else
 		{
@@ -289,20 +296,23 @@ static TInt RunShellL()
 	RProcess::Rendezvous(r);		// SSM's wait-for-signal: the shell's launcher is up (or its error)
 	if (r != KErrNone)
 		{
-		CleanupStack::PopAndDestroy(&fs);
 		delete repo;
+		CleanupStack::PopAndDestroy(2, &fs);		// shells, fs
 		return r;
 		}
 	if (s3 && repo)
 		{
 		// a note left by an earlier give-up: shown once S^3 is up
-		TBuf<40> n;
+		RBuf n;
+		n.CreateL(KPheCenRepTextMax);
+		n.CleanupClosePushL();
 		if (repo->Get(KPheDevKeyShellNote, n) == KErrNone && n.Length())
 			{
 			User::After(15000000);
-			ShowNote(n);
+			ShowNoteL(n);
 			repo->Set(KPheDevKeyShellNote, KNullDesC);
 			}
+		CleanupStack::PopAndDestroy(&n);
 		}
 	// stay as long as the launcher: its exit = ours, so the idle slot's restart monitor still sees a dying shell.
 	// A shell other than S^3 that stays up KPheShellGoodSeconds is confirmed good.
@@ -334,7 +344,7 @@ static TInt RunShellL()
 	r = launcher.ExitType() == EExitKill ? KErrNone : launcher.ExitReason();
 	launcher.Close();
 	delete repo;
-	CleanupStack::PopAndDestroy(&fs);
+	CleanupStack::PopAndDestroy(2, &fs);		// shells, fs
 	return r;
 	}
 

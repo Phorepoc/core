@@ -51,29 +51,33 @@ static void ChooseShellL()
 	RFs fs;
 	User::LeaveIfError(fs.Connect());
 	CleanupClosePushL(fs);
-	RArray<TPheShell> shells;
+	RPheShells shells;
 	CleanupClosePushL(shells);
-	PheListShells(fs, shells);
+	PheListShellsL(fs, shells);
 	CRepository* repo = CRepository::NewLC(KPheDevMenuRepoUid);
-	TBuf<24> cur;
-	PheSelectedShellId(repo, cur);
+	HBufC* cur = PheSelectedShellIdL(repo);
+	CleanupStack::PushL(cur);
 	CDesCArrayFlat* names = new (ELeave) CDesCArrayFlat(4);
+	CleanupStack::PushL(names);
 	TInt curIdx = 0;
 	for (TInt i = 0; i < shells.Count(); i++)
 		{
-		names->AppendL(shells[i].iName);
-		if (shells[i].iId.CompareF(cur) == 0)
+		names->AppendL(shells[i]->Name());
+		if (shells[i]->Id().CompareF(*cur) == 0)
 			curIdx = i;
 		}
+	CleanupStack::Pop(names);		// PickL owns it
 	const TInt pick = PickL(_L("UI shell"), names, curIdx);
 	if (pick >= 0 && pick != curIdx)
 		{
-		PheStoreShellId(repo, shells[pick].iId);
+		PheStoreShellId(repo, shells[pick]->Id());
 		repo->Set(KPheDevKeyShellTries, 0);
-		RDebug::Print(_L("PH: [gsphshell] shell %S chosen"), &shells[pick].iId);
+		RDebug::Print(_L("PH: [gsphshell] shell %S chosen"), &shells[pick]->Id());
 		CDesCArrayFlat* yn = new (ELeave) CDesCArrayFlat(2);
+		CleanupStack::PushL(yn);
 		yn->AppendL(_L("Restart now"));
 		yn->AppendL(_L("Later"));
+		CleanupStack::Pop(yn);
 		if (PickL(_L("Takes effect after a restart"), yn, 0) == 0)
 			{
 			RStarterSession starter;
@@ -85,7 +89,7 @@ static void ChooseShellL()
 				}
 			}
 		}
-	CleanupStack::PopAndDestroy(3, &fs);		// repo, shells, fs
+	CleanupStack::PopAndDestroy(4, &fs);		// cur, repo, shells, fs
 	}
 
 class CPheGsShell : public CGSPluginInterface
@@ -114,10 +118,10 @@ public:
 		RFs fs;
 		if (fs.Connect() != KErrNone)
 			return EFalse;
-		RArray<TPheShell> shells;
-		PheListShells(fs, shells);
+		RPheShells shells;
+		TRAP_IGNORE(PheListShellsL(fs, shells));
 		const TBool many = shells.Count() > 1;
-		shells.Close();
+		PheShellsClose(shells);
 		fs.Close();
 		return many;
 		}
