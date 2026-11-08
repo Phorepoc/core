@@ -1024,6 +1024,8 @@ CInstallMachine::TState* CInstallMachine::TPlanInstallationState::CompleteL()
 		iInstallMachine.iPlanner->FinalisePlanL();
 		
 		iInstallMachine.iPlan=iInstallMachine.iPlanner->TransferPlanOwnership(); // pass on ownership!
+		if (PhorepocDevModeL())   // Phorepoc developer mode: a trusted install may write any private directory, as a Su-cert one
+			iInstallMachine.iPlan->ApplicationL().SetInstallSuCertBased();
 		delete iInstallMachine.iPlanner;
 		iInstallMachine.iPlanner = NULL;
 		iInstallMachine.iSecurityManager->SetDevCertWarningState(ENoDevCerts);
