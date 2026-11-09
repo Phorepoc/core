@@ -22,8 +22,11 @@ import shutil
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-R48 = os.path.join(REPO, ".phorepoc-qt48-build")
-R47 = os.path.join(REPO, ".phorepoc-s4-build")
+# the pdk's package build: PHOREPOC_BUILD/qt48 (the Qt 4.8 S^4 set), PHOREPOC_BUILD/s4 (the Qt 4.7 set, when built); the private tree keeps them
+# in .phorepoc-qt48-build / .phorepoc-s4-build
+_B = os.environ.get("PHOREPOC_BUILD")
+R48 = os.path.join(_B, "qt48") if _B else os.path.join(REPO, ".phorepoc-qt48-build")
+R47 = os.path.join(_B, "s4") if _B else os.path.join(REPO, ".phorepoc-s4-build")
 OUT = os.path.join(R48, "sfw", "import")
 LIST = os.path.join(R48, "sfw", "import.list")
 ROOTS = ("hs-src", "hsrv-src", "qte-src")
