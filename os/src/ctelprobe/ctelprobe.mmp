@@ -1,0 +1,11 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+TARGET			ctelprobe.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE5510011
+CAPABILITY		ALL -TCB
+VENDORID		0
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+SOURCEPATH		.
+SOURCE			ctelprobe.cpp
+LIBRARY			euser.lib etel3rdparty.lib

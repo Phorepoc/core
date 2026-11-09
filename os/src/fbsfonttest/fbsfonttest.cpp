@@ -7,6 +7,22 @@
 #include <bitdev.h>
 #include <bitstd.h>
 
+// RFontTable (gdi.dll, publishedPartner gdiplatapi.h): declared here, as the header is not in the image build's include path
+class RFontTable
+	{
+public:
+	IMPORT_C RFontTable();
+	IMPORT_C TInt Open(CFont& aFont, TUint32 aTag);
+	IMPORT_C TInt TableLength() const;
+	IMPORT_C const TUint8* TableContent() const;
+	IMPORT_C void Close();
+private:
+	TAny* iTableContent;
+	TInt iLength;
+	const CFont* iFont;
+	TUint32 iTag;
+	};
+
 _LIT(KFace, "Nokia Sans S60");
 
 static void DrawWith(CFbsBitGc* aGc, CFont* aFont, const TDesC& aLabel)
@@ -27,6 +43,56 @@ static void DrawWith(CFbsBitGc* aGc, CFont* aFont, const TDesC& aLabel)
 	TInt h = aFont->HeightInPixels();
 	RDebug::Printf("[fbsfonttest] %S: width %d ascent %d height %d", &aLabel, w, a, h);
 	aGc->DiscardFont();
+	}
+
+
+static void ThreadBodyL(TInt aId)
+	{
+	User::LeaveIfError(RFbsSession::Connect());		// a font and bitmap server session is per thread
+	CFbsTypefaceStore* ts = CFbsTypefaceStore::NewL(NULL);
+	CleanupStack::PushL(ts);
+	static const TUint32 tags[] = { 0x636d6170, 0x68656164, 0x68686561, 0x686d7478, 0x6d617870, 0x6e616d65, 0x4f532f32, 0x706f7374 };
+	for (TInt round = 0; round < 60; ++round)
+		for (TInt size = 1 + aId; size <= 80; size += 3)
+			{
+			TFontSpec spec(KFace, 0);
+			spec.iHeight = size;
+			CFont* f = NULL;
+			if (ts->GetNearestFontInPixels(f, spec) != KErrNone)
+				continue;
+			CFbsFont* fbsFont = static_cast<CFbsFont*>(f);
+			for (TUint code = 0x41 + aId; code < 0x5A; code += 4)
+				{
+				TOpenFontCharMetrics m;
+				const TUint8* bits = NULL;
+				TSize bsize;
+				fbsFont->GetCharacterData(code, m, bits, bsize);
+				}
+			for (TUint k = 0; k < sizeof(tags) / sizeof(tags[0]); ++k)
+				{
+				RFontTable tbl;
+				if (tbl.Open(*fbsFont, tags[k]) == KErrNone)
+					{
+					volatile TUint8 sum = 0;
+					const TUint8* p = tbl.TableContent();
+					for (TInt n = 0; p && n < 64; ++n)
+						sum += p[n];
+					tbl.Close();
+					}
+				}
+			ts->ReleaseFont(f);
+			}
+	CleanupStack::PopAndDestroy(ts);
+	RFbsSession::Disconnect();
+	}
+
+static TInt ThreadFn(TAny* aArg)
+	{
+	const TInt id = (TInt)aArg;
+	CTrapCleanup* cleanup = CTrapCleanup::New();
+	TRAPD(err, ThreadBodyL(id));
+	delete cleanup;
+	return err;
 	}
 
 static void RunL()
@@ -94,6 +160,24 @@ static void RunL()
 			if (r == KErrNone) { DrawWith(gc, f, label); ts->ReleaseFont(f); }
 			else RDebug::Printf("[fbsfonttest] %S", &label);
 			}
+	// several client threads at once, font tables included (what Qt's font engine does while Hb's sweep runs)
+	RDebug::Printf("[fbsfonttest] threads...");
+	RThread th[4];
+	TRequestStatus ths[4];
+	for (TInt i = 0; i < 4; ++i)
+		{
+		TBuf<16> name;
+		name.Format(_L("fbsthr%d"), i);
+		User::LeaveIfError(th[i].Create(name, ThreadFn, 0x8000, NULL, (TAny*)i));
+		th[i].Logon(ths[i]);
+		th[i].Resume();
+		}
+	for (TInt i = 0; i < 4; ++i)
+		{
+		User::WaitForRequest(ths[i]);
+		RDebug::Printf("[fbsfonttest] thread %d exit %d type %d", i, th[i].ExitReason(), (TInt)th[i].ExitType());
+		th[i].Close();
+		}
 	RDebug::Printf("[fbsfonttest] done, no fault");
 	CleanupStack::PopAndDestroy(4);			// gc, dev, bmp, ts
 	RFbsSession::Disconnect();
