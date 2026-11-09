@@ -232,7 +232,9 @@ COMPONENTS = {
     # in CSvgtFbsRasterizer::RenderBitmapL and stayed white squares)
     "wserv": dict(mmp=f"{G}/windowing/windowserver/group/openwfc/wserv_nonnga.mmp", rom="wserv.exe",
                   heap_max=0x1000000,
-                  drop=["INIFILE.CPP"], extra=["toolchain/shims/wserv_board/inifile_board.cpp"], libs=["centralrepository.lib"]),
+                  drop=["INIFILE.CPP", "POINTER.CPP"], extra=["toolchain/shims/wserv_board/inifile_board.cpp",
+                  # the pointer follows the key-focus screen (multi-window: one classic app per WSERV screen)
+                  "toolchain/shims/wserv_board/pointer_board.cpp"], libs=["centralrepository.lib"]),
     # WSERV's standard ECOM plug-ins: std render stage, flicker buffer, fader
     "wsstdplugin": dict(mmp=f"{G}/windowing/windowserver/group/stdplugin_nonnga.mmp",
                         rom="2001b70b.dll"),
