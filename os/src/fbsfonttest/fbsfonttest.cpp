@@ -49,7 +49,8 @@ static void RunL()
 	for (TInt fam = 0; fam < 6; ++fam)
 		for (TInt size = 1; size <= 100; ++size)
 			{
-			TFontSpec spec(TPtrC(families[fam]), 0);
+			TPtrC famName(families[fam]); if (famName.Length() > KMaxTypefaceNameLength) famName.Set(famName.Left(KMaxTypefaceNameLength));
+			TFontSpec spec(famName, 0);
 			spec.iHeight = size;
 			CFont* f = NULL;
 			TInt r = ts->GetNearestFontInPixels(f, spec);
