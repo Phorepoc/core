@@ -40,7 +40,8 @@ PRE="-include $PORT/port_prelude.h -include e32def.h"
 [ "$LINK" = 1 ] && echo "$CXX $DEFS $INCS $PRE" > "$OUT/flags.txt"
 
 pass=0; fail=0; : > "$OUT/failed.txt"; : > "$OUT/errors.txt"
-for src in "$HAL/src/hal_main.cpp" "$HAL/src/userhal.cpp" "$OUT/hal_values.cpp" "$OUT/hal_config.cpp"; do
+# a board may add its own handlers (the ones its config.hcf names beyond userhal.cpp) as $BOARD/*.cpp
+for src in "$HAL/src/hal_main.cpp" "$HAL/src/userhal.cpp" $(ls "$BOARD"/*.cpp 2>/dev/null) "$OUT/hal_values.cpp" "$OUT/hal_config.cpp"; do
   tu="$(basename "$src")"
   [ -f "$src" ] || { echo "MISSING $tu" >> "$OUT/failed.txt"; fail=$((fail+1)); continue; }
   o=/dev/null; [ "$LINK" = 1 ] && o="$OBJ/$(echo "$tu" | tr "." "_").o"

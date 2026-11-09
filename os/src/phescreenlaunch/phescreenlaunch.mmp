@@ -1,0 +1,19 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// phescreenlaunch.mmp -- OURS: start an app on WSERV screen n / move the key focus to screen n (see phescreenlaunch.cpp)
+TARGET			phescreenlaunch.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE701573A
+
+// WriteDeviceData: RWsSession::SetFocusScreen (WSERV CLIENT.CPP checks it)
+CAPABILITY		WriteDeviceData
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			phescreenlaunch.cpp
+
+LIBRARY			euser.lib ws32.lib apgrfx.lib apparc.lib
+
+VENDORID		0
