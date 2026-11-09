@@ -442,7 +442,9 @@ COMPONENTS = {
     "eikcore": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/commonuisupport/uikon/group/EIKCORE.MMP",
                     x32_flags=["-DPORT_FOFF_DYNAMIC"],
                     # root, so dynamic_cast<CAknAppUi*>(CEikAppUi*) across DLLs works (SDK apps' orientation code; King Oddball)
-                    import_typeinfo=True),    # eikprivate.cpp: _FOFF(TUnlimitedFileName, iBuf[maxLength]), a run-time index
+                    import_typeinfo=True,     # eikprivate.cpp: _FOFF(TUnlimitedFileName, iBuf[maxLength]), a run-time index
+                    # the start-up view activation asks about the app's own screen (multi-window: one app per WSERV screen)
+                    drop=["EIKENV.CPP"], extra=["toolchain/shims/eikcore_board/eikenv_board.cpp"]),
     # eikcba.cpp = OURS fix (toolchain/shims/eikcba_fix): an embedded CBA (the options menu's softkeys) keeps the
     # transparent window background it was created with -- the opaque toolbar colour showed white around its frames
     "eikcoctl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/EikStd/coctlsrc/EIKCOCTL.MMP",
