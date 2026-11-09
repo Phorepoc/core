@@ -24,12 +24,12 @@ static void HbInfo(TInt aSecs)
 	TInt v[5];
 	for (TInt i = 0; i < 5; ++i)
 		v[i] = (b[i * 4] << 24) | (b[i * 4 + 1] << 16) | (b[i * 4 + 2] << 8) | b[i * 4 + 3];
-	RDebug::Printf("[pspeek] t+%ds hbsysinfo mode %d status %d signal %d power %d battery %d", aSecs, v[0], v[1], v[2], v[3], v[4]);
+	RDebug::Printf("[pspeek] t+%ds hbsysinfo mode %d status %d signal %d power %d battery %d (phonepwr %d)", aSecs, v[0], v[1], v[2], v[3], v[4], Peek(0x101f75b6, 0x100052C5));
 	}
 
 TInt E32Main()
 	{
-	for (TInt n = 0; n < 18; ++n)
+	for (TInt n = 0; n < 60; ++n)		// 10 minutes of guest time: the guest clock runs slower than the wall clock, a boot test must see past the RF-on (~t+50 s)
 		{
 		RDebug::Printf("[pspeek] t+%ds global %d simstatus %d bootoffline %d uiphase %d startupappstate %d idlephase1 %d activeidleuid %x phonepwr %d", n * 10,
 			Peek(0x101F8766, 0x41), Peek(0x101F8766, 0x31), Peek(0x101F8766, 0x11), Peek(0x101F8766, 0x42),
