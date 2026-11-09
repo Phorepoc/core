@@ -32,6 +32,8 @@ int symgl_window_size(void *native_window, unsigned *width, unsigned *height);
 
 /* the window covers the whole screen; w x h is the display: the result is the factor (1..4) by which the window server's screen is blown up onto it (the kernel's pixel doubling), 0 = no; window server round trips: call it rarely */
 int symgl_window_fullscreen(void *native_window, unsigned w, unsigned h);
+/* the window server has drawn all this window's pending drawing (before a scan-out takeover) */
+void symgl_window_finish(void *native_window);
 
 /* the rotation of the window server's current screen mode in degrees (0, 90, 180, 270): 90 = an application's (x, y) is the
  * display's (width - 1 - y, x); window server round trips: call it rarely */

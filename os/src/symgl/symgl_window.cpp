@@ -646,3 +646,11 @@ extern "C" int symgl_sgimage_info(void* aImage, symgl_sgimage* aOut)
 	aOut->usage = (unsigned)info.iUsage;
 	return 1;
 	}
+
+// Before this window takes the display over (scan-out): the window server has drawn everything already sent to it -- this window's own
+// last bitmap-path frame among it -- so that drawing reaches the display before the screen target does, not after (it would take it down).
+extern "C" void symgl_window_finish(void* aNative)
+	{
+	if (aNative)
+		static_cast<RWindow*>(aNative)->Session()->Finish();
+	}
