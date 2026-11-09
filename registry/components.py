@@ -460,9 +460,9 @@ COMPONENTS = {
     # panics 'PhSrvStartUp' -- run the emergency-call detector with a null CPhCltEmergencyCall
     # avkonu_later.def: the exports a later S60 release added after the RCL_3 .def's 4604 (CAknTasHook's performance markers, AknTasTimestamp.cpp)
     "avkon": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/group/avkon.mmp",
-                  drop=["aknecs.cpp", "AknAppUi.cpp", "AknAdaptiveSearchGrid.cpp"],
+                  drop=["aknecs.cpp", "AknAppUi.cpp", "AknAdaptiveSearchGrid.cpp", "AknDef.cpp"],
                   extra=["toolchain/shims/stems/AknEcs.cpp", "src/phorepoc/avkon_trace/AknAppUi.cpp", "src/phorepoc/avkon_layout/AknAdaptiveSearchGrid.cpp",
-                         "src/phorepoc/avkon_later/AknTasTimestamp.cpp"],
+                         "src/phorepoc/avkon_later/AknTasTimestamp.cpp", "toolchain/shims/avkon_idle/AknDef.cpp"],
                   **{"def": extended_def("symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/EABI/AVKONU.DEF",
                                          "src/phorepoc/avkon_later/eabi/avkonu_later.def", "avkonu.def")},
                   import_typeinfo=True),   # the AppUi typeinfo chain: CEikAppUi's real typeinfo from eikcore (see eikcore)
@@ -912,7 +912,7 @@ COMPONENTS = {
     "ecompluginnotifier": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AknGlobalUI/AknCapServer/group/EComPluginNotifier.mmp"),
     "syslangutil": dict(mmp="oss.FCL.sf.os.devicesrv/sysstatemgmt/syslangutil/group/syslangutil.mmp"),
     "akncapserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AknGlobalUI/AknCapServer/group/AknCapServer.mmp",
-                         drop=["AknEikSgcs.cpp", "AknCapServerEntry.cpp", "eiksrvsp.cpp"], extra=["src/phorepoc/akncapserver_trace/AknEikSgcs.cpp",
+                         drop=["AknEikSgcs.cpp", "AknCapServerEntry.cpp", "eiksrvsp.cpp", "aknKeyFilter.cpp"], extra=["src/phorepoc/akncapserver_trace/AknEikSgcs.cpp", "toolchain/shims/avkon_idle/aknKeyFilter.cpp",
                          # a server status pane per WSERV screen (multi-window)
                          "src/phorepoc/akncapserver_trace/AknCapServerEntry.cpp", "src/phorepoc/akncapserver_trace/eiksrvsp.cpp"]),
     "apsexe": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appsupport/appfw/apparchitecture/group/APSEXE.MMP"),
