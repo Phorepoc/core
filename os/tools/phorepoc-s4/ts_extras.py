@@ -27,6 +27,8 @@ SOURCES = [
     ("snsrbigclockscreensaverplugin",
      f"{B}/oss.FCL.sf.app.homescreen/screensaver/snsrplugins/snsrbigclockscreensaverplugin/snsrbigclockscreensaverplugin.ts"),
 ]
+# ids the code uses that NO source has (neither the snapshot nor the package's own .ts): OURS, the plain English the id names
+OWN = {"homescreen": {"txt_homescreen_opt_add_content": "Add content"}}
 MESSAGE = re.compile(r"<message\b[^>]*\bid=\"([^\"]+)\"[^>]*>.*?</message>", re.S)
 
 
@@ -41,6 +43,10 @@ def main() -> int:
             continue
         have = set(re.findall(r"\bid=\"([^\"]+)\"", open(official, encoding="utf-8", errors="replace").read()))
         missing = [m.group(0) for m in MESSAGE.finditer(text) if m.group(1) not in have]
+        known = have | {m.group(1) for m in MESSAGE.finditer(text)}
+        for mid, en in sorted(OWN.get(name, {}).items()):
+            if mid not in known:
+                missing.append(f'<message numerus="no" id="{mid}"><source>{en}</source><translation variants="no">{en}</translation></message>')
         out = os.path.join(TS, f"{name}_extra.ts")
         if not missing:
             if os.path.exists(out):
