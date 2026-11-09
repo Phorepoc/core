@@ -912,7 +912,9 @@ COMPONENTS = {
     "ecompluginnotifier": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AknGlobalUI/AknCapServer/group/EComPluginNotifier.mmp"),
     "syslangutil": dict(mmp="oss.FCL.sf.os.devicesrv/sysstatemgmt/syslangutil/group/syslangutil.mmp"),
     "akncapserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AknGlobalUI/AknCapServer/group/AknCapServer.mmp",
-                         drop=["AknEikSgcs.cpp"], extra=["src/phorepoc/akncapserver_trace/AknEikSgcs.cpp"]),
+                         drop=["AknEikSgcs.cpp", "AknCapServerEntry.cpp", "eiksrvsp.cpp"], extra=["src/phorepoc/akncapserver_trace/AknEikSgcs.cpp",
+                         # a server status pane per WSERV screen (multi-window)
+                         "src/phorepoc/akncapserver_trace/AknCapServerEntry.cpp", "src/phorepoc/akncapserver_trace/eiksrvsp.cpp"]),
     "apsexe": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appsupport/appfw/apparchitecture/group/APSEXE.MMP"),
     "featmgrserver": dict(mmp="oss.FCL.sf.os.persistentdata/featuremgmt/featuremgr/group/featmgrserver.mmp"),
     "aknskinsrvexe": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.uiresources/skins/AknSkins/group/AknSkinSrvMain.mmp",

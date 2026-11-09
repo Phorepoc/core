@@ -58,6 +58,87 @@
 
 #include <layoutpack.cdl.h>
 #include <CdlRefs.h>
+
+// OURS (multi-window, docs/phorepoc/hildon-port.md 7.51.15): one server status pane per WSERV screen. The 2010 SGCS keeps ONE pane
+// and ONE window-group order, read with the screen-less RWsSession calls (= the key-focus screen). Screen 0 keeps all of that, now
+// asked about screen 0 by number (the same on one screen). Every other screen n gets its own pane (made by AknCapServerEntry.cpp,
+// registered with PheSgcsSetScreenPane) whose layout + flags follow the topmost window group ON SCREEN n that asked for a pane.
+const TInt KPheMaxScreens = 8;
+static CEikServStatusPane* ThePheScreenSp[KPheMaxScreens];
+static TInt ThePheScreenLayout[KPheMaxScreens], ThePheScreenFlags[KPheMaxScreens];
+struct TPheWgSp { TInt iWg; TInt iLayout; TInt iFlags; TBool iFull; };
+static TInt ThePheFirstFullWg[KPheMaxScreens];	// screen n's topmost full-screen group (SetPartialForegroundStatusesL per screen)
+static RArray<TPheWgSp> ThePheWgSp;		// every window group's last status-pane request (the screen-0 states drop other screens' groups)
+
+void PheSgcsSetScreenPane(TInt aScreen, CEikServStatusPane* aSp)
+	{
+	if (aScreen > 0 && aScreen < KPheMaxScreens)
+		ThePheScreenSp[aScreen] = aSp;
+	}
+
+static void PheRecordWgSp(TInt aWg, TInt aLayout, TInt aFlags, TBool aFull)
+	{
+	for (TInt i = 0; i < ThePheWgSp.Count(); ++i)
+		if (ThePheWgSp[i].iWg == aWg)
+			{ ThePheWgSp[i].iLayout = aLayout; ThePheWgSp[i].iFlags = aFlags; ThePheWgSp[i].iFull = aFull; return; }
+	TPheWgSp e = { aWg, aLayout, aFlags, aFull };
+	ThePheWgSp.Append(e);
+	}
+
+// screen n's pane: the shape the topmost window group of that screen asked for (SetStatusPaneShapeAndFlagsL, per screen)
+static void PheRecalcScreenPanesL(RWsSession& aWs)
+	{
+	for (TInt n = 1; n < KPheMaxScreens; ++n)
+		{
+		CEikServStatusPane* sp = ThePheScreenSp[n];
+		if (!sp)
+			continue;
+		CArrayFixFlat<TInt>* ids = new(ELeave) CArrayFixFlat<TInt>(4);
+		CleanupStack::PushL(ids);
+		aWs.WindowGroupList(ids, n);
+		TInt layout = 0, flags = 0, firstFull = 0;
+		for (TInt i = 0; i < ids->Count() && !(layout && firstFull); ++i)
+			for (TInt k = 0; k < ThePheWgSp.Count(); ++k)
+				if (ThePheWgSp[k].iWg == ids->At(i))
+					{
+					if (!layout && ThePheWgSp[k].iLayout)
+						{ layout = ThePheWgSp[k].iLayout; flags = ThePheWgSp[k].iFlags; }
+					if (!firstFull && ThePheWgSp[k].iFull)
+						firstFull = ids->At(i);
+					break;
+					}
+		CleanupStack::PopAndDestroy(ids);
+		// The topmost full-screen group on screen n is told it is in the foreground, as SetPartialForegroundStatusesL does
+		// for screen 0 (its states only hold screen 0's groups). Its status pane clock and indicators run on that event
+		// (aknstatuspanedigitalclock.cpp:304, aknstatuspanedatasubscriber.cpp:452).
+		if (firstFull && firstFull != ThePheFirstFullWg[n])
+			{
+			TWsEvent event;
+			event.SetTimeNow();
+			if (ThePheFirstFullWg[n])
+				{
+				event.SetType(KAknFullOrPartialForegroundLost);
+				aWs.SendEventToWindowGroup(ThePheFirstFullWg[n], event);
+				}
+			ThePheFirstFullWg[n] = firstFull;
+			event.SetType(KAknFullOrPartialForegroundGained);
+			aWs.SendEventToWindowGroup(firstFull, event);
+			RDebug::Printf("[sgcs] screen %d: foreground group %d", n, firstFull);
+			}
+		if (!layout)
+			continue;
+		if (ThePheScreenLayout[n] != layout)
+			{
+			sp->SwitchLayoutL(layout);
+			ThePheScreenLayout[n] = layout;
+			}
+		if (ThePheScreenFlags[n] != flags)
+			{
+			sp->SetFlags(flags);
+			ThePheScreenFlags[n] = flags;
+			}
+		}
+	}
 const TInt KCdlEComInterfaceId = 0x101f8243;
 const TInt KMatrixMenuAppId = 0x101F4CD2;
 
@@ -558,6 +639,7 @@ void CEikSgcServer::HandleWindowGroupParamChangeL(TInt aWgId, TBitFlags aAppFlag
     state.SetLegacyLayout(aAppFlags[CAknSgcClient::ELegacyLayout]);
     state.SetSpLayout(aSpLayout);
     state.SetSpFlags(aSpFlags);
+    PheRecordWgSp(aWgId, aSpLayout, aSpFlags, isFullScreen);		// OURS (7.51.15)
     
     // Check whether understands partial foreground is changed. 
     if (!state.UnderstandsPartialForeground())
@@ -616,7 +698,7 @@ CEikSgcServer::CWgIds* CEikSgcServer::CreateWgIdListLC() const
     {
     CWgIds* wgIds = new(ELeave) CWgIds(1);
     CleanupStack::PushL(wgIds);
-    iWs.WindowGroupList(wgIds);
+    iWs.WindowGroupList(wgIds, 0);	// OURS (7.51.15): screen 0's order (the screen-less call = the key-focus screen)
     return wgIds;
     }
 
@@ -764,6 +846,7 @@ void CEikSgcServer::PostChangeRecalcL()
     SetLayoutL(topSp);
     SetStatusPaneShapeAndFlagsL(topSp);
     SetPartialForegroundStatusesL();
+    PheRecalcScreenPanesL(iWs);		// OURS (7.51.15): the other screens' panes
     }
 
 TBool CEikSgcServer::TestWgListOrderOk(CWgIds* aWgIds) const
@@ -785,7 +868,7 @@ TBool CEikSgcServer::TestWgListOrderOk(CWgIds* aWgIds) const
 
 TInt CEikSgcServer::FocusWgIndex() const
     {
-    TInt index = WgStateIndex(iWs.GetFocusWindowGroup());
+    TInt index = WgStateIndex(iWs.GetFocusWindowGroup(0));	// OURS (7.51.15): screen 0's focus
     if (index == KErrNotFound)
         {
         index = 0;
