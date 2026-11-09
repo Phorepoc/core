@@ -58,6 +58,13 @@ int symvmw_scanout(symvmw_t *v, int op);
 int symvmw_submit(symvmw_t *v, uint32_t offset, uint32_t length, uint32_t context, uint32_t flags, uint32_t dx_context,
                   uint32_t surf_high, uint32_t ctx_high, uint32_t *status, uint32_t *error_offset);
 
+/* GPU surface sharing between processes (the kernel's share table, hildon-port.md 7.45-7.47). export: one of this process's surfaces ->
+   a token (> 0) another process can import; import: token -> the surface id + its size and SVGA3dSurfaceFormat (read only by convention:
+   the kernel does not validate command buffers, see x86-64-port.md "Next rungs"). Return 0 or a negative Symbian error. */
+int symvmw_surface_export(symvmw_t *v, uint32_t sid, uint32_t width, uint32_t height, uint32_t format, int *token);
+int symvmw_surface_import(symvmw_t *v, int token, uint32_t *sid, uint32_t *width, uint32_t *height, uint32_t *format);
+int symvmw_surface_unexport(symvmw_t *v, int token);
+
 #ifdef __cplusplus
 }
 #endif
