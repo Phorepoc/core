@@ -74,6 +74,7 @@ enum TFmEvent
     EFmBoot,            // the modem comes up: ModemStatusReady, security, RF on
     EFmReg,             // answer GetNetworkRegistrationStatus (and announce the network)
     EFmNetwork,         // mode, current network, signal
+    EFmSignal,          // a signal strength report on its own (arg = bars)
     EFmIdent,           // IMEI / IMSI (GetPhoneId / GetSubscriberId)
     EFmOperatorName,    // CustomAPI operator name
     EFmProviderName,    // CustomAPI network provider name
@@ -444,7 +445,8 @@ private:
         area.iLocationAreaCode = 0x1234;
         // each later report is from the next cell (cell reselection): CTSY completes a client's pending "network changed" request only when
         // what it reports differs from what it held, and an identical repeat would reach nobody
-        area.iCellId = 0x00ABCD + ( iNetReports++ & 3 );
+        const TInt report = iNetReports++;
+        area.iCellId = 0x00ABCD + ( report & 3 );
 #ifdef PHE_LTSY
         if ( iAt ) { area.iAreaKnown = iAt->Net().iLac > 0; area.iLocationAreaCode = iAt->Net().iLac; area.iCellId = iAt->Net().iCellId; }
 #endif
@@ -454,6 +456,18 @@ private:
 
         TInt8 bars = KFmSignalBars;
         TInt32 rssi = KFmSignalRssi;
+        // the signal is a notification CTSY (and QtMobility on top: it compares the bar with the previous one) delivers only for a CHANGE; the
+        // first report after RF on reads one bar lower while the receiver settles and the real level follows a moment later
+        TBool wobble = ( report & 1 ) != 0;
+#ifdef PHE_LTSY
+        if ( iAt ) wobble = EFalse;      // the real modem's own levels
+#endif
+        if ( wobble )
+            {
+            bars = KFmSignalBars - 1;
+            rssi = KFmSignalRssi - 8;
+            Post( EFmSignal, 15, KFmSignalBars );
+            }
 #ifdef PHE_LTSY
         if ( iAt ) { bars = (TInt8)iAt->Net().iBars; rssi = iAt->Net().iRssiDbm; }   // pheltsy: AT+CSQ
 #endif
@@ -461,6 +475,15 @@ private:
         s.PackData( &bars, &rssi );
         Complete( EMobilePhoneNotifySignalStrengthChange, &s );
         RDebug::Print( _L("[fakemodem] network '%S', signal %d of 7 bars"), &KFmOperatorLong, (TInt)bars );
+        }
+    void DoSignal( TInt aBars )
+        {
+        TInt8 bars = (TInt8)aBars;
+        TInt32 rssi = KFmSignalRssi;
+        CMmDataPackage s;
+        s.PackData( &bars, &rssi );
+        Complete( EMobilePhoneNotifySignalStrengthChange, &s );
+        RDebug::Print( _L("[fakemodem] signal %d of 7 bars"), aBars );
         }
     void DoIdent( TBool aImsi )
         {
@@ -885,6 +908,7 @@ private:
                 case EFmBoot: DoBoot(); break;
                 case EFmReg: DoReg( arg ); break;
                 case EFmNetwork: DoNetwork(); break;
+                case EFmSignal: DoSignal( arg ); break;
                 case EFmIdent: DoIdent( arg ); break;
                 case EFmOperatorName: DoOperatorName(); break;
                 case EFmProviderName: DoProviderName(); break;
