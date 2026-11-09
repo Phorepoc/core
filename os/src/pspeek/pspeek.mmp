@@ -1,0 +1,12 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+// pspeek: prints the start-up Publish & Subscribe values every 10 s for three minutes (what SSM's conditions, SysAp, CTelephony wait on).
+TARGET			pspeek.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE5510013
+CAPABILITY		ALL -TCB
+VENDORID		0
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+SOURCEPATH		.
+SOURCE			pspeek.cpp
+LIBRARY			euser.lib
