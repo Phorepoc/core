@@ -10,8 +10,8 @@
 //   any other: the exes in the shell's start list (fire-and-forget, or "wait"), then its launcher exe
 // It signals SSM when the shell's launcher has signalled, then stays alive as long as that launcher, so SSM's restart monitoring
 // of the idle slot keeps its meaning (the launcher dies -> we exit with its reason -> SSM restarts us -> the shell comes back).
-// Safety (2026-11-08): the Menu key held at boot forces S^3; a shell that did not stay up KPheShellGoodSeconds twice in a row
-// (key 11 counts the unconfirmed starts) is given up -- back to S^3, with a note (key 12); a choice that is not there falls back.
+// Safety (2026-11-08): the Menu key held at boot forces S^3; a shell whose boot did not reach the Normal system state
+// (KPSGlobalSystemState) with its launcher still alive, twice in a row (key 11 counts the unconfirmed starts) is given up -- back to S^3, with a note (key 12); a choice that is not there falls back.
 #include <e32base.h>
 #include <e32debug.h>
 #include <f32file.h>
@@ -361,28 +361,47 @@ static TInt RunShellL()
 		CleanupStack::PopAndDestroy(&n);
 		}
 	// stay as long as the launcher: its exit = ours, so the idle slot's restart monitor still sees a dying shell.
-	// A shell other than S^3 that stays up KPheShellGoodSeconds is confirmed good.
+	// A shell other than S^3 is confirmed good by an EVENT: the system reaches a Normal state (SSM's terminal state of a normal boot,
+	// KPSGlobalSystemState NormalRfOn / NormalRfOff / NormalBTSap) while the shell's launcher is still alive. Not by a stretch of time:
+	// a slow machine (an emulated guest) needs longer for the same boot, and the rule must not depend on how long it takes.
 	TRequestStatus st;
 	launcher.Logon(st);
 	if (!s3)
 		{
-		RTimer timer;
-		timer.CreateLocal();
-		TRequestStatus ts;
-		timer.After(ts, KPheShellGoodSeconds * 1000000);
-		User::WaitForRequest(st, ts);
-		if (st == KRequestPending)
+		const TUid KPSUidStartup = {0x101F8766};
+		const TUint32 KPSGlobalSystemState = 0x41;
+		const TInt KSwStateNormalRfOn = 109, KSwStateNormalBTSap = 111;		// startupdomainpskeys.h: NormalRfOn, NormalRfOff (110), NormalBTSap
+		RProperty state;
+		TInt pr = state.Attach(KPSUidStartup, KPSGlobalSystemState);
+		TBool confirmed = EFalse;
+		while (pr == KErrNone && st == KRequestPending)
+			{
+			TInt v = 0;
+			TRequestStatus ps;
+			state.Subscribe(ps);
+			if (state.Get(v) == KErrNone && v >= KSwStateNormalRfOn && v <= KSwStateNormalBTSap)
+				{
+				state.Cancel();
+				User::WaitForRequest(ps);
+				confirmed = ETrue;
+				break;
+				}
+			User::WaitForRequest(st, ps);
+			if (st != KRequestPending)
+				{
+				state.Cancel();
+				User::WaitForRequest(ps);
+				break;
+				}
+			}
+		state.Close();
+		if (confirmed)
 			{
 			SetRepoInt(repo, KPheDevKeyShellTries, 0);
-			RDebug::Printf("PH: [shellsel] shell confirmed good");
+			RDebug::Printf("PH: [shellsel] shell confirmed good (the system reached its Normal state)");
+			}
+		if (st == KRequestPending)
 			User::WaitForRequest(st);
-			}
-		else
-			{
-			timer.Cancel();
-			User::WaitForRequest(ts);
-			}
-		timer.Close();
 		}
 	else
 		User::WaitForRequest(st);
