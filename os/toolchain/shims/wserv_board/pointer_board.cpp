@@ -1,5 +1,5 @@
 // pointer_board.cpp -- OURS: WSERV's REAL nonnga/SERVER/POINTER.CPP, copied unmodified except ONE block in PreProcessEvent
-// (marked OURS): the pointer follows the key-focus screen (multi-window: one classic app per WSERV screen).
+// (marked OURS): a second pointer stream for injected events, on the key-focus screen (multi-window, hildon-port.md 7.51.11).
 // components.py "wserv" drops POINTER.CPP and builds this instead.
 // Copyright (c) 1995-2010 Nokia Corporation and/or its subsidiary(-ies).
 // All rights reserved.
@@ -20,6 +20,7 @@
 
 #include <e32std.h>
 #include <e32hal.h>
+#include <e32debug.h>
 #include "W32CLICK.H"
 #include "pointer.h"
 #include "rootwin.h"
@@ -29,6 +30,7 @@
 #include "EVENT.H"
 #include "panics.h"
 #include "wstop.h"
+#include "CLIENT.H"
 #include "inifile.h"
 #include "graphics/pointereventdata.h"
 
@@ -56,6 +58,16 @@ TBool WsPointer::iTimerQueued;
 TBool WsPointer::iUpdateRequired;
 CPeriodic *WsPointer::iPeriodicTimer;
 CWsRootWindow* WsPointer::iRootWindow;
+
+// OURS (hildon-port.md 7.51.11): the saved state of the pointer stream that is not active (0 = the digitiser, 1 = injected)
+struct TPointerStream
+	{
+	TPoint iPos; TBool iDown; const CWsWindow* iCurrent; const CWsWindow* iGrab; const CWsWindow* iOver; const CWsWindow* iPrevClick;
+	TPoint iPrevClickPos; TTime iPrevClickTime; TPointerEvent::TType iPrevClickType; CWsRootWindow* iRoot;
+	TUint iUnmatched1, iUnmatched2, iUnmatched3;
+	};
+static TPointerStream TheStreams[2];
+static TInt TheActiveStream;
 
 TBool CWsPointerBuffer::iSignalled=EFalse;
 CWsPointerBuffer *CWsPointerBuffer::iCurrentBuffer=NULL;
@@ -168,6 +180,13 @@ void WsPointer::UnmatchedDownPurged(TPointerEvent::TType aPointerType, TUint aHa
 
 void WsPointer::WindowDisconected(const CWsWindow *deletedWindow)
 	{
+	{	// OURS (7.51.11): the inactive stream must not keep a deleted window either
+	TPointerStream& o=TheStreams[1-TheActiveStream];
+	if (o.iGrab==deletedWindow) o.iGrab=NULL;
+	if (o.iCurrent==deletedWindow) o.iCurrent=NULL;
+	if (o.iOver==deletedWindow) o.iOver=NULL;
+	if (o.iPrevClick==deletedWindow) o.iPrevClick=NULL;
+	}
 	if (iRepeatWindow==deletedWindow)
 		CancelPointerRepeatEventRequest();
 	if (iGrabWindow==deletedWindow)
@@ -411,11 +430,33 @@ TBool WsPointer::PreProcessEvent(TRawEvent &aRawEvent)
 		return ETrue;
 	if (!XyInput())
 		return EFalse;
-	// OURS (Phorepoc multi-window): the pointer follows the KEY FOCUS screen. 2010 binds it to screen 0 for good
-	// (InitStaticsL; only screen 0 gets a digitiser area, CWsTop::InitScreenL) -- a cover display has no pointer. With one
-	// classic app per screen (multi-window), the compositor focuses the window's screen (RWsSession::SetFocusScreen) before it
-	// injects the click; the root switches only between gestures (no button down), the grab and the current window reset.
-	if (!iPointerDown && iRootWindow->Screen()!=CWsTop::CurrentFocusScreen())
+	// OURS (Phorepoc, hildon-port.md 7.51.11): TWO pointer streams. 2010 has ONE pointer, bound to screen 0 for good (InitStaticsL;
+	// only screen 0 gets a digitiser area) -- a SimulateRawEvent shares it with the digitiser (aFromHardware tells them apart, WINS
+	// only). With one classic app per screen (multi-window) a compositor on screen 0 holds the digitiser's grab while it injects
+	// the window's press for the app's screen: through the one pointer that press went back to the compositor. So the digitiser
+	// keeps the 2010 pointer (screen 0), and an injected event (sent by a client: CWsClient::CurrentClient(), a SwEvent holder) has
+	// its own grab / down state / current window on the KEY FOCUS screen -- what 2010's multi-pointer model (NGA, per-pointer
+	// state) does for concurrent streams. Its root follows the focus screen between gestures (no button down).
+	{
+	const TInt want=CWsClient::CurrentClient()!=NULL ? 1 : 0;
+	if (want!=TheActiveStream)
+		{
+		TPointerStream& out=TheStreams[TheActiveStream];
+		out.iPos=iCurrentPos; out.iDown=iPointerDown; out.iCurrent=iCurrentWindow; out.iGrab=iGrabWindow;
+		out.iOver=iActualWinPointerIsOver; out.iPrevClick=iPrevClickWindow; out.iPrevClickPos=iPrevClickPos;
+		out.iPrevClickTime=iPrevClickTime; out.iPrevClickType=iPrevClickEventType; out.iRoot=iRootWindow;
+		out.iUnmatched1=iLastUnmatchedDown1; out.iUnmatched2=iLastUnmatchedDown2; out.iUnmatched3=iLastUnmatchedDown3;
+		TPointerStream& in=TheStreams[want];
+		if (!in.iRoot)
+			in.iRoot=CWsTop::CurrentFocusScreen()->RootWindow();
+		CancelPointerRepeatEventRequest();
+		iCurrentPos=in.iPos; iPointerDown=in.iDown; iCurrentWindow=in.iCurrent; iGrabWindow=in.iGrab;
+		iActualWinPointerIsOver=in.iOver; iPrevClickWindow=in.iPrevClick; iPrevClickPos=in.iPrevClickPos;
+		iPrevClickTime=in.iPrevClickTime; iPrevClickEventType=in.iPrevClickType; iRootWindow=in.iRoot;
+		iLastUnmatchedDown1=in.iUnmatched1; iLastUnmatchedDown2=in.iUnmatched2; iLastUnmatchedDown3=in.iUnmatched3;
+		TheActiveStream=want;
+		}
+	if (want==1 && !iPointerDown && iRootWindow->Screen()!=CWsTop::CurrentFocusScreen())
 		{
 		iGrabWindow=NULL;
 		SetCurrentWindow(NULL);
@@ -423,6 +464,7 @@ TBool WsPointer::PreProcessEvent(TRawEvent &aRawEvent)
 		if (MovesAvailable())
 			SetCurrentWindow(iRootWindow);
 		}
+	}
 	TPoint xy=aRawEvent.Pos();
 	if (DeltaMouse())
 		{
@@ -474,6 +516,12 @@ void WsPointer::ProcessEvent(TPointerEvent::TType aType, const TPoint &aPos, TUi
 	TPoint pos(iCurrentPos);	// We need a non-const TPoint for 'ReLogCurrentWindow'
 	TPoint parPos;
 	ReLogCurrentWindow(pos,parPos,aForceInGroup);
+	if (TheActiveStream==1 && aType!=TPointerEvent::EMove)	// OURS (7.51.11): where an injected press/release lands
+		{
+		const CWsWindowGroup* g=iCurrentWindow ? iCurrentWindow->WinGroup() : NULL;
+		RDebug::Printf("[wserv] injected pointer %d at %d,%d: screen %d, window %08x (group %d), grab %08x", aType, aPos.iX, aPos.iY,
+			iRootWindow->Screen()->ScreenNumber(), (TUint)iCurrentWindow, g ? g->Identifier() : 0, (TUint)iGrabWindow);
+		}
 	TWsEvent event;
 	TPointerEvent& pointerEvent=*event.Pointer();
 	pointerEvent.iModifiers=aModifiers;
