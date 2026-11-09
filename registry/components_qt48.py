@@ -94,7 +94,7 @@ COMPONENTS["qt48_qmlhello"] = dict(mmp=os.path.join(OS_ROOT, "src", "qt48", "qml
 # ---- Qt Mobility 1.2.0 (upstream tag v1.2.0, LGPL; tools/phorepoc-qt48/build_qtmobility_sis.sh) --------------------------------
 # The mmps are the ones qmake generated from features/config.pri.symbian3 (one per DLL the real firmware carries: the module DLLs
 # and the plug-ins). Keys are the lower-cased lib stems so an mmp's `LIBRARY QtSensors.lib` resolves to the component of that name;
-# the four modules components_s4.py already registers (1.0.3 sources, S4 line) keep their S4 keys when PHOREPOC_S4=1.
+# (the S4 line no longer registers 1.0.3 copies of serviceframework/publishsubscribe/systeminfo: Orbit uses these.)
 QTM = os.path.join(QB, "qtm12-src")
 _QTMINC = ["-I" + os.path.join(QTM, "src", "global"), "-I" + os.path.join(QTM, "include")] + \
           ["-I" + os.path.join(QTM, "include", "Qt" + m) for m in (
@@ -138,13 +138,16 @@ _QTM12 = {   # key: (mmp, .def or None for a plug-in, ROM/installed file name)
     "qtversit_backuphandler": ("plugins/versit/backuphandler/qtversit_backuphandler_dll.mmp", None, "qtversit_backuphandler.dll"),
     "qtversit_vcardpreserver": ("plugins/versit/vcardpreserver/qtversit_vcardpreserver_dll.mmp", None, "qtversit_vcardpreserver.dll"),
 }
-_QTM12_S4 = {   # the S4 line's 1.0.3 entries have these keys; the 1.2 ones are only added without it
+_QTM12_S4 = {   # the modules + servers Orbit/Hb/hs use (the S4 line used 1.0.3 copies of these until 2026-11-09)
     "qtserviceframework": ("src/serviceframework/QtServiceFramework_dll.mmp", "QtServiceFrameworku.def", "QtServiceFramework.dll"),
     "qtpublishsubscribe": ("src/publishsubscribe/QtPublishSubscribe_dll.mmp", "QtPublishSubscribeu.def", "QtPublishSubscribe.dll"),
     "qtsysteminfo": ("src/systeminfo/QtSystemInfo_dll.mmp", "QtSystemInfou.def", "QtSystemInfo.dll"),
+    # the two servers of the stock package (the service framework's database manager, the publish&subscribe path mapper)
+    "qsfwdatabasemanagerserver": ("src/serviceframework/databasemanagerserver_symbian/qsfwdatabasemanagerserver_exe.mmp", None,
+                                  "qsfwdatabasemanagerserver.exe"),
+    "qpspathmapperserver": ("src/publishsubscribe/psmapperserver_symbian/qpspathmapperserver_exe.mmp", None, "qpspathmapperserver.exe"),
 }
-if os.environ.get("PHOREPOC_S4") != "1":
-    _QTM12.update(_QTM12_S4)
+_QTM12.update(_QTM12_S4)     # also on the S^4 line: Orbit/Hb/hs link the stock 1.2.x
 # QtMessaging's Symbian engines use the commonemail client API (EPL: oss.FCL.sf.app.commonemail/email_plat)
 _EMAILINC = ["-I" + os.path.join(SYMBIAN, "symbian-2010", "oss.FCL.sf.app.commonemail", "email_plat", d, "inc")
              for d in ("email_client_api", "email_services_api")]
