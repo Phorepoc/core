@@ -312,7 +312,7 @@ private:
     CFakeModem( CMmMessageRouter* aRouter )
         : CPeriodic( CActive::EPriorityStandard ), iRouter( aRouter ), iCallId( 0 ),
           iCallStatus( RMobileCall::EStatusIdle ), iMsgRef( 0 ), iBooted( EFalse ),
-          iRingSeen( EFalse ), iSmsSeen( EFalse ), iPoll( 0 ), iPbSlot( 0 )
+          iRingSeen( EFalse ), iSmsSeen( EFalse ), iPoll( 0 ), iPhonePwr( 0 ), iNetReports( 0 ), iPbSlot( 0 )
         {
         }
     void ConstructL()
@@ -437,7 +437,9 @@ private:
         RMobilePhone::TMobilePhoneLocationAreaV1 area;
         area.iAreaKnown = ETrue;
         area.iLocationAreaCode = 0x1234;
-        area.iCellId = 0x00ABCD;
+        // each later report is from the next cell (cell reselection): CTSY completes a client's pending "network changed" request only when
+        // what it reports differs from what it held, and an identical repeat would reach nobody
+        area.iCellId = 0x00ABCD + ( iNetReports++ & 3 );
 #ifdef PHE_LTSY
         if ( iAt ) { area.iAreaKnown = iAt->Net().iLac > 0; area.iLocationAreaCode = iAt->Net().iLac; area.iCellId = iAt->Net().iCellId; }
 #endif
@@ -811,6 +813,20 @@ private:
     // external stimuli: P&S keys (defined by phetelprobe; absent = nothing to do)
     void PollStimuli()
         {
+        // The phone power (P&S KUidPhonePwr, set to ESAPhoneOn by SysAp once the start-up reached its Normal RF-on state): a modem that
+        // comes out of "flight mode" registers again and reports its network. CTelephony answers every request with KErrAccessDenied
+        // until the key is on, and a client that asked earlier (QtMobility's QSystemNetworkInfo, Orbit's home screen title) has only
+        // a pending change notification: this is what completes it with the name.
+        TInt pwr = 0;
+        if ( RProperty::Get( TUid::Uid( 0x101f75b6 ), 0x100052C5, pwr ) == KErrNone )
+            {
+            if ( pwr == 1 && iPhonePwr != 1 && iBooted )
+                {
+                RDebug::Printf( "[fakemodem] phone power on: registering again" );
+                Post( EFmReg, 2 );
+                }
+            iPhonePwr = pwr;
+            }
         TBuf<32> num;
         if ( RProperty::Get( KFmPropCat, KFmPropRing, num ) == KErrNone )
             {
@@ -894,6 +910,8 @@ private:
     RMobileCall::TMobileCallStatus iCallStatus;
     TInt16 iMsgRef;
     TBool iBooted;
+    TInt iPhonePwr;
+    TInt iNetReports;
     TBool iRingSeen;
     TBool iSmsSeen;
     TInt iPoll;
