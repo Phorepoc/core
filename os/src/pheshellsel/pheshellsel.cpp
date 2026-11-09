@@ -17,6 +17,7 @@
 #include <f32file.h>
 #include <w32std.h>
 #include <centralrepository.h>
+#include <e32property.h>
 #include <apgcli.h>
 #include <apacmdln.h>
 #include "../phedevmenu/phedevmenu.h"
@@ -320,6 +321,23 @@ static TInt RunShellL()
 		r = StartAndRendezvous(KAiLaunch, KNullDesC, launcher);
 		if (r == KErrNone)
 			StartMatrixMenuInBackground();
+		}
+	if (r == KErrNone && !s3 && shell->iIdleUid)
+		{
+		// What S^3's ailaunch does for its idle application: the Phone application (RCL_3 phoneui) does not mark the phone ready
+		// (KPSPhonePhase1Ok) until an idle application has published its UID (KPSUidAiInformation / KActiveIdleUid), SSM's start-up
+		// list waits for that key before it switches the RF on, and until the RF swp is set SysAp never sets KUidPhonePwr
+		// (CTelephony answers "flight mode" to everything). Orbit's home screen does not know that protocol: its selector
+		// announces it, once the launcher has signalled.
+		const TUid KPSUidAiInformation = {0x101FD657};
+		const TUint KActiveIdleUid = 1;
+		TInt pr = RProperty::Set(KPSUidAiInformation, KActiveIdleUid, (TInt)shell->iIdleUid);
+		if (pr == KErrNotFound)
+			{
+			RProperty::Define(KPSUidAiInformation, KActiveIdleUid, RProperty::EInt);
+			pr = RProperty::Set(KPSUidAiInformation, KActiveIdleUid, (TInt)shell->iIdleUid);
+			}
+		RDebug::Print(_L("PH: [shellsel] active idle UID %08x published: %d"), shell->iIdleUid, pr);
 		}
 	RProcess::Rendezvous(r);		// SSM's wait-for-signal: the shell's launcher is up (or its error)
 	if (r != KErrNone)

@@ -74,6 +74,7 @@ public:
 	HBufC* iLauncher;
 	HBufC* iIcon;
 	TBool iBuiltin;
+	TUint32 iIdleUid;		// the UID of the shell's idle application (0 = none): published as the active idle UID once the launcher is up
 	};
 
 typedef RPointerArray<CPheShell> RPheShells;
@@ -116,6 +117,7 @@ inline CPheShell* PheShellParseLC(const TDesC8& aText, TChar aDrive)
 			else if (k->CompareF(_L("start")) == 0) CPheShell::SetL(s->iStart, *v);
 			else if (k->CompareF(_L("launcher")) == 0) CPheShell::SetL(s->iLauncher, *v);
 			else if (k->CompareF(_L("icon")) == 0) CPheShell::SetL(s->iIcon, *v);
+			else if (k->CompareF(_L("idleuid")) == 0) { TLex lx(*v); TUint32 u = 0; if (lx.Val(u, EHex) == KErrNone) s->iIdleUid = u; }
 			CleanupStack::PopAndDestroy(2, k);		// v, k
 			}
 		CleanupStack::PopAndDestroy(l);
