@@ -72,12 +72,15 @@ _S4INC = os.path.join(QTB, "epoc32", "include")
 _S4EXPORTS = ["-idirafter", _S4INC, "-idirafter", os.path.join(_S4INC, "mw"),
               "-idirafter", os.path.join(_S4INC, "platform", "mw"), "-idirafter", os.path.join(_S4INC, "platform")]
 
-QTM = os.path.join(QTB, "qtm-src")
+QTM = os.path.join(QTB, "qtm12-src")      # Qt Mobility as shipped: the stock 1.2.x headers (the SIS "QtMobility" is built from the same tree)
 HSRV = os.path.join(QTB, "hsrv-src")
 # Qt Mobility's module headers for its clients (CONFIG += mobility: <QServiceManager>, <qservicemanager.h>)
-_QTMINC = ["-I" + os.path.join(QTM, "include", "Qt" + m)
-           for m in ("ServiceFramework", "PublishSubscribe", "SystemInfo", "Mobility")]
 QTE = os.path.join(QTB, "qte-src")
+# the Qt extensions' own xq*.h (xqsettingsmanager.h, xqutils.h ...) come FIRST: the stock QtMobility 1.2 header tree (our blanket copy of its
+# src/ headers) also carries same-named non-public xq*.h whose private headers are not installed; the clients mean the extensions'
+_QTEINC = ["-I" + os.path.join(QTE, "qtmobileextensions", "src", d) for d in ("settingsmanager", "sysinfo", "utils", "keycapture", "systemtoneservice")]
+_QTMINC = _QTEINC + ["-I" + os.path.join(QTM, "include", "Qt" + m)
+           for m in ("ServiceFramework", "PublishSubscribe", "SystemInfo", "Mobility")]
 HS = os.path.join(QTB, "hs-src")
 # the homescreen: Orbit + Qt Mobility clients, over the S^4 exports
 _HSFLAGS = _HBFLAGS + _HBINC + _QTMINC + _S4EXPORTS
@@ -101,20 +104,8 @@ def _qx(root: str, mmp: str, deffile=None, **kw) -> dict:
 
 
 COMPONENTS = {
-    "qtserviceframework": _qx(QTM, "src/serviceframework/QtServiceFramework_dll.mmp",
-                              "src/s60installs/eabi/QtServiceFrameworku.def", rom="QtServiceFramework.dll"),
-    # board delta: refresh the C: database when the ROM one is newer (toolchain/shims/qtm_board)
-    "qsfwdatabasemanagerserver": _qx(QTM, "src/serviceframework/databasemanagerserver_symbian/qsfwdatabasemanagerserver_exe.mmp",
-                                     drop=["databasemanagersession.cpp"], extra=["toolchain/shims/qtm_board/databasemanagersession.cpp"]),
-    "qtpublishsubscribe": _qx(QTM, "src/publishsubscribe/QtPublishSubscribe_dll.mmp",
-                              "src/s60installs/eabi/QtPublishSubscribeu.def", rom="QtPublishSubscribe.dll"),
-    "qpspathmapperserver": _qx(QTM, "src/publishsubscribe/psmapperserver_symbian/qpspathmapperserver_exe.mmp"),
-    # (s60_HbKeymap: Orbit's input keymaps, HbCore)
-    # board delta: no WLAN engine on this board -> CWlanInfo without a management client does not poll through it
-    "qtsysteminfo": _qx(QTM, "src/systeminfo/QtSystemInfo_dll.mmp", "src/s60installs/eabi/QtSystemInfou.def",
-                        rom="QtSystemInfo.dll", flags=_HBFLAGS + _HBINC + _S4EXPORTS,
-                        drop=["wlaninfo_s60.cpp"], extra=["toolchain/shims/qtsysteminfo_board/wlaninfo_s60.cpp"],
-                        defs=_QTDEFS + ["PHOREPOC_NO_WLAN"]),
+    # Qt Mobility (serviceframework, publishsubscribe, systeminfo + the two servers) is NOT here: Orbit/Hb/hs run on the stock 1.2.x
+    # (components_qt48.py, the upstream tag, its own SIS "QtMobility"); the 1.0.3 copies with two local source replacements are gone.
     # the native ones are the release's own mmps under the same export
     "cautils": _qx(HSRV, "contentstorage/cautils/cautils_dll.mmp", "contentstorage/eabi/cautilsu.def", rom="cautils.dll",
                    flags=_HBFLAGS + _HBINC + _S4EXPORTS),
@@ -286,7 +277,9 @@ COMPONENTS = {
                         "qtmobileextensions/src/eabi/xqkeycaptureu.def", rom="xqkeycapture.dll"),
     "xqsystemtoneservice": _qx(QTE, "qtmobileextensions/src/systemtoneservice/xqsystemtoneservice_dll.mmp",
                                "qtmobileextensions/src/eabi/xqsystemtoneserviceu.def", rom="xqsystemtoneservice.dll"),
-    "hbcore": _hb("hbcore", "HbCore_dll.mmp", "hbcore/defs/eabi/HbCoreu.def", rom="HbCore.dll", x32_flags=_S4UNDEFS + _S4SYSLANG),
+    # HB_HAVE_QT_MOBILITY (os/tools/phorepoc-s4/hb_configure_symbian.sh): HbSystemInfo reads QSystemNetworkInfo / QSystemDeviceInfo
+    "hbcore": _hb("hbcore", "HbCore_dll.mmp", "hbcore/defs/eabi/HbCoreu.def", rom="HbCore.dll", x32_flags=_S4UNDEFS + _S4SYSLANG,
+                  flags=_HBFLAGS + _QTMINC),
     "hbwidgets": _hb("hbwidgets", "HbWidgets_dll.mmp", "hbwidgets/defs/eabi/HbWidgetsu.def", rom="HbWidgets.dll"),
     "hbutils": _hb("hbutils", "HbUtils_dll.mmp", "hbutils/defs/eabi/HbUtilsu.def", rom="HbUtils.dll"),
     "hbinput": _hb("hbinput", "HbInput_dll.mmp", "hbinput/defs/eabi/HbInputu.def", rom="HbInput.dll"),

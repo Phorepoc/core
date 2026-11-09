@@ -244,10 +244,37 @@ static void SetRepoInt(CRepository* aRepo, TUint32 aKey, TInt aVal)
 		aRepo->Set(aKey, aVal);
 	}
 
+// The Qt Mobility service framework keeps its service database on C: (private/2002ac7f), seeded from the ROM's copy. A copy left by an OLDER
+// ROM (another image flashed since, or an empty file a misnamed ROM database left behind) shadows the new ROM database for good: no
+// command handlers, app launches fail KErrNotFound. Stock QtMobility does not look at the ROM copy again, so the platform does: a ROM database newer
+// than its C: copy replaces it (the C: copy is removed, QtMobility re-seeds from the ROM). Before any shell service starts.
+static void RefreshServiceDatabases(RFs& aFs)
+	{
+	_LIT(KRomDir, "z:\\private\\2002ac7f\\");
+	_LIT(KCDir, "c:\\private\\2002ac7f\\");
+	CDir* dir = NULL;
+	if (aFs.GetDir(KRomDir, KEntryAttNormal, ESortNone, dir) != KErrNone || !dir)
+		return;
+	for (TInt i = 0; i < dir->Count(); ++i)
+		{
+		const TEntry& rom = (*dir)[i];
+		TFileName cpath(KCDir);
+		cpath.Append(rom.iName);
+		TEntry c;
+		if (aFs.Entry(cpath, c) == KErrNone && rom.iModified > c.iModified)
+			{
+			TInt r = aFs.Delete(cpath);
+			RDebug::Print(_L("PH: [shellsel] service database %S is older than the ROM's: removed (%d)"), &rom.iName, r);
+			}
+		}
+	delete dir;
+	}
+
 static TInt RunShellL()
 	{
 	RFs fs;
 	User::LeaveIfError(fs.Connect());
+	RefreshServiceDatabases(fs);
 	CleanupClosePushL(fs);
 	RPheShells shells;
 	CleanupClosePushL(shells);
