@@ -5,10 +5,8 @@
 //
 // The PC display HAL (built with DYNRES) keeps a shadow screen of the largest size and shows its top-left
 // "active" part; a host window resize, or this client's keys, changes the active size and the real framebuffer
-// mode. This client is the piece that tells the window server: it polls the HAL's active size (function 0x7101),
-// and when it changed it sets the current screen mode's attributes (size, twips, pointer area) and re-selects
-// the mode, so WSERV's CScreen runs its normal screen-mode-change path (doSetScreenMode: device-changed events
-// to every client, focus reset). Then it does what any application does on EEventScreenDeviceChanged: refreshes
+// mode. The piece that tells the window server is core's phedispmode (no window, started at boot); this client polls the HAL's active size (function 0x7101) to log it,
+// and does what any application does on EEventScreenDeviceChanged: refreshes
 // its screen device (SetAppScreenMode) and re-lays out -- here a full-screen window with a grid, a border, the
 // size, and a count of the changes.
 //
@@ -87,23 +85,6 @@ static void DrawScene(CWindowGc& aGc, RWindow& aWin, CFont* aFont, TInt aChanges
 	aGc.Deactivate();
 	}
 
-// tell WSERV the display now has this size: the desktop screen mode takes it (the LAST wsini mode when there are more than the
-// phone's two -- the S60 modes keep their phone sizes; else the current mode), then the mode is re-selected
-static void ApplySize(CWsScreenDevice& aScreen, TInt aW, TInt aH)
-	{
-	const TInt modes = aScreen.NumScreenModes();
-	if (modes >= 3)
-		aScreen.SetScreenMode(modes - 1);
-	TSizeMode m = aScreen.GetCurrentScreenModeAttributes();
-	m.iScreenSize = TSize(aW, aH);
-	m.iScreenTwipsSize = TSize(aW * 48 / 7, aH * 48 / 7);		// the HAL's pixel density (210 dpi)
-	m.iOrigin = TPoint(0, 0);
-	m.iPointerCursorArea = TRect(0, 0, aW, aH);
-	aScreen.SetCurrentScreenModeAttributes(m);
-	aScreen.SetScreenMode(aScreen.CurrentScreenMode());
-	aScreen.SetAppScreenMode(aScreen.CurrentScreenMode());		// what an application does on EEventScreenDeviceChanged
-	}
-
 static void MainL()
 	{
 	RWsSession ws;
@@ -128,8 +109,6 @@ static void MainL()
 	ReadActive(aw, ah, gen);
 	RDebug::Printf("[phedynres] physical %dx%d, active %dx%d gen %d", screen->SizeInPixels().iWidth,
 		screen->SizeInPixels().iHeight, aw, ah, gen);
-	if (aw > 0 && ah > 0)
-		ApplySize(*screen, aw, ah);
 	TSize size = screen->SizeInPixels();
 	win.SetExtent(TPoint(0, 0), size);
 	RDebug::Printf("[phedynres] mode size %dx%d", size.iWidth, size.iHeight);
@@ -166,15 +145,7 @@ static void MainL()
 				{
 				gen = g;
 				++changes;
-				RDebug::Printf("[phedynres] display changed: %dx%d (gen %d)", w, h, g);
-				ApplySize(*screen, w, h);
-				size = screen->SizeInPixels();
-				win.SetExtent(TPoint(0, 0), size);
-				win.Invalidate();
-				RDebug::Printf("[phedynres] WSERV screen now %dx%d, window %dx%d", size.iWidth, size.iHeight,
-					win.Size().iWidth, win.Size().iHeight);
-				DrawScene(*gc, win, font, changes, gen);
-				ws.Flush();
+				RDebug::Printf("[phedynres] display changed: %dx%d (gen %d)", w, h, g);   // phedispmode gives WSERV the size; the screen-change event follows
 				}
 			}
 		else if (redrawSt != KRequestPending)
@@ -189,8 +160,17 @@ static void MainL()
 			TWsEvent ev;
 			ws.GetEvent(ev);
 			if (ev.Type() == EEventScreenDeviceChanged)
-				RDebug::Printf("[phedynres] EEventScreenDeviceChanged (mode %d size %dx%d)", screen->CurrentScreenMode(),
-					screen->SizeInPixels().iWidth, screen->SizeInPixels().iHeight);
+				{
+				// what any application does: take the new mode, re-lay out
+				screen->SetAppScreenMode(screen->CurrentScreenMode());
+				size = screen->SizeInPixels();
+				win.SetExtent(TPoint(0, 0), size);
+				win.Invalidate();
+				RDebug::Printf("[phedynres] EEventScreenDeviceChanged (mode %d size %dx%d): WSERV screen now %dx%d, window %dx%d", screen->CurrentScreenMode(),
+					size.iWidth, size.iHeight, size.iWidth, size.iHeight, win.Size().iWidth, win.Size().iHeight);
+				DrawScene(*gc, win, font, changes, gen);
+				ws.Flush();
+				}
 			else if (ev.Type() == EEventKey && ev.Key()->iCode >= '1' && ev.Key()->iCode <= '6')
 				{
 				const SSizes& s = KKeySizes[ev.Key()->iCode - '1'];

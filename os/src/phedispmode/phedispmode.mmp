@@ -1,0 +1,16 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+//
+// phedispmode.mmp -- the display-mode follower (no window): the window server's screen mode follows the PC display's size (dynamic-resolution HAL)
+TARGET			phedispmode.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015799
+CAPABILITY		WriteDeviceData
+VENDORID		0
+EPOCSTACKSIZE	0x4000
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+USERINCLUDE		../phorepoc/inc
+SOURCEPATH		.
+SOURCE			phedispmode.cpp
+LIBRARY			euser.lib ws32.lib
+SMPSAFE

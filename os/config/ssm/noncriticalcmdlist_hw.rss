@@ -97,6 +97,8 @@ RESOURCE SSM_COMMAND_LIST r_cmds
 	,r_cmd_phemenuwarm
 	// prio 0x7E04 -- PHOREPOC developer ttys (src/phetty): the tty daemon; exits at once when CenRep e7015904/1 = 0 (PHETTY=off)
 	,r_cmd_phettyd
+	// prio 0x7E05 -- PHOREPOC display-mode follower (src/phedispmode): the screen mode follows a resizable PC display; exits at once elsewhere
+	,r_cmd_phedispmode
         };
     }
 
@@ -206,6 +208,19 @@ RESOURCE SSM_START_PROCESS_INFO r_cmd_phettyd
     {
     priority = 0x7E04;
     name = "z:\\sys\\bin\\phettyd.exe";
+    execution_behaviour = ESsmFireAndForget;
+    }
+
+// ---------------------------------------------------------------------------
+// r_cmd_phedispmode -- PHOREPOC (2026-11-09): src/phedispmode. No window: polls the dynamic-resolution display HAL and gives the window
+// server's desktop screen mode the display's new size (SetScreenMode -> EEventScreenDeviceChanged to every client). Exits at once where
+// the HAL function does not exist. Non-critical: a ROM without phedispmode.exe skips it.
+// ---------------------------------------------------------------------------
+//
+RESOURCE SSM_START_PROCESS_INFO r_cmd_phedispmode
+    {
+    priority = 0x7E05;
+    name = "z:\\sys\\bin\\phedispmode.exe";
     execution_behaviour = ESsmFireAndForget;
     }
 
