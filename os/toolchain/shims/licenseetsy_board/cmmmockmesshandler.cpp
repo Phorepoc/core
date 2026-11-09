@@ -388,9 +388,13 @@ private:
         // CTSY now asks for the registration status, SIM status, SMS routing
         Complete( EMmTsyBootNotifyModemStatusReadyIPC );
         }
-    void DoReg()
+    // aSearching: the modem has just come up (RF on) and is looking for its network. CTSY (CMmPhoneGsmWcdmaExt::
+    // CompleteNotifyNetworkRegistrationStatusChange) forgets the network information for every status but a registered one, and
+    // completes a client's pending registration request only when the status CHANGES: RF on is "searching", then "registered on
+    // the home network" (the test LTSYs of cellularsrv/.../common_tsy/test do the same), and the network is announced once registered.
+    void DoReg( TBool aSearching = EFalse )
         {
-        RMobilePhone::TMobilePhoneRegistrationStatus reg = RMobilePhone::ERegisteredOnHomeNetwork;
+        RMobilePhone::TMobilePhoneRegistrationStatus reg = aSearching ? RMobilePhone::ENotRegisteredSearching : RMobilePhone::ERegisteredOnHomeNetwork;
 #ifdef PHE_LTSY
         if ( iAt ) reg = iAt->Net().iReg;   // pheltsy: AT+CREG
 #endif
@@ -399,8 +403,9 @@ private:
         pkg.PackData( &reg, &nw );
         Complete( EMobilePhoneNotifyNetworkRegistrationStatusChange, &pkg );
         Complete( EMobilePhoneGetNetworkRegistrationStatus );
-        RDebug::Printf( "[fakemodem] registered on the home network" );
-        Post( EFmNetwork, 2 );
+        RDebug::Printf( aSearching ? "[fakemodem] searching for a network" : "[fakemodem] registered on the home network" );
+        if ( !aSearching )
+            Post( EFmNetwork, 2 );
         }
     void DoNetwork()
         {
@@ -822,8 +827,9 @@ private:
             {
             if ( pwr == 1 && iPhonePwr != 1 && iBooted )
                 {
-                RDebug::Printf( "[fakemodem] phone power on: registering again" );
-                Post( EFmReg, 2 );
+                RDebug::Printf( "[fakemodem] phone power on: RF up, searching, then registering again" );
+                Post( EFmReg, 2, 1 );       // searching ...
+                Post( EFmReg, 25 );         // ... registered 2.5 s later, the network announced after it
                 }
             iPhonePwr = pwr;
             }
@@ -877,7 +883,7 @@ private:
             switch ( ev )
                 {
                 case EFmBoot: DoBoot(); break;
-                case EFmReg: DoReg(); break;
+                case EFmReg: DoReg( arg ); break;
                 case EFmNetwork: DoNetwork(); break;
                 case EFmIdent: DoIdent( arg ); break;
                 case EFmOperatorName: DoOperatorName(); break;
