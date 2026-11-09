@@ -37,4 +37,9 @@ enum TPhHalDisplayFunction
 	EPhHalDisplayRequest = 0x7102
 	};
 
+// the display-change notification of a board with a run-time resolution: a P&S property in the system category
+// (KUidSystemCategory) holding the generation of EPhHalDisplayActive, published by the display driver at every change;
+// defined on the first EPhHalDisplayActive call (read: anyone; write: the kernel only)
+const TInt KPhDisplayGenKey = (TInt)0xE7017101;
+
 #endif

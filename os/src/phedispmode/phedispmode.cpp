@@ -7,7 +7,8 @@
 // Non-NGA WSERV learns a new size only from a client: a screen mode's attributes and SetScreenMode (CScreen::doSetScreenMode sends
 // EEventScreenDeviceChanged to every client) -- on S60 that client is akncapserver for the phone's fixed modes; a resizable display has
 // no such piece. This is it, with no window: a window server session and a screen device only (SetScreenMode needs WriteDeviceData,
-// no window group). It polls the HAL's active size and, when the display generation changes, gives the desktop screen mode (the LAST
+// no window group). It waits on the display driver's change notification (the P&S property KPhDisplayGenKey of phhal.h, no polling)
+// and, when the display generation changes, gives the desktop screen mode (the LAST
 // wsini mode when there are more than the phone's two -- the S60 modes keep their phone sizes) the new size and re-selects it.
 // The logic was in core's phedynres test client (which owns a full-screen window to draw its test grid); phedynres now only follows
 // the event like any application. Started by SSM (non-critical list) or bootui; exits at once where the HAL function does not exist
@@ -18,10 +19,9 @@
 #include <e32svr.h>
 #include <u32hal.h>
 #include <w32std.h>
+#include <e32property.h>
 
 #include <phhal.h>
-
-static const TInt KPollUs = 150000;
 
 static TInt ReadActive(TInt& aW, TInt& aH, TInt& aGen)
 	{
@@ -66,16 +66,26 @@ static TInt Run()
 		ws.Flush();
 		RDebug::Printf("[phedispmode] screen mode %d: %dx%d", screen->CurrentScreenMode(), screen->SizeInPixels().iWidth, screen->SizeInPixels().iHeight);
 		}
+	RProperty gen_prop;
+	if ((r = gen_prop.Attach(KUidSystemCategory, KPhDisplayGenKey)) != KErrNone)
+		{ delete screen; ws.Close(); return r; }
 	for (;;)
 		{
-		User::After(KPollUs);
+		TRequestStatus st;
+		gen_prop.Subscribe(st);
 		TInt nw, nh, ngen;
-		if (ReadActive(nw, nh, ngen) != KErrNone || ngen == gen)
+		// (a change between the last read and the subscription is caught here, not lost)
+		if (ReadActive(nw, nh, ngen) == KErrNone && ngen != gen)
+			{
+			gen_prop.Cancel();
+			User::WaitForRequest(st);
+			gen = ngen;
+			RDebug::Printf("[phedispmode] display now %dx%d (gen %d): screen mode", nw, nh, gen);
+			ApplySize(*screen, nw, nh);
+			ws.Flush();
 			continue;
-		gen = ngen;
-		RDebug::Printf("[phedispmode] display now %dx%d (gen %d): screen mode", nw, nh, gen);
-		ApplySize(*screen, nw, nh);
-		ws.Flush();
+			}
+		User::WaitForRequest(st);
 		}
 	}
 
