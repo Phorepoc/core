@@ -350,6 +350,14 @@ EXPORT_C const TImplementationProxy* ImplementationGroupProxy(TInt& aTableCount)
 	return ImplementationTable;
 	}
 
+// PHOREPOC board delta: the 2010 font store states a ceiling of 1024 pixels for a font ("when font height in pixel is 1024 each character bitmap
+// is roughly 1 MB", FNTSTORE.CPP KMaxFontHeightInPixels) but enforces it only for the max-height variant of the font request. A client that asks
+// for a larger size by pixel height or design height (Orbit's Hb sent 0xFFFF pixels; a negative TInt reaches FreeType as an unsigned 65535) reaches
+// FT_Set_Pixel_Sizes, FreeType clamps it to 65535 ppem, the glyph load runs out of memory (FT_Err_Out_Of_Memory) and the font server's heap is
+// found corrupted by the next request (RHybridHeap "HEAP CORRUPTED", fbserv USER 47). Both entry points that set a size clamp it to the ceiling
+// (refusing it, as the max-height variant does with KErrTooBig, made Qt's font engine dereference a null font in hsapplication).
+static const TInt KPheMaxFontPixels = 1024;
+
 CFaceListItem* CFreeTypeFontFile::LoadFaceL(TInt aFaceIndex)
 	{
 	return iContext->LoadFaceL(iFileName, aFaceIndex);
@@ -358,6 +366,8 @@ CFaceListItem* CFreeTypeFontFile::LoadFaceL(TInt aFaceIndex)
 CFaceListItem* CFreeTypeFontFile::LoadFaceAndSetTransformL(TInt aFaceIndex,
 	TInt aSizeInPixels, TInt32 aWidthFactor, TInt32 aSlantFactor)
 	{
+	if (aSizeInPixels > KPheMaxFontPixels || aSizeInPixels < 0)
+		aSizeInPixels = KPheMaxFontPixels;
 	CFaceListItem* face = iContext->LoadFaceL(iFileName, aFaceIndex);
 	if (FT_Set_Pixel_Sizes(face->Face(), aSizeInPixels, aSizeInPixels))
 		{
@@ -837,6 +847,8 @@ void CFreeTypeFont::ConstructL(TInt aSizeInPixels, TInt aMaxHeight, TInt aScript
 		{
 		// Have to set the pixel size because no
 		// DeriveDesignHeightFromMaxHeightWith...() was called.
+		if (aSizeInPixels > KPheMaxFontPixels || aSizeInPixels < 0)
+			aSizeInPixels = KPheMaxFontPixels;
 		if (FT_Set_Pixel_Sizes(face->Face(), aSizeInPixels, aSizeInPixels))
 			User::Leave( KErrGeneral );
 		if (aSizeInPixels==0)
