@@ -26,13 +26,13 @@
 
 // key 10: the selected shell's id (text). Absent or empty = key 1 decides
 const TUint32 KPheDevKeyShellId = 10;
-// key 11: starts of a non-S^3 shell that were not yet confirmed good (the shell's launcher up for KPheShellGoodSeconds).
+// key 11: starts of a non-S^3 shell that were not yet confirmed good (the system did not reach a Normal state, KPSGlobalSystemState
+// NormalRfOn / NormalRfOff / NormalBTSap, with the shell's launcher still alive: an event, not a stretch of time).
 // pheshellsel counts it up before each start; two in a row and the shell is given up: back to S^3, with the note in key 12
 const TUint32 KPheDevKeyShellTries = 11;
 // key 12: the caption of a shell that was given up (text); shown once, then cleared
 const TUint32 KPheDevKeyShellNote = 12;
 const TInt KPheShellMaxTries = 2;
-const TInt KPheShellGoodSeconds = 150;
 const TInt KPheCenRepTextMax = 1024;		// CenRep's own limit for a string value (centralrepository.h KMaxUnicodeStringLength)
 
 _LIT(KPheShellIdS3, "symbian3");
