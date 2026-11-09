@@ -8,6 +8,8 @@
 //                                                   line's default screen), so the app needs no change
 //   phescreenlaunch focus <screen>                  RWsSession::SetFocusScreen: keys go to that screen's focused window group
 //                                                   (needs WriteDeviceData)
+//   phescreenlaunch stats <seconds>                 a cost probe: free RAM, then over <seconds> the CPU time of every thread
+//                                                   (busy % of one CPU, the top consumers by name)
 //   phescreenlaunch window <app.exe> [document]     the app as a window: take a free virtual screen (1 .. NumberOfScreens-1),
 //                                                   start phescreenpub for it, start the app there; rendezvous with the caller,
 //                                                   then stay until the app's thread ends, stop that phescreenpub and give the
@@ -19,6 +21,7 @@
 #include <apgcli.h>
 #include <apacmdln.h>
 #include <w32std.h>
+#include <hal.h>
 
 _LIT(KTag, "[phescreenlaunch] ");
 
@@ -134,6 +137,82 @@ static TInt Window(const TDesC& aExe, const TDesC& aDoc)
 	return r;
 	}
 
+struct TCpu { TFullName iName; TInt64 iUs; };
+
+static void Snapshot(RArray<TCpu>& aOut)
+	{
+	TFindThread find(_L("*"));
+	TFullName name;
+	while (find.Next(name) == KErrNone)
+		{
+		RThread t;
+		if (t.Open(find) != KErrNone)
+			continue;
+		TTimeIntervalMicroSeconds us;
+		if (t.GetCpuTime(us) == KErrNone)
+			{
+			TCpu c;
+			c.iName = name;
+			c.iUs = us.Int64();
+			aOut.Append(c);
+			}
+		t.Close();
+		}
+	}
+
+static TInt Stats(TInt aSeconds)
+	{
+	TInt freeRam = 0, totalRam = 0;
+	HAL::Get(HALData::EMemoryRAMFree, freeRam);
+	HAL::Get(HALData::EMemoryRAM, totalRam);
+	RWsSession ws;
+	TInt screens = 0;
+	if (ws.Connect() == KErrNone)
+		{
+		screens = ws.NumberOfScreens();
+		ws.Close();
+		}
+	Log(_L("stats: %d screens, free RAM %d KB of %d KB"), screens, freeRam / 1024, totalRam / 1024);
+	RArray<TCpu> a, b;
+	Snapshot(a);
+	TTime t0, t1;
+	t0.UniversalTime();
+	User::After(aSeconds * 1000000);
+	t1.UniversalTime();
+	const TInt ms = (TInt)(t1.MicroSecondsFrom(t0).Int64() / 1000);
+	Snapshot(b);
+	TInt64 busy = 0;
+	for (TInt i = 0; i < b.Count(); ++i)
+		{
+		TInt64 before = 0;
+		for (TInt j = 0; j < a.Count(); ++j)
+			if (a[j].iName == b[i].iName)
+				{ before = a[j].iUs; break; }
+		b[i].iUs -= before;					// this interval only (a new thread counts from 0)
+		if (b[i].iName.Find(_L("::Null")) >= 0)
+			b[i].iUs = 0;					// the kernel's idle threads (one per CPU) are not work
+		busy += b[i].iUs;
+		}
+	Log(_L("stats: %d ms, threads busy %Ld ms (%d%% of one CPU, idle threads excluded)"), ms, busy / 1000, ms ? (TInt)(busy / 10 / ms) : 0);
+	for (TInt top = 0; top < 8; ++top)
+		{
+		TInt best = -1;
+		for (TInt i = 0; i < b.Count(); ++i)
+			if (b[i].iUs > 0 && (best < 0 || b[i].iUs > b[best].iUs))
+				best = i;
+		if (best < 0)
+			break;
+		TPtrC n = b[best].iName.Right(Min(b[best].iName.Length(), 60));
+		Log(_L("stats:   %S %Ld ms"), &n, b[best].iUs / 1000);
+		b[best].iUs = 0;
+		}
+	HAL::Get(HALData::EMemoryRAMFree, freeRam);
+	Log(_L("stats: free RAM %d KB at the end"), freeRam / 1024);
+	a.Close();
+	b.Close();
+	return KErrNone;
+	}
+
 static TInt Run()
 	{
 	TBuf<256> line;
@@ -147,6 +226,13 @@ static TInt Run()
 		if (n.Val(s) != KErrNone)
 			return KErrArgument;
 		return Focus(s);
+		}
+	if (first.CompareF(_L("stats")) == 0)
+		{
+		TLex n(lex.NextToken());
+		TInt sec = 30;
+		n.Val(sec);
+		return Stats(sec > 0 ? sec : 30);
 		}
 	if (first.CompareF(_L("window")) == 0)
 		{
