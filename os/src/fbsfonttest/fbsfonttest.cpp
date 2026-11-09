@@ -46,6 +46,13 @@ static void DrawWith(CFbsBitGc* aGc, CFont* aFont, const TDesC& aLabel)
 	}
 
 
+static TInt HugeAllocFn(TAny*)
+	{
+	TAny* p = User::Alloc(1500000000);
+	User::Free(p);
+	return p ? 1 : 2;
+	}
+
 static void ThreadBodyL(TInt aId)
 	{
 	User::LeaveIfError(RFbsSession::Connect());		// a font and bitmap server session is per thread
@@ -108,6 +115,77 @@ static void RunL()
 	CFbsBitGc* gc = NULL;
 	User::LeaveIfError(dev->CreateContext(gc));
 	CleanupStack::PushL(gc);
+	// an absurd size, as Orbit's Hb sent (65535 pixels; a negative height reaches FreeType as the same unsigned 65535): the font
+	// server must refuse or fail the request, not panic (a huge FreeType allocation reached User::Alloc: USER 47, fbserv dead)
+	{
+	static const TInt huge[] = { 65535, -1, 1 << 20, 100000, 4096 };
+	for (TUint i = 0; i < sizeof(huge) / sizeof(huge[0]); ++i)
+		{
+		TFontSpec spec(KFace, 0);
+		spec.iHeight = huge[i];
+		CFont* f = NULL;
+		TInt r = ts->GetNearestFontInPixels(f, spec);
+		RDebug::Printf("[fbsfonttest] huge size %d: font r=%d", huge[i], r);
+		if (r == KErrNone)
+			{
+			CFbsFont* fbsFont = static_cast<CFbsFont*>(f);
+			TInt got = 0;
+			for (TUint code = 1; code < 0x400; ++code)
+				{
+				TOpenFontCharMetrics m;
+				const TUint8* bits = NULL;
+				TSize bsize;
+				if (fbsFont->GetCharacterData(code, m, bits, bsize) != CFont::EAllCharacterData)
+					continue;
+				++got;
+				}
+			RDebug::Printf("[fbsfonttest] huge size %d: %d of 992 glyphs, ascent %d", huge[i], got, f->AscentInPixels());
+			ts->ReleaseFont(f);
+			}
+		}
+	// glyph bitmaps of 1 to 2 GB: FreeType asks malloc for pitch x rows; a request of KMaxTInt/2 or more reached User::Alloc, which
+	// panics the whole font server (USER 47). Wide glyphs at mid-range huge sizes land in that window.
+	for (TInt size = 20000; size <= 65000; size += 2500)
+		{
+		TFontSpec spec(KFace, 0);
+		spec.iHeight = size;
+		CFont* f = NULL;
+		if (ts->GetNearestFontInPixels(f, spec) != KErrNone)
+			continue;
+		CFbsFont* fbsFont = static_cast<CFbsFont*>(f);
+		static const TUint wide[] = { 'W', 'M', '@', 'm', 'w', 0x2026, 0x2014 };
+		TInt got = 0;
+		for (TUint k = 0; k < sizeof(wide) / sizeof(wide[0]); ++k)
+			{
+			TOpenFontCharMetrics m;
+			const TUint8* bits = NULL;
+			TSize bsize;
+			if (fbsFont->GetCharacterData(wide[k], m, bits, bsize) == CFont::EAllCharacterData)
+				++got;
+			}
+		RDebug::Printf("[fbsfonttest] huge size %d: %d of 7 wide glyphs", size, got);
+		ts->ReleaseFont(f);
+		}
+	RDebug::Printf("[fbsfonttest] huge sizes survived");
+	// what a 1.5 GB request does to a heap that has no guard in front of it (what FreeType's malloc did inside the font server before
+	// the glue's memory manager): RHybridHeap::Alloc asserts and the thread is panicked. Run in a thread of its own.
+	{
+	RThread t;
+	TRequestStatus st;
+	if (t.Create(_L("hugealloc"), HugeAllocFn, 0x4000, NULL, NULL) == KErrNone)
+		{
+		t.Logon(st);
+		t.SetPriority(EPriorityNormal);
+		TBool jit = User::JustInTime();
+		User::SetJustInTime(EFalse);
+		t.Resume();
+		User::WaitForRequest(st);
+		User::SetJustInTime(jit);
+		RDebug::Printf("[fbsfonttest] User::Alloc(1.5 GB) in a thread: exit type %d reason %d category %S", (TInt)t.ExitType(), t.ExitReason(), &t.ExitCategory());
+		t.Close();
+		}
+	}
+	}
 	// what Orbit's Hb does when it has no typeface metrics (HbTypefaceInfoDatabase::autoGenerateMetrics): every size from 1 to
 	// 100 of each family, measured through the font and bitmap server
 	static const TText* const families[] = { _S("Nokia Sans"), _S("Nokia Sans Title SemiBold"), _S("OCR A Extended"),

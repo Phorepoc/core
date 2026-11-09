@@ -35,6 +35,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
+#include FT_MODULE_H
 #include FT_INTERNAL_TRUETYPE_TYPES_H
 #include <ftsnames.h>
 #include <ecom/ecom.h>
@@ -273,18 +274,48 @@ CFreeTypeContext* CFreeTypeContext::NewL()
 	return context;
 	}
 
+// PHOREPOC board delta: FreeType's memory manager. ftsystem.c's ft_alloc is malloc, and estlib's malloc is User::Alloc(nbytes) with
+// no bound; RHybridHeap::Alloc ASSERTS that a request is below KMaxTInt/2 (heap_hybrid.cpp: HEAP_PANIC(ETHeapBadAllocatedCellSize),
+// printed "HEAP CORRUPTED", panic USER 47). FreeType sizes some requests from the pixel size of the font (a glyph bitmap is pitch x
+// rows): a client that asks for a font of 0xFFFF pixels (Orbit's Hb did) made FreeType ask for ~4 GB, which killed the font and
+// bitmap server for every client. A request the heap cannot represent is an out-of-memory failure, like any other: return NULL
+// (FreeType reports FT_Err_Out_Of_Memory, the glue leaves, the font server answers the one request with an error).
+static void* PheFtAlloc(FT_Memory, long aSize)
+	{
+	if (aSize <= 0 || aSize >= KMaxTInt / 2)
+		return NULL;
+	return User::Alloc(aSize);
+	}
+
+static void PheFtFree(FT_Memory, void* aBlock)
+	{
+	User::Free(aBlock);
+	}
+
+static void* PheFtRealloc(FT_Memory, long, long aNewSize, void* aBlock)
+	{
+	if (aNewSize <= 0 || aNewSize >= KMaxTInt / 2)
+		return NULL;
+	return User::ReAlloc(aBlock, aNewSize);
+	}
+
+static const FT_MemoryRec_ KPheFtMemory = { NULL, PheFtAlloc, PheFtFree, PheFtRealloc };
+
 void CFreeTypeContext::ConstructL()
 	{
-	if (FT_Init_FreeType(&iLibrary))
+	// what FT_Init_FreeType does (ftinit.c), with the memory manager above in place of FT_New_Memory
+	if (FT_New_Library(const_cast<FT_Memory>(&KPheFtMemory), &iLibrary))
 		{
 		iLibrary = NULL;
 		User::Leave(KErrNoMemory);
 		}
+	FT_Add_Default_Modules(iLibrary);
 	}
 
 CFreeTypeContext::~CFreeTypeContext()
 	{
-	FT_Done_FreeType(iLibrary);
+	if (iLibrary)
+		FT_Done_Library(iLibrary);		// (not FT_Done_FreeType: that also frees the memory object, which is static here)
 	}
 
 FT_Library CFreeTypeContext::Library() const
@@ -350,14 +381,6 @@ EXPORT_C const TImplementationProxy* ImplementationGroupProxy(TInt& aTableCount)
 	return ImplementationTable;
 	}
 
-// PHOREPOC board delta: the 2010 font store states a ceiling of 1024 pixels for a font ("when font height in pixel is 1024 each character bitmap
-// is roughly 1 MB", FNTSTORE.CPP KMaxFontHeightInPixels) but enforces it only for the max-height variant of the font request. A client that asks
-// for a larger size by pixel height or design height (Orbit's Hb sent 0xFFFF pixels; a negative TInt reaches FreeType as an unsigned 65535) reaches
-// FT_Set_Pixel_Sizes, FreeType clamps it to 65535 ppem, the glyph load runs out of memory (FT_Err_Out_Of_Memory) and the font server's heap is
-// found corrupted by the next request (RHybridHeap "HEAP CORRUPTED", fbserv USER 47). Both entry points that set a size clamp it to the ceiling
-// (refusing it, as the max-height variant does with KErrTooBig, made Qt's font engine dereference a null font in hsapplication).
-static const TInt KPheMaxFontPixels = 1024;
-
 CFaceListItem* CFreeTypeFontFile::LoadFaceL(TInt aFaceIndex)
 	{
 	return iContext->LoadFaceL(iFileName, aFaceIndex);
@@ -366,8 +389,6 @@ CFaceListItem* CFreeTypeFontFile::LoadFaceL(TInt aFaceIndex)
 CFaceListItem* CFreeTypeFontFile::LoadFaceAndSetTransformL(TInt aFaceIndex,
 	TInt aSizeInPixels, TInt32 aWidthFactor, TInt32 aSlantFactor)
 	{
-	if (aSizeInPixels > KPheMaxFontPixels || aSizeInPixels < 0)
-		aSizeInPixels = KPheMaxFontPixels;
 	CFaceListItem* face = iContext->LoadFaceL(iFileName, aFaceIndex);
 	if (FT_Set_Pixel_Sizes(face->Face(), aSizeInPixels, aSizeInPixels))
 		{
@@ -847,8 +868,6 @@ void CFreeTypeFont::ConstructL(TInt aSizeInPixels, TInt aMaxHeight, TInt aScript
 		{
 		// Have to set the pixel size because no
 		// DeriveDesignHeightFromMaxHeightWith...() was called.
-		if (aSizeInPixels > KPheMaxFontPixels || aSizeInPixels < 0)
-			aSizeInPixels = KPheMaxFontPixels;
 		if (FT_Set_Pixel_Sizes(face->Face(), aSizeInPixels, aSizeInPixels))
 			User::Leave( KErrGeneral );
 		if (aSizeInPixels==0)
