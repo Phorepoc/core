@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /*
  * arith.h -- x32 (amd64) board copy of Open C's libc/inc/arith.h for gdtoa (strtod, dtoa, printf's floating formats).
  *
