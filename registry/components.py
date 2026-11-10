@@ -2327,7 +2327,8 @@ COMPONENTS = {
     "swidataprovider": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/swidataprovider.mmp"),   # <- sisregistryclient
     # Without the SIS registry server, RSisRegistrySession::Connect fails (-1) -> Calendar's Day view (map-provider
     # check in its container build, mnclientlib) left and the populator ran on a NULL container (KERN-EXEC 3).
-    "sisregistryserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/sisregistryserver_legacy.mmp"),   # bld.inf's non-USIF server
+    "sisregistryserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/sisregistryserver_legacy.mmp",   # bld.inf's non-USIF server
+                              drop=["sisregistrycache.cpp"], extra=["src/phorepoc/swi/oss.FCL.sf.mw.appinstall-group/sisregistrycache.cpp"]),   # mkswi.py: a firmware update drops ROM entries without a stub
     "sisregistryhelperserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/sisregistryhelperserver.mmp"),
     "installserver": dict(mmp=os.path.join(OS_ROOT, "src/phorepoc/swi/oss.FCL.sf.mw.appinstall-group/installserver.mmp")),
     "sislauncherserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appinstall/installationservices/swi/group/sislauncherserver.mmp"),
