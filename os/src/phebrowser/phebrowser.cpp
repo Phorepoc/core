@@ -609,7 +609,21 @@ public:
 		                         | EAknEditorFlagLaunchPenInputAutomatic | EAknEditorFlagEnablePartialScreen);   // the editor stays visible above an overlay keyboard
 		//   // focus opens the on-screen keyboard
 		iEdit->SetRect(EditRect(l));
-		iEdit->SetTextL(iPageInput ? &KNullDesC : &iTabs[iCur].iUrl);   // a page field: start empty, the text goes to the page
+		if (iPageInput)                        // a page field: start with its value (an older engine has none: empty)
+			{
+			HBufC* v = HBufC::NewLC(1024);
+			TPtr vp = v->Des();
+			if (iApi && iTabs[iCur].iView)
+				{
+				TUint16 tmp[1024];
+				const TInt n = iApi->get_str(iTabs[iCur].iView, PHE_STR_FOCUS_VALUE, tmp, 1024);
+				vp.Copy(tmp, Max(0, Min(n, 1024)));
+				}
+			iEdit->SetTextL(v);
+			CleanupStack::PopAndDestroy(v);
+			}
+		else
+			iEdit->SetTextL(&iTabs[iCur].iUrl);
 		iEdit->MakeVisible(ETrue);
 		iEdit->SetFocus(ETrue);
 		iEdit->SelectAllL();                  // select all on focus: typing replaces the address
@@ -640,7 +654,10 @@ public:
 			CleanupStack::PushL(text);
 			if (page && iApi && iCur >= 0 && iTabs[iCur].iView)
 				{                              // into the page's field, then Enter (submits a search box / form)
-				iApi->text(iTabs[iCur].iView, (const unsigned short*)text->Ptr(), text->Length());
+				if (iApi->size >= _FOFF(PheWebEngineApi, set_field) + sizeof(iApi->set_field) && iApi->set_field)
+					iApi->set_field(iTabs[iCur].iView, (const unsigned short*)text->Ptr(), text->Length());   // the whole value
+				else
+					iApi->text(iTabs[iCur].iView, (const unsigned short*)text->Ptr(), text->Length());        // inserted at the caret
 				if (aSubmit)
 					{
 					iApi->key(iTabs[iCur].iView, 0, 13, 1);
