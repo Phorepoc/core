@@ -15,6 +15,8 @@
 //                                                   then stay until the app's thread ends, stop that phescreenpub and give the
 //                                                   screen back. A screen is taken by holding the global mutex "phescreen-slot-<n>":
 //                                                   the kernel deletes it with its last handle, so a dead launcher frees its screen
+//                                                   An app already shown as a window (the window registry knows its app UID)
+//                                                   is raised and focused instead of started again
 //
 // Multi-window stage 1: each classic app on its own (virtual) screen, the display shows the screens side by side.
 #include <e32base.h>
@@ -22,6 +24,8 @@
 #include <apacmdln.h>
 #include <w32std.h>
 #include <hal.h>
+#include <f32file.h>
+#include "phewinreg.h"
 
 _LIT(KTag, "[phescreenlaunch] ");
 
@@ -94,8 +98,49 @@ static TInt TakeScreen(RMutex& aSlot)
 	return KErrInUse;				// every virtual screen has an app
 	}
 
+// the app's AppArc UID, from AppArc's list (the exe's own file is in \sys\bin, which only AllFiles may read), 0 = not found
+static TInt32 ExeUid3(const TDesC& aExe)
+	{
+	RApaLsSession ls;
+	if (ls.Connect() != KErrNone)
+		return 0;
+	TInt32 uid = 0;
+	TParsePtrC want(aExe);
+	TApaAppInfo info;
+	if (ls.GetAllApps() == KErrNone)
+		while (!uid && ls.GetNextApp(info) == KErrNone)
+			if (TParsePtrC(info.iFullName).NameAndExt().CompareF(want.NameAndExt()) == 0)
+				uid = info.iUid.iUid;
+	ls.Close();
+	return uid;
+	}
+
+// an app already shown as a window (its screen's publisher set the window's app UID, RPheWinReg::SetAppUid): raise and focus that
+// window instead of starting the app twice (a second copy cannot run anyway: AppArc brings the first one forward on its own
+// screen). The registry queues EPheWinActFocus for the publisher, which moves the key focus to the app's screen. KErrNotFound =
+// no such window (or no registry in this ROM): start it
+static TInt RaiseExisting(const TDesC& aExe)
+	{
+	const TInt32 uid = ExeUid3(aExe);
+	if (!uid)
+		return KErrNotFound;
+	RPheWinReg reg;
+	TInt r = reg.Connect();
+	if (r != KErrNone)
+		return KErrNotFound;
+	r = reg.RaiseApp(TUid::Uid(uid));
+	reg.Close();
+	Log(_L("window %S: app %08x %S (%d)"), &aExe, uid, r > 0 ? &_L("already a window: raised") : &_L("not a window yet"), r);
+	return r > 0 ? KErrNone : KErrNotFound;
+	}
+
 static TInt Window(const TDesC& aExe, const TDesC& aDoc)
 	{
+	if (RaiseExisting(aExe) == KErrNone)
+		{
+		RProcess::Rendezvous(KErrNone);
+		return KErrNone;
+		}
 	RMutex slot;
 	const TInt screen = TakeScreen(slot);
 	if (screen < 0)
