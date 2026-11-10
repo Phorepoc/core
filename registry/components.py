@@ -186,7 +186,8 @@ COMPONENTS = {
     "scdv": dict(mmp=f"{G}/graphicsdeviceinterface/screendriver/group/generic.mmp",
                  rom="scdv.dll",
                  # OURS: Cdsb.cpp with the flipped-surface HAL queries (a rotated DSA surface: pitch 2560, not the portrait 1472)
-                 drop=["Cdsb.cpp"], extra=["toolchain/shims/scdv_cdsb/Cdsb.cpp"],
+                 # OURS: scnew.cpp whose Update also pushes the drawn rows to the display driver (x86 virtual screens, HAL 0x7104)
+                 drop=["Cdsb.cpp", "scnew.cpp"], extra=["toolchain/shims/scdv_cdsb/Cdsb.cpp", "toolchain/shims/scdv_update/scnew.cpp"],
                  flags=["-iquote", _resolve_src(f"baseline/symbian-2010/{G}/graphicsdeviceinterface/screendriver/sgeneric"), "-iquote", _resolve_src(f"baseline/symbian-2010/{G}/graphicsdeviceinterface/screendriver/inc"), "-iquote", _resolve_src(f"baseline/symbian-2010/{G}/graphicsdeviceinterface/screendriver/sbit")]),
     "bitgdi": dict(mmp=f"{G}/graphicsdeviceinterface/bitgdi/group/BITGDI.MMP",
                    rom="bitgdi.dll"),
