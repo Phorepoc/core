@@ -48,7 +48,7 @@ typedef TPckgBuf<TPheWinInfo> TPheWinInfoPckg;
 enum TPheWinRegOp { EPheWinRegister, EPheWinUpdate, EPheWinContent, EPheWinRemove, EPheWinList, EPheWinNotify, EPheWinNotifyCancel, EPheWinWatchers, EPheWinWatchersCancel, EPheWinSubscribe, EPheWinContentNotify, EPheWinAction, EPheWinActionNotify, EPheWinActionCancel,
 	EPheWinPointer, EPheWinPointerNotify, EPheWinPointerCancel,
 	EPheWinSetHints, EPheWinHints, EPheWinResize, EPheWinPing, EPheWinPong,
-	EPheWinSetAppUid, EPheWinAppUid, EPheWinRaiseApp };
+	EPheWinSetAppUid, EPheWinAppUid, EPheWinRaiseApp, EPheWinApps, EPheWinOpen };
 
 // a frame's decoration actions, sent back to the window's owner (hildon-port.md 7.53)
 enum TPheWinAction { EPheWinActClose = 1, EPheWinActMinimise = 2, EPheWinActMaximise = 3, EPheWinActFocus = 4, EPheWinActRaise = 5 };
@@ -78,7 +78,7 @@ typedef TPckgBuf<TPheWinPointer> TPheWinPointerPckg;
 class TPheWinHints
 	{
 public:
-	TPheWinHints() : iId(0), iIcon(0), iPingPending(0), iPingAgeMs(0) {}
+	TPheWinHints() : iId(0), iIcon(0), iPingPending(0), iPingAgeMs(0), iIconMask(0), iFlags(0) {}
 	TInt iId;
 	TSize iMinSize;				// owner: the smallest size it can lay out in (0 x 0 = no limit)
 	TSize iMaxSize;				// owner: the largest useful size (0 x 0 = no limit)
@@ -87,8 +87,25 @@ public:
 	TRect iRequested;			// registry: the frame's last Resize request (empty = none since the owner set its hints)
 	TInt iPingPending;			// registry: pings the owner has not answered yet
 	TInt iPingAgeMs;			// registry: ms since the oldest unanswered ping (0 when none): a frame shows "not responding" past its limit
+	TInt iIconMask;				// owner: an FBSERV handle of the icon's mask (EGray256), 0 = none (hildon-port.md 7.51.23)
+	TUint iFlags;				// owner: EPheWinHint... flags
 	};
 typedef TPckgBuf<TPheWinHints> TPheWinHintsPckg;
+// TPheWinHints::iFlags: the window cannot be closed (screen 0, the phone screen: a close ends the app in front, the screen stays)
+enum { EPheWinHintPermanent = 1 };
+
+// one launchable classic app (RPheWinReg::Apps, hildon-port.md 7.51.23): AppArc's list minus hidden and non-classic apps
+class TPheWinApp
+	{
+public:
+	TPheWinApp() : iUid(0), iWindow(0), iIcon(0), iIconMask(0) {}
+	TInt32 iUid;				// AppArc UID (= a window's app UID, RPheWinReg::AppUid)
+	TInt iWindow;				// the window that shows it now, 0 = not open
+	TInt iIcon;					// FBSERV handle of its 48x48 icon (EColor16MU), 0 = none; the registry owns it, a frame Duplicates
+	TInt iIconMask;				// FBSERV handle of the icon's mask (EGray256), 0 = none
+	TBuf<64> iCaption;			// AppArc caption
+	};
+typedef TPckgBuf<TPheWinApp> TPheWinAppPckg;
 
 class RPheWinReg : public RSessionBase
 	{
@@ -153,6 +170,13 @@ public:
 	// anyone (a launcher): raise and focus the top window that shows application aUid, as a frame's EPheWinActRaise + EPheWinActFocus;
 	// its owner gets EPheWinActFocus. Returns the window id, or KErrNotFound when no window shows that app (then start it)
 	inline TInt RaiseApp(TUid aUid) { return SendReceive(EPheWinRaiseApp, TIpcArgs(aUid.iUid)); }
+	// anyone (a launcher): the launchable apps, sorted by caption, as TPheWinApp records in aBuf; returns the count (or the count
+	// needed, when > the buffer). Notify completes when the list changes (an app installed, a window opened or closed)
+	inline TInt Apps(TDes8& aBuf) { return SendReceive(EPheWinApps, TIpcArgs(&aBuf)); }
+	// anyone (a launcher): app aUid in a window. Already open: raised + focused, returns its window id (> 0). Otherwise started in a
+	// new window (on a screen made on demand), returns 0 at once; the window appears through Notify with that app UID.
+	// KErrNotFound = unknown or hidden app, KErrNoMemory = no screen could be made
+	inline TInt Open(TUid aUid, const TDesC& aDocument = KNullDesC) { return SendReceive(EPheWinOpen, TIpcArgs(aUid.iUid, &aDocument)); }
 	};
 
 inline TInt RPheWinReg::Connect()
