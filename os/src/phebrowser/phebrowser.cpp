@@ -633,6 +633,7 @@ public:
 		iEditing = EFalse;
 		const TBool page = iPageInput;
 		iPageInput = EFalse;
+		iFocusMuted = page;                    // the field keeps its caret: the engine's next focus report is not a new tap
 		Relayout();                            // the bar returns to its place
 		if (text)
 			{
@@ -853,7 +854,7 @@ private:
 				if (t == iCur) page = ETrue;
 				break;
 			case PHE_EV_FOCUS:                       // a = 2: a text field on the page has the caret -> our editor + keyboard
-				if (t == iCur && e.a == 2 && !iEditing && iMode == EModeBrowse)
+				if (t == iCur && e.a == 2 && !iEditing && iMode == EModeBrowse && !iFocusMuted)
 					{ iPageInput = ETrue; TRAP_IGNORE(StartEditL()); }
 				break;
 			case PHE_EV_NEW_VIEW:
@@ -1413,6 +1414,8 @@ private:
 		{
 		if (!iEditing && iMode == EModeBrowse && PinchPointerL(aE))
 			return;
+		if (aE.iType == TPointerEvent::EButton1Down && !iEditing)
+			iFocusMuted = EFalse;                // a new touch on the page may focus a field again
 		if (aE.iType == TPointerEvent::EButton1Down)
 			{ iDownPos = aE.iPosition; iDragY = aE.iPosition.iY; iDragX = aE.iPosition.iX; iMoved = EFalse; }
 		else if (aE.iType == TPointerEvent::EDrag && (Abs(aE.iPosition.iY - iDownPos.iY) > 6 || Abs(aE.iPosition.iX - iDownPos.iX) > 6))
@@ -1683,6 +1686,7 @@ private:
 	CFbsBitmap* iPageBmp = NULL;
 	CEikEdwin* iEdit = NULL;
 	TBool iEditing = EFalse;
+	TBool iFocusMuted = EFalse;              // a page field was just committed: ignore focus reports until the next touch
 	TBool iPageInput = EFalse;               // the editor is typing into a page field (PHE_EV_FOCUS), not the address
 	TBool iStartTouch = EFalse;
 	CFont* iSmall = NULL;                    // the address-field font
