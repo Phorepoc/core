@@ -1729,6 +1729,17 @@ public:
 			url.Copy(aTail.Left(200));
 			url.Trim();
 			}
+		// a plain process command line (ESHELL: phebrowser https://...) is not an apparc one: apparc reads its first
+		// character as the command code, so the URL came through clipped or not at all. The raw command line wins when it
+		// holds a URL (an apparc launch leaves it empty: its data travels in the environment slots).
+		if (User::CommandLineLength() > 0 && User::CommandLineLength() <= 200)
+			{
+			TBuf<200> raw;
+			User::CommandLine(raw);
+			raw.Trim();
+			if (raw.Find(_L("://")) > 0 || (raw.Locate(' ') < 0 && raw.Locate('.') > 0))
+				url = raw;
+			}
 		if (url.Length() && iView)
 			iView->OpenUrl(url);
 		else if (iView)
