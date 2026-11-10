@@ -16,6 +16,20 @@
 #include <apmrec.h>
 #include <f32file.h>
 
+// An install is something the user asked for: while it runs (the Hildon theme package takes minutes under QEMU) the phone must
+// not drift into the screensaver's display off, or the app started next comes up on a dark screen (hildon-port.md 7.93).
+// A small thread resets the user inactivity timer every few seconds until the install returns, and once more after it.
+static volatile TBool gInstalling;
+static TInt KeepAwake(TAny*)
+	{
+	while (gInstalling)
+		{
+		User::ResetInactivityTime();
+		User::After(4000000);
+		}
+	return KErrNone;
+	}
+
 static TInt Run()
 	{
 	TBuf<512> cmd;
@@ -124,8 +138,22 @@ static TInt Run()
 		}
 	if (err == KErrNone)
 		{
+		RThread awake;
+		gInstalling = ETrue;
+		TBool hasAwake = awake.Create(_L("sisinst-awake"), KeepAwake, 0x1000, NULL, NULL) == KErrNone;
+		if (hasAwake)
+			awake.Resume();
 		err = launcher.SilentInstall(file, pckg);
 		launcher.Close();
+		gInstalling = EFalse;
+		User::ResetInactivityTime();
+		if (hasAwake)
+			{
+			TRequestStatus st;
+			awake.Logon(st);
+			User::WaitForRequest(st);
+			awake.Close();
+			}
 		}
 	RDebug::Printf("PH: [sisinst] %S: %s (%d)", &f8, err == KErrNone ? "INSTALLED" : "FAILED", err);
 	return err;
