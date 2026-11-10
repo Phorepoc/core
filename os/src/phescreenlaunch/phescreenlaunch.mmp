@@ -14,8 +14,8 @@ OS_LAYER_SYSTEMINCLUDE_SYMBIAN
 SOURCEPATH		.
 SOURCE			phescreenlaunch.cpp
 
-// the window registry client (header only): "window" raises an app already shown as a window instead of starting it again
-USERINCLUDE		../../../../hildon-ui/os/src/phewinreg
+// the window registry client (header only, core os/inc/phorepoc): "window" raises an app already shown as a window instead of starting it again
+USERINCLUDE		../../inc/phorepoc
 
 LIBRARY			euser.lib ws32.lib apgrfx.lib apparc.lib hal.lib efsrv.lib
 
