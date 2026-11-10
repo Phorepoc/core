@@ -616,7 +616,7 @@ public:
 		iEditing = ETrue;
 		DrawDeferred();
 		}
-	void EndEditL(TBool aGo)
+	void EndEditL(TBool aGo, TBool aSubmit = ETrue)
 		{
 		if (!iEditing)
 			return;
@@ -640,8 +640,11 @@ public:
 			if (page && iApi && iCur >= 0 && iTabs[iCur].iView)
 				{                              // into the page's field, then Enter (submits a search box / form)
 				iApi->text(iTabs[iCur].iView, (const unsigned short*)text->Ptr(), text->Length());
-				iApi->key(iTabs[iCur].iView, 0, 13, 1);
-				iApi->key(iTabs[iCur].iView, 0, 13, 0);
+				if (aSubmit)
+					{
+					iApi->key(iTabs[iCur].iView, 0, 13, 1);
+					iApi->key(iTabs[iCur].iView, 0, 13, 0);
+					}
 				}
 			else
 				Navigate(*text);
@@ -1447,7 +1450,12 @@ private:
 				if (ClearRect(el).Contains(aE.iPosition))
 					{ iEdit->SetTextL(&KNullDesC); iEdit->SetCursorPosL(0, EFalse); iEdit->SetFocus(ETrue); DrawDeferred(); }   // (SelectAllL left the caret and the selection anchor past the now empty text: the next key panicked ETEXT 12)
 				else if (!FieldRect(el).Contains(aE.iPosition))
-					EndEditL(EFalse);                                   // tap outside = cancel
+					{                                                   // tap outside: a page field keeps what was typed
+					if (iPageInput)                                     // (no Enter: a login form needs its next field);
+						EndEditL(ETrue, EFalse);                        // the address bar cancels
+					else
+						EndEditL(EFalse);
+					}
 				}
 			return;
 			}
