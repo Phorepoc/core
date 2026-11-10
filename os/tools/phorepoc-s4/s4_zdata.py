@@ -52,7 +52,7 @@ HS_DATA = [
     # the Qt service framework's ROM database (tools/phorepoc-s4/build_servicedb.sh: servicedbgen over the
     # descriptors, as the release's qt/qtservice build extension)
     # the name carries the RUNNING Qt's version (databasemanagersession.cpp: "QtServiceFramework_" + qVersion major.minor): on
-    # our Qt 4.8 the same content as 4.8 (PinePhone boot 1021: no state plug-ins -> HsStateMachine::createStates NULL deref)
+    # our Qt 4.8 the same content as 4.8 (a phone boot, 2026-10-21: no state plug-ins -> HsStateMachine::createStates NULL deref)
     (r"private\2002ac7f\QtServiceFramework_%s_system.db" % ("4.8" if S4R != ".phorepoc-s4-build" else "4.7"),
      S4R + "/sfw/epoc32/data/z/private/2002AC7F/QtServiceFramework_4.7_system.db"),
 ]

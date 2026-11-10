@@ -82,7 +82,7 @@ def main() -> int:
                     os.makedirs(os.path.dirname(target), exist_ok=True)
                     shutil.copyfile(s, target)
                     n += 1
-    # Qt 4.8's qmake writes app registration resources S^3 cannot compile or use (2026-10-18, PinePhone boot 1018: hsapplication
+    # Qt 4.8's qmake writes app registration resources S^3 cannot compile or use (2026-10-18, a phone boot: hsapplication
     # died KErrNotFound in qt_init -- no hsapplication_reg.rsc): a `graphics_memory=` field the S^3 appinfo.rh lacks ("Label not
     # found"), and service TBUFs without their body. The registration is Qt-version independent -> the 4.7 tree's file where
     # there is one, else the 4.8 one without that field
