@@ -627,7 +627,9 @@ public:
 			{                                  // a password: the secret editor, empty (the engine never gives its value)
 			iSecret->Reset();
 			iSecret->SetRect(EditRect(l));
-			iSecret->MakeVisible(ETrue);
+			// it holds the text but the bar draws the mask (DrawField): the editor's own drawing (skin background,
+			// resource font clipped to the bar's field) stayed blank on a dark theme
+			iSecret->MakeVisible(EFalse);
 			iSecret->SetFocus(ETrue);
 			iEditing = ETrue;
 			DrawDeferred();
@@ -703,7 +705,7 @@ public:
 			}
 		DrawDeferred();
 		}
-	TInt CountComponentControls() const { return (iEdit && iEditing) ? 1 : 0; }
+	TInt CountComponentControls() const { return (iEdit && iEditing && !iSecretMode) ? 1 : 0; }
 	CCoeControl* ComponentControl(TInt) const { return iSecretMode ? static_cast<CCoeControl*>(iSecret) : iEdit; }
 	TBool BarAtBottom() const { return iSet->iBar == EPbBarBottom; }
 
@@ -1120,6 +1122,21 @@ private:
 		gc.DrawRoundRect(f, TSize(f.Height() / 2, f.Height() / 2));
 		if (iEditing)                        // the editor draws the text; we draw the clear (x) button
 			{
+			if (iSecretMode && iSecret)          // a password: one bullet per character, in the bar's ink, then the caret
+				{
+				const TRect er = EditRect(l);
+				const CFont* f = iSmall ? iSmall : iEikonEnv->NormalFont();
+				TBuf<128> mask;
+				const TInt n = Min(iSecret->Buffer().Length(), mask.MaxLength());
+				mask.Fill(TChar(0x2022), n);
+				const TInt fit = f->TextCount(mask, er.Width() - 4);
+				const TPtrC shown = mask.Right(fit);    // the end of a long one, as an editor scrolls
+				Txt(gc, shown, er, CGraphicsContext::ELeft, Rgb(tk.iInk), 0, f);
+				const TInt x = er.iTl.iX + f->TextWidthInPixels(shown) + 1;
+				gc.SetPenStyle(CGraphicsContext::ESolidPen);
+				gc.SetPenColor(Rgb(tk.iInk));
+				gc.DrawLine(TPoint(x, er.iTl.iY + 2), TPoint(x, er.iBr.iY - 2));
+				}
 			const TPoint c = ClearRect(l).Center();
 			gc.SetPenStyle(CGraphicsContext::ESolidPen);
 			gc.SetPenSize(TSize(2, 2));
@@ -1726,7 +1743,11 @@ private:
 				{ EndEditL(ETrue); return EKeyWasConsumed; }              // Enter = go
 			if (aType == EEventKey && aKey.iCode == EKeyEscape)
 				{ EndEditL(EFalse); return EKeyWasConsumed; }
-			return iSecretMode ? iSecret->OfferKeyEventL(aKey, aType) : iEdit->OfferKeyEventL(aKey, aType);
+			if (!iSecretMode)
+				return iEdit->OfferKeyEventL(aKey, aType);
+			const TKeyResponse r = iSecret->OfferKeyEventL(aKey, aType);
+			DrawDeferred();                                         // the mask is ours (DrawField)
+			return r;
 			}
 		if (aType != EEventKey || iCur < 0 || iMode != EModeBrowse || !iApi || !iTabs[iCur].iUrl.Length())
 			return EKeyWasNotConsumed;
