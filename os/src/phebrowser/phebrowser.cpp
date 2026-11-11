@@ -663,7 +663,7 @@ public:
 		if (aGo)
 			{
 			const TInt n = iSecretMode ? iSecret->Buffer().Length() : iEdit->TextLength();
-			text = HBufC::NewL(n + 1);
+			text = HBufC::NewL(iSecretMode ? Max(n + 1, KSecretMax) : n + 1);   // GetText needs room for the secret editor's maximum (EIKCTL 13)
 			TPtr p = text->Des();
 			if (iSecretMode)
 				iSecret->GetText(p);
