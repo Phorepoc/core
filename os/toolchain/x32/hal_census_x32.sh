@@ -12,7 +12,7 @@
 #       perl halcfg.pl    hal_data.h  values.hda -> hal_values.cpp   (attribute defaults)
 #       perl halcfg.pl -x hal_data.h  config.hcf -> hal_config.cpp   (attribute -> handler)
 # Only those two text files (board/hal/, the board's) are board-specific -- every handler they
-# name lives in the generic userhal.cpp, so nothing else about HAL is architecture-dependent.
+# names lives in the generic userhal.cpp or in the board's own board/hal/*.cpp (compiled below too).
 # EFILE imports HAL::Get (halu.def ordinal 1); sf_cache_man/sf_ldr/sf_utl ask it for
 # EMemoryPageSize / ECPUSpeed / EPowerGood.
 set -u
@@ -40,7 +40,9 @@ PRE="-include $PORT/port_prelude.h -include e32def.h"
 [ "$LINK" = 1 ] && echo "$CXX $DEFS $INCS $PRE" > "$OUT/flags.txt"
 
 pass=0; fail=0; : > "$OUT/failed.txt"; : > "$OUT/errors.txt"
-for src in "$HAL/src/hal_main.cpp" "$HAL/src/userhal.cpp" "$OUT/hal_values.cpp" "$OUT/hal_config.cpp"; do
+# + the board's own handler TUs (board/hal/*.cpp, e.g. the PC board's boardhal.cpp: a handler its config.hcf names
+# that userhal.cpp does not have)
+for src in "$HAL/src/hal_main.cpp" "$HAL/src/userhal.cpp" "$OUT/hal_values.cpp" "$OUT/hal_config.cpp" $(ls "$BOARD"/*.cpp 2>/dev/null); do
   tu="$(basename "$src")"
   [ -f "$src" ] || { echo "MISSING $tu" >> "$OUT/failed.txt"; fail=$((fail+1)); continue; }
   o=/dev/null; [ "$LINK" = 1 ] && o="$OBJ/$(echo "$tu" | tr "." "_").o"
