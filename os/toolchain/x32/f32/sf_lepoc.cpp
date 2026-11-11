@@ -1311,7 +1311,7 @@ E32Image* RImageArray::Find(const TRomImageHeader* a) const
 	}
 
 
-static TInt ForeignCpuRedirect(RLdrReq& aReq, SSecurityInfo& aForeign);
+static TInt ForeignCpuRedirect(RLdrReq& aReq, SSecurityInfo& aForeign, TUidType& aForeignUids);
 
 TInt E32Image::LoadProcess(const RLdrReq& aReq)
 	{
@@ -1324,10 +1324,11 @@ TInt E32Image::LoadProcess(const RLdrReq& aReq)
 	// PHOREPOC: no native image of that name -- an EXE built for another CPU with a handler installed? (ForeignCpuRedirect)
 	TBool foreign = EFalse;
 	SSecurityInfo foreignS;
+	TUidType foreignU;
 	if (r!=KErrNone && r!=KErrNoMemory)
 		{
 		const TInt notFound = r;
-		if (ForeignCpuRedirect(const_cast<RLdrReq&>(aReq), foreignS) == KErrNone)
+		if (ForeignCpuRedirect(const_cast<RLdrReq&>(aReq), foreignS, foreignU) == KErrNone)
 			{
 			foreign = ETrue;
 			finder.Close();
@@ -1352,16 +1353,22 @@ TInt E32Image::LoadProcess(const RLdrReq& aReq)
 		}
 	if (iIsDll)
 		return KErrNotSupported;
-	// PHOREPOC: a handler's code segment carries the identity of the process that created it -- a foreign program's (below), so
-	// every handler process starts from the identity the handler's own image declares, not the code segment's
+	// PHOREPOC: a handler's code segment carries the identity (security info, UIDs) of the process that created it -- a foreign
+	// program's (below), so every handler process starts from the identity the handler's own image declares, not the code segment's
 	TBuf8<KMaxFileName> root;
 	aReq.iFileNameInfo.GetName(root, TFileNameInfo::EIncludeBaseExt);
 	if (root.Length() >= 11 && root.Left(11).CompareF(_L8("cpuhandler_")) == 0)
 		{
 		if (iRomImageHeader)
+			{
 			iS = iRomImageHeader->iS;
+			iUids = *(const TUidType*)&iRomImageHeader->iUid1;
+			}
 		else if (iHeader)
+			{
 			iS = ((const E32ImageHeaderV*)iHeader)->iS;
+			iUids = *(const TUidType*)&iHeader->iUid1;
+			}
 		else
 			{
 			// already loaded: the code segment gives neither header -- read the file's (XIP in ROM, or its E32Image header)
@@ -1369,7 +1376,10 @@ TInt E32Image::LoadProcess(const RLdrReq& aReq)
 			name.Copy(iFileName);
 			const TRomImageHeader* rh = (const TRomImageHeader*)gTheLoaderFs.IsFileInRom(name);
 			if (rh)
+				{
 				iS = rh->iS;
+				iUids = *(const TUidType*)&rh->iUid1;
+				}
 			else
 				{
 				RFile f;
@@ -1386,6 +1396,7 @@ TInt E32Image::LoadProcess(const RLdrReq& aReq)
 				if (r != KErrNone)
 					return r;
 				iS = h.iS;
+				iUids = *(const TUidType*)&h.iUid1;
 				}
 			}
 		}
@@ -1393,6 +1404,9 @@ TInt E32Image::LoadProcess(const RLdrReq& aReq)
 		{
 		// PHOREPOC: the process is the foreign program's, run by its handler: its SecureId and VendorId, and the capabilities it
 		// declares as far as the handler holds them -- every server checks the program, not the handler (ForeignCpuRedirect)
+		// and its UIDs: the kernel names the process <name>[<uid3>]<gen> and answers RProcess::Type from them. (A new code segment of
+		// the handler carries them too; a later load finds it by name, and the program's UID1 is the EXE UID like the handler's.)
+		iUids = foreignU;
 		iS.iSecureId = foreignS.iSecureId;
 		iS.iVendorId = foreignS.iVendorId;
 		for (TInt i = 0; i < SCapabilitySet::ENCapW; ++i)
@@ -1770,7 +1784,7 @@ static TBool ArmHandlerInstalled()
 	return EFalse;
 	}
 
-static TInt ForeignCpuRedirect(RLdrReq& aReq, SSecurityInfo& aForeign)
+static TInt ForeignCpuRedirect(RLdrReq& aReq, SSecurityInfo& aForeign, TUidType& aForeignUids)
 	{
 	const TFileNameInfo& fi = aReq.iFileNameInfo;
 	if (!aReq.iFileName || aReq.iFileName->Length() >= KMaxFileName)
@@ -1814,6 +1828,7 @@ static TInt ForeignCpuRedirect(RLdrReq& aReq, SSecurityInfo& aForeign)
 		if (!(cpu == ECpuArmV4 || cpu == ECpuArmV5 || cpu == ECpuArmV6))
 			continue;
 		aForeign = h.iS;		// what the program declares (E32Image::LoadProcess gives the process this identity)
+		aForeignUids = TUidType(TUid::Uid(h.iUid1), TUid::Uid(h.iUid2), TUid::Uid(h.iUid3));
 		// the new command line: "<path> <old command line>" as 16-bit data in an 8-bit buffer
 		const TInt oldLen = aReq.iCmd ? aReq.iCmd->Length() : 0;
 		HBufC8* cmd = HBufC8::New(full.Size() + 2 + oldLen);
