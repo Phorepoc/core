@@ -25,6 +25,8 @@
 #include <eikmenub.h>
 #include <eikappui.h>
 #include <eikedwin.h>
+#include <eikseced.h>
+#include <barsread.h>
 #include <eikbtgpc.h>
 #include <txtfrmat.h>
 #include <txtfmlyr.h>
@@ -220,6 +222,7 @@ public:
 		if (iSmall)
 			iEikonEnv->ScreenDevice()->ReleaseFont(iSmall);
 		delete iEdit;
+		delete iSecret;
 		delete iPageBmp;
 		iTabs.Close();
 		}
@@ -237,6 +240,17 @@ public:
 		iEdit->SetAknEditorCase(EAknEditorLowerCase);          // an address is not a sentence: no auto-capital, no predictive text
 		iEdit->SetAknEditorFlags(EAknEditorFlagNoT9 | EAknEditorFlagNoEditIndicators | EAknEditorFlagLatinInputModesOnly);
 		iEdit->MakeVisible(EFalse);
+		{                                                    // a password field's editor: shows '*' only, never the text
+		iSecret = new (ELeave) CEikSecretEditor;
+		iSecret->SetContainerWindowL(*this);
+		TBuf8<2> res;                                        // SECRETED { WORD num_letters } (eikon.rh), built in memory
+		res.Append(KSecretMax & 0xff);
+		res.Append(KSecretMax >> 8);
+		TResourceReader rr;
+		rr.SetBuffer(&res);
+		iSecret->ConstructFromResourceL(rr);
+		iSecret->MakeVisible(EFalse);
+		}
 		{                                                    // the address font: about 2/3 of the normal one
 		TFontSpec spec = iEikonEnv->NormalFont()->FontSpecInTwips();
 		spec.iHeight = spec.iHeight * 2 / 3;
@@ -608,6 +622,17 @@ public:
 		iEdit->SetAknEditorFlags(EAknEditorFlagNoT9 | EAknEditorFlagNoEditIndicators | EAknEditorFlagLatinInputModesOnly
 		                         | EAknEditorFlagLaunchPenInputAutomatic | EAknEditorFlagEnablePartialScreen);   // the editor stays visible above an overlay keyboard
 		//   // focus opens the on-screen keyboard
+		iSecretMode = iPageInput && iPagePassword;
+		if (iSecretMode)
+			{                                  // a password: the secret editor, empty (the engine never gives its value)
+			iSecret->Reset();
+			iSecret->SetRect(EditRect(l));
+			iSecret->MakeVisible(ETrue);
+			iSecret->SetFocus(ETrue);
+			iEditing = ETrue;
+			DrawDeferred();
+			return;
+			}
 		iEdit->SetRect(EditRect(l));
 		if (iPageInput)                        // a page field: start with its value (an older engine has none: empty)
 			{
@@ -637,13 +662,21 @@ public:
 		HBufC* text = NULL;
 		if (aGo)
 			{
-			const TInt n = iEdit->TextLength();
+			const TInt n = iSecretMode ? iSecret->Buffer().Length() : iEdit->TextLength();
 			text = HBufC::NewL(n + 1);
 			TPtr p = text->Des();
-			iEdit->GetText(p);
+			if (iSecretMode)
+				iSecret->GetText(p);
+			else
+				iEdit->GetText(p);
 			}
 		iEdit->SetFocus(EFalse);
 		iEdit->MakeVisible(EFalse);
+		iSecret->SetFocus(EFalse);
+		iSecret->MakeVisible(EFalse);
+		if (iSecretMode)
+			iSecret->Reset();                  // the password does not stay in the editor
+		iSecretMode = EFalse;
 		iEditing = EFalse;
 		const TBool page = iPageInput;
 		iPageInput = EFalse;
@@ -671,7 +704,7 @@ public:
 		DrawDeferred();
 		}
 	TInt CountComponentControls() const { return (iEdit && iEditing) ? 1 : 0; }
-	CCoeControl* ComponentControl(TInt) const { return iEdit; }
+	CCoeControl* ComponentControl(TInt) const { return iSecretMode ? static_cast<CCoeControl*>(iSecret) : iEdit; }
 	TBool BarAtBottom() const { return iSet->iBar == EPbBarBottom; }
 
 private:
@@ -736,7 +769,7 @@ private:
 		const TInt w = r.Width() / 4;
 		return TRect(r.iTl.iX + aIx * w, r.iTl.iY, r.iTl.iX + (aIx + 1) * w, r.iBr.iY);
 		}
-	void SizeChanged() { if (iEditing) iEdit->SetRect(EditRect(Layout())); Relayout(); }
+	void SizeChanged() { if (iEditing) (iSecretMode ? static_cast<CCoeControl*>(iSecret) : iEdit)->SetRect(EditRect(Layout())); Relayout(); }
 	void Relayout()
 		{
 		if (!iApi)
@@ -871,8 +904,11 @@ private:
 				if (t == iCur) page = ETrue;
 				break;
 			case PHE_EV_FOCUS:                       // a = 2: a text field on the page has the caret -> our editor + keyboard
+				if (e.a == 0)                        // the committed field lost the caret (a tap elsewhere, or on the next
+					iFocusMuted = EFalse;            // field: the engine posts a = 0, then a = 2 for it); NetSurf's own
+				                                     // repeat of the committed field's focus (a = 2 alone) stays muted
 				if (t == iCur && e.a == 2 && !iEditing && iMode == EModeBrowse && !iFocusMuted)
-					{ iPageInput = ETrue; TRAP_IGNORE(StartEditL()); }
+					{ iPageInput = ETrue; iPagePassword = e.b == 1; TRAP_IGNORE(StartEditL()); }   // b = 1: a password field
 				break;
 			case PHE_EV_NEW_VIEW:
 				{
@@ -1468,11 +1504,20 @@ private:
 			if (aE.iType == TPointerEvent::EButton1Up)
 				{
 				if (ClearRect(el).Contains(aE.iPosition))
-					{ iEdit->SetTextL(&KNullDesC); iEdit->SetCursorPosL(0, EFalse); iEdit->SetFocus(ETrue); DrawDeferred(); }   // (SelectAllL left the caret and the selection anchor past the now empty text: the next key panicked ETEXT 12)
+					{ if (iSecretMode) iSecret->Reset(); else { iEdit->SetTextL(&KNullDesC); iEdit->SetCursorPosL(0, EFalse); iEdit->SetFocus(ETrue); } DrawDeferred(); }   // (SelectAllL left the caret and the selection anchor past the now empty text: the next key panicked ETEXT 12)
 				else if (!FieldRect(el).Contains(aE.iPosition))
 					{                                                   // tap outside: a page field keeps what was typed
 					if (iPageInput)                                     // (no Enter: a login form needs its next field);
-						EndEditL(ETrue, EFalse);                        // the address bar cancels
+						{                                               // the address bar cancels
+						EndEditL(ETrue, EFalse);
+						if (!iMoved && iApi && iCur >= 0 && iTabs[iCur].iView && R(el.iPage).Contains(aE.iPosition))
+							{                                           // the same tap also reaches the page (page coordinates, so
+							                                            // the bar's move does not matter): a tap on the next field
+							const TInt x = aE.iPosition.iX - el.iPage.iX, y = aE.iPosition.iY - el.iPage.iY;   // focuses it and opens
+							iApi->pointer(iTabs[iCur].iView, PHE_PTR_DOWN, x, y);                             // the editor again
+							iApi->pointer(iTabs[iCur].iView, PHE_PTR_UP, x, y);
+							}
+						}
 					else
 						EndEditL(EFalse);
 					}
@@ -1681,7 +1726,7 @@ private:
 				{ EndEditL(ETrue); return EKeyWasConsumed; }              // Enter = go
 			if (aType == EEventKey && aKey.iCode == EKeyEscape)
 				{ EndEditL(EFalse); return EKeyWasConsumed; }
-			return iEdit->OfferKeyEventL(aKey, aType);
+			return iSecretMode ? iSecret->OfferKeyEventL(aKey, aType) : iEdit->OfferKeyEventL(aKey, aType);
 			}
 		if (aType != EEventKey || iCur < 0 || iMode != EModeBrowse || !iApi || !iTabs[iCur].iUrl.Length())
 			return EKeyWasNotConsumed;
@@ -1702,6 +1747,10 @@ private:
 	TBuf<400> iQueue;
 	CFbsBitmap* iPageBmp = NULL;
 	CEikEdwin* iEdit = NULL;
+	CEikSecretEditor* iSecret = NULL;       // the page's password fields (PHE_EV_FOCUS b = 1)
+	TBool iSecretMode = EFalse;             // the open editor is iSecret
+	TBool iPagePassword = EFalse;           // the focused page field is a password
+	static const TInt KSecretMax = 128;
 	TBool iEditing = EFalse;
 	TBool iFocusMuted = EFalse;              // a page field was just committed: ignore focus reports until the next touch
 	TBool iPageInput = EFalse;               // the editor is typing into a page field (PHE_EV_FOCUS), not the address
