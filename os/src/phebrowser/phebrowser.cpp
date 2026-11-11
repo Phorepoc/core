@@ -885,7 +885,9 @@ private:
 			case PHE_EV_START:
 				tab.iFailCode = 0;
 				page = ETrue;
-				break;
+				if (t == iCur && iEditing && iPageInput)   // a new page load: the editor's field belongs to the old page
+					TRAP_IGNORE(EndEditL(EFalse));         // (a login's submit tap re-focused the password field, the
+				break;                                     // empty editor then stayed open over the next page)
 			case PHE_EV_FAILED:
 				tab.iFailCode = e.a ? e.a : -1;
 				page = ETrue;
