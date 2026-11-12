@@ -3,7 +3,7 @@
 
 // gsphbrowser.cpp -- OURS: Control Panel entry "Default browser" (next to Display). Lists the applications that declare the
 // data type x-scheme-handler/http in their registration (datatype_list; phebrowser does) and makes the chosen one apparc's
-// application for that type (RApaLsSession::SetAppForDataType, persisted by apparc -- the 2010 default-app mechanism). The
+// application for that type (RApaLsSession::InsertDataMapping at the user-specified priority, persisted by apparc -- the 2010 default-app mechanism). The
 // Scheme Handler's http(s) plug-in (toolchain/shims/schemedisp/HttpHandler.cpp) opens links with it: FindItem in Messaging,
 // Notes and every other application that opens a link through CSchemeHandler. A dialog-type item: GS calls HandleSelection.
 #include <e32std.h>
@@ -110,7 +110,7 @@ static void ChooseBrowserL()
 	const TInt pick = PickL(KTitle, names, curIdx);
 	if (pick >= 0 && uids[pick] != cur)
 		{
-		const TInt r = ls.SetAppForDataType(TDataType(KPheSchemeHttpType), uids[pick]);
+		const TInt r = ls.InsertDataMapping(TDataType(KPheSchemeHttpType), KDataTypePriorityUserSpecified, uids[pick]);
 		RDebug::Printf("PH: [gsphbrowser] default browser 0x%08x: %d", uids[pick].iUid, r);
 		}
 	CleanupStack::PopAndDestroy(2, &ls);		// uids, ls

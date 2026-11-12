@@ -22,7 +22,7 @@
 *      PHOREPOC: the release hard-coded the S60 browser (0x10008D39, embedded through BrowserLauncher). Here the
 *      browser is the default application of the data type "x-scheme-handler/http" -- apparc's own default-app
 *      mapping (RApaLsSession::AppForDataType; the Control Panel's "Default browser" item sets it with
-*      SetAppForDataType). Applications declare the type in their registration (phebrowser does). With no app
+*      InsertDataMapping). Applications declare the type in their registration (phebrowser does). With no app
 *      mapped, the highest-priority declarer wins (apparc's own choice); with none at all, phebrowser's UID.
 *      The URL goes as the document name: StartDocument when the browser is not running, the open-file
 *      message (TApaTask::SwitchOpenFile) when it is. Embedded launches open standalone: no browser embeds.
