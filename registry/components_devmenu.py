@@ -14,6 +14,6 @@ COMPONENTS = {
     "gsphedevmenu": dict(mmp=os.path.join(OS_ROOT, "src/phedevmenu/gsphedevmenu.mmp")),
 }
 
-COMPONENTS["gsphshell"] = dict(mmp=os.path.join(OS_ROOT, "src/phedevmenu/gsphshell.mmp"))   # Control Panel (next to Display) "User interface": the shells there are + a restart
+COMPONENTS["gsphshell"] = dict(mmp=os.path.join(OS_ROOT, "src/phedevmenu/gsphshell.mmp"))   # Control Panel (Device) "UI shell": the shells there are + a restart
 COMPONENTS["gsphorient"] = dict(mmp=os.path.join(OS_ROOT, "src/phedevmenu/gsphorient.mmp"))   # Control Panel (next to Display) "Screen orientation": Automatic / Portrait / Landscape
 COMPONENTS["gsphbrowser"] = dict(mmp=os.path.join(OS_ROOT, "src/phedevmenu/gsphbrowser.mmp"))   # Control Panel (next to Display) "Default browser": apparc's app for x-scheme-handler/http
