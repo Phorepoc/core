@@ -695,8 +695,11 @@ public:
 					iApi->text(iTabs[iCur].iView, (const unsigned short*)text->Ptr(), text->Length());        // inserted at the caret
 				if (aSubmit)
 					{
-					iApi->key(iTabs[iCur].iView, 0, 13, 1);
-					iApi->key(iTabs[iCur].iView, 0, 13, 0);
+					// Enter as the API's editing key (scan_code EKeyEnter) as well as the character: WebKit maps
+					// the scan code to VK_RETURN, whose keydown/keypress drives implicit submission; with scan 0 it
+					// saw only a bare '\r' character and the form stayed put. NetSurf keys on the character.
+					iApi->key(iTabs[iCur].iView, EKeyEnter, 13, 1);
+					iApi->key(iTabs[iCur].iView, EKeyEnter, 13, 0);
 					}
 				}
 			else
