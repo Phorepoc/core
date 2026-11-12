@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // gsphshell.cpp -- OURS: Control Panel entry "UI shell" (Device). Lists every shell there is (the built-in ones and the ones
-// installed from the Catalogue, pheshells.h), stores the choice (CenRep e7015a01 key 10) and offers a restart. Visible only
-// while there is more than one shell to choose from. A dialog-type item: GS calls HandleSelection.
+// installed from the Catalogue, pheshells.h), stores the choice (CenRep e7015a01 key 10) and offers a restart. Always
+// visible: with a single shell it lists that one as the current choice. A dialog-type item: GS calls HandleSelection.
 #include <e32std.h>
 #include <e32debug.h>
 #include <implementationproxy.h>
@@ -120,10 +120,10 @@ public:
 			return EFalse;
 		RPheShells shells;
 		TRAP_IGNORE(PheListShellsL(fs, shells));
-		const TBool many = shells.Count() > 1;
+		const TBool any = shells.Count() > 0;
 		PheShellsClose(shells);
 		fs.Close();
-		return many;
+		return any;
 		}
 private:
 	void DoActivateL(const TVwsViewId&, TUid, const TDesC8&) {}
