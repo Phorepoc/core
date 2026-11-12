@@ -795,7 +795,10 @@ private:
 		u.Trim();
 		if (u.Length() == 0)
 			return;
-		if (u.Find(_L("://")) == KErrNotFound && u.Left(6).CompareF(_L("about:")) != 0)
+		// schemes without "//" go to the engine as typed (a data: URL holds dots and no spaces, so it was taken for a host)
+		const TBool opaque = u.Left(6).CompareF(_L("about:")) == 0 || u.Left(5).CompareF(_L("data:")) == 0 ||
+			u.Left(11).CompareF(_L("javascript:")) == 0;
+		if (u.Find(_L("://")) == KErrNotFound && !opaque)
 			{
 			if (u.Locate(' ') == KErrNotFound && u.Locate('.') != KErrNotFound)
 				u.Insert(0, _L("https://"));                         // "example.org"
