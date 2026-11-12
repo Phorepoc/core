@@ -17,7 +17,8 @@
 #include <avkon.rsg>
 #include <badesca.h>
 #include <apgcli.h>
-#include <apaserverapp.h>
+#include <apaid.h>
+#include <apaidpartner.h>		// TApaAppServiceInfo, CApaAppServiceInfoArray, KOpenServiceUid
 
 const TUid KPheGsBrowserPluginUid = { 0xE7015A08 };
 const TInt KPheGsBrowserImplUid = 0xE7015A09;
