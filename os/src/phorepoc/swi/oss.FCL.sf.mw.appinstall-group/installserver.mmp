@@ -75,7 +75,7 @@ SOURCE siscontentprovider.cpp
 SOURCE expressionevaluator.cpp
 
 SOURCE processor.cpp
-SOURCE installationprocessor.cpp
+// SOURCE installationprocessor.cpp  -- OURS copy below (64 KB hash reads)
 SOURCE uninstallationprocessor.cpp
 
 SOURCE restorecontroller.cpp
@@ -154,3 +154,4 @@ SMPSAFE
 SOURCEPATH .
 SOURCE installmachine.cpp
 SOURCE securityinfo.cpp
+SOURCE installationprocessor.cpp
