@@ -25,5 +25,5 @@ TARGET			gsphorient.rsc
 TARGETPATH		ECOM_RESOURCE_DIR
 END
 
-LIBRARY			euser.lib ecom.lib apparc.lib apgrfx.lib avkon.lib cone.lib eikcore.lib centralrepository.lib eikctl.lib eikcoctl.lib bafl.lib efsrv.lib akncapserverclient.lib hal.lib
+LIBRARY			euser.lib ecom.lib apparc.lib apgrfx.lib avkon.lib cone.lib eikcore.lib centralrepository.lib eikctl.lib eikcoctl.lib bafl.lib efsrv.lib akncapserverclient.lib ws32.lib
 LIBRARY			gsecomplugin.lib gsframework.lib

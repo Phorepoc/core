@@ -15,14 +15,13 @@
 // What is ours: the stored choice (the developer-menu repository, key 13) and applying it at boot and on change.
 // 0 = Automatic: the sensor (or, without one, the hardware state) decides -- nothing is changed;
 // 1 = Portrait, 2 = Landscape: the preference is set so that the screen mode of an application that asks for nothing has that
-// shape. Which of Normal/Alternate that is follows from the display's own shape (HAL EDisplayXPixels/YPixels): on a portrait
-// display (the phones, the PC image's 360x640) the normal mode is portrait (wsini mode 1, hardware states 0 and 1).
+// shape (which of Normal/Alternate that is: PheApplyOrientation).
 #ifndef PHEORIENT_H
 #define PHEORIENT_H
 
 #include <e32base.h>
 #include <e32property.h>
-#include <hal.h>
+#include <w32std.h>
 #include <centralrepository.h>
 #include <akncapserverclient.h>
 #include "phedevmenu.h"
@@ -50,31 +49,60 @@ inline TInt PheStoredOrientation()
 	return v < EPheOrientAuto || v > EPheOrientLandscape ? EPheOrientAuto : v;
 	}
 
-// make the preferred orientation match aWanted (1/2; 0 changes nothing). KErrNone, KErrNotReady while AknCapServer has not
-// defined the property yet, or the error of the call
+// is the window server's current screen mode landscape (wider than tall)? KErrNone or the error
+inline TInt PheCurrentModeLandscape(RWsSession& aWs, TBool& aLandscape)
+	{
+	CWsScreenDevice* dev = new CWsScreenDevice(aWs);
+	if (!dev)
+		return KErrNoMemory;
+	TInt r = dev->Construct();
+	if (r == KErrNone)
+		{
+		TPixelsTwipsAndRotation m;
+		dev->GetScreenModeSizeAndRotation(dev->CurrentScreenMode(), m);
+		aLandscape = m.iPixelSize.iWidth > m.iPixelSize.iHeight;
+		}
+	delete dev;
+	return r;
+	}
+
+// make the preferred orientation give aWanted (1/2; 0 changes nothing) to an application that asks for none. Which of
+// Normal/Alternate that is depends on the hardware state's modes (the PC's normal mode is landscape, a phone's portrait), so
+// the current screen mode is looked at: the wrong shape -> RotateScreen. If the shape does not change (the application on top
+// fixed its orientation), the preference is toggled back. KErrNone, KErrNotReady while AknCapServer has not defined the
+// property yet, KErrLocked when the top application holds the other orientation, or the error of a call
 inline TInt PheApplyOrientation(TInt aWanted)
 	{
 	if (aWanted != EPheOrientPortrait && aWanted != EPheOrientLandscape)
 		return KErrNone;
-	TInt pref = KPhePreferredNormal;
+	TInt pref = 0;
 	TInt r = RProperty::Get(KPheUikPSCategory, KPheUikPreferredOrientation, pref);
 	if (r != KErrNone)
 		return r == KErrNotFound ? KErrNotReady : r;
-	TInt w = 0, h = 0;
-	HAL::Get(HALData::EDisplayXPixels, w);
-	HAL::Get(HALData::EDisplayYPixels, h);
-	const TBool displayPortrait = w <= h;
-	const TBool wantAlternate = (aWanted == EPheOrientLandscape) == displayPortrait;
-	const TBool isAlternate = pref == KPhePreferredAlternate;
-	if (wantAlternate == isAlternate)
-		return KErrNone;
-	RAknUiServer ui;
-	r = ui.Connect();
-	if (r == KErrNone)
+	RWsSession ws;
+	r = ws.Connect();
+	if (r != KErrNone)
+		return r;
+	TBool land = EFalse;
+	r = PheCurrentModeLandscape(ws, land);
+	const TBool wantLand = aWanted == EPheOrientLandscape;
+	if (r == KErrNone && land != wantLand)
 		{
-		r = ui.RotateScreen();
-		ui.Close();
+		RAknUiServer ui;
+		r = ui.Connect();
+		if (r == KErrNone)
+			{
+			r = ui.RotateScreen();
+			TBool now = land;
+			if (r == KErrNone && PheCurrentModeLandscape(ws, now) == KErrNone && now != wantLand)
+				{
+				ui.RotateScreen();			// the top application holds its orientation: leave the preference as it was
+				r = KErrLocked;
+				}
+			ui.Close();
+			}
 		}
+	ws.Close();
 	return r;
 	}
 

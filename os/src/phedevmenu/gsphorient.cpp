@@ -62,8 +62,24 @@ static void ChooseOrientationL()
 	CRepository* repo = CRepository::NewLC(KPheDevMenuRepoUid);
 	User::LeaveIfError(repo->Set(KPheDevKeyOrientation, pick));
 	CleanupStack::PopAndDestroy(repo);
-	// Automatic after a fixed choice: back to the hardware state's own mode (Normal), the sensor turns it from there
-	const TInt r = PheApplyOrientation(pick == EPheOrientAuto ? EPheOrientPortrait : pick);
+	TInt r = KErrNone;
+	if (pick == EPheOrientAuto)
+		{
+		// back to the hardware state's own mode (Normal), what every boot starts from; a sensor turns the screen from there
+		TInt pref = 0;
+		if (RProperty::Get(KPheUikPSCategory, KPheUikPreferredOrientation, pref) == KErrNone && pref == KPhePreferredAlternate)
+			{
+			RAknUiServer ui;
+			r = ui.Connect();
+			if (r == KErrNone)
+				{
+				r = ui.RotateScreen();
+				ui.Close();
+				}
+			}
+		}
+	else
+		r = PheApplyOrientation(pick);
 	RDebug::Printf("PH: [gsphorient] orientation %d stored, applied: %d", pick, r);
 	}
 

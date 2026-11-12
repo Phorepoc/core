@@ -11,4 +11,4 @@ VENDORID		0
 APP_LAYER_SYSTEMINCLUDE
 SOURCEPATH		.
 SOURCE			pheshellsel.cpp
-LIBRARY			euser.lib efsrv.lib centralrepository.lib apgrfx.lib apparc.lib ws32.lib akncapserverclient.lib hal.lib eikcore.lib
+LIBRARY			euser.lib efsrv.lib centralrepository.lib apgrfx.lib apparc.lib ws32.lib akncapserverclient.lib eikcore.lib
