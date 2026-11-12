@@ -1,0 +1,29 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// gsphbrowser.mmp -- OURS: the Control Panel (GS) plug-in "Default browser" (next to Display):
+// the application that opens web links (apparc data type x-scheme-handler/http)
+#include <data_caging_paths.hrh>
+#include <platform_paths.hrh>
+
+CAPABILITY		CAP_ECOM_PLUGIN
+TARGET			gsphbrowser.dll
+TARGETTYPE		PLUGIN
+UID				0x10009D8D 0xE7015A08
+VENDORID		VID_DEFAULT
+
+SOURCEPATH		.
+SOURCE			gsphbrowser.cpp
+
+USERINCLUDE		.
+APP_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SYSTEMINCLUDE	/epoc32/include/ecom
+
+START RESOURCE	gsphbrowser_ecom.rss
+TARGET			gsphbrowser.rsc
+TARGETPATH		ECOM_RESOURCE_DIR
+END
+
+LIBRARY			euser.lib ecom.lib apparc.lib apgrfx.lib avkon.lib cone.lib eikcore.lib centralrepository.lib eikctl.lib eikcoctl.lib bafl.lib efsrv.lib apmime.lib
+LIBRARY			gsecomplugin.lib gsframework.lib

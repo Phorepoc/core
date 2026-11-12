@@ -1877,6 +1877,12 @@ COMPONENTS = {
     # s60web layer, so no image carries them -- no browser engine goes into an image; engines are Catalogue packages
     "browserng": dict(needs="s60web", mmp="../symbian-rcl3/oss.FCL.sf.app.webuis/browserui/browser/Group/BrowserNG.mmp", rsc_incs=["src/browserng-loc", "baseline/symbian-2010/oss.FCL.sf.mw.appinstall/iaupdate/IAD/loc"]),   # the root
     "browserlauncher": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.webuis/browserui/browser/Launcher2/group/BrowserLauncher.mmp"),   # the root
+    # the Scheme Handler (CSchemeHandler, schemehandler.h): how FindItem (Messaging, Notes ...) opens a link -- an ECom plug-in per
+    # scheme. HttpHandler.cpp is ours (toolchain/shims/schemedisp): http(s) go to the default browser, apparc's application for the
+    # data type x-scheme-handler/http (Control Panel "Default browser", gsphbrowser), not the hard-coded S60 browser
+    "schemedispatcher": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/browserutilities/schemehandler/SchemeDispatcher/group/SchemeDispatcher.mmp",
+                             drop=["HttpHandler.cpp"], extra=["toolchain/shims/schemedisp/HttpHandler.cpp"]),
+    "browsertelservice": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/browserutilities/browsertelservice/group/BrowserTelService.mmp"),   # <- schemedispatcher (tel:, wtai:)
     # resolved by the S60 MCPR + MPM; plain Symbian ESOCK picked IAP 0 -> TierManagerUtils 4
     "mpmclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/bearermanagement/mpm/group/mpmclient.mmp"),   # the Mobility Policy Manager client
     "mpmserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/bearermanagement/mpm/group/mpmserver.mmp"),   # MPM: picks the IAP for a TExtendedConnPref/SNAP

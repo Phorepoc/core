@@ -1,0 +1,28 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// gsphbrowser_ecom.rss -- OURS: ECOM registration of the Control Panel default browser entry
+#include <ecom/registryinfo.rh>
+
+RESOURCE REGISTRY_INFO theInfo
+	{
+	dll_uid     = 0xE7015A08;
+	interfaces  =
+		{
+		INTERFACE_INFO
+			{
+			interface_uid   = 0x10207236;   // CGSPluginInterface
+			implementations =
+				{
+				IMPLEMENTATION_INFO
+					{
+					implementation_uid  = 0xE7015A09;
+					version_no          = 1;
+					display_name        = "Default browser";
+					default_data        = "0x10207237";   // parent: the folder that holds Display (gsdisplayplugin.rsc names it)
+					opaque_data         = "33";           // order number: after Display (30), Screen orientation (31), User interface (32)
+					}
+				};
+			}
+		};
+	}

@@ -13,4 +13,10 @@ RESOURCE APP_REGISTRATION_INFO
 	app_file = "phebrowser";
 	localisable_resource_file = "\\resource\\apps\\phebrowser";
 	localisable_resource_id = R_PHEBROWSER_LOCALISABLE_APP_INFO;
+	// opens web links: the Scheme Handler's http(s) plug-in sends a link to apparc's application for this type, and the
+	// Control Panel's "Default browser" (gsphbrowser) lists the applications that declare it
+	datatype_list =
+		{
+		DATATYPE { priority = EDataTypePriorityNormal; type = "x-scheme-handler/http"; }
+		};
 	}
