@@ -85,7 +85,7 @@ SOURCE restoreprocessor.cpp
 SOURCE fileextractor.cpp
 
 SOURCE securitycheckutil.cpp
-SOURCE sidcache.cpp
+// SOURCE sidcache.cpp  -- OURS copy below (rebuilt for a new ROM)
 // SOURCE securityinfo.cpp  -- OURS copy below (VFPv3 runs VFPv2 code)
 SOURCE packageremover.cpp
 SOURCE adornedutilities.cpp
@@ -155,3 +155,4 @@ SOURCEPATH .
 SOURCE installmachine.cpp
 SOURCE securityinfo.cpp
 SOURCE installationprocessor.cpp
+SOURCE sidcache.cpp
