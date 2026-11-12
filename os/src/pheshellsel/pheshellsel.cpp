@@ -22,6 +22,7 @@
 #include <apacmdln.h>
 #include "../phedevmenu/phedevmenu.h"
 #include "../phedevmenu/pheshells.h"
+#include "../phedevmenu/pheorient.h"
 
 _LIT(KAiLaunch, "z:\\sys\\bin\\ailaunch.exe");
 _LIT(KMatrixMenu, "z:\\sys\\bin\\matrixmenu.exe");
@@ -244,8 +245,26 @@ static void SetRepoInt(CRepository* aRepo, TUint32 aKey, TInt aVal)
 		aRepo->Set(aKey, aVal);
 	}
 
+// the user's fixed screen orientation (Control Panel "Screen orientation", pheorient.h), before the shell's first screen.
+// AknCapServer defines the preferred-orientation property; it is up before the idle slot, the retries only cover a slow start
+static void ApplyOrientation()
+	{
+	const TInt wanted = PheStoredOrientation();
+	if (wanted == EPheOrientAuto)
+		return;
+	TInt r = KErrNotReady;
+	for (TInt i = 0; i < 20 && r == KErrNotReady; i++)
+		{
+		r = PheApplyOrientation(wanted);
+		if (r == KErrNotReady)
+			User::After(250000);
+		}
+	RDebug::Printf("PH: [shellsel] orientation %d applied: %d", wanted, r);
+	}
+
 static TInt RunShellL()
 	{
+	ApplyOrientation();
 	RFs fs;
 	User::LeaveIfError(fs.Connect());
 	CleanupClosePushL(fs);

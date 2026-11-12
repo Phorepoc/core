@@ -1,0 +1,29 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// gsphorient.mmp -- OURS: the Control Panel (GS) plug-in "Screen orientation" (under Personalisation, next to Display):
+// Automatic / Portrait / Landscape for a device without (or with a disabled) orientation sensor
+#include <data_caging_paths.hrh>
+#include <platform_paths.hrh>
+
+CAPABILITY		CAP_ECOM_PLUGIN
+TARGET			gsphorient.dll
+TARGETTYPE		PLUGIN
+UID				0x10009D8D 0xE7015A06
+VENDORID		VID_DEFAULT
+
+SOURCEPATH		.
+SOURCE			gsphorient.cpp
+
+USERINCLUDE		.
+APP_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SYSTEMINCLUDE	/epoc32/include/ecom
+
+START RESOURCE	gsphorient_ecom.rss
+TARGET			gsphorient.rsc
+TARGETPATH		ECOM_RESOURCE_DIR
+END
+
+LIBRARY			euser.lib ecom.lib apparc.lib apgrfx.lib avkon.lib cone.lib eikcore.lib centralrepository.lib eikctl.lib eikcoctl.lib bafl.lib efsrv.lib akncapserverclient.lib hal.lib
+LIBRARY			gsecomplugin.lib gsframework.lib
