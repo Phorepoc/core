@@ -80,9 +80,17 @@ python3 /tmp/synchb.py -i "$SRC" -o "$OUT"
 echo "headers: $(find include -type f | wc -l)   resources.qrc: $(grep -c '<file>' "$SRC/src/hbcore/resources/resources.qrc") files"
 
 # 4. qmake -> bld.inf + mmps
+# hbcore.pro's `CONFIG += mobility` (HB_HAVE_QT_MOBILITY) needs mobility.prf among the features NOW: qmake skips a CONFIG
+# feature it cannot find without a word, and HbCore then links QSystemNetworkInfo / QSystemDeviceInfo to the
+# not-implemented stub (hbdevicedialogappserver died EUSRNIMP at start). hsrv_configure_symbian.sh stages the same files
+# later; a fresh build tree (CI) runs this script first.
 export QMAKEFEATURES=$Q/qmake-features
+mkdir -p "$QMAKEFEATURES"
+cp -f "$S10/oss.FCL.sf.mw.qtmobility/features/mobility.prf" "$S10/oss.FCL.sf.mw.qtmobility/features/mobilityconfig.prf" "$QMAKEFEATURES/"
 "$QMAKE" -spec $Q/qt-symbian/mkspecs/symbian-sbsv2 -cache "$OUT/.qmake.cache" -r "$SRC/hb.pro" > qmake.log 2>&1 || { tail -40 qmake.log; exit 1; }
 tail -15 qmake.log
+grep -q "^LIBRARY[[:space:]]*QtSystemInfo.lib" "$OUT/src/hbcore/HbCore_dll.mmp" \
+  || { echo "hb_configure: HbCore_dll.mmp does not link QtSystemInfo.lib (CONFIG += mobility not applied)"; exit 1; }
 # 5. the generated sources the SBSv2 build makes before compiling (moc/rcc; qmake's shadow build writes them next to
 # the mmp, whose SOURCEPATH is `.`), with the host tools of build_qt_host.sh (as qt_mocables.sh)
 for mmp in $(find "$OUT/src" -name "*.mmp"); do
