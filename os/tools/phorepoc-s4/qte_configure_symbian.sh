@@ -45,20 +45,25 @@ for mk in $(find "$SRC/qthighway" "$SRC/qtmobileextensions/src" -name Makefile);
   for m in "$d"/*.mmp; do echo "${m#$SRC/}: $(grep -c "moc" "$m") moc lines (moc output: under build/)"; done
 done
 # the release was built on Windows: a source may name a forwarding header in another case (targetwrapper.h: <XqKeyCapture>
-# for include/XQKeyCapture). Link each such spelling beside the header (casefix does the same for the release tree, not this copy)
+# for include/XQKeyCapture). Link each such spelling in the including file's folder (on its component's include path), to the
+# header's own text (the forwarding header names its target relative to src/; casefix does this for the release tree, not this copy)
 python3 - "$SRC" <<'PY'
 import os, re, sys
 src = sys.argv[1]
 inc = os.path.join(src, "qtmobileextensions", "include")
 have = {f.lower(): f for f in os.listdir(inc)}
-want = set()
+n = 0
 for d, _, files in os.walk(src):
     for f in files:
-        if f.endswith((".h", ".cpp")):
-            want.update(re.findall(r'#\s*include\s*[<"]([A-Za-z][A-Za-z0-9_]*)[>"]', open(os.path.join(d, f), errors="replace").read()))
-n = 0
-for w in sorted(want):
-    if w.lower() in have and w != have[w.lower()] and not os.path.lexists(os.path.join(inc, w)):
-        os.symlink(have[w.lower()], os.path.join(inc, w)); n += 1
-print(f"qte: {n} case links in qtmobileextensions/include")
+        if not f.endswith((".h", ".cpp")):
+            continue
+        for w in set(re.findall(r'#\s*include\s*[<"]([A-Za-z][A-Za-z0-9_]*)[>"]', open(os.path.join(d, f), errors="replace").read())):
+            real = have.get(w.lower())
+            if real and w != real and not os.path.lexists(os.path.join(d, w)):
+                m = re.search(r'#\s*include\s*"([^"]+)"', open(os.path.join(inc, real), errors="replace").read())
+                target = m and next((os.path.join(r, m.group(1)) for r, _, fs in os.walk(os.path.join(src, "qtmobileextensions", "src"))
+                                     if m.group(1) in fs), None)
+                if target:
+                    os.symlink(target, os.path.join(d, w)); n += 1
+print(f"qte: {n} case links beside the files that include them")
 PY
