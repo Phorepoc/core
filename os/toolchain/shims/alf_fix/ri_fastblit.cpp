@@ -26,6 +26,15 @@
 #include <e32std.h>
 #include <e32debug.h>
 #include <hal.h>
+#include "../sfopenvg_board/ph_scratch.h"	// staging buffers: one cached block, no per-upload commit/decommit
+// per-draw timing (an exec per User::FastCounter: ~10% of alfredserver in a game) only in ALF_TIMING builds
+#ifndef PH_FB_NOW
+#ifdef PH_RI_TIMING
+#define PH_FB_NOW() User::FastCounter()
+#else
+#define PH_FB_NOW() 0u
+#endif
+#endif
 // floor(n / 255) for n < 65535 (exact; every blend term here is at most 255*255+127): no division call on ARMv5
 static inline unsigned PhDiv255(unsigned n) { return (n + 1 + (n >> 8)) >> 8; }
 
@@ -396,13 +405,13 @@ static bool PhRiScaledDraw(VGContext* c, Surface* s, Image* img, RIfloat a, RIfl
 			int r = PhvgDrawImage(s, img, w, h, hash, M, blendSrc, mul, &rects[0][0], nr, NULL);
 			if (r == -2)
 				{
-				TUint8* buf = (TUint8*)User::Alloc(w * h * 4);
+				TUint8* buf = (TUint8*)PhScratchAlloc(w * h * 4);
 				r = 0;
 				if (buf)
 					{
 					PhImageToRgba(img, buf);
 					r = PhvgDrawImage(s, img, w, h, hash, M, blendSrc, mul, &rects[0][0], nr, buf);
-					User::Free(buf);
+					PhScratchFree(buf);
 					}
 				}
 			if (r == 1)
@@ -557,13 +566,13 @@ static bool PhRiRotatedDraw(VGContext* c, Surface* s, Image* img, RIfloat b, RIf
 		int r = PhvgDrawImage(s, img, w, h, hash, M, blendSrc, mul, &rects[0][0], nr, NULL);
 		if (r == -2)
 			{
-			TUint8* buf = (TUint8*)User::Alloc(w * h * 4);
+			TUint8* buf = (TUint8*)PhScratchAlloc(w * h * 4);
 			r = 0;
 			if (buf)
 				{
 				PhImageToRgba(img, buf);
 				r = PhvgDrawImage(s, img, w, h, hash, M, blendSrc, mul, &rects[0][0], nr, buf);
-				User::Free(buf);
+				PhScratchFree(buf);
 				}
 			}
 		if (r == 1)
@@ -763,21 +772,21 @@ static bool PhRiFastDrawImageImpl(VGContext* c, Image* img, const Matrix3x3& m)
 				return true;
 				}
 			PhvgImageCpuAccess(img, false);
-			const TUint th0 = User::FastCounter();
+			const TUint th0 = PH_FB_NOW();
 			const TUint hash = PhImageHash(img, w, h);
-			gHashTicks += User::FastCounter() - th0;
+			gHashTicks += PH_FB_NOW() - th0;
 			const int blendSrc = c->m_blendMode == VG_BLEND_SRC;
 			int r = PhvgDrawImage(s, img, w, h, hash, M, blendSrc, mul, &rects[0][0], nr, NULL);
 			if (r == -2)
 				{
-				TUint8* buf = (TUint8*)User::Alloc(w * h * 4);
+				TUint8* buf = (TUint8*)PhScratchAlloc(w * h * 4);
 				if (buf)
 					{
-					const TUint tc0 = User::FastCounter();
+					const TUint tc0 = PH_FB_NOW();
 					PhImageToRgba(img, buf);
-					gConvTicks += User::FastCounter() - tc0;
+					gConvTicks += PH_FB_NOW() - tc0;
 					r = PhvgDrawImage(s, img, w, h, hash, M, blendSrc, mul, &rects[0][0], nr, buf);
-					User::Free(buf);
+					PhScratchFree(buf);
 					}
 				else
 					r = 0;
@@ -835,7 +844,7 @@ static bool PhRiFastDrawImageImpl(VGContext* c, Image* img, const Matrix3x3& m)
 	const bool same32 = bpp == 32 && !multiply && !flipX && rs == drs && gs == dgs && bs == dbs &&
 		(srcAlpha ? (srcPre && as == das) : true);
 #ifdef PH_RI_TIMING
-	const TUint phB0 = User::FastCounter();
+	const TUint phB0 = PH_FB_NOW();
 	if (!same32 && bnd.width * bnd.height >= 4096)
 		{	// which big images miss the same-format loop (first 12 distinct)
 		static TUint seen[12]; static int nseen;
@@ -1006,7 +1015,7 @@ static bool PhRiFastDrawImageImpl(VGContext* c, Image* img, const Matrix3x3& m)
 #ifdef PH_RI_TIMING
 	{
 	const int k = same32 ? 0 : (bpp == 32 && !multiply && !flipX) || (bpp == 16 && !multiply && !flipX && !srcAlpha) ? 0 : 1;
-	gBlitTicks[k] += User::FastCounter() - phB0;
+	gBlitTicks[k] += PH_FB_NOW() - phB0;
 	gBlitPix[k] += bnd.width * bnd.height;
 	}
 	if (multiply) gBlitMulPix += bnd.width * bnd.height;
@@ -1286,7 +1295,7 @@ bool PhRiFastFillRect(VGContext* c, VGPath vgpath, const Matrix3x3& m, VGbitfiel
 			// a ramp varying along one axis only: a 1 x h (or w x 1) texture of the per-pixel colours, stretched over the rectangle
 			const bool vertical = PhAbs(gdx) < 1e-6f;
 			const int n = vertical ? iy1 - iy0 : ix1 - ix0;
-			TUint8* tex = n > 0 && n <= 4096 ? (TUint8*)User::Alloc(n * 4) : NULL;
+			TUint8* tex = n > 0 && n <= 4096 ? (TUint8*)PhScratchAlloc(n * 4) : NULL;
 			if (tex)
 				{
 				const int spread = (int)paint->m_colorRampSpreadMode;
@@ -1304,7 +1313,7 @@ bool PhRiFastFillRect(VGContext* c, VGPath vgpath, const Matrix3x3& m, VGbitfiel
 				r = PhvgDrawImage(s, key, tw, th, hash, M, bs, one, &rects[0][0], nr, NULL);
 				if (r == -2)
 					r = PhvgDrawImage(s, key, tw, th, hash, M, bs, one, &rects[0][0], nr, tex);
-				User::Free(tex);
+				PhScratchFree(tex);
 				}
 			}
 		if (r == 1)

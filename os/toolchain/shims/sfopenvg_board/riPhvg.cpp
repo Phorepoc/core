@@ -44,6 +44,15 @@
 #undef private
 #undef protected
 #include "phvg.h"
+#include "ph_scratch.h"	// staging buffers: one cached block, no per-upload commit/decommit
+// per-draw timing (an exec per User::FastCounter: ~10% of alfredserver in a game) only in ALF_TIMING builds
+#ifndef PH_FB_NOW
+#ifdef PH_RI_TIMING
+#define PH_FB_NOW() User::FastCounter()
+#else
+#define PH_FB_NOW() 0u
+#endif
+#endif
 
 #ifndef PHVG_DEFAULT_MODE
 #define PHVG_DEFAULT_MODE 0
@@ -275,13 +284,13 @@ namespace
 	TBool UploadSurface(Surface* aS)
 		{
 		const int w = aS->getWidth(), h = aS->getHeight();
-		TUint8* buf = (TUint8*)User::Alloc(w * h * 4);
+		TUint8* buf = (TUint8*)PhScratchAlloc(w * h * 4);
 		if (!buf)
 			return EFalse;
 		const TUint t0 = User::FastCounter();
 		ReadSurface(aS, buf);
 		const TInt r = gT.Upload(Ck(aS), w, h, buf);
-		User::Free(buf);
+		PhScratchFree(buf);
 		gPerf[0]++; gPerf[1] += User::FastCounter() - t0;
 		return r == 1;
 		}
@@ -468,7 +477,7 @@ void PhvgCpuAccess(const Surface* aS, bool aWrite)
 	if (gT.Dirty(Ck(aS), rect))
 		{
 		const int w = rect[2] - rect[0], h = rect[3] - rect[1];
-		TUint8* buf = (TUint8*)User::Alloc(w * h * 4);
+		TUint8* buf = (TUint8*)PhScratchAlloc(w * h * 4);
 		if (buf)
 			{
 			const TUint t0 = User::FastCounter();
@@ -477,7 +486,7 @@ void PhvgCpuAccess(const Surface* aS, bool aWrite)
 				WriteSurface((Surface*)aS, rect, buf);
 				PhvgImgWritten(aS->m_image);		// the GPU's pixels are now in its memory
 				}
-			User::Free(buf);
+			PhScratchFree(buf);
 			gPerf[2]++; gPerf[3] += User::FastCounter() - t0;
 			}
 		}
@@ -539,13 +548,13 @@ bool PhvgTryBlitOut(const Surface* aS, Image* aDst, int aSx, int aSy, int aDx, i
 			return true;
 			}
 		}
-	TUint8* buf = (TUint8*)User::Alloc(aW * aH * 4);
+	TUint8* buf = (TUint8*)PhScratchAlloc(aW * aH * 4);
 	if (!buf)
 		return false;
 	const TInt rect[4] = { aSx, aSy, aSx + aW, aSy + aH };
 	if (gT.ReadDirect(Ck(aS), rect, buf) != 1)
 		{
-		User::Free(buf);
+		PhScratchFree(buf);
 		return false;
 		}
 	{	// PH (SkyForce white hunt): the present path -- a GPU-ahead surface is blitted out into the destination (the ALF window bitmap = the UI image)
@@ -595,7 +604,7 @@ bool PhvgTryBlitOut(const Surface* aS, Image* aDst, int aSx, int aSy, int aDx, i
 			}
 		}
 	aDst->m_mipmapsValid = false;
-	User::Free(buf);
+	PhScratchFree(buf);
 	return true;
 	}
 
@@ -635,7 +644,7 @@ void PhvgImageCpuAccess(const Image* aImg, bool aWrite)
 		{
 		const Color::Descriptor& d = aImg->m_desc;
 		const int w = rect[2] - rect[0], h = rect[3] - rect[1];
-		TUint8* buf = (TUint8*)User::Alloc(w * h * 4);
+		TUint8* buf = (TUint8*)PhScratchAlloc(w * h * 4);
 		if (buf)
 			{
 			const TUint t0 = User::FastCounter();
@@ -666,7 +675,7 @@ void PhvgImageCpuAccess(const Image* aImg, bool aWrite)
 				im->m_mipmapsValid = false;
 				PhvgImgWritten(aImg);
 				}
-			User::Free(buf);
+			PhScratchFree(buf);
 			gPerf[2]++; gPerf[3] += User::FastCounter() - t0;
 			}
 		}
@@ -1131,9 +1140,9 @@ int PhvgDrawImage(Surface* aS, const void* aKey, int aIw, int aIh, unsigned aHas
 	for (int i = 0; i < 4; i++)
 		im.iMul[i] = aMul[i];
 	im.iRects = aRects; im.iNRects = aN; im.iPixels = aPixels;
-	const TUint t0 = User::FastCounter();
+	const TUint t0 = PH_FB_NOW();
 	const int res = gT.DrawImage(&im);
-	gPerf[4]++; gPerf[5] += User::FastCounter() - t0;
+	gPerf[4]++; gPerf[5] += PH_FB_NOW() - t0;
 	if (res == -2)
 		gPerf[6]++;
 	return res;
@@ -1165,9 +1174,9 @@ int PhvgDrawResident(Surface* aS, const Image* aSrc, const float* aM, int aBlend
 	for (int i = 0; i < 4; i++)
 		im.iMul[i] = aMul[i];
 	im.iRects = aRects; im.iNRects = aN;
-	const TUint t0 = User::FastCounter();
+	const TUint t0 = PH_FB_NOW();
 	const int res = gT.DrawImage(&im);
-	gPerf[4]++; gPerf[5] += User::FastCounter() - t0;
+	gPerf[4]++; gPerf[5] += PH_FB_NOW() - t0;
 	if (res == 1)
 		gPerf[7]++;
 	return res == 1;
