@@ -49,7 +49,7 @@ for mk in $(find "$SRC/homescreenapp" -name "Makefile*" -not -path "*/tsrc/*" -n
   # Orbit's docml -> binary layout compiler (CONFIG += docml2bin; the rcc'd .qrc files name its output): the host
   # build of build_hb_host_tools.sh -- its output is a QDataStream, not ABI-dependent (unlike the cssbin)
   # docml2bin = the HOST converter built on the 4.7 host Qt (the 4.8 tree has no host QtGui; it writes Hb's binary docml, not Qt ABI)
-  sed -i 's#/epocroot/epoc32/tools/docml2bin#LD_LIBRARY_PATH=$Q/qt-host/lib $Q/hb-host/docml2bin#g' "$mk"
+  sed -i "s#/epocroot/epoc32/tools/docml2bin#LD_LIBRARY_PATH=$Q/qt-host/lib $Q/hb-host/docml2bin#g" "$mk"   # (expanded here: make would read $Q as its own)
   dm=; grep -q "^compiler_docml2bin_make_all:" "$mk" && dm=compiler_docml2bin_make_all
   ( cd "$d" && make -s -f "$(basename "$mk")" mocables $dm compiler_rcc_make_all > "mocables-$(basename "$mk").log" 2>&1 ) \
     || { echo "${mk#$SRC/}: mocables FAILED"; tail -3 "$d/mocables-$(basename "$mk").log"; }
