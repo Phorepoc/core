@@ -28,6 +28,15 @@
 
 #include "sf_std.h"
 
+// PHOREPOC: the loader's own trace, off in releases. Build efile with EXTRA_DEFS=-DTRACE_CHECK_FAILURES and every
+// RETURN_FAILURE / LEAVE_FAILURE prints "Loader check failure: <file> line <n>" (sf_ldr.h), and PH_LDR names the image a
+// finder refused or an import that failed.
+#ifdef TRACE_CHECK_FAILURES
+#define PH_LDR(_a) RDebug::Printf _a
+#else
+#define PH_LDR(_a)
+#endif
+
 #include <e32std.h>
 #include <e32std_private.h>
 #include <e32base.h>
@@ -1075,12 +1084,14 @@ TInt RImageFinder::Try(RImageInfo& aInfo, const TDesC8& aRootName, const TDesC8&
 		{
 		++iUidFail;
 		__IF_DEBUG(Printf("<RImageFinder::Try UIDFAIL"));
+		PH_LDR(("PH: [ldr] %S%S: UIDFAIL (file %08x %08x %08x)", &aDriveAndPath, &aRootName, aInfo.iUid[0], aInfo.iUid[1], aInfo.iUid[2]));
 		return KErrNotFound;
 		}
 	if (iReq->CheckSecInfo(aInfo.iS) != KErrNone)
 		{
 		++iCapFail;
 		__IF_DEBUG(Printf("<RImageFinder::Try CAPFAIL"));
+		PH_LDR(("PH: [ldr] %S%S: CAPFAIL", &aDriveAndPath, &aRootName));
 		return KErrNotFound;
 		}
 	TInt action = DetailedCompareVersions(aInfo.iModuleVersion, iReq->iRequestedVersion, iCurrentVersion, !iReq->iImporter);
@@ -1089,6 +1100,7 @@ TInt RImageFinder::Try(RImageInfo& aInfo, const TDesC8& aRootName, const TDesC8&
 		if (DetailedCompareVersions(aInfo.iModuleVersion, iReq->iRequestedVersion) == EVersion_MajorSmaller)
 			++iMajorVersionFail;
 		__IF_DEBUG(Printf("<RImageFinder::Try VERFAIL"));
+		PH_LDR(("PH: [ldr] %S%S: VERFAIL (file version %08x, requested %08x)", &aDriveAndPath, &aRootName, aInfo.iModuleVersion, iReq->iRequestedVersion));
 		return KErrNotFound;
 		}
 	if (action == EAction_CheckImports || action == EAction_CheckLastImport)
@@ -1098,6 +1110,8 @@ TInt RImageFinder::Try(RImageInfo& aInfo, const TDesC8& aRootName, const TDesC8&
 		if (abi_mismatch || CheckRequiredImports(iReq->iImporter, aInfo, action)!=KErrNone)
 			{
 			__IF_DEBUG(Printf("<RImageFinder::Try IMPFAIL"));
+			PH_LDR(("PH: [ldr] %S%S: IMPFAIL (abi_mismatch %d, file attr %08x, exe attr %08x, last import %d of %d exports)", &aDriveAndPath, &aRootName,
+				abi_mismatch, aInfo.iAttr, gExeAttr, iReq->iImporter->LastCurrentImport(), aInfo.iExportDirCount));
 			++iImportFail;
 			return KErrNotFound;
 			}
@@ -1230,7 +1244,7 @@ void RImageFinder::CompareHashL(RImageInfo& aInfo, const TDesC8& aDriveAndPath)
 	TPtr8 filedata(aInfo.iFileData, size);
 	User::LeaveIfError(aInfo.iFile.Read(0, filedata, size));
 	if (filedata.Length() != size)
-		User::Leave(KErrCorrupt);
+		LEAVE_FAILURE(KErrCorrupt);
 	CleanupStack::PopAndDestroy(1);	//the file handle only->aInfo.iFile.Close();
 	hasher->Update(filedata);
 		
@@ -2627,14 +2641,14 @@ void E32Image::LoadFileInflateL()
 
 		TInt count = inflater->ReadL((TUint8*)iCodeLoadAddress,iCodeSize,&WordCopy);
 		if(count!=iCodeSize)
-			User::Leave(KErrCorrupt);
+			LEAVE_FAILURE(KErrCorrupt);
 		}
 
 	if(iRestOfFileSize)
 		{
 		TUint32 count = inflater->ReadL(iRestOfFileData,iRestOfFileSize,&Mem::Copy);
 		if(count!=iRestOfFileSize)
-			User::Leave(KErrCorrupt);
+			LEAVE_FAILURE(KErrCorrupt);
 		}
 
 	CleanupStack::PopAndDestroy(2,file);
@@ -2673,7 +2687,7 @@ void E32Image::LoadFileBytePairUnpakL()
 
 		__IF_DEBUG(Printf("bytes:%x",bytes));
 		if((TInt)bytes!=iCodeSize)
-			User::Leave(KErrCorrupt);
+			LEAVE_FAILURE(KErrCorrupt);
 
 		codeLoaded = true;
 		}
@@ -2698,7 +2712,7 @@ void E32Image::LoadFileBytePairUnpakL()
 		TUint32 bytes = reader->DecompressPagesL(iRestOfFileData,iRestOfFileSize,NULL);
 		__IF_DEBUG(Printf("bytes:%x",bytes));
 		if(bytes!=iRestOfFileSize)
-			User::Leave(KErrCorrupt);
+			LEAVE_FAILURE(KErrCorrupt);
 		}
 		
 	CleanupStack::PopAndDestroy(reader);
@@ -3246,6 +3260,7 @@ TInt E32Image::LoadDlls(RImageArray& aArray)
 				}
 			if (r!=KErrNone)
 				{
+				PH_LDR(("PH: [ldr] import %S of %S: search %d", &dllname, &iFileName, r));
 				finder.Close();
 				return r;
 				}
@@ -3292,6 +3307,7 @@ TInt E32Image::LoadDlls(RImageArray& aArray)
 				}
 			if (r!=KErrNone)
 				{
+				PH_LDR(("PH: [ldr] import %S of %S: load %d", req.iFileName, &iFileName, r));
 				delete e;
 				return r;
 				}
