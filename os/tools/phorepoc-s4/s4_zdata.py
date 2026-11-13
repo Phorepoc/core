@@ -82,6 +82,15 @@ HS_DATA += [
     # Orbit's device dialog server finds its plug-ins in \resource\plugins\devicedialogs
     (r"resource\plugins\devicedialogs\tsdevicedialogplugin.qtplugin",
      f"{HSRVR}/taskswitcher/tsdevicedialogplugin/qmakepluginstubs/tsdevicedialogplugin.qtplugin"),
+    # ... and Hb's stock ones (registry/components_s4.py: message box, notification, progress, indicator menu)
+] + [
+    (rf"resource\plugins\devicedialogs\{n}.qtplugin",
+     f"{S4R}/hb-symbian/src/hbplugins/devicedialogs/{d}/qmakepluginstubs/{n}.qtplugin")
+    for d, n in (("devicemessageboxplugin", "HbDeviceMessageBoxPlugin"),
+                 ("devicenotificationdialogplugin", "HbDeviceNotificationDialogPlugin"),
+                 ("deviceprogressdialogplugin", "HbDeviceProgressDialogPlugin"),
+                 ("indicatormenuplugin", "HbIndicatorMenuPlugin"))
+] + [
     (r"resource\qt\crml\tsdevicedialog.qcrml", f"{HSRVR}/homescreensrv_plat/taskswitcher_api/tsdevicedialog.qcrml"),
     (r"resource\qt\plugins\afservice.qtplugin", f"{HSRVR}/activityfw/activityserviceplugin/qmakepluginstubs/afservice.qtplugin"),
     (r"resource\qt\plugins\hbactivityplugin.qtplugin",

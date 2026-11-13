@@ -231,6 +231,17 @@ COMPONENTS = {
     "hsapplicationlauncher": _qx(HS, "homescreenapp/hsapplicationlauncher/group/hsapplicationlauncher.mmp"),
     # Orbit's device dialog server (notes, the indicator menu, the homescreen's dialogs)
     "hbdevicedialogappserver": _hb("hbservers/hbdevicedialogappserver", "hbdevicedialogappserver_exe.mmp"),
+    # Hb's stock device dialog plug-ins (hbplugins/devicedialogs): the message box, notification, progress and indicator menu
+    # dialogs every HbDeviceMessageBox / HbDeviceNotificationDialog / HbDeviceProgressDialog / indicator menu request needs
+    # (the device dialog server loads them from resource/plugins/devicedialogs; s4_zdata.py ships their stubs)
+    "hbdevicemessageboxplugin": _hb("hbplugins/devicedialogs/devicemessageboxplugin", "HbDeviceMessageBoxPlugin_dll.mmp", rom="HbDeviceMessageBoxPlugin.dll",
+                       **{"def": os.path.join(QTB, "hb-symbian", "src", "hbplugins", "devicedialogs", "devicemessageboxplugin", "plugin_commonu.def")}),
+    "hbdevicenotificationdialogplugin": _hb("hbplugins/devicedialogs/devicenotificationdialogplugin", "HbDeviceNotificationDialogPlugin_dll.mmp", rom="HbDeviceNotificationDialogPlugin.dll",
+                       **{"def": os.path.join(QTB, "hb-symbian", "src", "hbplugins", "devicedialogs", "devicenotificationdialogplugin", "plugin_commonu.def")}),
+    "hbdeviceprogressdialogplugin": _hb("hbplugins/devicedialogs/deviceprogressdialogplugin", "HbDeviceProgressDialogPlugin_dll.mmp", rom="HbDeviceProgressDialogPlugin.dll",
+                       **{"def": os.path.join(QTB, "hb-symbian", "src", "hbplugins", "devicedialogs", "deviceprogressdialogplugin", "plugin_commonu.def")}),
+    "hbindicatormenuplugin": _hb("hbplugins/devicedialogs/indicatormenuplugin", "HbIndicatorMenuPlugin_dll.mmp", rom="HbIndicatorMenuPlugin.dll",
+                       **{"def": os.path.join(QTB, "hb-symbian", "src", "hbplugins", "devicedialogs", "indicatormenuplugin", "plugin_commonu.def")}),
     # the Symbian^4 system tone service (mw.mmmw mmserv/sts; xqsystemtoneservice's CSystemToneService -- a link stub
     # until now): the client DLL (+ its proxy lib) and the server, whose player map is std::map -> Open C++
     "stsproxy": dict(mmp=_STS + "stsproxy/group/stsproxy.mmp", cdriver=True, incs_first=_STLPORT_X32,
