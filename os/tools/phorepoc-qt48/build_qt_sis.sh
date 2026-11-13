@@ -53,12 +53,13 @@ stage_host() {
   [ -f "$HOST/.qfix" ] && return 0
   mkdir -p "$HOST"; cd "$HOST"
   export CXXFLAGS="-std=gnu++98 -fpermissive -w" CFLAGS="-w"
+  # -no-icu: a toolchain image with libicu-dev would turn ICU on, and its headers need C++11 (char16_t), not the gnu++98 of Qt 4
   if [ ! -f "$HOST/bin/qmake" ]; then
     "$SRC/configure" -opensource -confirm-license -embedded x86_64 -prefix "$HOST" -fast -release \
       -nomake examples -nomake demos -nomake docs -nomake translations -no-webkit -no-qt3support -no-phonon \
       -no-multimedia -no-script -no-scripttools -no-declarative -no-xmlpatterns -no-dbus -no-openssl -no-opengl \
       -no-glib -no-cups -no-nis -no-iconv -no-gif -no-libtiff -no-libmng -qt-zlib -qt-libpng -qt-libjpeg \
-      -no-accessibility -no-sql-sqlite -no-exceptions -silent -platform linux-g++ > configure.log 2>&1 \
+      -no-accessibility -no-sql-sqlite -no-exceptions -no-icu -silent -platform linux-g++ > configure.log 2>&1 \
       || { tail -30 configure.log; exit 1; }
   fi
   # uic's XML reader loops over a widget's attributes with foreach: with GCC >= 9 the original Q_FOREACH ends the loop at the first
