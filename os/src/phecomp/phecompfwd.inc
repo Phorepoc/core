@@ -2,12 +2,11 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
 // phecompfwd.inc -- the MWsGraphicsContext members of phecomp's TGcProxy: each forwards to the current target T()
-// (one line per pure virtual of graphics/wsgraphicscontext.h)
+// (one line per pure virtual of graphics/wsgraphicscontext.h; the two clipping calls are TGcProxy's own: shapes)
 	void BitBlt(const TPoint& aDestPos, const CFbsBitmap& aSourceBitmap) { T()->BitBlt(aDestPos, aSourceBitmap); }
 	void BitBlt(const TPoint& aDestPos, const CFbsBitmap& aSourceBitmap, const TRect& aSourceRect) { T()->BitBlt(aDestPos, aSourceBitmap, aSourceRect); }
 	void BitBltMasked(const TPoint& aDestPos, const CFbsBitmap& aSourceBitmap, const TRect& aSourceRect, const CFbsBitmap& aMaskBitmap, TBool aInvertMask) { T()->BitBltMasked(aDestPos, aSourceBitmap, aSourceRect, aMaskBitmap, aInvertMask); }
 	void BitBltMasked(const TPoint& aDestPos, const CFbsBitmap& aSourceBitmap, const TRect& aSourceRect, const CFbsBitmap& aMaskBitmap, const TPoint& aMaskPos) { T()->BitBltMasked(aDestPos, aSourceBitmap, aSourceRect, aMaskBitmap, aMaskPos); }
-	void ResetClippingRegion() { T()->ResetClippingRegion(); }
 	void Clear() { T()->Clear(); }
 	void Clear(const TRect& aRect) { T()->Clear(aRect); }
 	void ResetBrushPattern() { T()->ResetBrushPattern(); }
@@ -42,7 +41,6 @@
 	void SetBrushColor(const TRgb& aColor) { T()->SetBrushColor(aColor); }
 	void SetBrushOrigin(const TPoint& aOrigin) { T()->SetBrushOrigin(aOrigin); }
 	void SetBrushStyle(TBrushStyle aBrushStyle) { T()->SetBrushStyle(aBrushStyle); }
-	void SetClippingRegion(const TRegion& aRegion) { T()->SetClippingRegion(aRegion); }
 	void SetDrawMode(TDrawMode aDrawMode) { T()->SetDrawMode(aDrawMode); }
 	void SetOrigin(const TPoint& aPoint) { T()->SetOrigin(aPoint); }
 	void SetPenColor(const TRgb& aColor) { T()->SetPenColor(aColor); }

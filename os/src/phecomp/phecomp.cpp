@@ -108,7 +108,31 @@ class TGcProxy : public MWsGraphicsContext
 	{
 public:
 	MWsGraphicsContext* iTarget;
+	const TRegion* iShape;			// the shape of the window being drawn (screen coordinates), NULL if it has none
 	inline MWsGraphicsContext* T() const { return iTarget; }
+	// a shaped window draws only inside its shape. With change tracking the server draws each window whole, not clipped
+	// by its own shape, so a shaped window would paint its whole rectangle into the group's target (the Notes editor's
+	// line window over the lined page)
+	void SetClippingRegion(const TRegion& aRegion)
+		{
+		if (!iShape)
+			{
+			T()->SetClippingRegion(aRegion);
+			return;
+			}
+		RRegion r;
+		r.Copy(aRegion);
+		r.Intersect(*iShape);
+		T()->SetClippingRegion(r);
+		r.Close();
+		}
+	void ResetClippingRegion()
+		{
+		if (iShape)
+			T()->SetClippingRegion(*iShape);
+		else
+			T()->ResetClippingRegion();
+		}
 	TAny* ResolveObjectInterface(TUint aTypeId)
 		{
 		if (aTypeId == MWsGraphicsContext::EWsObjectInterfaceId)
@@ -131,7 +155,9 @@ struct TGroup
 	TAny* iSource;					// ... as a drawable source of the next stage
 	const MWsWindowTreeNode* iTop[KMaxTops];	// its top-level windows
 	TRect iTopRect[KMaxTops];		// ... where each was last
-	TBool iTopShown[KMaxTops];		// ... and whether it is visible
+	TBool iTopShown[KMaxTops];		// ... and whether it is visible (activated and not hidden)
+	TBool iTopActive[KMaxTops];		// ... activated
+	TBool iTopHidden[KMaxTops];		// ... made invisible (RWindowBase::SetVisible(EFalse))
 	TBool iCovered;					// behind a group that covers the screen (not shown, no target)
 	TBool iDropped;					// its target was freed while it was covered: repaint when it shows
 	TInt iTops;
@@ -298,6 +324,7 @@ void CPheCompStage::ConstructComposeL(MWsIniFile* aIni)
 	User::LeaveIfError(MakeTarget(iRest, iRestSource));
 	iSink = CPheTarget::NewL(TSize(1, 1), iScreenNumber);
 	iProxy.iTarget = iRest->Gc();
+	iProxy.iShape = NULL;
 	iCompose = ETrue;
 	RDebug::Printf("PH: [phecomp] compose %dx%d, tiles %08x %08x", iSize.iWidth, iSize.iHeight, iTileUid[0], iTileUid[1]);
 	}
@@ -956,6 +983,8 @@ void CPheCompStage::NodeCreated(const MWsWindowTreeNode& aNode, const MWsWindowT
 			{
 			g->iTop[g->iTops] = &aNode;
 			g->iTopRect[g->iTops] = w->AbsRect();
+			g->iTopActive[g->iTops] = EFalse;
+			g->iTopHidden[g->iTops] = EFalse;
 			g->iTopShown[g->iTops++] = EFalse;
 			}
 		if (g && w)
@@ -979,6 +1008,8 @@ void CPheCompStage::NodeReleased(const MWsWindowTreeNode& aNode)
 		g->iTop[top] = g->iTop[--g->iTops];
 		g->iTopRect[top] = g->iTopRect[g->iTops];
 		g->iTopShown[top] = g->iTopShown[g->iTops];
+		g->iTopActive[top] = g->iTopActive[g->iTops];
+		g->iTopHidden[top] = g->iTopHidden[g->iTops];
 		TopGone(*g, gone, NULL);
 		UpdateTarget(*g);
 		return;
@@ -1008,6 +1039,17 @@ void CPheCompStage::NodeActivated(const MWsWindowTreeNode& aNode)
 	{
 	if (aNode.NodeType() != MWsWindowTreeNode::EWinTreeNodeClient)
 		return;
+	TInt top;
+	if (TGroup* g = GroupOfTop(aNode, top))
+		{
+		g->iTopActive[top] = ETrue;
+		if (!g->iTopHidden[top] && !g->iTopShown[top])
+			{
+			g->iTopShown[top] = ETrue;
+			iFull = ETrue;
+			UpdateTarget(*g);
+			}
+		}
 	const MWsWindowTreeNode* p = aNode.ParentNode();
 	if (p && p->NodeType() == MWsWindowTreeNode::EWinTreeNodeGroup)
 		if (TGroup* g = Group(p))
@@ -1079,7 +1121,10 @@ void CPheCompStage::FlagChanged(const MWsWindowTreeNode& aNode, TFlags aFlag, TB
 	TInt top;
 	if (TGroup* g = GroupOfTop(aNode, top))
 		{
-		g->iTopShown[top] = aNewValue;
+		// a window is visible by default: the server reports EVisible only when SetVisible changes it, so a top-level
+		// window shows once it is activated, unless made invisible
+		g->iTopHidden[top] = !aNewValue;
+		g->iTopShown[top] = g->iTopActive[top] && aNewValue;
 		if (!aNewValue)
 			TopGone(*g, g->iTopRect[top], &aNode);
 		UpdateTarget(*g);
@@ -1133,11 +1178,21 @@ void CPheCompStage::WindowRedrawStart(const MWsWindowTreeNode& aNode, const TReg
 	if (g && !g->iTarget && MakeTarget(g->iTarget, g->iSource, ETrue) == KErrNone)
 		RDebug::Printf("PH: [phecomp] group %d '%S': own target (%d targets)", g->iId, &g->iName, ++iTargets);
 	iProxy.iTarget = (g && g->iTarget) ? g->iTarget->Gc() : iRest->Gc();
+	// a shaped window (RWindowBase::SetShape: its window area is not its rectangle) draws only inside the shape
+	const MWsWindow* w = aNode.Window();
+	iProxy.iShape = NULL;
+	if (w)
+		{
+		const TRegion& area = w->WindowArea();
+		if (area.Count() != 1 || area.BoundingRect() != w->AbsRect())
+			iProxy.iShape = &area;
+		}
 	}
 
 void CPheCompStage::WindowRedrawEnd(const MWsWindowTreeNode&)
 	{
 	iDrawing = NULL;
+	iProxy.iShape = NULL;
 	if (iCompose)
 		iProxy.iTarget = iRest->Gc();
 	}
