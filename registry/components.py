@@ -895,7 +895,9 @@ COMPONENTS = {
     "aicalendarplugin2": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.organizer/calendarui/organizerplugin/aiagendaplugin2/group/aicalendarplugin2.mmp"),
     "cseschedulerclient": dict(mmp="oss.FCL.sf.mw.videoutils/videoscheduler/SchedulerClient/group/CseSchedulerClient.mmp"),
     "power_save_display_mode": dict(mmp="oss.FCL.sf.adapt.stubs/power_save_display_mode_stub/group/power_save_display_mode.mmp"),
-    "bsengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.homescreensrv/backsteppingsrv/group/bsengine.mmp"),
+    # bs_config.xml (bld.inf export): without it the XCFW load fails and bsengine panics KERN-EXEC 3 at boot
+    "bsengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.homescreensrv/backsteppingsrv/group/bsengine.mmp",
+                     rom_data=["private\\2000F83E\\bs_config.xml=baseline/symbian-rcl3/oss.FCL.sf.mw.homescreensrv/backsteppingsrv/data/bs_config.xml"]),
     "cseschedulerserver": dict(mmp="oss.FCL.sf.mw.videoutils/videoscheduler/SchedulerServer/group/ScheduleServer.mmp"),
     "dbrecovery": dict(mmp="oss.FCL.sf.mw.appsupport/coreapplicationuis/DbRecovery/Group/DbRecovery.mmp"),
     # ncnlist (the Network Communication Notifier: SMS first-boot -- it fetches the service centres from the SIM via smum's
