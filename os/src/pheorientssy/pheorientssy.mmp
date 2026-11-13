@@ -1,0 +1,27 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+// pheorientssy.mmp -- OURS: the orientation sensor (SSY) for boards without an accelerometer: the orientation channel
+// Orbit's Hb turns by, served from the Control Panel's screen orientation choice (pheorientssy.cpp)
+
+#include <data_caging_paths.hrh>
+#include <platform_paths.hrh>
+
+TARGET          pheorientssy.dll
+TARGETTYPE      PLUGIN
+UID             0x10009D8D 0xE7015A20
+CAPABILITY      CAP_ECOM_PLUGIN
+VENDORID        VID_DEFAULT
+
+SOURCEPATH      .
+SOURCE          pheorientssy.cpp
+USERINCLUDE     .
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SYSTEMINCLUDE   /epoc32/include/ecom
+
+START RESOURCE  pheorientssy_ecom.rss
+TARGET          pheorientssy.rsc
+TARGETPATH      ECOM_RESOURCE_DIR
+END
+
+LIBRARY         euser.lib ecom.lib sensrvclient.lib sensrvutil.lib centralrepository.lib ws32.lib

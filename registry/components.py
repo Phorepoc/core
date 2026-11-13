@@ -853,12 +853,15 @@ COMPONENTS = {
     # hwrmstubplugins' VibraPlugin (no motor on this board: requests succeed, nothing moves)
     "hwrmvibraclient": dict(mmp="oss.FCL.sf.os.devicesrv/resourcemgmt/hwresourcesmgr/vibra/group/HWRMVibraClient.mmp",
                             drop=["HWRMVibraImpl.cpp"], extra=["toolchain/shims/hwrmvibra_board/HWRMVibraImpl.cpp"]),
-    # the sensor framework (client, utilities, server; no sensor plug-ins = no channels found): Orbit's orientation
-    # orientation SSY advertises the rotation channel only); + orientationssy and its compensator library
+    # the sensor framework (client, utilities, server). Orbit's Hb turns its UI by the orientation channel, and exactly one
+    # SSY per board may register it -- the board's rom_exclude.txt leaves the other out: orientationssy (+ its compensator
+    # library) computes the channel from an accelerometer SSY, for a board that has one; pheorientssy (OURS,
+    # os/src/pheorientssy) reports the Control Panel's screen orientation choice, for a board without an accelerometer
     "sensrvclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensorserver/group/sensrvclient.mmp"),
     "sensrvutil": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensorserver/group/sensrvutil.mmp"),
     "sensordatacompensator": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensordatacompensator/group/sensordatacompensator.mmp"),
     "orientationssy": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/orientationssy/group/OrientationSsy.mmp", drop=["SsyChannel.cpp"], extra=["toolchain/shims/orientationssy_board/SsyChannel.cpp"]),
+    "pheorientssy": dict(mmp=os.path.join(OS_ROOT, "src/pheorientssy/pheorientssy.mmp")),
     "sensrvserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensorserver/group/sensrvserver.mmp",
                          rom="sensorserver.exe"),   # KSensrvExeName
     # Symbian Foundation's no-audio stem (incubator.stemkit/breakdeps) + our one-hunk tone-player fix stood in
