@@ -20,3 +20,6 @@
 ../symbian-rcl3/oss.FCL.sf.mw.homescreensrv/contentpublishingsrv/contentpublishingserver/cpserver/data/20016b7b.txt
 # OURS: the input-method registry (phimreg, keyboard framework)
 ../../config/cenrep/E7015830.txt
+# OURS copy of the generated file (menucontentsrv s60mcs confml): About (10005a22) left out of KMenuHideCPApplication (key 0xA),
+# so the launcher lists it in Applications as well as Control Panel
+../../config/cenrep/101F8847.txt
