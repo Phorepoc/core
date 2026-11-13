@@ -1429,7 +1429,9 @@ COMPONENTS = {
     "clocknitzplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.organizer/clock2/clockengines/clocknitzplugin/group/clocknitzplugin.mmp"),
     # (key clockapp: "clock" is classicui's clock.dll, the clock control library uiklaf imports)
     "clockapp": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.organizer/clock2/clockui/uilayer/group/clock.mmp", rom="clock.exe"),
-    "filemanager": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.files/filemanager/group/FileManager.mmp"),
+    "filemanager": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.files/filemanager/group/FileManager.mmp",
+                        # no WSERV background on the list container (its white clear showed as white frames in scrolls)
+                        drop=["CFileManagerContainerBase.cpp"], extra=["toolchain/shims/fm_fix/CFileManagerContainerBase.cpp"]),
     "srchuiindeviceserviceplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.organizer/searchui/searchapp/plugins/indevicesearch/group/srchuiindeviceserviceplugin.mmp"),
     # Profiles (the profile list + settings) -- on the profiles engine (mw.gsprofilesrv)
     "profileapp": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.profile/profilesapplication/Profiles/ProfileApp/group/ProfileApp.mmp"),
