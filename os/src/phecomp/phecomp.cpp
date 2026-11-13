@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
 // phecomp.cpp -- OURS: Phorepoc's window compositor as a render stage of the NGA window server
-// (docs: core os/src/phecomp/README.md). v0, step "trace": a PASS-THROUGH stage that sits first in the
+// (docs: core os/src/phecomp/README.md). v0. Default (no PHECOMPTILE in wsini): a PASS-THROUGH stage that sits first in the
 // render-stage chain (wsini "RENDERSTAGES phecomp flickerbuffer display") and only watches:
 //   - the window tree (MWsWindowTreeObserver): window groups and their top-level windows as they are created, placed,
 //     restacked, shown and released;
@@ -18,10 +18,33 @@
 #include <graphics/wsrenderstage.h>
 #include <graphics/wsrenderstagefactory.h>
 #include <graphics/wsgraphicdrawerinterface.h>
+#include <graphics/wsgraphicscontext.h>
+#include <graphics/wsdrawablesourceprovider.h>
+#include <graphics/wsscreendevice.h>
+#include "rendertarget.h"			// the 2010 std plug-in's off-screen target (an RSgImage + a DirectGDI context)
 
 namespace {
 
 const TInt KMaxGroups = 32;
+const TInt KMaxTiles = 2;
+
+// Compose mode (wsini PHECOMPTILE <uid> <uid>): every window group draws into its own off-screen target (the redraw
+// brackets route the window server's drawing there; CHANGETRACKING makes it draw every window whole, covered or not), and
+// End() composes the targets back to front. The groups named in PHECOMPTILE are the tiles: when two of them run, they are
+// drawn side by side, scaled; otherwise every group is drawn where the window server put it.
+class TGcProxy : public MWsGraphicsContext
+	{
+public:
+	MWsGraphicsContext* iTarget;
+	inline MWsGraphicsContext* T() const { return iTarget; }
+	TAny* ResolveObjectInterface(TUint aTypeId)
+		{
+		if (aTypeId == MWsGraphicsContext::EWsObjectInterfaceId)
+			return static_cast<MWsGraphicsContext*>(this);
+		return iTarget->ResolveObjectInterface(aTypeId);
+		}
+#include "phecompfwd.inc"
+	};
 
 // what the stage knows of one window group
 struct TGroup
@@ -31,12 +54,15 @@ struct TGroup
 	TBuf8<40> iName;				// the start of its name (the app's caption follows the UID)
 	TInt iRedraws;					// window redraw brackets since the last summary
 	TRect iBounds;					// the union of its top-level windows' extents
+	TUint32 iUid;					// the app UID from the name ("<nn>.<uid hex>.<caption>"), 0 if none
+	CRenderTarget* iTarget;			// compose mode: its off-screen target (made at its first redraw)
+	TAny* iSource;					// ... as a drawable source of the next stage
 	};
 
 NONSHARABLE_CLASS(CPheCompStage) : public CWsRenderStage, public MWsWindowTreeObserver, public MWsDrawAnnotationObserver
 	{
 public:
-	static CPheCompStage* NewL(CWsRenderStage* aNext);
+	static CPheCompStage* NewL(CWsRenderStage* aNext, MWsIniFile* aIni);
 	~CPheCompStage();
 	// CWsRenderStage
 	void Begin(const TRegion* aRegion);
@@ -69,9 +95,31 @@ public:
 	void SegmentRedrawEnd() {}
 private:
 	CPheCompStage() {}
+	void ConstructComposeL(MWsIniFile* aIni);
 	TGroup* Group(const MWsWindowTreeNode* aNode);
 	static const MWsWindowTreeNode* GroupOf(const MWsWindowTreeNode& aNode);
 	void Summary();
+	TInt MakeTarget(CRenderTarget*& aTarget, TAny*& aSource);
+	void DropTarget(CRenderTarget*& aTarget, TAny*& aSource);
+	TInt TileOf(const TGroup& aGroup) const;
+	void Compose(TRequestStatus* aFinished);
+	void SetUid(TGroup& aGroup);
+private:
+	// compose mode
+	TBool iCompose;
+	TGcProxy iProxy;
+	MWsGraphicsContext* iNextGc;
+	MWsDrawableSourceProvider* iSources;
+	TSize iSize;							// the targets: square, the screen's longer side (either orientation fits)
+	MWsScreenDevice* iDevice;
+	TInt iScreenNumber;
+	CRenderTarget* iRest;					// drawing outside any window group bracket (root window, sprites)
+	TAny* iRestSource;
+	TUint32 iTileUid[KMaxTiles];
+	TInt iTileUids;
+	const MWsWindowTreeNode* iOrder[KMaxGroups];	// the window groups front to back (SiblingOrderChanged)
+	TInt iOrderCount;
+	TUint32 iComposed;
 private:
 	TGroup iGroups[KMaxGroups];
 	TInt iCount;
@@ -80,19 +128,90 @@ private:
 	TUint32 iLastSummary;					// User::NTickCount of the last summary
 	};
 
-CPheCompStage* CPheCompStage::NewL(CWsRenderStage* aNext)
+CPheCompStage* CPheCompStage::NewL(CWsRenderStage* aNext, MWsIniFile* aIni)
 	{
 	CPheCompStage* self = new(ELeave) CPheCompStage;
 	CleanupStack::PushL(self);
 	self->BaseConstructL();
 	self->SetNext(aNext);
+	self->ConstructComposeL(aIni);
 	CleanupStack::Pop(self);
-	RDebug::Printf("PH: [phecomp] trace stage up (pass-through)");
+	RDebug::Printf("PH: [phecomp] stage up (%s)", self->iCompose ? "compose" : "trace, pass-through");
 	return self;
+	}
+
+// PHECOMPTILE <uid hex> [<uid hex>]: compose mode, these apps are the tiles
+void CPheCompStage::ConstructComposeL(MWsIniFile* aIni)
+	{
+	_LIT(KTile, "PHECOMPTILE");
+	TPtrC tiles;
+	if (!aIni || !aIni->FindVar(KTile, tiles))
+		return;
+	TLex lex(tiles);
+	while (iTileUids < KMaxTiles && !lex.Eos())
+		{
+		lex.SkipSpace();
+		TUint32 uid;
+		if (lex.Val(uid, EHex) != KErrNone)
+			break;
+		iTileUid[iTileUids++] = uid;
+		}
+	iNextGc = Next()->ObjectInterface<MWsGraphicsContext>();
+	iSources = iNextGc ? iNextGc->ObjectInterface<MWsDrawableSourceProvider>() : NULL;
+	MWsScreenDevice* dev = Next()->ObjectInterface<MWsScreenDevice>();
+	if (!iSources || !dev)
+		{
+		RDebug::Printf("PH: [phecomp] next stage has no GC / drawable sources / screen device: trace only");
+		return;
+		}
+	iDevice = dev;
+	const TSize s = dev->SizeInPixels();
+	iSize = TSize(Max(s.iWidth, s.iHeight), Max(s.iWidth, s.iHeight));
+	iScreenNumber = dev->ScreenNumber();
+	User::LeaveIfError(MakeTarget(iRest, iRestSource));
+	iProxy.iTarget = iRest->DirectGdiGc();
+	iCompose = ETrue;
+	RDebug::Printf("PH: [phecomp] compose %dx%d, tiles %08x %08x", iSize.iWidth, iSize.iHeight, iTileUid[0], iTileUid[1]);
+	}
+
+// an off-screen target the size of the screen, with alpha (a group that draws only part of the screen leaves the rest
+// transparent), cleared, and known to the next stage as a drawable source
+TInt CPheCompStage::MakeTarget(CRenderTarget*& aTarget, TAny*& aSource)
+	{
+	aTarget = NULL;
+	aSource = NULL;
+	TRAPD(err, aTarget = CRenderTarget::NewL(NULL, ESgUsageDirectGdiTarget | ESgUsageWindowGcSource, ESgCpuAccessReadWrite,
+											 EColor16MAP, iSize, iScreenNumber));
+	if (err == KErrNone)
+		err = iSources->CreateDrawableSource(aTarget->ImageId(CRenderTarget::ENormalAspectRatio), aSource);
+	if (err != KErrNone)
+		{
+		RDebug::Printf("PH: [phecomp] off-screen target: %d", err);
+		DropTarget(aTarget, aSource);
+		return err;
+		}
+	MWsGraphicsContext* gc = aTarget->DirectGdiGc();
+	gc->SetDrawMode(MWsGraphicsContext::EDrawModeWriteAlpha);
+	gc->SetBrushColor(TRgb(0, 0, 0, 0));
+	gc->Clear();
+	gc->SetDrawMode(MWsGraphicsContext::EDrawModePEN);
+	return KErrNone;
+	}
+
+void CPheCompStage::DropTarget(CRenderTarget*& aTarget, TAny*& aSource)
+	{
+	if (aSource && iSources)
+		iSources->CloseDrawableSource(aSource);
+	aSource = NULL;
+	delete aTarget;
+	aTarget = NULL;
 	}
 
 CPheCompStage::~CPheCompStage()
 	{
+	for (TInt i = 0; i < iCount; ++i)
+		DropTarget(iGroups[i].iTarget, iGroups[i].iSource);
+	DropTarget(iRest, iRestSource);
 	}
 
 TAny* CPheCompStage::ResolveObjectInterface(TUint aTypeId)
@@ -103,19 +222,109 @@ TAny* CPheCompStage::ResolveObjectInterface(TUint aTypeId)
 		return static_cast<MWsWindowTreeObserver*>(this);
 	case MWsDrawAnnotationObserver::EWsObjectInterfaceId:
 		return static_cast<MWsDrawAnnotationObserver*>(this);
-	default:
-		return CWsRenderStage::ResolveObjectInterface(aTypeId);	// the next stage (the GC, the scene, the display ...)
+	case MWsGraphicsContext::EWsObjectInterfaceId:
+		if (iCompose)
+			return static_cast<MWsGraphicsContext*>(&iProxy);
+		break;
+	case MWsDrawableSourceProvider::EWsObjectInterfaceId:
+	case MWsTextCursor::EWsObjectInterfaceId:
+	case MWsFader::EWsObjectInterfaceId:
+		if (iCompose)
+			return iProxy.ResolveObjectInterface(aTypeId);	// the target being drawn now
+		break;
 		}
+	return CWsRenderStage::ResolveObjectInterface(aTypeId);	// the next stage (the GC, the scene, the display ...)
 	}
 
 void CPheCompStage::Begin(const TRegion* aRegion)
 	{
-	Next()->Begin(aRegion);
+	if (!iCompose)
+		Next()->Begin(aRegion);
+	// compose mode: the window server draws into the targets now; End() composes the whole screen
+	}
+
+TInt CPheCompStage::TileOf(const TGroup& aGroup) const
+	{
+	for (TInt i = 0; i < iTileUids; ++i)
+		if (aGroup.iUid && aGroup.iUid == iTileUid[i])
+			return i;
+	return KErrNotFound;
+	}
+
+// back to front: the rest (root window, sprites), then every group with a target where the window server put it --
+// except the tiles, when both run: side by side, scaled, aspect kept
+void CPheCompStage::Compose(TRequestStatus* aFinished)
+	{
+	TGroup* tile[KMaxTiles] = {NULL, NULL};
+	TInt tiles = 0;
+	for (TInt i = 0; i < iCount; ++i)
+		{
+		const TInt t = TileOf(iGroups[i]);
+		if (t >= 0 && iGroups[i].iTarget && !tile[t])
+			{
+			tile[t] = &iGroups[i];
+			++tiles;
+			}
+		}
+	const TBool tiling = (tiles == KMaxTiles);
+	const MWsWindowTreeNode* focus = NULL;		// the front tile has the focus
+	for (TInt o = 0; o < iOrderCount && !focus; ++o)
+		if (TGroup* g = Group(iOrder[o]))
+			if (TileOf(*g) >= 0 && g->iSource)
+				focus = g->iNode;
+	const TSize size = iDevice->SizeInPixels();		// the current screen mode's (the UI turns; the targets do not)
+	const TRect screen(size);
+	TRegionFix<1> all(screen);
+	Next()->Begin(&all);
+	iNextGc->SetClippingRegion(all);
+	iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModeWriteAlpha);
+	iNextGc->SetBrushStyle(MWsGraphicsContext::ESolidBrush);
+	iNextGc->SetBrushColor(TRgb(0, 0, 0, 255));
+	iNextGc->Clear();
+	iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModePEN);
+	iSources->DrawResource(iRestSource, screen, screen);
+	for (TInt o = iOrderCount - 1; o >= 0; --o)
+		{
+		TGroup* g = Group(iOrder[o]);
+		if (!g || !g->iSource)
+			continue;
+		const TInt t = TileOf(*g);
+		if (tiling && t >= 0)
+			{
+			// a tile: half the width less a margin, the screen's aspect
+			const TInt w = size.iWidth / 2 - 16;
+			const TInt h = w * size.iHeight / size.iWidth;
+			const TPoint tl(8 + t * (size.iWidth / 2), (size.iHeight - h) / 2);
+			const TRect r(tl, TSize(w, h));
+			iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModeWriteAlpha);
+			iNextGc->SetBrushStyle(MWsGraphicsContext::ENullBrush);
+			iNextGc->SetPenStyle(MWsGraphicsContext::ESolidPen);
+			iNextGc->SetPenSize(TSize(2, 2));
+			iNextGc->SetPenColor(g->iNode == focus ? TRgb(0x40, 0xc0, 0xff) : TRgb(0x60, 0x60, 0x60));	// the front one has the focus
+			TRect frame(r);
+			frame.Grow(3, 3);
+			iNextGc->DrawRect(frame);
+			iSources->DrawResource(g->iSource, r, screen);
+			iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModePEN);
+			}
+		else
+			iSources->DrawResource(g->iSource, screen, screen);
+		}
+	iNextGc->ResetClippingRegion();
+	if (!(iComposed++ & 0x3f))
+		RDebug::Printf("PH: [phecomp] composed #%u: %d groups, tiling %d", iComposed, iOrderCount, tiling);
+	Next()->End(aFinished);
 	}
 
 void CPheCompStage::End(TRequestStatus* aFinished)
 	{
-	Next()->End(aFinished);
+	if (iCompose)
+		{
+		iProxy.iTarget = iRest->DirectGdiGc();
+		Compose(aFinished);
+		}
+	else
+		Next()->End(aFinished);
 	++iFrames;
 	const TUint32 now = User::NTickCount();
 	if (now - iLastSummary >= 1000)
@@ -186,6 +395,11 @@ void CPheCompStage::NodeCreated(const MWsWindowTreeNode& aNode, const MWsWindowT
 		NameOf(aNode, g.iName);
 		g.iRedraws = 0;
 		g.iBounds = TRect();
+		g.iTarget = NULL;
+		g.iSource = NULL;
+		SetUid(g);
+		if (iOrderCount < KMaxGroups)
+			iOrder[iOrderCount++] = &aNode;
 		RDebug::Printf("PH: [phecomp] group +%d '%S' (%d groups)", g.iId, &g.iName, iCount);
 		}
 	else if (aNode.NodeType() == MWsWindowTreeNode::EWinTreeNodeClient && aParent
@@ -212,6 +426,14 @@ void CPheCompStage::NodeReleased(const MWsWindowTreeNode& aNode)
 		if (iGroups[i].iNode == &aNode)
 			{
 			RDebug::Printf("PH: [phecomp] group -%d '%S'", iGroups[i].iId, &iGroups[i].iName);
+			DropTarget(iGroups[i].iTarget, iGroups[i].iSource);
+			for (TInt o = 0; o < iOrderCount; ++o)
+				if (iOrder[o] == &aNode)
+					{
+					Mem::Move(&iOrder[o], &iOrder[o + 1], (iOrderCount - o - 1) * sizeof(iOrder[0]));
+					--iOrderCount;
+					break;
+					}
 			iGroups[i] = iGroups[--iCount];
 			return;
 			}
@@ -226,8 +448,15 @@ void CPheCompStage::NodeActivated(const MWsWindowTreeNode& aNode)
 		if (TGroup* g = Group(p))
 			{
 			// the group's name is often set after it was created (CEikonEnv: the app's UID + caption)
-			NameOf(*p, g->iName);
-			RDebug::Printf("PH: [phecomp] group %d '%S': top window active", g->iId, &g->iName);
+			// log on a name change only: every top-level window of an app (CBA, status pane, dialogs) activates
+			TBuf8<40> name;
+			NameOf(*p, name);
+			if (name != g->iName)
+				{
+				g->iName = name;
+				SetUid(*g);
+				RDebug::Printf("PH: [phecomp] group %d named '%S'", g->iId, &g->iName);
+				}
 			}
 	}
 
@@ -251,8 +480,20 @@ void CPheCompStage::SiblingOrderChanged(const MWsWindowTreeNode& aNode, TInt aNe
 	{
 	if (aNode.NodeType() != MWsWindowTreeNode::EWinTreeNodeGroup)
 		return;
-	if (TGroup* g = Group(&aNode))
-		RDebug::Printf("PH: [phecomp] group %d '%S' -> position %d", g->iId, &g->iName, aNewPos);
+	TGroup* g = Group(&aNode);
+	if (!g)
+		return;
+	RDebug::Printf("PH: [phecomp] group %d '%S' -> position %d", g->iId, &g->iName, aNewPos);
+	// keep iOrder front to back: take the group out, put it back at its new position
+	TInt o = 0;
+	while (o < iOrderCount && iOrder[o] != &aNode)
+		++o;
+	if (o == iOrderCount)
+		return;
+	Mem::Move(&iOrder[o], &iOrder[o + 1], (iOrderCount - o - 1) * sizeof(iOrder[0]));
+	const TInt n = Min(Max(aNewPos, 0), iOrderCount - 1);
+	Mem::Move(&iOrder[n + 1], &iOrder[n], (iOrderCount - 1 - n) * sizeof(iOrder[0]));
+	iOrder[n] = &aNode;
 	}
 
 void CPheCompStage::FlagChanged(const MWsWindowTreeNode& aNode, TFlags aFlag, TBool aNewValue)
@@ -282,13 +523,35 @@ void CPheCompStage::WindowGroupChained(const MWsWindowTreeNode& aParent, const M
 void CPheCompStage::WindowRedrawStart(const MWsWindowTreeNode& aNode, const TRegion&)
 	{
 	iDrawing = &aNode;
-	if (TGroup* g = Group(GroupOf(aNode)))
+	TGroup* g = Group(GroupOf(aNode));
+	if (g)
 		++g->iRedraws;
+	if (!iCompose)
+		return;
+	// the window server's drawing of this window goes to its group's target (made at the first redraw)
+	if (g && !g->iTarget && MakeTarget(g->iTarget, g->iSource) == KErrNone)
+		RDebug::Printf("PH: [phecomp] group %d '%S': own target", g->iId, &g->iName);
+	iProxy.iTarget = (g && g->iTarget) ? g->iTarget->DirectGdiGc() : iRest->DirectGdiGc();
 	}
 
 void CPheCompStage::WindowRedrawEnd(const MWsWindowTreeNode&)
 	{
 	iDrawing = NULL;
+	if (iCompose)
+		iProxy.iTarget = iRest->DirectGdiGc();
+	}
+
+// "<nn>.<uid hex>.<caption>" (CEikonEnv's window group name) -> the uid
+void CPheCompStage::SetUid(TGroup& aGroup)
+	{
+	aGroup.iUid = 0;
+	const TInt dot = aGroup.iName.Locate('.');
+	if (dot < 0)
+		return;
+	TLex8 lex(aGroup.iName.Mid(dot + 1));
+	TUint32 uid;
+	if (lex.Val(uid, EHex) == KErrNone && lex.Peek() == '.')
+		aGroup.iUid = uid;
 	}
 
 // ---- the plug-in: the factory the window server finds by the wsini name "phecomp" ----
@@ -311,7 +574,7 @@ public:
 		return NULL;
 		}
 	CWsRenderStage* CreateRenderStageL(MWsScreen*, MWsScreenRedraw*, CWsRenderStage* aNext)
-		{ return CPheCompStage::NewL(aNext); }
+		{ return CPheCompStage::NewL(aNext, Env().ObjectInterface<MWsIniFile>()); }
 	};
 
 } // namespace

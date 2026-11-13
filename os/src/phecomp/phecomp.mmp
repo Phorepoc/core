@@ -13,8 +13,13 @@ VENDORID		0x70000001
 MACRO			SYMBIAN_GRAPHICS_GCE
 OS_LAYER_SYSTEMINCLUDE_SYMBIAN
 
+USERINCLUDE		.
+// compose mode: the 2010 std plug-in's off-screen target (RSgImage + DirectGDI) and its MWsGraphicsContext over DirectGDI (EPL)
+USERINCLUDE		../../baseline/symbian-2010/oss.FCL.sf.os.graphics/windowing/windowserverplugins/openwfc/inc
 SOURCEPATH		.
 SOURCE			phecomp.cpp
+SOURCEPATH		../../baseline/symbian-2010/oss.FCL.sf.os.graphics/windowing/windowserverplugins/openwfc/src
+SOURCE			rendertarget.cpp directgdigcwrapper.cpp utils.cpp
 
 START RESOURCE	E7017C00.rss
 TARGET			phecomp.rsc
@@ -23,5 +28,6 @@ END
 LIBRARY			euser.lib
 LIBRARY			ecom.lib
 LIBRARY			wsgraphicdrawer.lib
+LIBRARY			directgdi.lib graphicsresource.lib fbscli.lib gdi.lib bitgdi.lib lookuptable.lib estor.lib
 
 SMPSAFE
