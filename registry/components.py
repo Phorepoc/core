@@ -2209,8 +2209,10 @@ COMPONENTS = {
                       rom_data=["resource\\apps\\eshell_icon.mbm=" + os.path.join(OS_ROOT, "src/eshellreg/data/eshell_icon.mbm")]),
     "elocal": dict(mmp="oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/sfat/elocal.mmp",
                    rom="elocal.fsy"),
+    # sl_vfat.cpp: ours, the release file with the entry-set erase fixed for a data area that does not start on a cluster
+    # boundary of the media (it erased directory entries in the following cluster's file data; see the file's header)
     "efat32": dict(mmp="oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/sfat32/efat32.mmp",
-                   rom="efat32.fsy"),
+                   rom="efat32.fsy", drop=["sl_vfat.cpp"], extra=["toolchain/shims/sfat32/sl_vfat.cpp"]),
     # tcpip/ethernet ibys put in a ROM, server side. c32start reads the .cmi files, the root
     # server (c32exe) loads the CPMs (esocksvr, ...), ESOCK loads tcpip6.prt + the ethernet NIF.
     **{k: dict(mmp=f"{CFW}/{p}", **kw) for k, p, kw in [
