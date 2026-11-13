@@ -2101,7 +2101,13 @@ COMPONENTS = {
     "gsdevicemanagementplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSDeviceManagementPlugin/GSDeviceManagementPlugin.mmp"),   # the root
     "backgroundimage": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.gsprofilesrv/gssettingsuis/Gs/GSBackgroundImage/GSBackgroundImage.mmp"),   # the root
     "mediaclientimage": dict(mmp="oss.FCL.sf.os.mmimaging/imaging/imagingfws/MediaClientImage/MmpFiles/Client/MediaClientImage.mmp"),   # <- backgroundimage
-    "about": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.utils/extras/about/group/about.mmp"),
+    # About (Nokia's, RCL_3): our legal texts in place of the product's (about.rss) and, after Nokia's EPL-1.0 and OSS texts, the notice files
+    # the build generates from every repository's NOTICE + LICENSES (pdk zdata_gen.py -> z:/resource/about/) and those packages drop (c:/resource/about/)
+    "about": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.utils/extras/about/group/about.mmp",
+                  drop=["AboutContainer.cpp"], extra=["src/phorepoc/about/AboutContainer.cpp"],
+                  rss_delta={"about.rss": "src/phorepoc/about/about.rss"}),
+    # its Control Panel entry: Device > Phone management (the device-management plug-in is its parent), opens About
+    "aboutgsplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.utils/extras/about/aboutgsplugin/group/aboutgsplugin.mmp"),
     "sysversioninfo": dict(mmp="oss.FCL.sf.os.devicesrv/commonservices/PlatformEnv/sysversioninfo/group/sysversioninfo.mmp"),
     # OURS: minimal S60 Avkon application (app/document/appui/view + .rss)
     "aknapp": dict(mmp=os.path.join(OS_ROOT, "src/aknapp/aknapp.mmp"), rtti=True,

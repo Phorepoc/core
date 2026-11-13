@@ -1,0 +1,208 @@
+/*
+* Copyright (c) 2004 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright The Phorepoc Authors
+* All rights reserved.
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+* This component and the accompanying materials are made available
+* under the terms of the Eclipse Public License v2.0, available at
+* https://www.eclipse.org/legal/epl-2.0/ (relicensed from v1.0 under
+* section 7 of the Eclipse Public License v1.0).
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* or later.
+*
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
+*
+* Contributors:
+* The Phorepoc Authors - Phorepoc's copyright, licences and source offer in place of the product legal texts
+*
+* Description: Resource file for about including some nokia phone's infomation. 
+* At this time, it contains the legal documents and legal description for this 
+* phone. Because it involve a large number of law information. About the OSS text
+* content. We add it to the other two resource files.
+*
+*/
+
+
+//  RESOURCE IDENTIFIER
+NAME    ABOU // 4 letter ID
+
+//  INCLUDES
+
+#include "about.rh"
+#include "about.hrh"
+#include <about.loc>
+#include <about.mbg>
+
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.loc>
+#include <avkon.rsg>
+#include <avkon.mbg>
+
+#include <appinfo.rh>
+
+#include <data_caging_paths_strings.hrh>
+
+    #define about_mbm APP_BITMAP_DIR"\\about.mbm"
+
+RESOURCE RSS_SIGNATURE {}
+
+RESOURCE TBUF { buf= ""; }
+
+RESOURCE EIK_APP_INFO
+    {
+    	status_pane = r_about_status_pane;
+    	
+    	// for 5.0
+    	#ifdef RD_CONTROL_PANEL
+    		cba = R_AVKON_SOFTKEYS_BACK;
+ 	 	#else
+ 	 		cba = R_AVKON_SOFTKEYS_EXIT;
+ 	 	#endif	
+ 	 		
+ 	 // no menu bar
+    }
+
+
+RESOURCE STATUS_PANE_APP_MODEL r_about_status_pane
+    {
+    panes =
+        {
+        SPANE_PANE
+            {
+            id = EEikStatusPaneUidTitle;
+            type = EAknCtTitlePane;
+            resource = r_about_title_pane;
+            }
+#ifndef __SCALABLE_ICONS
+,
+        SPANE_PANE
+            {
+            id = EEikStatusPaneUidContext;
+            type = EAknCtContextPane;
+            resource =  r_about_title_icon;
+            }
+#endif            
+        };
+    
+}
+
+RESOURCE TITLE_PANE r_about_title_pane
+    {
+    txt = "About";
+    }
+
+RESOURCE CONTEXT_PANE r_about_title_icon
+    {
+    bmpfile = about_mbm;
+    bmpid = EMbmAboutQgn_menu_about_cxt;
+    bmpmask = EMbmAboutQgn_menu_about_cxt_mask;
+    }
+    
+// Texts and images appear in this order on the about screen.
+// Every new text item starts from a new line.
+
+RESOURCE ABOUT_ITEM_LIST r_about_main_text
+    {
+    items =
+        {
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_1;
+            },
+        ABOUT_TEXT
+            {
+            updatetimeflag = EAboutUpdateTime;
+            txt = r_about_legal_text_2;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_3;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_licences;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_4;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_5;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_dolby;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_6;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_7;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_8;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_9;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_10;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_11;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_12;
+            },
+        ABOUT_TEXT
+            {
+            txt = r_about_legal_text_13;
+            }
+        }; 
+    }
+RESOURCE TBUF r_about_legal_text_1   { buf = "Phorepoc is a free and open-source operating system built from the Symbian platform."; } 
+RESOURCE TBUF r_about_legal_text_2   { buf = "Copyright %N The Phorepoc Authors. Phorepoc was founded by Kyriakos Bompotis."; } 
+RESOURCE TBUF r_about_legal_text_3   { buf = "This product is based on the Symbian platform source code, Copyright (c) Nokia Corporation and/or its subsidiary(-ies), released by Nokia and the Symbian Foundation under the Eclipse Public License v1.0, whose full text follows below."; } 
+RESOURCE TBUF r_about_legal_text_4   { buf = "Third-party software in this product keeps its own copyright and licence. The notices of every part of this product and the full licence texts are listed below."; } 
+RESOURCE TBUF r_about_legal_text_5   { buf = "Source code: the complete corresponding source code of this product is published at https://github.com/Phorepoc"; } 
+RESOURCE TBUF r_about_legal_text_6   { buf = "Other product and company names mentioned herein may be trademarks or trade names of their respective owners."; } 
+RESOURCE TBUF r_about_legal_text_7   { buf = "Written offer: for the software in this product that is under the GNU General Public License or another licence that asks for it, the Phorepoc Authors offer the complete corresponding source code, for at least three years from the date this product was distributed, at no charge beyond the cost of providing it."; } 
+RESOURCE TBUF r_about_legal_text_8   { buf = "Source Code Requests"; } 
+RESOURCE TBUF r_about_legal_text_9   { buf = "The Phorepoc Authors"; } 
+RESOURCE TBUF r_about_legal_text_10   { buf = "https://github.com/Phorepoc"; } 
+RESOURCE TBUF r_about_legal_text_11   { buf = "Packages installed through Catalogue list their own notices and source offers at the end of this list, for as long as they are installed."; } 
+RESOURCE TBUF r_about_legal_text_12   { buf = "The licences, notices and acknowledgements follow: first those of the Symbian platform, then those of each part of this product."; } 
+RESOURCE TBUF r_about_legal_text_13   { buf = "This software is provided \"as is\", without warranty of any kind, to the extent permitted by applicable law; see the licences below."; } 
+RESOURCE TBUF r_about_legal_text_licences { buf = "Licences: Symbian files used unmodified remain under the Eclipse Public License v1.0. Nokia files the Phorepoc Authors modified are distributed under the Eclipse Public License v2.0, with the GNU General Public License, version 2 or later, as a Secondary License (EPL-2.0 OR GPL-2.0-or-later). The Phorepoc Authors' own files are under the Apache License, Version 2.0."; }
+RESOURCE TBUF r_about_legal_text_dolby { buf = "Other product and company names mentioned herein may be trademarks or trade names of their respective owners."; }
+
+RESOURCE LOCALISABLE_APP_INFO r_about_localisable_app_info
+    {
+    short_caption = qtn_apps_about_grid;
+    caption_and_icon = 
+    CAPTION_AND_ICON_INFO
+        {
+        caption = qtn_apps_about_list;
+#ifdef __SCALABLE_ICONS
+        number_of_icons = 1;
+        icon_file = APP_BITMAP_DIR"\\about_aif.mif";
+#else
+        number_of_icons = 2;
+        icon_file = APP_BITMAP_DIR"\\about_aif.mbm";
+#endif
+        };
+    }
+
+// End of File
