@@ -8,7 +8,7 @@
 //
 // CPheAt owns the modem's serial channel (RBusDevComm unit 3 = the modem UART's PDD:
 // opening it powers the EG25-G) and runs a polled AT loop on the fake modem's 100 ms ticker:
-//   init (after "RDY"): ATE0, AT+CMEE=2, AT+CREG=2, AT+CGSN (IMEI)
+//   init (after "RDY"): Zephyr's EG2x-G init (ATE0, AT+CMEE=1, AT+CREG/CGREG/CEREG=2, AT+CGSN) + the call/SMS set
 //   every 5 s: AT+CPIN?, AT+CREG?, AT+COPS=3,2 + AT+COPS? (MCC/MNC), AT+COPS=3,0 + AT+COPS? (long name), AT+CSQ,
 //              AT+QSPN (the SIM's service provider name), AT+CIMI (until the IMSI is known)
 //   one-shot, ahead of the poll: AT+CPIN="<pin>" / AT+CPIN="<puk>","<new pin>" (EnterCode, from VerifySecurityCode)
@@ -170,7 +170,7 @@ public:
 		}
 
 private:
-	enum { KInit = 9, KPoll = 10, KQ = 6 };
+	enum { KInit = 11, KPoll = 10, KQ = 6 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
 		{
 		if (!iOpen || iQn >= KQ)
@@ -300,9 +300,14 @@ private:
 		iKind = ECmdPoll;
 		if (!iReady)
 			{
-			// + M4: caller id, +CRING: VOICE, PDU mode, new SMS stored with a +CMTI index, the SMSC
-			static const char* const KInitCmds[KInit] = { "ATE0", "AT+CMEE=2", "AT+CREG=2", "AT+CGSN", "AT+CLIP=1",
-														  "AT+CRC=1", "AT+CMGF=0", "AT+CNMI=2,1,0,0,0", "AT+CSCA?" };
+			// Registration + identity = Zephyr's EG2x-G init script (cellular_quectel_eg2x_g.c, Apache-2.0: ATE0, AT+CMEE=1,
+			// AT+CREG/CGREG/CEREG, AT+CGSN), with <n>=2 instead of Zephyr's 1 so the URCs carry LAC/TAC + cell id
+			// (3GPP TS 27.007 7.2 / 10.1.20 / 10.1.22); Zephyr's AT+CFUN=4 is left out (RF stays on, its power-on default).
+			// Calls + SMS from the specs: +CLIP=1 caller id (27.007 7.6), +CRC=1 "+CRING: VOICE" (27.007 6.11), PDU mode
+			// +CMGF=0 (27.005 3.2.3), new SMS stored + "+CMTI" (+CNMI=2,1,0,0,0, 27.005 3.4.1), the SMSC +CSCA? (27.005 3.3.1).
+			static const char* const KInitCmds[KInit] = { "ATE0", "AT+CMEE=1", "AT+CREG=2", "AT+CGREG=2", "AT+CEREG=2",
+														  "AT+CGSN", "AT+CLIP=1", "AT+CRC=1", "AT+CMGF=0", "AT+CNMI=2,1,0,0,0",
+														  "AT+CSCA?" };
 			Send(TPtrC8((const TUint8*)KInitCmds[iStep]));
 			return;
 			}
@@ -487,11 +492,10 @@ private:
 			iPdu.Copy(aLine.Left(iPdu.MaxLength()));
 			return;
 			}
-		if (aLine.Find(_L8("+QDAI: ")) == 0)	// the audio subsystem answers: the PCM config the codec route assumes?
+		if (aLine.Find(_L8("+QDAI: ")) == 0)	// the audio subsystem answers (Quectel AT+QDAI, read-only)
 			{
 			iAudioReady = ETrue;
-			const TBool ok = aLine.Mid(7) == _L8("1,1,0,1,0,0,1,1");
-			RDebug::Printf("[pheltsy] audio ready, QDAI %S%s", &l, ok ? "" : " -- NOT the expected PCM slave config (phemodemtest ensures it)");
+			RDebug::Printf("[pheltsy] audio ready, QDAI %S", &l);
 			return;
 			}
 		if (aLine.Find(_L8("+CPIN: ")) == 0)
