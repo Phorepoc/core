@@ -1,0 +1,16 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+// OURS (2026-10-18): <cstdlib> for the S^4 set (Orbit, Qt Mobility, homescreen) on the S^3 target. libstdc++'s wrapper
+// #include_next-s past Open C into newlib's stdlib.h (two C libraries' FILE structs clash: hbthemeserver main.cpp,
+// qtm qmallocpool_p.h). Open C's stdlib.h is THE C library here; the std:: names the C++ code may use come from it.
+#ifndef PHE_HB_CSTDLIB
+#define PHE_HB_CSTDLIB
+#include <stdlib.h>
+#include <stddef.h>
+namespace std {
+using ::size_t; using ::div_t; using ::ldiv_t;
+using ::abort; using ::abs; using ::atexit; using ::atof; using ::atoi; using ::atol; using ::bsearch; using ::calloc;
+using ::div; using ::exit; using ::free; using ::getenv; using ::labs; using ::ldiv; using ::malloc; using ::qsort;
+using ::rand; using ::realloc; using ::srand; using ::strtod; using ::strtol; using ::strtoul; using ::system;
+}
+#endif
