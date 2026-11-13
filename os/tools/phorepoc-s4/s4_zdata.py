@@ -99,6 +99,18 @@ HS_DATA += [
     # the repository hsapplicationlauncher needs (no definition in the release: a board file, key 0x7 = language set)
     (r"private\10202be9\2002b3aa.txt", os.path.join(OS_ROOT, "toolchain", "shims", "hs_board", "2002b3aa.txt")),
 ]
+# the stand-alone widgets (hsw_configure_symbian.sh): what each package's rom/*.iby puts in the homescreen's widget registry
+# folder -- the plug-in stub, the manifest, the icon and the service descriptor. The descriptor is the package's
+# xml_for_sisx, the one Nokia made for an installed widget (its <filepath> names the stub on c:)
+HSWR = S4R + "/hsw/app"
+for _uid, _n in (("2002EAD2", "profileswidgetplugin"), ("2002EAD3", "silentwidgetplugin")):
+    _dst = rf"private\20022f35\import\widgetregistry\{_uid}" + "\\"
+    HS_DATA += [
+        (_dst + f"{_n}.qtplugin", f"{HSWR}/{_n}/qmakepluginstubs/{_n}.qtplugin"),
+        (_dst + f"{_n}.manifest", f"{HSWR}/{_n}/resource/{_n}.manifest"),
+        (_dst + f"{_n}.png", f"{HSWR}/{_n}/resource/{_n}.png"),
+        (_dst + f"{_n}.xml", f"{HSWR}/{_n}/resource/{_n}.xml_for_sisx"),
+    ]
 
 
 def main() -> int:

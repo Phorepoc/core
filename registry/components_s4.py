@@ -82,6 +82,7 @@ _QTEINC = ["-I" + os.path.join(QTE, "qtmobileextensions", "src", d) for d in ("s
 _QTMINC = _QTEINC + ["-I" + os.path.join(QTM, "include", "Qt" + m)
            for m in ("ServiceFramework", "PublishSubscribe", "SystemInfo", "Mobility")]
 HS = os.path.join(QTB, "hs-src")
+HSW = os.path.join(QTB, "hsw", "app")   # the stand-alone widget packages (hsw_configure_symbian.sh)
 # the homescreen: Orbit + Qt Mobility clients, over the S^4 exports
 _HSFLAGS = _HBFLAGS + _HBINC + _QTMINC + _S4EXPORTS
 
@@ -216,6 +217,12 @@ COMPONENTS = {
     "hsshortcutwidgetplugin": _qx(HS, "homescreenapp/widgetplugins/hsshortcutwidgetplugin/hsshortcutwidgetplugin_dll.mmp",
                                   "homescreenapp/widgetplugins/hsshortcutwidgetplugin/plugin_commonu.def",
                                   rom="hsshortcutwidgetplugin.dll", flags=_HSFLAGS),
+    # the release's stand-alone widgets (tools/phorepoc-s4/hsw_configure_symbian.sh): the profile switcher and silent on/off,
+    # over the S^3 profile engine (profileeng, in the image)
+    "profileswidgetplugin": _qx(HSW, "profileswidgetplugin/profileswidgetplugin_dll.mmp",
+                                "profileswidgetplugin/plugin_commonu.def", rom="profileswidgetplugin.dll", flags=_HSFLAGS),
+    "silentwidgetplugin": _qx(HSW, "silentwidgetplugin/silentwidgetplugin_dll.mmp",
+                              "silentwidgetplugin/plugin_commonu.def", rom="silentwidgetplugin.dll", flags=_HSFLAGS),
     "hswidgetuninstaller": _qx(HS, "homescreenapp/hswidgetuninstaller/hswidgetuninstaller_exe.mmp", flags=_HSFLAGS),
     # (its registration declares Qt Highway services: xqserviceipcconst.h, an S^4 export)
     "hsapplication": _qx(HS, "homescreenapp/hsapplication/hsapplication_exe.mmp", flags=_HSFLAGS,
