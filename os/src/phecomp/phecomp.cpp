@@ -198,6 +198,9 @@ private:
 	// compose mode
 	TBool iCompose;
 	TGcProxy iProxy;
+	RRegion iDirty;					// compose: what the window server drew since the last frame (screen coordinates)
+	TBool iFull;					// compose: the whole screen next frame (order, visibility, extent, tiles changed)
+	TSize iLastSize;
 	MWsGraphicsContext* iNextGc;
 	MWsDrawableSourceProvider* iSources;
 	TSize iSize;							// the targets: square, the screen's longer side (either orientation fits)
@@ -303,6 +306,7 @@ void CPheCompStage::DropTarget(CPheTarget*& aTarget, TAny*& aSource)
 
 CPheCompStage::~CPheCompStage()
 	{
+	iDirty.Close();
 	for (TInt i = 0; i < iCount; ++i)
 		DropTarget(iGroups[i].iTarget, iGroups[i].iSource);
 	DropTarget(iRest, iRestSource);
@@ -345,6 +349,8 @@ void CPheCompStage::Begin(const TRegion* aRegion)
 	{
 	if (!iCompose)
 		Next()->Begin(aRegion);
+	else if (aRegion)
+		iDirty.Union(*aRegion);		// sprites and the like (CHANGETRACKING: the windows report their own regions below)
 	// compose mode: the window server draws into the targets now; End() composes the whole screen
 	}
 
@@ -640,23 +646,56 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 	const TSize size = iDevice->SizeInPixels();		// the current screen mode's (the UI turns; the targets do not)
 	const TRect screen(size);
 	TRegionFix<1> all(screen);
-	Next()->Begin(&all);
-	iNextGc->SetClippingRegion(all);
+	// only what changed, unless the layout changed (tiles are scaled: always whole)
+	RRegion dirty;
+	if (iFull || tiling || iDirty.CheckError() || size != iLastSize)
+		dirty.Copy(all);
+	else
+		{
+		dirty.Copy(iDirty);
+		dirty.ClipRect(screen);
+		dirty.Tidy();
+		}
+	iDirty.Clear();
+	iFull = EFalse;
+	iLastSize = size;
+	if (dirty.IsEmpty() || dirty.CheckError())
+		{
+		const TBool err = dirty.CheckError();
+		dirty.Close();
+		if (!err)
+			{
+			// nothing to show: the frame is done
+			TRegionFix<1> none;
+			Next()->Begin(&none);
+			Next()->End(aFinished);
+			return;
+			}
+		dirty.Copy(all);
+		}
+	Next()->Begin(&dirty);
+	iNextGc->SetClippingRegion(dirty);
 	iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModeWriteAlpha);
 	iNextGc->SetBrushStyle(MWsGraphicsContext::ESolidBrush);
 	iNextGc->SetBrushColor(TRgb(0, 0, 0, 255));
 	iNextGc->Clear();
 	iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModePEN);
 	iSources->DrawResource(iRestSource, screen, screen);
-	// two passes: the other groups where the window server put them, then (tiling) the tiles above them all, back one first
-	for (TInt pass = 0; pass < (tiling ? 2 : 1); ++pass)
+	// tiling: three passes, back to front -- the groups behind the front tile where the window server put them, the tiles,
+	// then the groups in front of the front tile (overlays: the task switcher, notes, menus) above the tiles
+	TInt frontTile = iOrderCount;
+	for (TInt o = 0; o < iOrderCount && frontTile == iOrderCount; ++o)
+		if (TGroup* g = Group(iOrder[o]))
+			if (TileOf(*g) >= 0 && g->iSource)
+				frontTile = o;
+	for (TInt pass = 0; pass < (tiling ? 3 : 1); ++pass)
 	for (TInt o = iOrderCount - 1; o >= 0; --o)
 		{
 		TGroup* g = Group(iOrder[o]);
 		if (!g || !g->iSource)
 			continue;
 		const TInt t = TileOf(*g);
-		if (tiling && (t >= 0) != (pass == 1))
+		if (tiling && (pass == 1 ? t < 0 : (t >= 0 || (pass == 0) != (o > frontTile))))
 			continue;
 		if (tiling && t >= 0)
 			{
@@ -679,6 +718,7 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 			iSources->DrawResource(g->iSource, screen, screen);
 		}
 	iNextGc->ResetClippingRegion();
+	dirty.Close();
 	if (!(iComposed++ & 0x3f))
 		RDebug::Printf("PH: [phecomp] composed #%u: %d groups, tiling %d", iComposed, iOrderCount, tiling);
 	Next()->End(aFinished);
@@ -795,6 +835,7 @@ void CPheCompStage::NodeCreated(const MWsWindowTreeNode& aNode, const MWsWindowT
 
 void CPheCompStage::NodeReleased(const MWsWindowTreeNode& aNode)
 	{
+	iFull = ETrue;
 	if (iDrawing == &aNode)
 		iDrawing = NULL;
 	TInt top;
@@ -852,6 +893,7 @@ void CPheCompStage::NodeActivated(const MWsWindowTreeNode& aNode)
 
 void CPheCompStage::NodeExtentChanged(const MWsWindowTreeNode& aNode, const TRect& aRect)
 	{
+	iFull = ETrue;
 	TInt top;
 	if (TGroup* g = GroupOfTop(aNode, top))
 		{
@@ -876,6 +918,7 @@ void CPheCompStage::NodeExtentChanged(const MWsWindowTreeNode& aNode, const TRec
 
 void CPheCompStage::SiblingOrderChanged(const MWsWindowTreeNode& aNode, TInt aNewPos)
 	{
+	iFull = ETrue;
 	if (aNode.NodeType() != MWsWindowTreeNode::EWinTreeNodeGroup)
 		return;
 	TGroup* g = Group(&aNode);
@@ -896,6 +939,7 @@ void CPheCompStage::SiblingOrderChanged(const MWsWindowTreeNode& aNode, TInt aNe
 
 void CPheCompStage::FlagChanged(const MWsWindowTreeNode& aNode, TFlags aFlag, TBool aNewValue)
 	{
+	iFull = ETrue;
 	if (aFlag != EVisible || aNode.NodeType() != MWsWindowTreeNode::EWinTreeNodeClient)
 		return;
 	TInt top;
@@ -934,9 +978,11 @@ void CPheCompStage::WindowGroupChained(const MWsWindowTreeNode& aParent, const M
 		RDebug::Printf("PH: [phecomp] group %d chained under %d", c->iId, p->iId);
 	}
 
-void CPheCompStage::WindowRedrawStart(const MWsWindowTreeNode& aNode, const TRegion&)
+void CPheCompStage::WindowRedrawStart(const MWsWindowTreeNode& aNode, const TRegion& aRegion)
 	{
 	iDrawing = &aNode;
+	if (iCompose)
+		iDirty.Union(aRegion);
 	TGroup* g = Group(GroupOf(aNode));
 	if (g)
 		++g->iRedraws;
