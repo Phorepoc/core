@@ -171,7 +171,8 @@ COMPONENTS = {
     "hsactivitydbserver": _qx(HSRV, "activityfw/storage/server/group/server.mmp",
                               drop=["afapplicationscollection.cpp"],
                               extra=["toolchain/shims/afstorage_board/afapplicationscollection.cpp"],
-                              defs=_QTDEFS + ["PHOREPOC_S3_APPARC"]),
+                              defs=_QTDEFS + ["PHOREPOC_S3_APPARC"],
+                              libs=["apparc.lib"]),   # the delta's TApaAppInfo (apaid.h: apparc, not apgrfx)
     "afactivitylauncher": _qx(HSRV, "activityfw/afactivitylauncher/group/afactivitylauncher.mmp",
                               "activityfw/afactivitylauncher/eabi/afactivitylauncheru.def", rom="afactivitylauncher.dll"),
     "afservice": _qx(HSRV, "activityfw/activityserviceplugin/afservice_dll.mmp",
