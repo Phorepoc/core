@@ -93,6 +93,8 @@ BUILTIN = {
 
 _SFVG = "oss.FCL.sf.os.graphics/openvg/openvgrefimplementation/sfopenvg/group/"
 _OENV = "oss.FCL.sf.os.ossrv/genericopenlibs/openenvcore/"
+_PTHR = ("mutex.cpp", "condvar.cpp", "pthread_mutex_unlock.cpp", "pthread_mutex_trylock.cpp", "pthread_mutex_destroy.cpp",
+         "pthread_getspecific.cpp", "pthread_key_create.cpp", "pthread_key_delete.cpp")   # libpthread_board copies
 _ALF = "oss.FCL.sf.mw.uiaccelerator/uiacceltk/hitchcock/"
 # ALF_LOG=1 phe component build -arch arm alfrenderstage alfappservercore alfdecoderserverclient_real: the release's own RDebug::Print logging
 # (alflogger.h _ALF_LOGGING) -- "CAlfRenderStage: ready to rock", connect/bridge steps; per-frame lines too, so first boots only
@@ -544,7 +546,8 @@ COMPONENTS = {
                     drop=["ftable.cpp", "fdesc.cpp"], extra=["toolchain/shims/backend_board/ftable.cpp", "toolchain/shims/backend_board/fdesc.cpp"]),   # (fdesc.cpp: /dev/null = the null device, whose write() reports the bytes taken)
     # mutex.cpp + condvar.cpp: OURS copies fixing the static-initializer race (_InitOnce / _staticCondInit read the state
     "libpthread": dict(mmp=_OENV + "libpthread/group/libpthread.mmp", cdriver=True, allow_wsd=True, static_ctors=True, defs=["__SOFTFP="],
-                       drop=["mutex.cpp", "condvar.cpp", "pthread_mutex_unlock.cpp", "pthread_mutex_trylock.cpp", "pthread_mutex_destroy.cpp"], extra=["toolchain/shims/libpthread_board/" + f for f in ("mutex.cpp", "condvar.cpp", "pthread_mutex_unlock.cpp", "pthread_mutex_trylock.cpp", "pthread_mutex_destroy.cpp")],
+                       # + lock-free pthread_getspecific (key nodes kept on delete, inserts published with a barrier)
+                       drop=_PTHR, extra=["toolchain/shims/libpthread_board/" + f for f in _PTHR],
                        # mutextypes.h: the per-mutex data lock is an RFastLock (no exec uncontended); every TU must see it
                        incs_first=["toolchain/shims/libpthread_board/inc"], arm_incs_first=True),
     # Open C++ (STLport; ossrv/stdcpp): the STL for release code that uses it -- first user the Symbian^4 system tone
