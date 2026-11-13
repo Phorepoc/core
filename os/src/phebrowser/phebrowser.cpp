@@ -231,6 +231,8 @@ public:
 		{
 		iSet = aSettings;
 		CreateWindowL();
+		Window().SetBackgroundColor();                        // no WSERV clear (its default is WHITE): Draw paints the whole view;
+		                                                      // the clear reached the compositor first as a white frame (frame log)
 		EnableDragEvents();
 		Window().EnableAdvancedPointers();                    // multi-touch: the second finger arrives as pointer 1 (pinch zoom)
 		iWake = CPbWake::NewL(TCallBack(Pump, this));          // the engine notifies from its own thread
