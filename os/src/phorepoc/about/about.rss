@@ -34,6 +34,9 @@ NAME    ABOU // 4 letter ID
 #include "about.rh"
 #include "about.hrh"
 #include <about.loc>
+
+// Phorepoc: the copyright line About shows (%N = the current year). Change or shorten it here only.
+#define PHE_ABOUT_COPYRIGHT "Copyright %N The Phorepoc Authors. Phorepoc was founded by Kyriakos Bompotis."
 #include <about.mbg>
 
 #include <eikon.rh>
@@ -173,7 +176,7 @@ RESOURCE ABOUT_ITEM_LIST r_about_main_text
         }; 
     }
 RESOURCE TBUF r_about_legal_text_1   { buf = "Phorepoc is a free and open-source operating system built from the Symbian platform."; } 
-RESOURCE TBUF r_about_legal_text_2   { buf = "Copyright %N The Phorepoc Authors. Phorepoc was founded by Kyriakos Bompotis."; } 
+RESOURCE TBUF r_about_legal_text_2   { buf = PHE_ABOUT_COPYRIGHT; }
 RESOURCE TBUF r_about_legal_text_3   { buf = "This product is based on the Symbian platform source code, Copyright (c) Nokia Corporation and/or its subsidiary(-ies), released by Nokia and the Symbian Foundation under the Eclipse Public License v1.0, whose full text follows below."; } 
 RESOURCE TBUF r_about_legal_text_4   { buf = "Third-party software in this product keeps its own copyright and licence. The notices of every part of this product and the full licence texts are listed below."; } 
 RESOURCE TBUF r_about_legal_text_5   { buf = "Source code: the complete corresponding source code of this product is published at https://github.com/Phorepoc"; } 
