@@ -88,7 +88,7 @@ def main() -> int:
     # there is one, else the 4.8 one without that field
     regs = 0
     if S4R != ".phorepoc-s4-build":
-        for t in trees:
+        for t in trees + ["hb-src"]:   # (Hb's two servers register too: hbthemeserver, hbdevicedialogappserver)
             for d, _, files in os.walk(os.path.join(S4, t)):
                 for f in files:
                     if not f.endswith("_reg.rss"):
