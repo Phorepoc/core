@@ -38,8 +38,8 @@ static TBool CurrentModeLandscape()
 	{
 	RWsSession ws;
 	if (ws.Connect() != KErrNone)
-		return ETrue;	// the PC board's default hardware state is landscape (adaptation-pc os/board/wsini.txt)
-	TBool land = ETrue;
+		return EFalse;	// no window server to ask: the natural (portrait) shape
+	TBool land = EFalse;
 	CWsScreenDevice* dev = new CWsScreenDevice(ws);
 	if (dev && dev->Construct() == KErrNone)
 		{
