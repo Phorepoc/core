@@ -13,6 +13,7 @@ symbian-2010	oss.FCL.sf.adapt.codecs.aricent	26ce2bf92183c42d9fcad50755d258ec1cb
 symbian-2010	oss.FCL.sf.adapt.stubs	6682e8c27bf4754ddff4b7330da6a7cfd8af03ac
 symbian-2010	oss.FCL.sf.app.JRT	0822c2dcfb807a245ec84ab06006b59df7aedab6
 symbian-2010	oss.FCL.sf.app.commonemail	6a784f9441eb3508444b19fcbeeea6a806df27e6
+symbian-2010	oss.FCL.sf.app.homescreen	61d721e71cc55557a6ad9c5ae066f07302c87aa2
 symbian-2010	oss.FCL.sf.app.messaging	7ecf4269c53f5b2c6a47f3596e77e2bb75c1700c
 symbian-2010	oss.FCL.sf.app.mmsharinguis	9054f87d8ed408d79a305f09d720e6812e12244c
 symbian-2010	oss.FCL.sf.app.organizer	e15734d1943a012120b188fe3ffd5dd7594d145f
@@ -50,7 +51,9 @@ symbian-2010	oss.FCL.sf.mw.mmappfw	f6d6d94e162009a9f116bf0d69dbbb8c864db9d4
 symbian-2010	oss.FCL.sf.mw.mmmw	038ca7403b6f3fd773f7827add19ed1562e4ef51
 symbian-2010	oss.FCL.sf.mw.netprotocols	cc43765893d358f20903b5635a2a125134a2ede8
 symbian-2010	oss.FCL.sf.mw.phonesrv	fae51ff53b72187b3e0330967cab1328d0391186
+symbian-2010	oss.FCL.sf.mw.qtextensions	6940fe99c4e22c0f2f4c91133f161af2f4df739f
 symbian-2010	oss.FCL.sf.mw.qtmobility	a462a7d9493bb0bfb809c09d5c331498b47a2cd6
+symbian-2010	oss.FCL.sf.mw.qttranslations	6ebedadaf5b2f1d20677d3aa57391b98e7609179
 symbian-2010	oss.FCL.sf.mw.remoteconn	dc4c3e82a68e21d294115babc0a2f783f27c7106
 symbian-2010	oss.FCL.sf.mw.remotemgmt	6a5ae0a1c13204694b59cd2144ee38ec0560e251
 symbian-2010	oss.FCL.sf.mw.remotestorage	faf0a1c4eeb1da171de112c60263a9a76c7585af
