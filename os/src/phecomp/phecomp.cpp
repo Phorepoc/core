@@ -830,7 +830,26 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 			iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModePEN);
 			}
 		else
-			iSources->DrawResource(g->iSource, screen, screen);
+			{
+			// what an app group in front shows hides this group there, as the window server's visible regions do (its
+			// target keeps old pixels where its windows are hidden: a stale title showed through the home screen's)
+			RRegion shown;
+			shown.Copy(dirty);
+			if (!tiling)
+				for (TInt f = 0; f < o; ++f)
+					if (TGroup* fg = Group(iOrder[f]))
+						if (fg->iUid && fg->iSource && !fg->iCovered)
+							for (TInt t2 = 0; t2 < fg->iTops; ++t2)
+								if (fg->iTopShown[t2])
+									shown.SubRect(fg->iTopRect[t2]);
+			if (!shown.IsEmpty() && !shown.CheckError())
+				{
+				iNextGc->SetClippingRegion(shown);
+				iSources->DrawResource(g->iSource, screen, screen);
+				iNextGc->SetClippingRegion(dirty);
+				}
+			shown.Close();
+			}
 		}
 	iNextGc->ResetClippingRegion();
 	dirty.Close();
