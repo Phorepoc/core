@@ -44,3 +44,21 @@ for mk in $(find "$SRC/qthighway" "$SRC/qtmobileextensions/src" -name Makefile);
   done
   for m in "$d"/*.mmp; do echo "${m#$SRC/}: $(grep -c "moc" "$m") moc lines (moc output: under build/)"; done
 done
+# the release was built on Windows: a source may name a forwarding header in another case (targetwrapper.h: <XqKeyCapture>
+# for include/XQKeyCapture). Link each such spelling beside the header (casefix does the same for the release tree, not this copy)
+python3 - "$SRC" <<'PY'
+import os, re, sys
+src = sys.argv[1]
+inc = os.path.join(src, "qtmobileextensions", "include")
+have = {f.lower(): f for f in os.listdir(inc)}
+want = set()
+for d, _, files in os.walk(src):
+    for f in files:
+        if f.endswith((".h", ".cpp")):
+            want.update(re.findall(r'#\s*include\s*[<"]([A-Za-z][A-Za-z0-9_]*)[>"]', open(os.path.join(d, f), errors="replace").read()))
+n = 0
+for w in sorted(want):
+    if w.lower() in have and w != have[w.lower()] and not os.path.lexists(os.path.join(inc, w)):
+        os.symlink(have[w.lower()], os.path.join(inc, w)); n += 1
+print(f"qte: {n} case links in qtmobileextensions/include")
+PY
