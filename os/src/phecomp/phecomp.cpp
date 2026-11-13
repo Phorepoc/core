@@ -555,6 +555,10 @@ void CPheCompStage::SceneElements(TBool aShow, const TRect& aScreen)
 		MWsElement* e = g->iTarget->iElement;
 		e->SetDestinationRectangle(aScreen);
 		e->SetSourceRectangle(aScreen);
+		// only the group's own windows: clip the element to their extent (the UI element shows the rest)
+		TRect clip(g->iBounds);
+		clip.Intersection(aScreen);
+		e->SetDestinationClippingRect(clip.IsEmpty() ? aScreen : clip);
 		if (!below)
 			{
 			// the first time: put ours at the bottom, walk up to the top of the others, and put it back above that
