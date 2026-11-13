@@ -491,6 +491,139 @@ static bool PhRiScaledDraw(VGContext* c, Surface* s, Image* img, RIfloat a, RIfl
 	return true;
 	}
 
+// (2026-11-13) a quarter turn at whole pixels (the landscape UI on the portrait panel: ALF draws each window's layer
+// rotated by 90 or 270 degrees every frame). The reference pixel pipe resampled it per pixel (Color::unpack, convert
+// with gamma/invgamma, pack: ~80% of alfredserver in landscape). Here a nearest-pixel copy, which is what the reference
+// gives at whole-pixel positions (pixel centres map onto pixel centres): 32-bit 8:8:8(:8) premultiplied or opaque, or
+// opaque 5:6:5 sources, into the 32-bit premultiplied surface of the same linearity; VG_BLEND_SRC or SRC_OVER, no tint.
+static TUint gRotTaken;
+static bool PhRiRotatedDraw(VGContext* c, Surface* s, Image* img, RIfloat b, RIfloat cc, RIfloat tx, RIfloat ty)
+	{
+	Image* dst = s->m_image;
+	if (!dst || !dst->m_data || !img->m_data)
+		return false;
+	const TInt itx = PhRound(tx), ity = PhRound(ty);
+	if (PhAbs(tx - (RIfloat)itx) > 1e-3f || PhAbs(ty - (RIfloat)ity) > 1e-3f)
+		return false;
+	const Color::Descriptor& sd = img->m_desc;
+	const Color::Descriptor& dsd = dst->m_desc;
+	if (dsd.bitsPerPixel != 32 || dsd.redBits != 8 || dsd.greenBits != 8 || dsd.blueBits != 8 || dsd.alphaBits != 8 || !dsd.isPremultiplied() || dsd.isLuminance() ||
+		sd.isLuminance() || sd.isNonlinear() != dsd.isNonlinear())
+		return false;
+	const bool is32 = sd.bitsPerPixel == 32 && sd.redBits == 8 && sd.greenBits == 8 && sd.blueBits == 8 && (!sd.alphaBits || (sd.alphaBits == 8 && sd.isPremultiplied()));
+	const bool is565 = sd.bitsPerPixel == 16 && sd.redBits == 5 && sd.greenBits == 6 && sd.blueBits == 5 && !sd.alphaBits;
+	if (!is32 && !is565)
+		return false;
+	// image pixel (u,v) -> surface pixel (x,y): x = b*v + tx, y = cc*u + ty (pixel squares: a negative axis is one off)
+	const TInt w = img->m_width, h = img->m_height;
+	const TInt x0 = b > 0 ? itx : itx - h, y0 = cc > 0 ? ity : ity - w;
+	Rectangle clips[KMaxClips];
+	int nclip = 0;
+	const int sw = s->getWidth(), sh = s->getHeight();
+	if (c->m_scissoring)
+		{
+		const int n = c->m_scissor.size();
+		if (n > KMaxClips)
+			return false;
+		for (int i = 0; i < n; i++)
+			if (c->m_scissor[i].width > 0 && c->m_scissor[i].height > 0)
+				clips[nclip++] = c->m_scissor[i];
+		}
+	else
+		{
+		clips[0].x = 0; clips[0].y = 0; clips[0].width = sw; clips[0].height = sh;
+		nclip = 1;
+		}
+	Rectangle bnd; bnd.x = 0; bnd.y = 0; bnd.width = sw; bnd.height = sh;
+	Rectangle dr; dr.x = x0; dr.y = y0; dr.width = h; dr.height = w;
+	bnd.intersect(dr);
+	if (bnd.width <= 0 || bnd.height <= 0)
+		return true;
+	if (PhvgSurfaceGpu(s))
+		{	// the GPU image draw takes any affine matrix: the same quarter turn as one textured quad
+		int rects[64][4];
+		const int nr = PhBandRects(clips, nclip, bnd, rects, 64);
+		if (nr == 0)
+			return true;
+		if (nr < 0)
+			return false;
+		const float M[6] = { 0.0f, (float)b, (float)itx, (float)cc, 0.0f, (float)ity };
+		const float mul[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		const int blendSrc = c->m_blendMode == VG_BLEND_SRC;
+		if (PhvgImageResident(img) && PhvgDrawResident(s, img, M, blendSrc, mul, &rects[0][0], nr))
+			return true;
+		PhvgImageCpuAccess(img, false);
+		const TUint hash = PhImageHash(img, w, h);
+		int r = PhvgDrawImage(s, img, w, h, hash, M, blendSrc, mul, &rects[0][0], nr, NULL);
+		if (r == -2)
+			{
+			TUint8* buf = (TUint8*)User::Alloc(w * h * 4);
+			r = 0;
+			if (buf)
+				{
+				PhImageToRgba(img, buf);
+				r = PhvgDrawImage(s, img, w, h, hash, M, blendSrc, mul, &rects[0][0], nr, buf);
+				User::Free(buf);
+				}
+			}
+		if (r == 1)
+			{
+			if ((++gRotTaken & 255) == 1)
+				RDebug::Printf("PH: alf: RI rotated drawImage (GPU): taken %u (last %dx%d bpp %d)", gRotTaken, w, h, sd.bitsPerPixel);
+			return true;
+			}
+		}
+	PhvgImageCpuAccess(img, false);
+	PhvgCpuAccess(s, true);
+	const bool over = c->m_blendMode == VG_BLEND_SRC_OVER && sd.alphaBits;
+	const TUint rs = sd.redShift, gs = sd.greenShift, bs = sd.blueShift, as = sd.alphaShift;
+	const TUint drs = dsd.redShift, dgs = dsd.greenShift, dbs = dsd.blueShift, das = dsd.alphaShift;
+	const RIuint32 amask = 255u << das;
+	const TInt sstride = img->m_stride;
+	const RIuint8* sbase = img->m_data + img->m_storageOffsetY * sstride;
+	const TInt bpp = sd.bitsPerPixel / 8;
+	int sp[KMaxClips][2];
+	for (TInt y = bnd.y; y < bnd.y + bnd.height; y++)
+		{
+		const TInt u = cc > 0 ? y - ity : ity - y - 1;		// the image column this surface row reads
+		const int ns = PhRowSpans(clips, nclip, y, bnd.x, bnd.x + bnd.width, sp);
+		RIuint32* drow = (RIuint32*)(dst->m_data + (y + dst->m_storageOffsetY) * dst->m_stride) + dst->m_storageOffsetX;
+		const RIuint8* scol = sbase + (u + img->m_storageOffsetX) * bpp;
+		for (int si = 0; si < ns; si++)
+			for (TInt x = sp[si][0]; x < sp[si][1]; x++)
+				{
+				const TInt v = b > 0 ? x - itx : itx - x - 1;	// the image row
+				const RIuint8* p = scol + v * sstride;
+				RIuint32 d, sa = 255;
+				if (is32)
+					{
+					const RIuint32 q = *(const RIuint32*)p;
+					if (sd.alphaBits) sa = (q >> as) & 255;
+					d = (((q >> rs) & 255) << drs) | (((q >> gs) & 255) << dgs) | (((q >> bs) & 255) << dbs) | (sa << das);
+					}
+				else
+					{
+					const RIuint32 q = *(const RIuint16*)p;
+					const RIuint32 r5 = (q >> rs) & 31, g6 = (q >> gs) & 63, b5 = (q >> bs) & 31;
+					d = (((r5 << 3) | (r5 >> 2)) << drs) | (((g6 << 2) | (g6 >> 4)) << dgs) | (((b5 << 3) | (b5 >> 2)) << dbs) | amask;
+					}
+				if (!over || sa == 255)
+					drow[x] = d;
+				else if (sa != 0)
+					{
+					const RIuint32 ia = 255 - sa, o = drow[x];
+					RIuint32 rb = (o & 0x00ff00ffu) * ia, ag = ((o >> 8) & 0x00ff00ffu) * ia;
+					rb = ((rb + 0x00800080u + ((rb >> 8) & 0x00ff00ffu)) >> 8) & 0x00ff00ffu;	// /255, rounded
+					ag = ((ag + 0x00800080u + ((ag >> 8) & 0x00ff00ffu)) >> 8) & 0x00ff00ffu;
+					drow[x] = d + (rb | (ag << 8));
+					}
+				}
+		}
+	if ((++gRotTaken & 255) == 1)
+		RDebug::Printf("PH: alf: RI rotated drawImage: taken %u (last %dx%d bpp %d)", gRotTaken, w, h, sd.bitsPerPixel);
+	return true;
+	}
+
 static bool PhRiFastDrawImageImpl(VGContext* c, Image* img, const Matrix3x3& m)
 	{
 	static TUint calls, taken, denied;
@@ -528,6 +661,12 @@ static bool PhRiFastDrawImageImpl(VGContext* c, Image* img, const Matrix3x3& m)
 	if (PhAbs(b) > 1e-3f || PhAbs(cc) > 1e-3f || PhAbs(PhAbs(a) - 1.0f) > 1e-3f || PhAbs(PhAbs(dd) - 1.0f) > 1e-3f)
 		{
 		if (PhAbs(b) <= 1e-3f && PhAbs(cc) <= 1e-3f && PhRiScaledDraw(c, s, img, a, dd, tx, ty, multiply, paint))
+			{
+			++taken;
+			return true;
+			}
+		if (PhAbs(a) <= 1e-3f && PhAbs(dd) <= 1e-3f && PhAbs(PhAbs(b) - 1.0f) <= 1e-3f && PhAbs(PhAbs(cc) - 1.0f) <= 1e-3f &&
+			!multiply && PhRiRotatedDraw(c, s, img, b, cc, tx, ty))
 			{
 			++taken;
 			return true;

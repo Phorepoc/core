@@ -829,6 +829,73 @@ void Image::blit(const Image& src, int sx, int sy, int dx, int dy, int w, int h,
 	if(w <= 0 || h <= 0)
 		return;	//zero area
 
+	//OURS (perf 2026-11-13): 8-bit RGB(A) into 8-bit RGB(A), same linearity, no dither, in integers (vgImageSubData of an
+	//app's frame into ALF's texture: with rotated draws on the fast path this per-pixel float loop was most of
+	//alfredserver's CPU in a landscape game). Same rules and rounding as the surface->image path below.
+	if(!dither)
+	{
+		const Color::Descriptor& sd = src.m_desc;
+		const Color::Descriptor& dd = m_desc;
+		const int sp = sd.internalFormat & Color::PREMULTIPLIED, dp = dd.internalFormat & Color::PREMULTIPLIED;
+		if(sd.bitsPerPixel == 32 && dd.bitsPerPixel == 32 &&
+		   !(sd.internalFormat & Color::LUMINANCE) && !(dd.internalFormat & Color::LUMINANCE) &&
+		   (sd.internalFormat & Color::NONLINEAR) == (dd.internalFormat & Color::NONLINEAR) &&
+		   sd.redBits == 8 && sd.greenBits == 8 && sd.blueBits == 8 && (sd.alphaBits == 8 || sd.alphaBits == 0) &&
+		   dd.redBits == 8 && dd.greenBits == 8 && dd.blueBits == 8 && (dd.alphaBits == 8 || dd.alphaBits == 0) &&
+		   (sp == dp || (sp && !dp) || (!sp && dp && dd.alphaBits == 8)))
+		{
+			const bool unpre = sp && !dp;
+			const bool topre = !sp && dp && sd.alphaBits == 8;	//(an opaque source is the same premultiplied)
+			const int srs = sd.redShift, sgs = sd.greenShift, sbs = sd.blueShift, sas = sd.alphaShift, sab = sd.alphaBits;
+			const int drs = dd.redShift, dgs = dd.greenShift, dbs = dd.blueShift, das = dd.alphaShift, dab = dd.alphaBits;
+			const bool same = !unpre && !topre && sab == dab && srs == drs && sgs == dgs && sbs == dbs && (!dab || sas == das);
+			const bool up = src.m_data == m_data && dy > sy;	//(vgCopyImage within one image: rows bottom-up when moving down)
+			for(int yy=0;yy<h;yy++)
+			{
+				const int y = up ? h - 1 - yy : yy;
+				const RIuint32* s = (const RIuint32*)(src.m_data + (sy + y + src.m_storageOffsetY) * src.m_stride) + sx + src.m_storageOffsetX;
+				RIuint32* d = (RIuint32*)(m_data + (dy + y + m_storageOffsetY) * m_stride) + dx + m_storageOffsetX;
+				if(same)
+				{
+					memmove(d, s, w * 4);	//(vgCopyImage within one image may overlap)
+					continue;
+				}
+				for(int x=0;x<w;x++)
+				{
+					const RIuint32 p = s[x];
+					RIuint32 r = (p >> srs) & 0xff, g = (p >> sgs) & 0xff, b = (p >> sbs) & 0xff;
+					const RIuint32 a = sab ? (p >> sas) & 0xff : 255;
+					if(topre && a != 255)
+					{
+						RIuint32 n = r * a + 127; r = (n + 1 + (n >> 8)) >> 8;
+						n = g * a + 127; g = (n + 1 + (n >> 8)) >> 8;
+						n = b * a + 127; b = (n + 1 + (n >> 8)) >> 8;
+					}
+					if(unpre && a != 255)
+					{
+						if(a == 0)
+							r = g = b = 0;
+						else
+						{
+							r = (r * 255 + a / 2) / a; if(r > 255) r = 255;
+							g = (g * 255 + a / 2) / a; if(g > 255) g = 255;
+							b = (b * 255 + a / 2) / a; if(b > 255) b = 255;
+						}
+					}
+					d[x] = (r << drs) | (g << dgs) | (b << dbs) | (dab ? a << das : 0);
+				}
+			}
+			m_mipmapsValid = false;
+			return;
+		}
+		static unsigned slowI = 0;
+		if(slowI < 8 || (slowI & (slowI - 1)) == 0)
+			RDebug::Printf("PH: vg blit image->image slow path #%u %dx%d: src fmt %d bpp %d a%d@%d r@%d, dst fmt %d bpp %d a%d@%d r@%d",
+				slowI, w, h, sd.internalFormat, sd.bitsPerPixel, sd.alphaBits, sd.alphaShift, sd.redShift,
+				dd.internalFormat, dd.bitsPerPixel, dd.alphaBits, dd.alphaShift, dd.redShift);
+		slowI++;
+	}
+
 	Array<Color> tmp;
 	tmp.resize(w*h);	//throws bad_alloc
 
