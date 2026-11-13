@@ -858,7 +858,7 @@ COMPONENTS = {
     "sensrvclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensorserver/group/sensrvclient.mmp"),
     "sensrvutil": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensorserver/group/sensrvutil.mmp"),
     "sensordatacompensator": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensordatacompensator/group/sensordatacompensator.mmp"),
-    "orientationssy": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/orientationssy/group/OrientationSsy.mmp"),
+    "orientationssy": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/orientationssy/group/OrientationSsy.mmp", drop=["SsyChannel.cpp"], extra=["toolchain/shims/orientationssy_board/SsyChannel.cpp"]),
     "sensrvserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.os.devicesrv/sensorservices/sensorserver/group/sensrvserver.mmp",
                          rom="sensorserver.exe"),   # KSensrvExeName
     # Symbian Foundation's no-audio stem (incubator.stemkit/breakdeps) + our one-hunk tone-player fix stood in
