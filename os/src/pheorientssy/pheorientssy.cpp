@@ -90,7 +90,7 @@ private:
 		CPheOrientSsy& iSsy;
 		TInt iKind;
 		};
-	enum { EOpened, EFill, ERepo };
+	enum { EOpened, EClosed, EFill, ERepo };
 	CPheOrientSsy(MSsyCallback& aCallback) : iCallback(aCallback) {}
 	void ConstructL();
 	void Step(TInt aKind, TInt aStatus);
@@ -102,6 +102,7 @@ private:
 	TSensrvChannelId iChannelId;
 	CRepository* iRepo;
 	CStep* iOpened;
+	CStep* iClosed;
 	CStep* iFill;
 	CStep* iRepoWatch;
 	TUint8* iBuffer;		// the server's buffer while data listening is on
@@ -135,6 +136,7 @@ void CPheOrientSsy::ConstructL()
 	{
 	TRAP_IGNORE(iRepo = CRepository::NewL(KPheDevMenuRepoUid));	// none = Automatic
 	iOpened = new (ELeave) CStep(*this, EOpened);
+	iClosed = new (ELeave) CStep(*this, EClosed);
 	iFill = new (ELeave) CStep(*this, EFill);
 	iRepoWatch = new (ELeave) CStep(*this, ERepo);
 	iLast = Current();
@@ -155,6 +157,7 @@ CPheOrientSsy::~CPheOrientSsy()
 	{
 	delete iRepoWatch;
 	delete iFill;
+	delete iClosed;
 	delete iOpened;
 	delete iRepo;
 	}
@@ -178,6 +181,9 @@ void CPheOrientSsy::Step(TInt aKind, TInt aStatus)
 	{
 	switch (aKind)
 		{
+	case EClosed:
+		iCallback.ChannelClosed(iChannelId);
+		break;
 	case EOpened:
 		iCallback.ChannelOpened(iChannelId, KErrNone, this, this);
 		break;
@@ -225,7 +231,10 @@ void CPheOrientSsy::CloseChannelL(TSensrvChannelId aChannelId)
 	if (aChannelId != iChannelId)
 		User::Leave(KErrNotFound);
 	iBuffer = NULL;
-	iCallback.ChannelClosed(iChannelId);
+	// (from the active object, as ChannelOpened: called inside this call, the server has not yet marked its close
+	// transaction handled at the SSY and drops the callback -- the close never completed, the next client's open
+	// queued behind it and the unload timer cancelled both: Hb's OpenChannelL = KErrCancel)
+	iClosed->Kick();
 	}
 
 void CPheOrientSsy::StartChannelDataL(const TSensrvChannelId aChannelId, TUint8* aBuffer, TInt aCount)
