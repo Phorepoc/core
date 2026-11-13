@@ -1618,7 +1618,11 @@ COMPONENTS = {
     "mmcommonutils": dict(mmp="oss.FCL.sf.os.mmaudio/mmlibs/mmutilitylib/mmpfiles/MMCommonUtils.mmp"),   # <- mmfcontrollerframework
     # CFbsBitmaps; ECOM 0x1020707F, ROM-only resolver) + the S60 test app that shows its viewfinder. x86 first; nothing below ECam exists in the release.
     "ecam": dict(mmp="oss.FCL.sf.os.mm/imagingandcamerafws/camerafw/mmpfiles/ECam.mmp"),
-    "ecampluginsupport": dict(mmp="oss.FCL.sf.os.mm/imagingandcamerafws/camerafw/mmpfiles/ECamPluginSupport.mmp"),
+    # camera plug-ins from ROM or from an installed package (a trusted SIS on C:), the highest version wins
+    # (src/phorepoc/ecam: PheEcamSelectL instead of KRomOnlyResolverUid; the camera-a64 package needs this core)
+    "ecampluginsupport": dict(mmp="oss.FCL.sf.os.mm/imagingandcamerafws/camerafw/mmpfiles/ECamPluginSupport.mmp",
+                              drop=["EcamPluginSupport.cpp", "ECamInfo.cpp"],
+                              extra=["src/phorepoc/ecam/EcamPluginSupport.cpp", "src/phorepoc/ecam/ECamInfo.cpp"]),
     "ecamtestplugin": dict(mmp="oss.FCL.sf.os.mm/mmplugins/cameraplugins/mmpfiles/TestCamera.mmp"),
     # DevVideo (CMMFDevVideoPlay + the hw-device base classes + ECOM plugin glue): VDU V4 -- phevdec is a decoder hw device
     "devvideo": dict(mmp="oss.FCL.sf.os.mm/mmhais/videohai/devvideo/mmpfiles/DevVideo/DevVideo.mmp"),
