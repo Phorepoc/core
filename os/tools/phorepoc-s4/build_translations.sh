@@ -18,6 +18,17 @@ QH=$S4/qt-host
 OUT=$S4/qm
 # lrelease (tools/linguist/lrelease: QtCore + QtXml), the same modern-GCC guard flags as the other host tools
 QFIX='CXX=g++ -fno-delete-null-pointer-checks -fno-lifetime-dse -fno-strict-aliasing -fpermissive -DQT_QCHAR_CONSTRUCTOR -DQT_NO_INOTIFY'
+# the English (_en) set of the release's translations (qttranslations data/tsfiles.zip), then the texts the code gained
+# after that snapshot (ts_extras.py: <name>_extra.ts with only the ids <name>_en.ts lacks)
+mkdir -p "$OUT/ts"
+python3 - "$S10/oss.FCL.sf.mw.qttranslations/data/tsfiles.zip" "$OUT/ts" <<'PY'
+import os, sys, zipfile
+z = zipfile.ZipFile(sys.argv[1])
+for n in z.namelist():
+    if n.endswith("_en.ts"):
+        open(os.path.join(sys.argv[2], os.path.basename(n)), "wb").write(z.read(n))
+PY
+python3 "$HERE/ts_extras.py"
 LR=$QH/tools/linguist/lrelease     # (inside the host tree: its .qmake.cache names the source/build trees)
 if [ ! -f "$OUT/lrelease" ]; then
   mkdir -p "$LR"
