@@ -1193,9 +1193,9 @@ This function always causes a flush of the window server buffer.
 	__ASSERT_DEBUG(!aRegion.CheckError(),Panic(EW32PanicInvalidRegion));
 	const TInt regionCount=aRegion.Count();
 	TPtrC8 ptrRect(reinterpret_cast<const TUint8*>(aRegion.RectangleList()),regionCount*sizeof(TRect));
-//	return(WriteReplyByProvidingRemoteReadAccess(&regionCount,sizeof(regionCount),&ptrRect,EWsWinOpSetShape));
-	RDebug::Printf("Bug 1863 - RWindowBase::SetShape() deprecated and non-functional. Disabling the panic.");
-	return KErrNone;
+	// OURS: sent again -- our NGA server keeps the shape (wserv_board/cliwin_nga.cpp PhShapeOf); upstream had made this a
+	// no-op (bug 1863), so a shaped window covered what lay under it with its whole rectangle
+	return(WriteReplyByProvidingRemoteReadAccess(&regionCount,sizeof(regionCount),&ptrRect,EWsWinOpSetShape));
 	}
 
 /** 

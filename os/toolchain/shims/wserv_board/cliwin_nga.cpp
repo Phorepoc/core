@@ -1136,6 +1136,15 @@ void CWsClientWindow::CommandL(TInt aOpcode, const TAny *aCmdData)
 					OwnerPanic(EWservPanicTransparencyObjNotCreated);
 				}
 				break;
+			case EWsWinOpSetShape:
+				// OURS: window shapes, as the classic server does them (nonnga cliwin.cpp). Upstream's NGA client made
+				// RWindowBase::SetShape a no-op (bug 1863), but this server still has the corner-region base area: the shape
+				// becomes the window's base area -- its visible region (what it covers, what it draws) and its hit-test area.
+				// Without it a shaped window covered what lay under it with its whole rectangle (the Notes editor's line
+				// window hid the page, the softkey bar hid the middle softkey's clock).
+				SetCornerTypeL(EWindowCornerRegion, 0, GetRegionFromClientL(iWsOwner, *pData.Int), ETrue);
+				SetReply(KErrNone);
+				break;
 			case EWsWinOpSetTransparencyAlphaChannel:
 				{
 				iFlags |= static_cast<TUint>(EFlagHasAlpha);
