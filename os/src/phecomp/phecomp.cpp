@@ -23,6 +23,10 @@
 #include <graphics/wsscreendevice.h>
 #include <w32std.h>
 #include <graphics/sgimage.h>
+#include <graphics/sgimagecollection.h>
+#include <graphics/surface.h>
+#include <graphics/wsscene.h>
+#include <graphics/wselement.h>
 #include <graphics/directgdidriver.h>
 #include <graphics/directgdiimagetarget.h>
 #include "directgdigcwrapper.h"		// the 2010 std plug-in's MWsGraphicsContext over a DirectGDI context
@@ -33,11 +37,11 @@ namespace {
 NONSHARABLE_CLASS(CPheTarget) : public CBase
 	{
 public:
-	static CPheTarget* NewL(const TSize& aSize, TInt aScreen)
+	static CPheTarget* NewL(const TSize& aSize, TInt aScreen, TBool aSurface = EFalse)
 		{
 		CPheTarget* self = new(ELeave) CPheTarget;
 		CleanupStack::PushL(self);
-		self->ConstructL(aSize, aScreen);
+		self->ConstructL(aSize, aScreen, aSurface);
 		CleanupStack::Pop(self);
 		return self;
 		}
@@ -46,12 +50,17 @@ public:
 		delete iGc;
 		iTarget.Close();
 		iImage.Close();
+		iCollection.Close();
 		}
+	// scene mode: the surface under the image, and the scene element showing it
+	TBool HasSurface() const { return iHasSurface; }
+	const TSurfaceId& SurfaceId() const { return iCollection.SurfaceId(); }
+	MWsElement* iElement;
 	MWsGraphicsContext* Gc() const { return iGc; }
 	TSize Size() const { return iSize; }
 	const TSgDrawableId& Id() const { return iImage.Id(); }
 private:
-	void ConstructL(const TSize& aSize, TInt aScreen)
+	void ConstructL(const TSize& aSize, TInt aScreen, TBool aSurface)
 		{
 		CDirectGdiDriver* driver = CDirectGdiDriver::Static();
 		if (!driver)
@@ -63,13 +72,24 @@ private:
 		info.iUsage = ESgUsageDirectGdiTarget | ESgUsageWindowGcSource;
 		info.iCpuAccess = ESgCpuAccessNone;
 		info.iScreenId = aScreen;
-		User::LeaveIfError(iImage.Create(info, NULL, 0));
+		if (aSurface)
+			{
+			// one image in a collection: the collection is a surface, so the scene can compose it as an element
+			info.iUsage |= ESgUsageCompositionSource;
+			User::LeaveIfError(iCollection.Create(info, 1));
+			User::LeaveIfError(iCollection.OpenImage(0, iImage));
+			iHasSurface = ETrue;
+			}
+		else
+			User::LeaveIfError(iImage.Create(info, NULL, 0));
 		iTarget = RDirectGdiImageTarget(*driver);
 		User::LeaveIfError(iTarget.Create(iImage));
 		iGc = CDirectGdiGcWrapper::NewL();
 		User::LeaveIfError(iGc->DirectGdiGc().Activate(iTarget));
 		}
 private:
+	RSgImageCollection iCollection;
+	TBool iHasSurface;
 	RSgImage iImage;
 	RDirectGdiImageTarget iTarget;
 	CDirectGdiGcWrapper* iGc;
@@ -168,7 +188,8 @@ private:
 	TGroup* Group(const MWsWindowTreeNode* aNode);
 	static const MWsWindowTreeNode* GroupOf(const MWsWindowTreeNode& aNode);
 	void Summary();
-	TInt MakeTarget(CPheTarget*& aTarget, TAny*& aSource);
+	TInt MakeTarget(CPheTarget*& aTarget, TAny*& aSource, TBool aSurface = EFalse);
+	void SceneElements(TBool aShow, const TRect& aScreen);
 	void DropTarget(CPheTarget*& aTarget, TAny*& aSource);
 	TInt TileOf(const TGroup& aGroup) const;
 	void Compose(TRequestStatus* aFinished);
@@ -203,6 +224,9 @@ private:
 	TSize iLastSize;
 	MWsGraphicsContext* iNextGc;
 	MWsDrawableSourceProvider* iSources;
+	MWsScene* iScene;						// wsini PHECOMPSCENE: the groups are scene elements (no per-frame copy)
+	MWsElement* iSceneTop;					// the topmost element that is not ours (the window server's UI element)
+	TBool iSceneShown;						// our elements are in the scene
 	TSize iSize;							// the targets: square, the screen's longer side (either orientation fits)
 	MWsScreenDevice* iDevice;
 	TInt iScreenNumber;
@@ -262,6 +286,12 @@ void CPheCompStage::ConstructComposeL(MWsIniFile* aIni)
 		return;
 		}
 	iDevice = dev;
+	_LIT(KScene, "PHECOMPSCENE");
+	if (aIni->FindVar(KScene))
+		{
+		iScene = Next()->ObjectInterface<MWsScene>();
+		RDebug::Printf("PH: [phecomp] scene elements %s", iScene ? "on" : "asked for, but the next stage has no MWsScene");
+		}
 	const TSize s = dev->SizeInPixels();
 	iSize = TSize(Max(s.iWidth, s.iHeight), Max(s.iWidth, s.iHeight));
 	iScreenNumber = dev->ScreenNumber();
@@ -274,11 +304,34 @@ void CPheCompStage::ConstructComposeL(MWsIniFile* aIni)
 
 // an off-screen target the size of the screen, with alpha (a group that draws only part of the screen leaves the rest
 // transparent), cleared, and known to the next stage as a drawable source
-TInt CPheCompStage::MakeTarget(CPheTarget*& aTarget, TAny*& aSource)
+TInt CPheCompStage::MakeTarget(CPheTarget*& aTarget, TAny*& aSource, TBool aSurface)
 	{
 	aTarget = NULL;
 	aSource = NULL;
-	TRAPD(err, aTarget = CPheTarget::NewL(iDevice->SizeInPixels(), iScreenNumber));
+	TRAPD(err, aTarget = CPheTarget::NewL(iDevice->SizeInPixels(), iScreenNumber, aSurface && iScene));
+	if (err == KErrNone && aTarget->HasSurface())
+		{
+		err = iScene->RegisterSurface(aTarget->SurfaceId());
+		if (err == KErrNone)
+			{
+			TRAP(err, aTarget->iElement = iScene->CreateSceneElementL());
+			if (err == KErrNone)
+				{
+				const TRect r(aTarget->Size());
+				aTarget->iElement->ConnectSurface(aTarget->SurfaceId());
+				aTarget->iElement->SetSourceRectangle(r);
+				aTarget->iElement->SetDestinationRectangle(r);
+				TUint32 flags = 0;
+				aTarget->iElement->GetTargetRendererFlags(flags);
+				aTarget->iElement->SetTargetRendererFlags(flags | MWsElement::EElementTransparencySource);
+				}
+			else
+				iScene->UnregisterSurface(aTarget->SurfaceId());
+			}
+		if (err != KErrNone)
+			RDebug::Printf("PH: [phecomp] scene element: %d", err);
+		iFull = ETrue;
+		}
 	if (err == KErrNone)
 		err = iSources->CreateDrawableSource(aTarget->Id(), aSource);
 	if (err != KErrNone)
@@ -300,6 +353,14 @@ void CPheCompStage::DropTarget(CPheTarget*& aTarget, TAny*& aSource)
 	if (aSource && iSources)
 		iSources->CloseDrawableSource(aSource);
 	aSource = NULL;
+	if (aTarget && aTarget->iElement && iScene)
+		{
+		iScene->RemoveSceneElement(aTarget->iElement);	// (not inserted: KErrArgument, harmless)
+		iScene->DestroySceneElement(aTarget->iElement);
+		iScene->UnregisterSurface(aTarget->SurfaceId());
+		aTarget->iElement = NULL;
+		iFull = ETrue;
+		}
 	delete aTarget;
 	aTarget = NULL;
 	}
@@ -464,6 +525,53 @@ void CPheCompStage::Prune(const TSize& aSize)
 			&& g->iBounds.Width() >= aSize.iWidth && g->iBounds.Height() >= aSize.iHeight)
 			covered = ETrue;
 		}
+	}
+
+// scene mode: the groups' targets are elements above the window server's UI element (which now carries only the "rest":
+// the root window and sprites), back to front in the group order. Re-stacked after a structural change; while tiling (the
+// tiles are scaled copies) they are taken out of the scene.
+void CPheCompStage::SceneElements(TBool aShow, const TRect& aScreen)
+	{
+	if (!aShow)
+		{
+		if (iSceneShown)
+			for (TInt i = 0; i < iCount; ++i)
+				if (iGroups[i].iTarget && iGroups[i].iTarget->iElement)
+					iScene->RemoveSceneElement(iGroups[i].iTarget->iElement);
+		iSceneShown = EFalse;
+		return;
+		}
+	if (iSceneShown && !iFull)
+		return;
+	for (TInt i = 0; i < iCount; ++i)
+		if (iGroups[i].iTarget && iGroups[i].iTarget->iElement)
+			iScene->RemoveSceneElement(iGroups[i].iTarget->iElement);
+	MWsElement* below = iSceneTop;
+	for (TInt o = iOrderCount - 1; o >= 0; --o)
+		{
+		TGroup* g = Group(iOrder[o]);
+		if (!g || !g->iTarget || !g->iTarget->iElement || g->iCovered)
+			continue;
+		MWsElement* e = g->iTarget->iElement;
+		e->SetDestinationRectangle(aScreen);
+		e->SetSourceRectangle(aScreen);
+		if (!below)
+			{
+			// the first time: put ours at the bottom, walk up to the top of the others, and put it back above that
+			iScene->InsertSceneElement(e, NULL);
+			MWsElement* top = NULL;
+			for (MWsElement* x = e->ElementAbove(); x; x = x->ElementAbove())
+				top = x;
+			iScene->RemoveSceneElement(e);
+			iSceneTop = top;
+			below = top;
+			}
+		const TInt err = iScene->InsertSceneElement(e, below);
+		if (err != KErrNone)
+			RDebug::Printf("PH: [phecomp] scene insert: %d", err);
+		below = e;
+		}
+	iSceneShown = ETrue;
 	}
 
 // memory: a group keeps its target only while it shows a window (tiles keep theirs); it gets a new one at its next
@@ -645,6 +753,8 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 	iFocusNode = focus;
 	const TSize size = iDevice->SizeInPixels();		// the current screen mode's (the UI turns; the targets do not)
 	const TRect screen(size);
+	if (iScene)
+		SceneElements(!tiling, screen);		// before iFull is consumed below
 	TRegionFix<1> all(screen);
 	// only what changed, unless the layout changed (tiles are scaled: always whole)
 	RRegion dirty;
@@ -688,7 +798,8 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 		if (TGroup* g = Group(iOrder[o]))
 			if (TileOf(*g) >= 0 && g->iSource)
 				frontTile = o;
-	for (TInt pass = 0; pass < (tiling ? 3 : 1); ++pass)
+	const TBool scene = iScene && !tiling;
+	for (TInt pass = 0; pass < (tiling ? 3 : 1) && !scene; ++pass)
 	for (TInt o = iOrderCount - 1; o >= 0; --o)
 		{
 		TGroup* g = Group(iOrder[o]);
@@ -996,7 +1107,7 @@ void CPheCompStage::WindowRedrawStart(const MWsWindowTreeNode& aNode, const TReg
 		iProxy.iTarget = iSink->Gc();
 		return;
 		}
-	if (g && !g->iTarget && MakeTarget(g->iTarget, g->iSource) == KErrNone)
+	if (g && !g->iTarget && MakeTarget(g->iTarget, g->iSource, ETrue) == KErrNone)
 		RDebug::Printf("PH: [phecomp] group %d '%S': own target (%d targets)", g->iId, &g->iName, ++iTargets);
 	iProxy.iTarget = (g && g->iTarget) ? g->iTarget->Gc() : iRest->Gc();
 	}
