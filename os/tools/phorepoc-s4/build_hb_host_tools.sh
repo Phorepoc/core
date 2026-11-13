@@ -18,6 +18,12 @@ QH=$S4/qt-host
 HB=$S4/hb-src
 OUT=$S4/hb-host
 mkdir -p "$OUT" "$S4/hb-themes"
+# the release's Qt tree lacks FreeType's include/freetype/internal/ (the mirror dropped every `internal` dir there);
+# the host QtGui (Qt/Embedded) compiles Qt's bundled FreeType 2.3.9 -> the same version's headers from upstream
+FT=$S4/freetype-2.3.9.tar.bz2
+[ -f "$FT" ] || curl -sSfL -o "$FT" https://download.savannah.gnu.org/releases/freetype/freetype-old/freetype-2.3.9.tar.bz2
+echo "51a033bce9904d73e0821e8e2bba24bd319619d7d1b2e9eeccac611580242ab6 *$FT" | sha256sum -c - >/dev/null \
+  || { echo "FreeType tarball checksum mismatch"; rm -f "$FT"; exit 1; }
 # the same guard flags as the host moc/rcc/uic (Qt 4 vs modern GCC: null-this checks, object lifetimes), added
 # through CXX so each Makefile keeps its own CXXFLAGS (-fPIC ...). QT_QCHAR_CONSTRUCTOR: Orbit is built with it
 # (configure.py), and Qt's qbase.pri adds it on Symbian only -- the host Qt must have the same QString API.
