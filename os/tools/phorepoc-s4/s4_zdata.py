@@ -11,6 +11,7 @@ import sys
 
 BUILD = os.environ["PHOREPOC_BUILD"]
 S10 = os.path.join(os.environ["PHOREPOC_SYMBIAN"], "symbian-2010")
+OS_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 REPO = ""   # (absolute paths below; the private tree used repo-relative ones)
 S4R = os.path.join(BUILD, "qt48")
 B = S10
@@ -49,12 +50,7 @@ HS_DATA = [
     (r"private\20022f35\import\widgetregistry\20022F6C\qtg_graf_hswidget_preview_clock.svg",
      f"{HSA}/widgetplugins/hsclockwidgetplugin/resource/qtg_graf_hswidget_preview_clock.svg"),
     (r"resource\qt\crml\hsapplibrary.qcrml", f"{HSA}/stateplugins/hsapplibrarystateplugin/conf/hsapplibrary.qcrml"),
-    # the Qt service framework's ROM database (tools/phorepoc-s4/build_servicedb.sh: servicedbgen over the
-    # descriptors, as the release's qt/qtservice build extension)
-    # the name carries the RUNNING Qt's version (databasemanagersession.cpp: "QtServiceFramework_" + qVersion major.minor): on
-    # our Qt 4.8 the same content as 4.8 (a phone boot, 2026-10-21: no state plug-ins -> HsStateMachine::createStates NULL deref)
-    (r"private\2002ac7f\QtServiceFramework_%s_system.db" % ("4.8" if S4R != ".phorepoc-s4-build" else "4.7"),
-     S4R + "/sfw/epoc32/data/z/private/2002AC7F/QtServiceFramework_4.7_system.db"),
+    # (no Qt service framework database: Orbit's descriptors go to the database manager's import folder, service_descriptors.py)
 ]
 # Qt plug-in stubs (qmake's qmakepluginstubs/<target>.qtplugin): QPluginLoader finds a Symbian plug-in DLL through
 # the stub in \resource\qt\plugins\<subdir>
@@ -92,7 +88,7 @@ HS_DATA += [
      f"{HSRVR}/activityfw/orbitintegration/hbactivityplugin/qmakepluginstubs/hbactivityplugin.qtplugin"),
     (r"resource\activity\afservice.xml", f"{HSRVR}/activityfw/activityserviceplugin/data/afservice.xml"),
     # the repository hsapplicationlauncher needs (no definition in the release: a board file, key 0x7 = language set)
-    (r"private\10202be9\2002b3aa.txt", "toolchain/shims/hs_board/2002b3aa.txt"),
+    (r"private\10202be9\2002b3aa.txt", os.path.join(OS_ROOT, "toolchain", "shims", "hs_board", "2002b3aa.txt")),
 ]
 
 
