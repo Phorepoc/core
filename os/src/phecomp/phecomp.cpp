@@ -283,12 +283,16 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 	iNextGc->Clear();
 	iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModePEN);
 	iSources->DrawResource(iRestSource, screen, screen);
+	// two passes: the other groups where the window server put them, then (tiling) the tiles above them all, back one first
+	for (TInt pass = 0; pass < (tiling ? 2 : 1); ++pass)
 	for (TInt o = iOrderCount - 1; o >= 0; --o)
 		{
 		TGroup* g = Group(iOrder[o]);
 		if (!g || !g->iSource)
 			continue;
 		const TInt t = TileOf(*g);
+		if (tiling && (t >= 0) != (pass == 1))
+			continue;
 		if (tiling && t >= 0)
 			{
 			// a tile: half the width less a margin, the screen's aspect
