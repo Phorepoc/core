@@ -21,6 +21,7 @@ SOURCE			phecomp.cpp
 SOURCEPATH		../../baseline/symbian-2010/oss.FCL.sf.os.graphics/windowing/windowserverplugins/openwfc/src
 SOURCE			directgdigcwrapper.cpp utils.cpp
 
+SOURCEPATH		.
 START RESOURCE	E7017C00.rss
 TARGET			phecomp.rsc
 END
