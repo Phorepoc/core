@@ -167,6 +167,9 @@ COMPONENTS = {
     "voicerecorderrecview": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.voicerec/voicerecorder/group/RecView.mmp", flags=_VR_INC),
     "voicerecorder": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.voicerec/voicerecorder/group/VoiceRecorderApp.mmp", flags=_VR_INC,
                           rsc_incs=_VR_RSC),
+    # its Control Panel entry (Applications > Voice recorder: quality and memory in use)
+    "gsvoicerecorderplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.voicerec/voicerecorder/gsplugin/group/GSVoiceRecorderPlugin.mmp", flags=_VR_INC,
+                                  rsc_incs=_VR_RSC),
     # --- FM Radio (app.radio RCL_3 + mmmw radioutility): the UI runs without a tuner (radio server / tuner DD absent)
     # the radio server + the adaptation stub (adapt.stubs: no tuner hardware; the stub lets CRadioUtility open its session so the UI starts)
     "fmradiotunercontrol": dict(mmp="oss.FCL.sf.adapt.stubs/audiostubs/fmradiotunercontrolstub/Group/FMRadioTunerControlStub.mmp"),
