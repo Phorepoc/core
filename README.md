@@ -60,7 +60,8 @@ output, which otherwise go into `symbian/` and `build/` here.
 
 ## License
 
-Code we wrote is Apache-2.0. Symbian files we've changed are EPL-2.0, with GPL-2.0-or-later as a Secondary License
+Code we wrote is Apache-2.0, except the window compositor (`os/src/phecomp`), which is BSD-2-Clause.
+Symbian files we've changed are EPL-2.0, with GPL-2.0-or-later as a Secondary License
 (EPL-1.0 lets us move them to the newer version). Symbian sources we use unchanged are downloaded from upstream and stay
 EPL-1.0. A few third-party files carry their own license in their headers. The license texts are in `LICENSES/`.
 

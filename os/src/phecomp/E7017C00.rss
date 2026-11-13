@@ -1,0 +1,31 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: BSD-2-Clause
+
+// E7017C00.rss -- the ECOM registration of phecomp: one window-server plug-in (CWsPlugin interface 0x10285A29)
+#include <ecom/registryinfoconst.hrh>
+#include <ecom/registryinfov2.rh>
+
+RESOURCE REGISTRY_INFO theInfo
+	{
+	resource_format_version = RESOURCE_FORMAT_VERSION_2;
+	dll_uid = 0xE7017C00;
+	interfaces =
+		{
+		INTERFACE_INFO
+			{
+			interface_uid = 0x10285A29;
+			implementations =
+				{
+				IMPLEMENTATION_INFO
+					{
+					implementation_uid = 0xE7017C01;
+					version_no = 1;
+					display_name = "phecomp";
+					default_data = "";
+					opaque_data = "";
+					rom_only = 1;
+					}
+				};
+			}
+		};
+	}

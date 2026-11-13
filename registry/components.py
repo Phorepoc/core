@@ -343,6 +343,8 @@ COMPONENTS = {
                             # rejected (SetSourceRectangle KErrArgument -> client panic WSERV 76)
                             defs=["SYMBIAN_ROTATION_MODE_CHANGES"],
                             drop=["openwfcwrapper.cpp"], extra=["toolchain/shims/wsstdplugin_board/openwfcwrapper.cpp"]),
+    # OURS: phecomp, the window compositor as a render stage (os/src/phecomp; BSD-2). wsini: PHECOMP=1 at ROM time puts it first in the chain
+    "phecomp": dict(mmp=os.path.join(OS_ROOT, "src/phecomp/phecomp.mmp"), nga=True),
     # "keyrouter.dll" (wsini KEYROUTERPLUGIN overrides) and LEAVES without it -- the NGA boot's EWsPanicFailedToInitialise
     "keyrouter": dict(mmp=f"{G}/windowing/windowserverplugins/keyeventrouting/group/keyeventrouting.mmp", nga=True,
                       drop=["keyrouter.cpp"], extra=["toolchain/shims/keyrouter_board/keyrouter.cpp"],   # no combined power/end key

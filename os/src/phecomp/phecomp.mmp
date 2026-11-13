@@ -1,0 +1,27 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: BSD-2-Clause
+
+// phecomp.mmp -- OURS: phecomp, the window compositor as an NGA window-server render stage (phecomp.cpp, README.md)
+#include <platform_paths.hrh>
+
+TARGET			phecomp.dll
+TARGETTYPE		PLUGIN
+UID				0x10009D8D 0xE7017C00
+CAPABILITY		PowerMgmt ReadDeviceData WriteDeviceData ProtServ
+VENDORID		0x70000001
+
+MACRO			SYMBIAN_GRAPHICS_GCE
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			phecomp.cpp
+
+START RESOURCE	E7017C00.rss
+TARGET			phecomp.rsc
+END
+
+LIBRARY			euser.lib
+LIBRARY			ecom.lib
+LIBRARY			wsgraphicdrawer.lib
+
+SMPSAFE
