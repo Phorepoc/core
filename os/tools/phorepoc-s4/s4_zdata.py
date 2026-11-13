@@ -103,7 +103,7 @@ HS_DATA += [
 # folder -- the plug-in stub, the manifest, the icon and the service descriptor. The descriptor is the package's
 # xml_for_sisx, the one Nokia made for an installed widget (its <filepath> names the stub on c:)
 HSWR = S4R + "/hsw/app"
-for _uid, _n in (("2002EAD2", "profileswidgetplugin"), ("2002EAD3", "silentwidgetplugin")):
+for _uid, _n in (("2002EAD2", "profileswidgetplugin"),):
     _dst = rf"private\20022f35\import\widgetregistry\{_uid}" + "\\"
     HS_DATA += [
         (_dst + f"{_n}.qtplugin", f"{HSWR}/{_n}/qmakepluginstubs/{_n}.qtplugin"),

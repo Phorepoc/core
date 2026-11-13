@@ -222,8 +222,6 @@ COMPONENTS = {
     # over the S^3 profile engine (profileeng, in the image)
     "profileswidgetplugin": _qx(HSW, "profileswidgetplugin/profileswidgetplugin_dll.mmp",
                                 "profileswidgetplugin/plugin_commonu.def", rom="profileswidgetplugin.dll", flags=_HSFLAGS),
-    "silentwidgetplugin": _qx(HSW, "silentwidgetplugin/silentwidgetplugin_dll.mmp",
-                              "silentwidgetplugin/plugin_commonu.def", rom="silentwidgetplugin.dll", flags=_HSFLAGS),
     "hswidgetuninstaller": _qx(HS, "homescreenapp/hswidgetuninstaller/hswidgetuninstaller_exe.mmp", flags=_HSFLAGS),
     # (its registration declares Qt Highway services: xqserviceipcconst.h, an S^4 export)
     "hsapplication": _qx(HS, "homescreenapp/hsapplication/hsapplication_exe.mmp", flags=_HSFLAGS,

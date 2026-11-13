@@ -17,7 +17,7 @@ mkdir -p "$Q/hsw/app"
 : > "$Q/hsw/common.pri"
 echo "QT_BUILD_TREE = $Q/qt-symbian" > "$Q/hsw/.qmake.cache"
 
-for pkg in profileswidgetplugin silentwidgetplugin; do
+for pkg in profileswidgetplugin; do   # (silentwidgetplugin needs the S^4 profile engine: KProEngSilenceMode)
   s4_export oss.FCL.sf.app.$pkg hsw/app/$pkg $pkg.pro
   d=$Q/hsw/app/$pkg
   ( cd "$d" && "$QMAKE" -cache "$Q/hsw/.qmake.cache" -spec "$Q/qt-symbian/mkspecs/symbian-sbsv2" "$pkg.pro" > qmake.log 2>&1 ) \
