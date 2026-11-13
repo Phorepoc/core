@@ -1044,8 +1044,22 @@ COMPONENTS = {
     # the process's own capabilities on the log (proves the header capabilities of an installed package): SIS test, not in the ROM
     "phecaps": dict(mmp=os.path.join(OS_ROOT, "src/phecaps/phecaps.mmp"), test=True),
     # OURS: the browser frontend (custom-drawn CONE UI; engines plug in through os/inc/phorepoc/phewebengine.h)
-    "phebrowser": dict(needs="webengine", mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp"),
-                       rom_data=["resource\\apps\\phebrowser_icon.mbm=" + os.path.join(OS_ROOT, "src/phebrowser/data/phebrowser_icon.mbm")]),
+    # It is also released as a SIS of its own (package.conf, recipes/sis.sh: Catalogue, browser updates without a new image, older
+    # Symbian^3 phones), so the image's copy is laid out RAM-loadable (`sis`), the image carries a ROM stub listing its files
+    # (`rom_stub`, pdk tools/rom_stubs.py) and the SIS (--rom-upgrade) installs over them. heap_max = rom_heap.tsv's, which only
+    # the ROM copy gets: an installed copy keeps its image header's (engines allocate through the process heap).
+    "phebrowser": dict(needs="webengine", mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp"), sis=True, heap_max=0x10000000,
+                       rom_data=["resource\\apps\\phebrowser_icon.mbm=" + os.path.join(OS_ROOT, "src/phebrowser/data/phebrowser_icon.mbm")],
+                       rom_stub=dict(name="Phorepoc Browser", files=["sys\\bin\\phebrowser.exe", "resource\\apps\\phebrowser.rsc",
+                                                                     "resource\\apps\\phebrowser_icon.mbm",
+                                                                     "private\\10003a3f\\import\\apps\\phebrowser_reg.rsc"])),
+    # The same frontend as a stock-loader ARM image (`device`) for the ARM SIS: it runs on Phorepoc's ARM boards and on stock
+    # Symbian^3 phones (their framework DLLs serve the 2010 ordinals it imports; no _ZTI data imports, which stock firmware does
+    # not serve). Not in any ROM: the ARM images carry the `phebrowser` key's build (`package_only`: never built by --all, which
+    # would overwrite that image of the same name; only package.yml names it).
+    "phebrowser_arm": dict(needs="webengine", mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp"), rom="phebrowser.exe",
+                           package_only=True, arm_only=True, device=True, sis=True, rtti=True, import_typeinfo=False, static_ctors=True, arm_heap_max=0x10000000,
+                           rom_data=["resource\\apps\\phebrowser_icon.mbm=" + os.path.join(OS_ROOT, "src/phebrowser/data/phebrowser_icon.mbm")]),
     "tonetest": dict(mmp=os.path.join(OS_ROOT, "src/tonetest/tonetest.mmp"), test=True),
     # --- vector graphics: what the default skin's backgrounds + every real icon need (next: vgrenderer,
     "svgengine": dict(mmp="oss.FCL.sf.mw.svgt/svgtopt/SVG/SVGEngine/group/SVGEngine.mmp",
