@@ -37,6 +37,15 @@
 #include "advancedpointereventhelper.h"
 #include "graphics/pointereventdata.h"
 #include "debughelper.h"
+#include "screen.h"
+
+// Phorepoc: the pointer filter a render stage may offer (core os/src/phecomp declares the same)
+class MPhePointerFilter
+	{
+public:
+	enum { ETypeId = 0xE7017C02 };
+	virtual TBool FilterPointer(TRawEvent& aEvent) = 0;	// EFalse = drop it
+	};
 
 TTimeIntervalMicroSeconds32 TWsPointer::iDoubleClickMaxInterval;
 TInt 			   TWsPointer::iDoubleClickMaxDistance;
@@ -686,6 +695,13 @@ TBool TWsPointer::PreProcessDriverEvent(TRawEvent &aRawEvent)
 		return ETrue;
 	
 	{ static TInt phN = 0; if (phN < 24 && type != TRawEvent::EPointerMove) { ++phN; RDebug::Printf("PH: WSERV raw pointer type=%d pos=%d,%d xy=%d max=%d", (TInt)type, aRawEvent.Pos().iX, aRawEvent.Pos().iY, (TInt)XyInput(), iMaxPointers); } }
+	// Phorepoc: a compositor stage (phecomp) that places windows itself maps the pointer back to the window server's
+	// layout -- or drops the event (a press that only focuses or drags) -- before the hit test
+	if (const CScreen* screen = CWsTop::Screen())
+		if (MWsWindowTreeObserver* stage = screen->WindowTreeObserver())
+			if (MPhePointerFilter* filter = static_cast<MPhePointerFilter*>(stage->ResolveObjectInterface(MPhePointerFilter::ETypeId)))
+				if (!filter->FilterPointer(aRawEvent))
+					return EFalse;
 	if (!XyInput())
 		{
 		return EFalse;

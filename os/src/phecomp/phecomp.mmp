@@ -19,13 +19,13 @@ USERINCLUDE		../../baseline/symbian-2010/oss.FCL.sf.os.graphics/windowing/window
 SOURCEPATH		.
 SOURCE			phecomp.cpp
 SOURCEPATH		../../baseline/symbian-2010/oss.FCL.sf.os.graphics/windowing/windowserverplugins/openwfc/src
-SOURCE			rendertarget.cpp directgdigcwrapper.cpp utils.cpp
+SOURCE			directgdigcwrapper.cpp utils.cpp
 
 START RESOURCE	E7017C00.rss
 TARGET			phecomp.rsc
 END
 
-LIBRARY			euser.lib
+LIBRARY			euser.lib ws32.lib
 LIBRARY			ecom.lib
 LIBRARY			wsgraphicdrawer.lib
 LIBRARY			directgdi.lib graphicsresource.lib fbscli.lib gdi.lib bitgdi.lib lookuptable.lib estor.lib

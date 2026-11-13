@@ -34,22 +34,33 @@ The wsini also gets `CHANGETRACKING` and `PHECOMPTILE <uid> <uid>` (default `100
 stage then:
 
 - hands the window server its own `MWsGraphicsContext` (a forwarder, `phecompfwd.inc`) whose target switches at every window
-  redraw bracket: each window group draws into its own off-screen target (a square RSgImage of the screen's longer side, with
-  alpha, made at the group's first redraw, freed with the group); drawing outside a bracket (root window, sprites) goes to a
-  "rest" target. `CHANGETRACKING` makes the window server draw every window whole, covered or not;
+  redraw bracket: each window group draws into its own off-screen target (one RSgImage of the current screen size, ARGB
+  premultiplied, with a DirectGDI context); drawing outside a bracket (root window, sprites) goes to a "rest" target.
+  `CHANGETRACKING` makes the window server draw every window whole, covered or not;
 - composes in `End()`: the rest, then every group back to front (the order from `SiblingOrderChanged`) through the next stage's
-  `MWsDrawableSourceProvider`; when both `PHECOMPTILE` apps run, those two are drawn side by side, scaled to half the width, the
-  front one framed as focused.
+  `MWsDrawableSourceProvider`; when both `PHECOMPTILE` apps run, those two are drawn above the rest, side by side at half
+  width, the front one framed as focused, each with a darker outer band as its drag handle;
+- memory: front to back, the groups down to the first named one that covers the screen keep their targets; the ones behind it
+  free theirs and draw into a 1x1 sink (tiles never), and repaint (`MWsWindow::Invalidate`) once they are in front again. A
+  group that shows no window frees its target; a target of the wrong size (the UI turned) is re-made;
+- stale pixels: when a top-level window hides, moves or goes, its old place is cleared in the group's target and the group's
+  other windows repaint it; a hidden nested window has its parent repaint the place;
+- pointer (tiling only): the window server's pointer pre-processing (core `toolchain/shims/wserv_board/pointer_nga.cpp`) asks
+  the first stage for `MPhePointerFilter` (type 0xE7017C02). A press in the focused tile goes to its app, mapped to the app's
+  full-screen coordinates (moves and the release follow the press); a press in the other tile only focuses it (click-to-focus:
+  a window server client thread of the stage brings that group to the front); a press on a tile's band drags the tile;
+  everything else is dropped. The digitiser's coordinates are portrait: a landscape mode is handled as the portrait one turned.
 
-The off-screen target and the DirectGDI graphics context are the 2010 standard plug-in's (`rendertarget.cpp`,
-`directgdigcwrapper.cpp`, `utils.cpp`, EPL-1.0), compiled from the Symbian source tree, not copied.
+The DirectGDI graphics context is the 2010 standard plug-in's (`directgdigcwrapper.cpp`, `utils.cpp`, EPL-1.0), compiled
+from the Symbian source tree, not copied.
 
-Not yet: pointer mapping (the window server still hit-tests its own full-screen layout), click-to-focus, drag; a group's stale
-pixels after a window inside it hides or moves.
+Seen as a side effect: windows drawn with an alpha channel over others (the Notes editor's lined page and its text, the
+middle softkey clock) come out right in compose mode, while the standard NGA chain without `CHANGETRACKING` draws them white
+or black.
 
 ## Next
 
-Pointer mapping before the window server's hit test; click-to-focus and drag; MWsScene elements instead of the per-frame
-copy; then the window manager (`phewm`: placement, stacking, decorations).
+MWsScene elements instead of the per-frame copy; z-order for overlays (the task switcher draws under the tiles); then the
+window manager (`phewm`: placement, stacking, decorations).
 
 UIDs: DLL 0xE7017C00, implementation 0xE7017C01. Licence: BSD-2-Clause (the three 2010 plug-in sources it builds: EPL-1.0).
