@@ -30,7 +30,7 @@
 #include <eikbtgpc.h>
 #include <txtfrmat.h>
 #include <txtfmlyr.h>
-#include <frmtview.h>
+#include <gulutil.h>
 #include <avkon.hrh>
 #include <apgcli.h>
 #include <apacmdln.h>
@@ -578,7 +578,10 @@ public:
 		TRect f = FieldRect(l);
 		f.iTl.iX += f.Height() / 2;
 		f.iBr.iX -= f.Height();               // room for the clear (x) button
-		f.Shrink(0, 3);
+		const CFont* font = iSmall ? iSmall : iEikonEnv->NormalFont();
+		const TInt h = font->FontMaxHeight() + 2;   // the editor's line: ascent + descent (a fixed inset cut g/j/p/q)
+		f.iTl.iY = f.Center().iY - h / 2;
+		f.iBr.iY = f.iTl.iY + h;
 		return f;
 		}
 	TRect ClearRect(const TPbLayout& l) const
@@ -638,9 +641,10 @@ public:
 			DrawDeferred();
 			return;
 			}
+		iFieldBg.iColor = Rgb(tk.iField);      // every background the editor paints (FORM's line ends included) goes through
+		iEdit->SetBackground(&iFieldBg);       // this drawer; without one Avkon's custom draw left a white block after the text
+		iEdit->SetBorderViewMargins(TMargins8());   // the text view = the whole field (the default margins cut the descenders)
 		iEdit->SetRect(EditRect(l));
-		if (iEdit->TextView())                 // FORM clears past the text with the view's own background
-			iEdit->TextView()->SetBackgroundColor(Rgb(tk.iField));   // (its default, ESystemBackgroundColor, was a white block)
 		if (iPageInput)                        // a page field: start with its value (an older engine has none: empty)
 			{
 			HBufC* v = HBufC::NewLC(1024);
@@ -1780,6 +1784,17 @@ private:
 	TBool iEngineFailed = EFalse;
 	TBuf<400> iQueue;
 	CFbsBitmap* iPageBmp = NULL;
+	struct TPbFieldBg : public MCoeControlBackground    // the address editor's background: the bar's field colour
+		{
+		void Draw(CWindowGc& aGc, const CCoeControl& /*aControl*/, const TRect& aRect) const
+			{
+			aGc.SetPenStyle(CGraphicsContext::ENullPen);
+			aGc.SetBrushStyle(CGraphicsContext::ESolidBrush);
+			aGc.SetBrushColor(iColor);
+			aGc.DrawRect(aRect);
+			}
+		TRgb iColor;
+		} iFieldBg;
 	CEikEdwin* iEdit = NULL;
 	CEikSecretEditor* iSecret = NULL;       // the page's password fields (PHE_EV_FOCUS b = 1)
 	TBool iSecretMode = EFalse;             // the open editor is iSecret
