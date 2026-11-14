@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """hb_zdata -- Orbit's ROM data (Symbian^4 S4.4, docs/phorepoc/symbian4-build.md), for the S^4 ROM.
 
 Orbit's .pro files export their Z: data with hbPrjExport("<src>", "$${EPOCROOT}epoc32/data/z/<rom path>") -- the

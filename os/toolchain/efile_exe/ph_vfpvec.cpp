@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // ph_vfpvec.cpp -- OURS: mark the VFP short-vector blocks of a RAM-loaded ARM image for the kernel (2026-10-27).
 // ARM11 (VFPv2) runs VFP data-processing instructions over FPSCR.LEN+1 registers; RVCT-built games enter that mode with

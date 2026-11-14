@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 """mk_qt_stubs.py <outdir> -- the ROM stub SIS files for the Qt we ship (docs/phorepoc/qt48-build.md), as qt.iby's
 System\\Install\\qt_stub.sis: a SIS of a Qt app declares "(0x2001E61C), 4, 7, 3, {"Qt"}" and SWI refuses it unless that package is

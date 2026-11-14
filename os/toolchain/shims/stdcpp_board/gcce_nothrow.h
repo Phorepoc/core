@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // gcce_nothrow.h -- OURS (ARM, pre-included by the components built with C++ exceptions on: libstdcpp).
 // Our ARM prefix leaves __NO_THROW / __THROW empty, which fits code built without exceptions. With them on,

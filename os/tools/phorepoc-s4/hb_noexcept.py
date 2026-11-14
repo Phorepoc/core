@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """hb_noexcept.py -- Symbian^4 S4.4 (docs/phorepoc/symbian4-build.md): Orbit without C++ exceptions, as Qt (patch 0001).
 
 Our x32 board has no C++ unwinder (TRAP is setjmp-based), so Qt is built QT_NO_EXCEPTIONS. Orbit's own try/catch are

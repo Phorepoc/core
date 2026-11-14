@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 // ctelprobe: what CTelephony (the third-party telephony API QtMobility's systeminfo uses) says about the network, every 10 s
 // for three minutes after the process starts (its requests complete through active objects: it runs a scheduler like a Qt app).
 #include <e32base.h>

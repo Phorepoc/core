@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 #
 # Stand-in for Symbian's uidcrc tool (snmtool.pl's WRITER.pm runs it): prints the three UIDs and the UID checksum
 # (CRC-16/CCITT over the even and the odd bytes of the 12-byte UID block, as euser's crypt.cpp does).

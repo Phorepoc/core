@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // xu_rtnames.cpp -- Phorepoc amd64/x32: the runtime names the toolchain's own archives (the distro libsupc++, libgcc)
 // reference in an image that has no provider for them. build_mmp_x32.py links this object, with the -DRT_<name> of each

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phelooptest.cpp -- OURS: boot test of Open C sockets on the loopback with NO connection up (no RConnection, no setdefaultif, no IAP):
 // a TCP listen / connect / accept / send / recv exchange and a UDP datagram to itself, all on 127.0.0.1. The 2010 backend refused every

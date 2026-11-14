@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: Apache-2.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 /* features.h -- OURS (S4.1): an empty stand-in for glibc's, which libstdc++'s Linux os_defines.h includes.
  * Qt on Symbian takes only libstdc++'s freestanding headers (<exception>, <typeinfo>, <new>) from the container
  * gcc, searched after everything of ours (emitter/components_s4.py); none of them needs glibc's feature macros. */

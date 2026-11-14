@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """make_icon.py -- renders the aknapp launcher icon (a window) to the Etesian design language
 (https://language.etesian-design.com; see ../../../tools/icongen/icongen.py). Writes aknapp_icon.svg (the source),
 aknapp_icon.mbm (64x64 bitmap + mask, the registration's icon_file) and aknapp_icon_preview.png. Run: py make_icon.py (needs Pillow)."""

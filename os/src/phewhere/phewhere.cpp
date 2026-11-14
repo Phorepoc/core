@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phewhere.cpp -- OURS: which DLL holds a code address, and the nearest export below it. RAM-loaded code runs at the
 // same address in every process (the code is shared), so a crash pc from the kernel's exception log can be placed

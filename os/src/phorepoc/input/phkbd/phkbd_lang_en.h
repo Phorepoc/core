@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: Apache-2.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // phkbd_lang_en.h -- OURS (Phorepoc): the English (QWERTY) keyboard language of phkbd, as data (see phkbd_lang.h).
 #ifndef PHKBD_LANG_EN_H

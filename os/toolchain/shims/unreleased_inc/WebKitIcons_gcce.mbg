@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: Apache-2.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // WebKitIcons_gcce.mbg -- OURS (not Symbian source): WebCore's ImageSymbian.cpp includes this name under __GCCE__,
 // but nothing in the release generates it (the GCCE icon build lived outside the source). The icons are the same

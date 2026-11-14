@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """make_icon.py -- renders the Browser launcher icon (globe glyph on the "browser" accent) to the Etesian design language
 (https://language.etesian-design.com; see ../../../tools/icongen/icongen.py). Writes phebrowser_icon.svg (the source),
 phebrowser_icon.mbm (64x64 bitmap + mask, the registration's icon_file) and phebrowser_icon_preview.png. Run: py make_icon.py (needs Pillow)."""

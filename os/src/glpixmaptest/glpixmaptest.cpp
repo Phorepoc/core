@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // glpixmaptest.cpp -- OURS: an RSgImage as an EGL pixmap surface (EGL_NOK_pixmap_type_rsgimage), the contract the graphics stack's
 // compositors and apps rely on. One image, one GLES 1.1 context, four checks of EGL 1.4 section 3.9's native-rendering rules:

@@ -1,5 +1,5 @@
 ; Copyright The Phorepoc Authors
-; SPDX-License-Identifier: Apache-2.0
+; SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 ;
 ; The exports a later S60 release added to avkon.dll, after the last ordinal of the RCL_3 AVKONU.DEF (4604). Only the ones
 ; implemented here are listed; a number not listed stays the build's "not implemented" stub. registry/components.py appends this

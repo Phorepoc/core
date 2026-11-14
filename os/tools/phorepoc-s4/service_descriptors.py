@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """service_descriptors.py -- the Qt Mobility service descriptors of the Symbian^4 packages, as files to INSTALL.
 
 Qt Mobility's service framework registers a service from its XML descriptor. The release's build ran the host tool `servicedbgen` over every

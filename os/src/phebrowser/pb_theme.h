@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pb_theme.h -- the design tokens of the browser frontend, in ONE place: every colour the UI draws with. Plain 0xRRGGBB
 // ints (no CONE types), so a host test or a later skin-derived theme can build one. Light, dark and the private-tab theme.

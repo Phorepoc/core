@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // tracedefs_ph.h -- OURS: -include'd into the real GOOM monitor (registry goommonitor_real, built with _GOOM_DEBUG so its
 // INFO/ERROR traces are compiled in). It takes the place of goommonitor/inc/tracedefs.h (same include guard): the trace

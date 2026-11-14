@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 #
 # sis.sh -- the pdk's package.yml runs it after the components (package.conf): the browser frontend as
 # $PHOREPOC_BUILD/sis/phebrowser-<arch>.sis -- the app, its resources and registration, its icon. No engine (the engines are
@@ -13,7 +13,7 @@ ARCH=${PHOREPOC_ARCH:-x32}
 if [ "$ARCH" = arm ]; then KEY=phebrowser_arm; AFL=--arm; else KEY=phebrowser; AFL=--unsigned; fi
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 LIC=
-for f in "$REPO/LICENSES/Apache-2.0.txt" "$REPO/NOTICE"; do
+for f in "$REPO/LICENSES/EPL-2.0.txt" "$REPO/NOTICE"; do
   LIC="$LIC --file $f=!:/resource/phebrowser/licences/$(basename "$f")"
 done
 mkdir -p "$PHOREPOC_BUILD/sis"

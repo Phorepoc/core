@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later -- a changed copy of Open C (Nokia, EPL-1.0) libc/inc/arith.h, relicensed under EPL-1.0 section 7 */
 /*
  * arith.h -- x32 (amd64) board copy of Open C's libc/inc/arith.h for gdtoa (strtod, dtoa, printf's floating formats).
  *

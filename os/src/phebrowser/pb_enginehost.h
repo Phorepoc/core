@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pb_enginehost.h -- engine discovery and loading for the browser frontend (docs/phorepoc/browser-frontend.md 3.1):
 //   * CPbEngines lists the installed engine packages (ECom implementations of PHE_WEBENGINE_ECOM_IFACE_UID) WITHOUT loading them,

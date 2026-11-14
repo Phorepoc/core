@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 //
 // phhal.h -- the HAL functions Phorepoc's own components call on a board, beyond Symbian's (the interface a SoC
 // adaptation implements in its variant's HAL handler, docs/layering.md in the pdk). A board without the hardware

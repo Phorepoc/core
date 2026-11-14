@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // WebKit (2011) expects the C99 isnan/isinf/signbit that Symbian's stdapis math.h provides globally. Force-included for the
 // QtWebKit set: plain inline overloads (libstdc++ <cmath> would drag newlib's math.h/reent.h into the Symbian headers).

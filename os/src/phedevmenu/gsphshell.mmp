@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // gsphshell.mmp -- OURS: the Control Panel (GS) plug-in "UI shell" (under Device): the
 // shells installed from the Catalogue and the built-in ones, with a restart

@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 """components -- the registry build_mmp.py builds from.
 
@@ -1336,7 +1336,7 @@ COMPONENTS = {
     # folder switch showed its undrawn window). No server (Classic) = it reports no effects, as the stub did.
     "gfxtransadapter_alf": dict(mmp=_ALF + "plugins/alftranseffect/alfgfxtransadapter/group/gfxtransenginetfx.mmp", alf=3, **_ALFFX,
                                 rom="gfxtransadapter_alf.dll", rom_as="gfxtransadapter.dll",
-                                # our effect set (Apache-2.0; the release never shipped its .fxml files) + the default-skin selection
+                                # our effect set (EPL-2.0 OR GPL-2.0-or-later; the release never shipped its .fxml files) + the default-skin selection
                                 rom_data=[
                                           "resource\\effects\\manifest.mf=" + os.path.join(OS_ROOT, "data/effects/manifest.mf"),
                                           "resource\\effects\\phe_appear.fxml=" + os.path.join(OS_ROOT, "data/effects/phe_appear.fxml"),

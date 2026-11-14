@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 # build_hb_host_tools.sh -- Symbian^4 S4.4 (docs/phorepoc/symbian4-build.md): Orbit's HOST tools, which the Symbian
 # build runs to precompute theme data (configure.py's "Building host tools" step: --host-qmake-bin/--host-make-bin):
 #   hbbincssmaker   the theme's CSS -> hbdefault.cssbin (the binary stylesheets + the GLOBAL LAYOUT PARAMETERS the theme

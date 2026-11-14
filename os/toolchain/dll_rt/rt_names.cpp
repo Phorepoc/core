@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // rt_names.cpp -- the runtime names the GCC archives (libsupc++, libgcc) reference in an image that has no provider for
 // them. build_mmp.py links this object, with the -DRT_<name> of each such name, instead of a link stub: the name is a

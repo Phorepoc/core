@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // calist.cpp -- OURS (Symbian^4 S4.5, docs/phorepoc/symbian4-build.md): the content-arsenal checkpoint. Asks the
 // S^4 app library's storage (homescreensrv's CaService -> camenuserver -> castorage, filled by caappscanner from

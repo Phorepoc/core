@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // symgl_tls.cpp -- OURS (2026-10-29): the per-thread storage behind Mesa's thread-locals (symgl_native.h,
 // symgl_thread_slot). The ARM toolchain's ELF TLS (__aeabi_read_tp + a TLS block per thread) has no runtime on

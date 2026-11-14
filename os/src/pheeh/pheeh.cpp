@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pheeh.cpp -- the parts of the exception runtime that GCC's archives expect from the C library and the dynamic linker.
 // pheeh.dll depends on euser only: the unwinder's libc needs (memcpy, malloc, getenv, abort) are met here, and the

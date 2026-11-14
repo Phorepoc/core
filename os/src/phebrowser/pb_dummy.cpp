@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pb_dummy.cpp -- the dummy web engine of the browser frontend: a PheWebEngineApi table (phorepoc/phewebengine.h) that
 // "loads" any URL in a few timer ticks (progress, title, security from the scheme), keeps a real back/forward history per

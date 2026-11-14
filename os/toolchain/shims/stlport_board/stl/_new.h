@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // stl/_new.h -- OURS: STLport's <stl/_new.h> for a module built with C++ exceptions (PH_EH_NEW, set by the x86 builder for
 // eh=True components). Its first two operator new declarations (the `__SYMBIAN32__ && !__GCCE__` branch) carry no exception

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // drtrvct2_2.cpp -- OURS (2026-10-30): the RVCT 2.2 runtime DLL that applications built with ARM's RVCT 2.2 import
 // (drtrvct2_2.dll, the release's kernel/eka/compsupp/rvct/drtrvct.mmp). The release builds it from a few Symbian sources

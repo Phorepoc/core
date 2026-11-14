@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """hb_drives.py -- Orbit's typeface metrics files are found on any drive, not only on z:.
 
 Orbit (hbcore/utils/hbtypefacexmlparser_p.h) hard-codes TYPEFACE_RESOURCE_FOLDER "z:\\resource\\fonts": in S^4 they were

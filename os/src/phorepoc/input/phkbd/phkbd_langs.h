@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: Apache-2.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // phkbd_langs.h -- OURS (Phorepoc): the installed keyboard languages of phkbd. To add a language: write its
 // phkbd_lang_<code>.h (see phkbd_lang_en.h), include it here and add it to KPhLanguages.

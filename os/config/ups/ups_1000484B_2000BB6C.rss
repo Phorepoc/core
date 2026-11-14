@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // Compiled copy: ups_1000484b_2000bb6c.rsc (next to this file) -- regenerate: py -c "import sys; sys.path[:0]=['tools','emitter']; import rsc; rsc.compile_rss('config/ups/ups_1000484B_2000BB6C.rss', 'config/ups/ups_1000484b_2000bb6c.rsc', None)"
 // OURS (Phorepoc board data, 2026-10-16) -- the User Prompt Service policy for the SMS service (service 0x2000BB6C, requested by the

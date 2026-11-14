@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 // pheorientssy.mmp -- OURS: the orientation sensor (SSY) for boards without an accelerometer: the orientation channel
 // Orbit's Hb turns by, served from the Control Panel's screen orientation choice (pheorientssy.cpp)
 

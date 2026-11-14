@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 # build.yml -- build core alone for each architecture on a push and publish the build tree as the image
 # ghcr.io/<owner>/core-<arch>:<commit> (+ :main). Boards start their builds from it (pdk board-image.yml,

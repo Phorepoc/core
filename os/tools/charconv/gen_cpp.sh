@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 #
 # Regenerates os/data/charconv/generatedcpp/g_<stem>.cpp -- the conversion tables of the charconv plug-ins -- the way
 # the 2010 build's syslibs/generate_cpp extension does: for every "start extension syslibs/generate_cpp" block of

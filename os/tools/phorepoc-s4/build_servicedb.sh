@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 # build_servicedb.sh -- Symbian^4 S4.6 (docs/phorepoc/symbian4-build.md): the Qt service framework's ROM database.
 # Qt Mobility's database server (qsfwdatabasemanagerserver) copies z:\private\2002ac7f\QtServiceFramework_4.7_system.db
 # to C: at first use; the release's build made it with the HOST tool servicedbgen (qtmobility/tools/servicedbgen),

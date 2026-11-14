@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 # build_iap_sis.sh -- the In-App Purchase client stand-in (iapclientapi.dll, os/src/phorepoc/iapclient) as a downloadable SIS:
 # package "IAP", uid 0x200345C8, version 3.23.7 (what an app declaring a dependency on IAP >= 3.23.7 expects), depending on

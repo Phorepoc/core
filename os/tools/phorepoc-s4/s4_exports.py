@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """s4_exports.py -- Symbian^4 (docs/phorepoc/symbian4-build.md): the header EXPORT step of the S^4 packages' own builds
 (sbs's prj_exports), which their compiles rely on -- qthighway, for one, compiles against its own internal headers
 exported to qthighway/inc and its public ones exported to /epoc32/include/mw.

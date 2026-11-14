@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 # hs_configure_symbian.sh -- Symbian^4 stage S4.6 (docs/phorepoc/symbian4-build.md): the S^4 homescreen (the release's
 # oss.FCL.sf.app.homescreen: hsapplication, the domain model, the state plug-ins, the clock/shortcut widgets, the
 # app library), qmake-generated in-source as the package's build -- the same recipe as hsrv_configure_symbian.sh.

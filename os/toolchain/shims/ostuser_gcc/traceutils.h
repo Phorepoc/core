@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // traceutils.h (ostuser) -- the release's header, with GET_PC for GCC. The release spells the caller's address as the RVCT
 // inline-assembler intrinsic `asm("mov pc, __return_address()")` (ARMv5 only; every other target gets 0), which no GCC

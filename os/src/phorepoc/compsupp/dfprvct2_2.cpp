@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // dfprvct2_2.cpp -- OURS (2026-10-31): the RVCT 2.2 floating-point runtime DLL that applications built with ARM's RVCT 2.2
 // import (dfprvct2_2.dll, the release's kernel/eka/compsupp/rvct/dfprvct.mmp, which links ARM's proprietary fplib f_t_p.l /

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phebrowser.cpp -- OURS: the browser frontend (prototype). A custom-drawn CONE UI -- one window, flat bars drawn with
 // CWindowGc, no Qt -- over any engine that implements the PheWebEngineApi table (the webengine repository). It has:

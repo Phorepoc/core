@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 # build_qtmobility_sis.sh -- Qt Mobility 1.2 for ARM as a downloadable SIS (package "QtMobility", uid 0x2002AC89, the uid/name
 # a Qt Mobility app's dependency declares, so the installer sees the dependency as met). LGPL 2.1 sources (upstream tag v1.2.0),

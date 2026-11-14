@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pheeh.mmp -- OURS: pheeh.dll, the ONE C++ exception runtime of an x86 (x32) process. It carries the unwinder (GCC's
 // libgcc_eh: _Unwind_*, the frame registry __register_frame_info) and the C++ ABI half of libsupc++ (__cxa_throw,

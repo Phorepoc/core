@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 # qtm_configure_symbian.sh -- Symbian^4 stage S4.5 (docs/phorepoc/symbian4-build.md): Qt Mobility 1.0.3 (the release's
 # oss.FCL.sf.mw.qtmobility) configured for Symbian the way the MCL build does it: NO configure run -- the checked-in
 # config.pri + staticconfig.pri, an in-source qmake (staticconfig.pri: "shadow builds are not supported for symbian").

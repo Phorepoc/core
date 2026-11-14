@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // stdnew_nothrow.cpp -- std::nothrow for stdnew.dll. operator_new.cpp passes it to the nothrow overloads (new[] -> new);
 // the GCCE toolchain's libsupc++ defines it in new_handler.o, the same member that defines std::set_new_handler, which

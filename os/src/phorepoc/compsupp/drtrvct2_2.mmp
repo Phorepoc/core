@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // drtrvct2_2.mmp -- OURS: the RVCT 2.2 runtime DLL (the release's kernel/eka/compsupp/rvct/drtrvct.mmp, ARMCC_2_2), built
 // with GCC: the release's Symbian sources unmodified + drtrvct2_2.cpp for what RVCT's C library supplied there

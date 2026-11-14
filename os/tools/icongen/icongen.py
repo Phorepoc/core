@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """icongen.py -- app icons in the Etesian design language (https://language.etesian-design.com, "Iconography",
 "Shape: the squircle", "Icon lighting"). Original artwork; nothing here is copied from any vendor's icons.
 
@@ -149,7 +149,7 @@ def svg(glyph, accent, title="icon"):
     stroke = 'fill="none" stroke-width="%g" stroke-linecap="round" stroke-linejoin="round"' % STROKE
     return """<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" role="img">
   <title>%(title)s</title>
-  <!-- Original artwork, Apache-2.0 (The Phorepoc Authors), drawn to the Etesian design language: squircle |x|^2.8 + |y|^2.8 = 1,
+  <!-- Original artwork, EPL-2.0 OR GPL-2.0-or-later (The Phorepoc Authors), drawn to the Etesian design language: squircle |x|^2.8 + |y|^2.8 = 1,
        24-grid glyph with one 2 px round stroke, lit from above (icongen.py) -->
   <defs>
     <linearGradient id="tile" gradientUnits="userSpaceOnUse" x1="0" y1="%(g0).2f" x2="0" y2="%(g1).2f">

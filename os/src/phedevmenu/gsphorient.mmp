@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // gsphorient.mmp -- OURS: the Control Panel (GS) plug-in "Screen orientation" (under Personalisation, next to Display):
 // Automatic / Portrait / Landscape for a device without (or with a disabled) orientation sensor

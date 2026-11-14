@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pb_stkdump.h -- a diagnostic (PHEBROWSER_STKDUMP builds only): STKDUMP_DELAY_S seconds after start, log every thread of this
 // process with its registers and every word of its stack that looks like a ROM code address ("PH: [stk] ..." lines), so the

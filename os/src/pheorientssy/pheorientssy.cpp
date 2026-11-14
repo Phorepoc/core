@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: Apache-2.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // pheorientssy.cpp -- OURS: an orientation sensor (SSY plug-in of the sensor framework) for boards without an
 // accelerometer. Orbit (Hb) turns its UI only from the sensor framework's orientation channel (HbSensorListener:

@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """ts_extras.py -- Symbian^4 S4.6 (docs/phorepoc/symbian4-build.md): the English texts newer than the release's
 translation snapshot. oss.FCL.sf.mw.qttranslations (tsfiles.zip, 201037) lags the application code (201042): e.g. the
 app library's "Applications & widgets (%L1)" (txt_applib_subtitle_applications_widgets_l1) is in no language there.

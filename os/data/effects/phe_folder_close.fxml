@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <layers>
-	<comment>Copyright The Phorepoc Authors. SPDX-License-Identifier: Apache-2.0</comment>
+	<comment>Copyright The Phorepoc Authors. SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later</comment>
 	<comment>The view being left (input1, stored at BeginFullScreen) shrinks and fades out over the view returned to.</comment>
 	<visual src="Item">
 	</visual>

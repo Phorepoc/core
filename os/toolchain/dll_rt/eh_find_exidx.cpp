@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // __gnu_Unwind_Find_exidx for the in-image C++ exception runtime (build_mmp.py `cxx_eh`, 2026-10-26). libgcc's ARM
 // unwinder calls it once per frame to find the .ARM.exidx table that covers a return address. On Linux it walks the

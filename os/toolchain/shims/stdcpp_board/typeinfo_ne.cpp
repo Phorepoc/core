@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // typeinfo_ne.cpp -- std::type_info::operator!= for libstdcppv5.dll. STLport's <typeinfo> declares the operator out of
 // line (the release's runtime defined it in its own library); the GCC runtime this system links defines it inline in the

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // libglesv1_front.cpp -- GENERATED (gen_gl_fronts.py) from libglesv1_cm11u.def -- do not edit.
 // libGLESv1_CM.dll: the frozen Symbian ABI front over phgl.dll (Mesa). Every function resolves its backend entry once (ordinal

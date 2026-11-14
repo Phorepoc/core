@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // qttest.cpp -- OURS: log every Qt start-up step (qDebug -> RDebug), to see where a Qt app stops.
 #include <QtGui/QApplication>

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 # hsrv_configure_symbian.sh -- Symbian^4 stage S4.5 (docs/phorepoc/symbian4-build.md): homescreensrv (the release's
 # oss.FCL.sf.mw.homescreensrv) -- the content arsenal (contentstorage: the storage server, the app scanners, the Qt
 # client API) and the platform API headers (homescreensrv_plat), qmake-generated in-source as the package's build.

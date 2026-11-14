@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // hbbincssmaker_symbian.mmp -- OURS (S4.4b): Orbit's CSS -> cssbin tool, built for the TARGET.
 // The cssbin is a raw dump of the theme server's shared-memory structures, so it must be made by code with the

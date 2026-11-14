@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 # build_translations.sh -- Symbian^4 S4.6 (docs/phorepoc/symbian4-build.md): the S^4 UI's English texts.
 # Orbit apps show logical text ids (hbTrId("txt_homescreen_title_...")) that a QTranslator turns into text; the
 # release ships every S^4 translation as Qt Linguist sources (oss.FCL.sf.mw.qttranslations: data/tsfiles.zip,

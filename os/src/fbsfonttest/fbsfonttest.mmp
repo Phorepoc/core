@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 // fbsfonttest: asks the font and bitmap server for fonts of size 0 (and tiny sizes) and rasterises text with them, then a
 // healthy font -- the platform's behaviour for a zero-size request (any client can send one), checked for heap damage.
 TARGET			fbsfonttest.exe

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 # s4env.sh -- the S^4 build's environment, sourced by every script here. They run INSIDE the toolchain image with the pdk, core
 # and the exported Symbian sources mounted as `phe` mounts them (PHOREPOC_BUILD, PHOREPOC_SYMBIAN, PHOREPOC_OS_ROOT) and with

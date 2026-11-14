@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // The advanced audio controller's frame table (mmaudio_plat frametable_api FrameTable.h), in place of the release's
 // frametable_stub (every call answered "nothing": no seeking, no position events in MP3/AAC/AMR playback).

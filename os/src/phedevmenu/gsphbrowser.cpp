@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // gsphbrowser.cpp -- OURS: Control Panel entry "Default browser" (next to Display). Lists the applications that declare the
 // data type x-scheme-handler/http in their registration (datatype_list; phebrowser does) and makes the chosen one apparc's

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phewlantest.cpp -- OURS: the WLAN regression benchmark. Run from a shell (or by phestart) at any time, as often as
 // wanted; every number goes to the log as "[phewlantest] ..." and to C:\data\phewlantest.txt.

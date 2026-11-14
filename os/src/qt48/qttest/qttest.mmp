@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // qttest.mmp -- OURS: a Qt start-up probe. Logs each start-up step through qDebug (RDebug) to find which one ends a Qt app.
 TARGET			qttest.exe

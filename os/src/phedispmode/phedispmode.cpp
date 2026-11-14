@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phedispmode.cpp -- OURS: the display-mode follower of the PC image (dynamic resolution, x86-64-port.md X4.139, hildon-port.md 7.39).
 //

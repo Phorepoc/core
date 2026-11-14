@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: Apache-2.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // SvgCodecImageConstants.hrh -- OURS (not Symbian source): the SVG image codec's constants header, which no release
 // shipped. Its only user here, the gallery's upload command handler, includes it but uses none of its names (it

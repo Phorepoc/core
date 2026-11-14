@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 # build_qt_sis.sh -- Qt 4.8.7 for ARM as an INSTALLABLE SIS, from the public Qt source. Qt is LGPL, so it is never in the
 # ROM image: it is built and packaged separately (package 0x2001E61C "Qt" 4.8.7, which is also what a Qt app's SIS depends on).

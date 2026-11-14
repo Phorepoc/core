@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // symgl_heap.cpp -- OURS (2026-10-29): one process-wide heap for everything the GL implementation allocates. phgl.dll
 // is linked with ld --wrap for the C allocators, the string functions that allocate and C++'s global new/delete

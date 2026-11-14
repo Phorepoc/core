@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 // pheorientssy_ecom.rss -- OURS: the ECOM registration of the orientation SSY. default_data = the channel the sensor
 // server lists before it loads the plug-in, in the release orientation SSY's layout (orientationssy 10282F0F.RSS)
 

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pheadm.mmp -- OURS: ADM.exe, the installer a Smart Installer wrapper's bootstrap starts (pheadm.cpp). The name and the
 // SID are the ones the bootstrap launches and the import folder \private\2002CCCE\ belongs to.

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 //
 // CAknTasHook's performance markers: an application (a clock, a calculator, a phonebook ...) calls AddTimestampL("<what just happened>")
 // at the points a test harness measures (the application is ready, a view is up); the TAS test server reads the list back with

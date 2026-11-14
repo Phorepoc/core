@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 # hsw_configure_symbian.sh -- the release's stand-alone homescreen widgets (oss.FCL.sf.app.profileswidgetplugin: the
 # profile switcher, oss.FCL.sf.app.silentwidgetplugin: silent on/off), qmake-generated in-source like
 # hs_configure_symbian.sh (whose staged qmake features they use: hb, mobility).

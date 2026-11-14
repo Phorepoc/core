@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phecaps.cpp -- OURS: report the process's own capabilities on the serial log (a test tool for installed packages: a
 // binary installed from a SIS runs on the capabilities of its E32 image header).

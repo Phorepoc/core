@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // drtrvct2_2_rt.cpp -- OURS (2026-10-31): the RVCT-internal part of drtrvct2_2.dll (the 35 exports of drtrvct2_2u.def that
 // ARM's proprietary C library supplied): integer division helpers, memory helpers, signal raising, library init and the

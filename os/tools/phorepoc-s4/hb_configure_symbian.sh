@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 # hb_configure_symbian.sh -- Symbian^4 stage S4.4 (docs/phorepoc/symbian4-build.md): configure Orbit (the release's
 # oss.FCL.sf.mw.hb) for Symbian the way its configure.py does for `--platform symbian`, then let qmake GENERATE the
 # bld.inf + one .mmp per .pro (the same route as Qt, qt_configure_symbian.sh).

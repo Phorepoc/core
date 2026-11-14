@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """s4_zdata.py -- Symbian^4 (docs/phorepoc/symbian4-build.md): the Z: data of the S^4 platform packages besides Orbit
 (hb_zdata.py) -- the files their bld.infs export to /epoc32/data/z, which the S^4 ROM build adds
 (tools/phorepoc-x86/x32_rom_args.py reads every .phorepoc-s4-build/*-zdata.txt).

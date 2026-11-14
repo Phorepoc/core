@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // patchdata.cpp -- OURS: the SISX recognizer's patchable constant at the value a phone ROM patches in.
 //

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 # gen_def.sh -- regenerates pheeh.def from the x32 toolchain archives (run in the build image, stdout = the .def).
 # Ordinals follow the sorted names, so a regenerated def renumbers: rebuild every eh component after it. Vtables and
 # data objects are marked DATA; typeinfo (_ZTI/_ZTS) is left out (the importing module builds its own leaves).

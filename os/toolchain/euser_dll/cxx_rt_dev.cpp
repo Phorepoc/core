@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // cxx_rt_dev.cpp — the two modern-g++ runtime leaves the DEVICE euser calls
 // internally that no 2010 TU provides (they were silent link stubs -> EUSRNIMP):

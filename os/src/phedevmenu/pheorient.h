@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: Apache-2.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // pheorient.h -- OURS: the screen orientation the user wants when no sensor turns the screen. Shared by the Control Panel
 // plug-in (gsphorient) and the boot (pheshellsel).

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // gsphorient.cpp -- OURS: Control Panel entry "Screen orientation" (next to Display). Automatic (the sensor, or without one the
 // display's own orientation) / Portrait / Landscape. The choice is stored (CenRep e7015a01 key 13) and applied at once through

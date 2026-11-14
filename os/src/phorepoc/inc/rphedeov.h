@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: Apache-2.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // rphedeov.h -- OURS: the interface of a display's video plane -- a plane the display hardware scans a YUV picture out of
 // directly, with its own scaler and YUV->RGB conversion, blended over the UI. Video playback (src/phevidctl) uses it

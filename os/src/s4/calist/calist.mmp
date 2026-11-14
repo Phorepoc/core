@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // calist.mmp -- OURS (S4.5): the content-arsenal checkpoint (include paths come from registry/components_s4.py)
 TARGET			calist.exe

@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: Apache-2.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // phkbd_lang.h -- OURS (Phorepoc): the keyboard languages of phkbd. A language is DATA: its pages (rows of keys), its
 // long-press accents, a name. One header per language (phkbd_lang_en.h ...), each defining one TPhLanguage; adding a

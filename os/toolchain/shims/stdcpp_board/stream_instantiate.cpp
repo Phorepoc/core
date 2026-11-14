@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // stream_instantiate.cpp (2026-10-31) -- the stream class instantiations libstdcppv5.dll exports. The library's own sources force them
 // (stl/src/sstream.cpp, istream.cpp, fstream.cpp: "Force instantiation of ... classes") unless

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // symgpu_null.cpp -- OURS: the GPU channel seam of symgpu.h for boards without a GPU
 // driver: symgpu_open() answers NULL, so Mesa's DRM shim finds no device and phgl renders with softpipe. A SoC

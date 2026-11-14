@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phestart.mmp -- OURS: start an application through apparc the way the launcher does (a test tool).
 //   phestart <uid-hex | exe name> [document]      e.g. phestart 2003b2ce     phestart skyforcereloaded

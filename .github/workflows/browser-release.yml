@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 # browser-release.yml -- core's one installable package, the browser frontend (package.conf), as SIS files (ARM and x32), built by
 # the pdk's package.yml on every push to main that changes it. When the commits that touch it since the last release ask for one

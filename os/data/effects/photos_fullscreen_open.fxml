@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <layers>
-	<comment>Copyright The Phorepoc Authors. SPDX-License-Identifier: Apache-2.0. Photos opens an image with this file by name (glxfullscreenviewimp.cpp): the picture zooms in</comment>
+	<comment>Copyright The Phorepoc Authors. SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later. Photos opens an image with this file by name (glxfullscreenviewimp.cpp): the picture zooms in</comment>
 	<visual src="Item">
 		<param name="opacity" type="anim">
 			<duration>0.25</duration>

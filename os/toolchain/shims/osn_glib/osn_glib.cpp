@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: Apache-2.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // osn_glib.cpp -- OURS (not Symbian source): the eleven GLib calls osncore makes (UString's UTF-8 helpers), so osncore
 // does not import libglib (LGPL; nothing LGPL goes in the image). Compiled into osncore (registry `extra`); the

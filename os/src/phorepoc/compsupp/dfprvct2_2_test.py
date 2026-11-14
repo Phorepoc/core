@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """dfprvct2_2_test.py -- host test of dfprvct2_2.cpp (the RVCT 2.2 floating-point runtime, OURS).
 
 Compiles dfprvct2_2.cpp with arm-none-eabi-g++ (soft-float, as the ROM build does) into a flat image, runs every one of

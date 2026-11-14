@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // pb_layout.h -- the pure layout of the browser frontend: where the page and the bar go for a given screen size and bar
 // position. ONE row, in portrait and landscape: [nav button] [address field] [overflow button]. The navigation buttons

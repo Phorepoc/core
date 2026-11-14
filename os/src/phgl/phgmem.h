@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phgmem.h -- OURS: system-wide graphics memory accounting, the data behind EGL_NOK_resource_profiling (libegl_front.cpp)
 // and so behind the real GOOM monitor. Nokia's GPU driver answered from its own pool; here graphics memory is ordinary RAM

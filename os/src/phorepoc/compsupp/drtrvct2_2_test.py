@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """drtrvct2_2_test.py -- host test of drtrvct2_2_rt.cpp (the RVCT 2.2 runtime helpers, OURS).
 
 Compiles drtrvct2_2_rt.cpp with arm-none-eabi-g++ into a flat image and runs the 35 helpers of drtrvct2_2u.def that the

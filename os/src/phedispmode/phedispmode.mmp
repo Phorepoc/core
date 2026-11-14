@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 //
 // phedispmode.mmp -- the display-mode follower (no window): the window server's screen mode follows the PC display's size (dynamic-resolution HAL)
 TARGET			phedispmode.exe

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phecaps.mmp -- OURS: the capability report (a test tool; see phecaps.cpp)
 TARGET			phecaps.exe

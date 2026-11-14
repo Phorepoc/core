@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 """mbm.py -- an app icon the way the launcher's registration resource wants it: a multi-bitmap file with one 64 x 64
 32-bit colour bitmap and its 8-bit mask (icon_file in the app's LOCALISABLE_APP_INFO), drawn by icongen.py in the
 Etesian design language. make_app_icon(dir, name, glyph, accent) writes <name>_icon.svg, .mbm and _preview.png."""

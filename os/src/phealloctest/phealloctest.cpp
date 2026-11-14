@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phealloctest.cpp -- OURS: cost of the user-side allocator and of fast execs on this kernel (perf, 2026-10-26).
 // The compositor's profile showed Exec::Heap() (the fast exec behind User::Alloc / User::Free) as its hottest

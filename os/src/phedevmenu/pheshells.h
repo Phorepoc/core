@@ -1,5 +1,5 @@
 /* Copyright The Phorepoc Authors
- * SPDX-License-Identifier: Apache-2.0 */
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later */
 
 // pheshells.h -- OURS: the UI shells a device can start. Shared by pheshellsel (boot), the developer menu, the Settings
 // plug-in (gsphshell) and SysAp's power menu.

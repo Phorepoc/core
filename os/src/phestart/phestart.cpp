@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phestart.cpp -- OURS: start an application through apparc (RApaLsSession::StartApp, the launcher's path) and bring its
 // task to the foreground. A process started with a plain RProcess::Create (the text shell) is not an apparc-started

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 #
 # Regenerates os/data/charconv/basic.snm -- the character-set standard-names / MIB-enum file that Symbian's charconv.iby
 # ships as Z:\resource\charconv\basic.snm -- from the upstream charconv source (tools/basic.txt, tools/snmtool.pl).

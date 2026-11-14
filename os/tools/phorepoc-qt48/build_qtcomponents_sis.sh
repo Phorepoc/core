@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 # build_qtcomponents_sis.sh -- Qt Quick Components for Symbian 1.1 for ARM as a downloadable SIS (package "Qt Quick components for
 # Symbian", uid 0x200346DE, 1.1.3: the uid/name a Qt Quick app's dependency declares, so the installer sees it as met). BSD-licensed

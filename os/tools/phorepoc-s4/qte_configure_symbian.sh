@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 # qte_configure_symbian.sh -- Symbian^4 stage S4.5 (docs/phorepoc/symbian4-build.md): the Qt extensions (the release's
 # oss.FCL.sf.mw.qtextensions) the S^4 homescreen and homescreensrv link -- qthighway (xqserviceutil, xqserviceipc,
 # xqservice) and qtmobileextensions (xqsettingsmanager, xqsysinfo, xqutils, xqkeycapture, xqsystemtoneservice).

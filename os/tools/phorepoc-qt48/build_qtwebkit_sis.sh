@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 # build_qtwebkit_sis.sh -- QtWebKit (the WebKit that ships inside Qt 4.8.7, src/3rdparty/webkit) for ARM as a downloadable
 # SIS: package "QtWebKit", uid 0x200267C2, version 4.8.1 (what a Qt browser app's SIS declares; 4.8.1 satisfies >= 4.8.0),

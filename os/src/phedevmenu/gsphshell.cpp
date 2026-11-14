@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // gsphshell.cpp -- OURS: Control Panel entry "UI shell" (Device). Lists every shell there is (the built-in ones and the ones
 // installed from the Catalogue, pheshells.h), stores the choice (CenRep e7015a01 key 10) and offers a restart. Always

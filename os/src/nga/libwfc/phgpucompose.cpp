@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phgpucompose.cpp -- OURS (GPU plan G8): libWFC's scene composed by the GPU (GLES2 through phgl) instead of
 // the 2010 per-pixel float pipeline (~15 ms per full-screen element at 360x640, ~37 ms with a rotated game on top).
