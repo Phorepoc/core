@@ -38,6 +38,79 @@
 #include "graphics/pointereventdata.h"
 #include "debughelper.h"
 #include "screen.h"
+#include "ph_compat.h"
+
+// ---- phecompat: "extend the down" ----
+// An app with a minimum-hold profile (resistive-screen era games ignore a touch that is shorter than a few frames)
+// gets its pointer-up delayed until the press has lasted the profile's time. The up is held back, the other pointer events
+// are swallowed meanwhile, and the stored raw event is put back with UserSvr::AddEvent; that second pass is let through.
+// Apps without a profile cost one table lookup per pointer-up.
+class CPhHold : public CTimer
+	{
+public:
+	static CPhHold* NewL()
+		{
+		CPhHold* h = new (ELeave) CPhHold;
+		CleanupStack::PushL(h);
+		h->ConstructL();
+		CActiveScheduler::Add(h);
+		CleanupStack::Pop(h);
+		return h;
+		}
+	// ETrue = the event is swallowed (the caller drops it)
+	TBool Hold(const TRawEvent& aEvent)
+		{
+		const TRawEvent::TType type = aEvent.Type();
+		if (iPendingActive)
+			return ETrue; // everything is held until the delayed up has gone round
+		if (type == TRawEvent::EButton1Down)
+			{
+			iDown = ETrue;
+			iDownTime.UniversalTime();
+			return EFalse;
+			}
+		if (type != TRawEvent::EButton1Up)
+			return EFalse;
+		if (iInjecting)
+			{
+			iInjecting = EFalse;
+			iDown = EFalse;
+			return EFalse;
+			}
+		if (!iDown)
+			return EFalse;
+		iDown = EFalse;
+		const CWsClient* owner = CWsTop::FocusWindowGroupOwner();
+		const TInt hold = owner ? PhCompat::HoldMs(owner->SecureId()) : 0;
+		if (hold <= 0)
+			return EFalse;
+		TTime now;
+		now.UniversalTime();
+		const TInt elapsedMs = static_cast<TInt>(now.MicroSecondsFrom(iDownTime).Int64() / 1000);
+		if (elapsedMs >= hold)
+			return EFalse;
+		iPending = aEvent;
+		iPendingActive = ETrue;
+		RDebug::Printf("PH: phecompat hold sid %08x press %d ms, up held to %d ms", static_cast<TUint32>(owner->SecureId()), elapsedMs, hold);
+		After((hold - elapsedMs) * 1000);
+		return ETrue;
+		}
+private:
+	CPhHold() : CTimer(EPriorityHigh) {}
+	void RunL()
+		{
+		iPendingActive = EFalse;
+		iInjecting = ETrue;
+		UserSvr::AddEvent(iPending);
+		}
+	TBool iDown = EFalse;
+	TBool iPendingActive = EFalse;
+	TBool iInjecting = EFalse;
+	TTime iDownTime;
+	TRawEvent iPending;
+	};
+static CPhHold* gPhHold = NULL;
+static TBool gPhHoldTried = EFalse;
 
 // Phorepoc: the pointer filter a render stage may offer (core os/src/phecomp declares the same)
 class MPhePointerFilter
@@ -693,6 +766,15 @@ TBool TWsPointer::PreProcessDriverEvent(TRawEvent &aRawEvent)
 	
 	if (!IsPointerEventType(type)) 
 		return ETrue;
+	
+	// phecompat: minimum touch hold for flagged apps
+	if (!gPhHoldTried)
+		{
+		gPhHoldTried = ETrue;
+		TRAP_IGNORE(gPhHold = CPhHold::NewL());
+		}
+	if (gPhHold && gPhHold->Hold(aRawEvent))
+		return EFalse;
 	
 	{ static TInt phN = 0; if (phN < 24 && type != TRawEvent::EPointerMove) { ++phN; RDebug::Printf("PH: WSERV raw pointer type=%d pos=%d,%d xy=%d max=%d", (TInt)type, aRawEvent.Pos().iX, aRawEvent.Pos().iY, (TInt)XyInput(), iMaxPointers); } }
 	// Phorepoc: a compositor stage (phecomp) that places windows itself maps the pointer back to the window server's
