@@ -452,6 +452,21 @@ public:
 			TRAP_IGNORE(NewTabL(line, EFalse));
 		}
 
+	void EnginesChangedL()
+		{
+		if (!iEngines)
+			return;
+		const TInt before = iEngines->Count();
+		iEngines->Refresh();
+		if (iEngines->Count() == before)
+			return;
+		PbTrace("PH: [phebrowser] engines listed: %d (was %d)", iEngines->Count(), before);
+		iEngineFailed = EFalse;
+		if (iEngines->Count() > 0 && iTabs.Count() == 0)
+			NewTabL(KNullDesC, EFalse);       // the first engine arrived: the new-tab page, as at a start with one
+		DrawDeferred();
+		}
+
 	// ---- commands ----
 	void NewTabL(const TDesC& aUrl, TBool aPrivate)
 		{
@@ -1882,6 +1897,12 @@ public:
 		PbTrace("PH: [phebrowser] OpenFileL url len=%d", url.Length());
 		if (url.Length() && iView)
 			iView->OpenRunning(url);
+		}
+	void HandleForegroundEventL(TBool aForeground)   // back from Catalogue ("Get a browser engine"): an engine may have come or gone
+		{
+		CAknAppUi::HandleForegroundEventL(aForeground);
+		if (aForeground && iView)
+			iView->EnginesChangedL();
 		}
 	void HandleResourceChangeL(TInt aType)       // rotation: stay full screen
 		{

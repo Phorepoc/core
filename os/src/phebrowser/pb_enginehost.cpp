@@ -91,7 +91,15 @@ void CPbEngines::ListL()
 
 void CPbEngines::Refresh()
 	{
+	const TUid loaded = (iLoaded >= 0 && iLoaded < iList.Count()) ? iList[iLoaded].iUid : TUid::Null();
 	TRAP_IGNORE(ListL());
+	if (iLoaded >= 0)                     // the loaded engine keeps running: find its new place in the list
+		{
+		iLoaded = -1;
+		for (TInt i = 0; i < iList.Count(); ++i)
+			if (iList[i].iUid == loaded)
+				iLoaded = i;
+		}
 	LoadDefault();
 	}
 
