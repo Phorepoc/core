@@ -30,6 +30,7 @@
 #include <eikbtgpc.h>
 #include <txtfrmat.h>
 #include <txtfmlyr.h>
+#include <frmtview.h>
 #include <avkon.hrh>
 #include <apgcli.h>
 #include <apacmdln.h>
@@ -638,6 +639,8 @@ public:
 			return;
 			}
 		iEdit->SetRect(EditRect(l));
+		if (iEdit->TextView())                 // FORM clears past the text with the view's own background
+			iEdit->TextView()->SetBackgroundColor(Rgb(tk.iField));   // (its default, ESystemBackgroundColor, was a white block)
 		if (iPageInput)                        // a page field: start with its value (an older engine has none: empty)
 			{
 			HBufC* v = HBufC::NewLC(1024);
