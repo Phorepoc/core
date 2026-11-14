@@ -23,3 +23,5 @@
 # OURS copy of the generated file (menucontentsrv s60mcs confml): About (10005a22) left out of KMenuHideCPApplication (key 0xA),
 # so the launcher lists it in Applications as well as Control Panel
 ../../config/cenrep/101F8847.txt
+# OURS: the phecompat profile repository (empty by default: no app has a profile; see docs phecompat)
+../../config/cenrep/E7016E00.txt
