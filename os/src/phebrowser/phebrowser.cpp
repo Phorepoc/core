@@ -38,6 +38,7 @@
 #include <fbs.h>
 #include <gdi.h>
 #include <utf.h>
+#include <hal.h>
 #include <phebrowser.rsg>
 #include "phebrowser.hrh"
 #include "pb_layout.h"
@@ -192,6 +193,9 @@ struct TPbTab
 	TBool iPrivate;
 	TInt iFailCode;            // the engine's last PHE_EV_FAILED code for this tab (0 = none): the error page is drawn instead of the stale page
 	CFbsBitmap* iThumb;        // KThumbW x KThumbH snapshot for the tab grid
+	TUint32 iLoadStart;        // the load's PHE_EV_START (User::NTickCount), 0 = none running: the TIMING lines (TraceTiming)
+	TInt iCommitMs, iPaintMs;  // ms from the start to the commit and to the first repaint after it (-1 = not yet)
+	TUint32 iLateStart;        // the finished load's start while its first repaint is still to come (paint-after-finish)
 	};
 
 enum TPbMode { EModeBrowse, EModeGrid, EModeSheet, EModeSearchPick, EModeNav };
@@ -492,6 +496,7 @@ public:
 		t.iPrivate = aPrivate;
 		t.iFailCode = 0;
 		t.iThumb = NULL;
+		t.iLoadStart = t.iLateStart = 0; t.iCommitMs = t.iPaintMs = -1;
 		iTabs.AppendL(t);
 		iCur = iTabs.Count() - 1;
 		if (aUrl.Length() && EnsureView(iCur))
@@ -894,6 +899,59 @@ private:
 		url8.Copy(url);                       // RDebug::Printf's %S is an 8-bit descriptor
 		PbTrace("PH: [phebrowser] %s view %d code %d: %S", name, aE.view, aE.a, &url8);
 		}
+	// page-load timing for every engine alike (the same events, the same clock): one line when the load ends, for the
+	// site and benchmark runs -- "TIMING load <ms> commit <ms> paint <ms> free <KB> ok|FAILED <code> <url>"
+	void TraceTiming(TPbTab& aTab, const PheEvent& aE)
+		{
+		const TUint32 now = User::NTickCount();
+		TInt ms = 0;
+		if (aTab.iLoadStart)
+			ms = TInt(TInt64(now - aTab.iLoadStart) * TickUs() / 1000);
+		switch (aE.kind)
+			{
+		case PHE_EV_START:
+			aTab.iLoadStart = now ? now : 1;
+			aTab.iCommitMs = aTab.iPaintMs = -1;
+			return;
+		case PHE_EV_COMMIT:
+			if (aTab.iLoadStart && aTab.iCommitMs < 0)
+				aTab.iCommitMs = ms;
+			return;
+		case PHE_EV_REPAINT:
+			if (aTab.iLoadStart && aTab.iCommitMs >= 0 && aTab.iPaintMs < 0)
+				aTab.iPaintMs = ms;
+			else if (!aTab.iLoadStart && aTab.iLateStart)   // the first paint came after the finish: its own line
+				{
+				PbTrace("PH: [phebrowser] TIMING paint-after-finish %d", TInt(TInt64(now - aTab.iLateStart) * TickUs() / 1000));
+				aTab.iLateStart = 0;
+				}
+			return;
+		case PHE_EV_FINISHED:
+		case PHE_EV_FAILED:
+		case PHE_EV_CRASHED:
+			break;
+		default:
+			return;
+			}
+		if (!aTab.iLoadStart)
+			return;
+		TInt freeRam = 0;
+		HAL::Get(HALData::EMemoryRAMFree, freeRam);
+		TBuf<160> url;
+		FetchStr(aE.view, PHE_STR_URL, url);
+		TBuf8<160> url8;
+		url8.Copy(url);
+		PbTrace("PH: [phebrowser] TIMING load %d commit %d paint %d free %d %s %d %S", ms, aTab.iCommitMs, aTab.iPaintMs,
+		        freeRam / 1024, aE.kind == PHE_EV_FINISHED ? "ok" : (aE.kind == PHE_EV_FAILED ? "FAILED" : "CRASHED"), aE.a, &url8);
+		aTab.iLateStart = aTab.iPaintMs < 0 ? aTab.iLoadStart : 0;
+		aTab.iLoadStart = 0;
+		}
+	static TInt TickUs()
+		{
+		TInt us = 1000;
+		HAL::Get(HALData::ENanoTickPeriod, us);
+		return us;
+		}
 	void DrainEvents()
 		{
 		PheEvent e;
@@ -909,6 +967,7 @@ private:
 			PheViewState st;
 			iApi->get_state(e.view, &st);
 			TPbTab& tab = iTabs[t];
+			TraceTiming(tab, e);
 			tab.iBack = st.can_back; tab.iFwd = st.can_forward; tab.iLoading = st.loading; tab.iProgress = st.progress;
 			switch (e.kind)
 				{
@@ -1512,6 +1571,13 @@ private:
 		return (TInt)r;
 		}
 
+	// the touch that starts editing reaches the editor (it opens the keyboard) and puts the caret where it lands: the address
+	// is selected again, so typing replaces it (the caret in the middle spliced a new URL into the old one)
+	void ReselectAddressL()
+		{
+		if (iEditing && !iPageInput && !iSecretMode)
+			iEdit->SelectAllL();
+		}
 	void HandlePointerEventL(const TPointerEvent& aE)
 		{
 		if (!iEditing && iMode == EModeBrowse && PinchPointerL(aE))
@@ -1531,6 +1597,7 @@ private:
 				pe.iPosition = EditRect(Layout()).Center();
 				iStartTouch = ETrue;
 				CCoeControl::HandlePointerEventL(pe);
+				ReselectAddressL();
 				}
 			return;
 			}
@@ -1545,6 +1612,7 @@ private:
 					TPointerEvent pe = aE;
 					pe.iPosition = EditRect(el).Center();
 					CCoeControl::HandlePointerEventL(pe);
+					ReselectAddressL();
 					}
 				return;
 				}
