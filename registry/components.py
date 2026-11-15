@@ -491,8 +491,10 @@ COMPONENTS = {
     "cenrepnotifhandler": dict(mmp="oss.FCL.sf.os.persistentdata/persistentstorage/centralrepository/cenrepnotifierhandler/group/cenrepnotifhandler.mmp"),
     "akncapserverclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AknGlobalUI/AknCapServer/group/AknCapServerClient.mmp"),
     "aknnotify": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/notifsrc/aknNotify.mmp"),
+    # OURS copy of AknIconSrvUtils.cpp: the installed-app icon margin is the system set's ~8%, not 12% (the same change in
+    # our SvgtFbsRasterizer.cpp for vector icons) -- installed and built-in app icons draw at one size
     "aknicon": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.uiresources/uigraphics/AknIcon/group/AknIcon.mmp",
-                    ),
+                    drop=["akniconsrvutils.cpp"], extra=["toolchain/shims/akniconsrv_margin/AknIconSrvUtils.cpp"]),
     "aknskins": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.uiresources/skins/AknSkins/group/AknSkins.mmp", defs=["AKNS_TRACING_ENABLED_ERROR"]),
     "eikcoctllaf": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/uiklaf/Group/EikCoCtlLaf.MMP"),
     # its DEFFILE arm is `#if defined(ARMCC)`; the def is exported under epoc32/include
@@ -1124,9 +1126,9 @@ COMPONENTS = {
     # (`rom_stub`, pdk tools/rom_stubs.py) and the SIS (--rom-upgrade) installs over them. heap_max = rom_heap.tsv's, which only
     # the ROM copy gets: an installed copy keeps its image header's (engines allocate through the process heap).
     "phebrowser": dict(needs="webengine", mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp"), sis=True, heap_max=0x10000000,
-                       rom_data=["resource\\apps\\phebrowser_icon.mbm=" + os.path.join(OS_ROOT, "src/phebrowser/data/phebrowser_icon.mbm")],
+                       rom_data=["resource\\apps\\phebrowser_icon.mif=" + os.path.join(OS_ROOT, "src/phebrowser/data/phebrowser_icon.mif")],
                        rom_stub=dict(name="Phorepoc Browser", files=["sys\\bin\\phebrowser.exe", "resource\\apps\\phebrowser.rsc",
-                                                                     "resource\\apps\\phebrowser_icon.mbm",
+                                                                     "resource\\apps\\phebrowser_icon.mif",
                                                                      "private\\10003a3f\\import\\apps\\phebrowser_reg.rsc"])),
     # The same frontend as a stock-loader ARM image (`device`) for the ARM SIS: it runs on Phorepoc's ARM boards and on stock
     # Symbian^3 phones (their framework DLLs serve the 2010 ordinals it imports; no _ZTI data imports, which stock firmware does
@@ -1134,7 +1136,7 @@ COMPONENTS = {
     # would overwrite that image of the same name; only package.yml names it).
     "phebrowser_arm": dict(needs="webengine", mmp=os.path.join(OS_ROOT, "src/phebrowser/phebrowser.mmp"), rom="phebrowser.exe",
                            package_only=True, arm_only=True, device=True, sis=True, rtti=True, import_typeinfo=False, static_ctors=True, arm_heap_max=0x10000000,
-                           rom_data=["resource\\apps\\phebrowser_icon.mbm=" + os.path.join(OS_ROOT, "src/phebrowser/data/phebrowser_icon.mbm")]),
+                           rom_data=["resource\\apps\\phebrowser_icon.mif=" + os.path.join(OS_ROOT, "src/phebrowser/data/phebrowser_icon.mif")]),
     "tonetest": dict(mmp=os.path.join(OS_ROOT, "src/tonetest/tonetest.mmp"), test=True),
     # --- vector graphics: what the default skin's backgrounds + every real icon need (next: vgrenderer,
     "svgengine": dict(mmp="oss.FCL.sf.mw.svgt/svgtopt/SVG/SVGEngine/group/SVGEngine.mmp",
@@ -2189,10 +2191,10 @@ COMPONENTS = {
     "sysversioninfo": dict(mmp="oss.FCL.sf.os.devicesrv/commonservices/PlatformEnv/sysversioninfo/group/sysversioninfo.mmp"),
     # OURS: minimal S60 Avkon application (app/document/appui/view + .rss)
     "aknapp": dict(mmp=os.path.join(OS_ROOT, "src/aknapp/aknapp.mmp"), rtti=True,
-                   rom_data=["resource\\apps\\aknapp_icon.mbm=" + os.path.join(OS_ROOT, "src/aknapp/data/aknapp_icon.mbm")]),
+                   rom_data=["resource\\apps\\aknapp_icon.mif=" + os.path.join(OS_ROOT, "src/aknapp/data/aknapp_icon.mif")]),
     # OURS: interim S60 launcher -- a real Avkon list of the AppList server's apps (src/aknmenu)
     "aknmenu": dict(mmp=os.path.join(OS_ROOT, "src/aknmenu/aknmenu.mmp"), rtti=True,
-                    rom_data=["resource\\apps\\aknmenu_icon.mbm=" + os.path.join(OS_ROOT, "src/aknmenu/data/aknmenu_icon.mbm")]),
+                    rom_data=["resource\\apps\\aknmenu_icon.mif=" + os.path.join(OS_ROOT, "src/aknmenu/data/aknmenu_icon.mif")]),
     # OURS: minimal CONE application (CCoeEnv/CCoeAppUi/CCoeControl)
     "coneapp": dict(mmp=os.path.join(OS_ROOT, "src/coneapp/coneapp.mmp")),
     "econs": dict(mmp="oss.FCL.sf.os.kernelhwsrv/kernel/eka/ewsrv/econs.mmp"),
@@ -2209,7 +2211,7 @@ COMPONENTS = {
     "eshell": dict(mmp="oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/etshell/eshell.mmp"),
     # OURS: eshell's apparc registration + caption/icon (data only: the real eshell has none)
     "eshellreg": dict(mmp=os.path.join(OS_ROOT, "src/eshellreg/eshellreg.mmp"), rsc_only=True,
-                      rom_data=["resource\\apps\\eshell_icon.mbm=" + os.path.join(OS_ROOT, "src/eshellreg/data/eshell_icon.mbm")]),
+                      rom_data=["resource\\apps\\eshell_icon.mif=" + os.path.join(OS_ROOT, "src/eshellreg/data/eshell_icon.mif")]),
     "elocal": dict(mmp="oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/sfat/elocal.mmp",
                    rom="elocal.fsy"),
     # sl_vfat.cpp: ours, the release file with the entry-set erase fixed for a data area that does not start on a cluster

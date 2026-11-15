@@ -43,9 +43,9 @@ RESOURCE MENU_PANE r_pheterm_menu
 		};
 	}
 
-// the launcher's entry: the caption and the icon (pheterm_icon.mbm, drawn by data/make_icon.py)
+// the launcher's entry: the caption and the icon (pheterm_icon.mif, drawn by data/make_icon.py)
 RESOURCE LOCALISABLE_APP_INFO r_pheterm_localisable_app_info
 	{
 	short_caption = "Terminal";
-	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Terminal"; number_of_icons = 1; icon_file = "\\resource\\apps\\pheterm_icon.mbm"; };
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Terminal"; number_of_icons = 1; icon_file = "\\resource\\apps\\pheterm_icon.mif"; };
 	}

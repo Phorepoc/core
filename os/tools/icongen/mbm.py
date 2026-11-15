@@ -52,6 +52,9 @@ def make_app_icon(folder, name, glyph, accent):
     g = icongen.GLYPHS[glyph]
     with open(os.path.join(folder, name + "_icon.svg"), "w", newline="\n") as f:
         f.write(icongen.svg(g, accent, name))
+    # the launcher's scalable icon: pdk tools/app_icon_mif.py <name>_icon_tiny.svg <name>_icon.mif (in the toolchain container)
+    with open(os.path.join(folder, name + "_icon_tiny.svg"), "w", newline="\n") as f:
+        f.write(icongen.svg_tiny(g, accent, name))
     icongen.render_png(g, accent, 256).save(os.path.join(folder, name + "_icon_preview.png"))
     with open(os.path.join(folder, name + "_icon.mbm"), "wb") as f:
         f.write(mbm(icongen.render_png(g, accent, S, ss=8)))

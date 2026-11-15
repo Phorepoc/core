@@ -705,13 +705,15 @@ TSize CSvgtFbsRasterizer::ApplyMarginL(VGImage aVgImage, TSize aSize)
     HBufC8* buf = HBufC8::NewL(aSize.iWidth* sizeof(TUint32));
     TUint32* ptr = (TUint32*)(buf->Des()).Ptr();
     
-    const TInt validMargin = aSize.iHeight * 12 / 100;
+    // OURS: the installed-app icon margin = the system icon set's own (~8% a side, measured in the launcher grid:
+    // 64 px art in a 76 px cell), not 12% -- with 12% an installed icon came out ~10% smaller than the built-in ones
+    const TInt validMargin = aSize.iHeight * 8 / 100;
     
     const TInt Ha = aSize.iHeight;
     TInt hTa = 0;
     TInt hNT = 0;
     TInt C = 0;
-    TInt hNTN = Ha - 2.0 * 0.12 * Ha;   
+    TInt hNTN = Ha - 2.0 * 0.08 * Ha;   
     TReal R = 1.0;
     TInt HaN = Ha;
     

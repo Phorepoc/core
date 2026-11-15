@@ -19,7 +19,7 @@ import colorsys
 import math
 
 N = 2.8                      # the squircle exponent (language: Shape)
-TILE = 0.975                 # tile size as a fraction of the canvas
+TILE = 0.84                  # tile size as a fraction of the canvas: the S60 system icons' ~8% margin a side (launcher grid: 64 px art in a 76 px cell), which installed icons are normalised to (akniconsrv)
 GLYPH = 0.60                 # glyph box (24 grid) as a fraction of the tile
 STROKE = 2.0                 # in grid units
 
@@ -174,6 +174,82 @@ def svg(glyph, accent, title="icon"):
            glyph_shadow=_svg_glyph(glyph, 'transform="%s" %s' % (place, stroke)),
            glyph_hi=_svg_glyph(glyph, 'transform="%s" %s' % (place, stroke)),
            glyph_main=_svg_glyph(glyph, 'transform="%s" %s' % (place, stroke)))
+
+
+def _clip_convex(subject, clipper):
+    """subject polygon clipped to a convex polygon (Sutherland-Hodgman)"""
+    area = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(clipper, clipper[1:] + clipper[:1]))
+    sign = 1 if area > 0 else -1
+
+    def inside(p, a, b):
+        return sign * ((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])) >= 0
+
+    def cross(p, q, a, b):
+        x1, y1, x2, y2 = p[0], p[1], q[0], q[1]
+        x3, y3, x4, y4 = a[0], a[1], b[0], b[1]
+        d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / d
+        return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+
+    out = list(subject)
+    for a, b in zip(clipper, clipper[1:] + clipper[:1]):
+        inp, out = out, []
+        for i, q in enumerate(inp):
+            p = inp[i - 1]
+            if inside(q, a, b):
+                if not inside(p, a, b):
+                    out.append(cross(p, q, a, b))
+                out.append(q)
+            elif inside(p, a, b):
+                out.append(cross(p, q, a, b))
+    return out
+
+
+def svg_tiny(glyph, accent, title="icon"):
+    """the icon as SVG-Tiny for mifconv/svgtbinencode (the launcher's scalable icon): svg() without what Tiny lacks --
+    no filter (the glyph's cast shadow is drawn unblurred and lighter), no clipPath (the rim is the tile minus its
+    intersection with the shifted tile, computed here), no group opacity, no currentColor"""
+    top, bottom = tile_colours(accent)
+    L = LIGHT
+    half = 50 * TILE
+    tile = squircle_points(50, 50, half)
+    shifted = squircle_points(50, 50 + 100 * L["rim"], half)
+    inner = _clip_convex(tile, shifted)
+    gs = 100 * TILE * GLYPH / 24.0
+    place = "translate(50 50) scale(%.4f) translate(-12 -12)" % gs
+    y0, y1 = 50 - 12 * gs, 50 + 12 * gs
+    rim = _tohex(_rgb(*(_hsl(top)[0], _hsl(top)[1], _hsl(top)[2] + L["rim_light"])))
+    shadow = _tohex(tuple(v * 0.55 for v in bottom))
+    stroke = 'fill="none" stroke-width="%g" stroke-linecap="round" stroke-linejoin="round"' % STROKE
+
+    def glyph_in(colour, extra=""):
+        g = _svg_glyph(glyph, 'transform="%s" %s stroke="%s"%s' % (place, stroke, colour, extra))
+        return g.replace('fill="currentColor"', 'fill="%s"' % (colour if not colour.startswith("url(") else "#EAE9E3"))
+
+    castop = L["cast_opacity"] * 0.6
+    return """<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="tiny" width="100" height="100" viewBox="0 0 100 100">
+  <title>%(title)s</title>
+  <!-- Original artwork, EPL-2.0 OR GPL-2.0-or-later (The Phorepoc Authors): the SVG-Tiny form of %(title)s_icon.svg (icongen.py svg_tiny) -->
+  <defs>
+    <linearGradient id="tile" gradientUnits="userSpaceOnUse" x1="0" y1="%(g0).2f" x2="0" y2="%(g1).2f">
+      <stop offset="0" stop-color="%(top)s"/><stop offset="1" stop-color="%(bottom)s"/>
+    </linearGradient>
+    <linearGradient id="glyph" gradientUnits="userSpaceOnUse" x1="0" y1="%(y0).2f" x2="0" y2="%(y1).2f">
+      <stop offset="0" stop-color="%(c0)s"/><stop offset="0.5" stop-color="%(c1)s"/><stop offset="1" stop-color="%(c2)s"/>
+    </linearGradient>
+  </defs>
+  <path d="%(tile)s" fill="url(#tile)"/>
+  <path d="%(tile)s %(inner)s" fill="%(rim)s" fill-opacity="%(rimop)s" fill-rule="evenodd"/>
+  <g transform="translate(0 %(cast).2f)">%(glyph_shadow)s</g>
+  <g transform="translate(0 -0.6)">%(glyph_hi)s</g>
+  %(glyph_main)s
+</svg>
+""" % dict(title=title, g0=100 * L["gradient_start"], g1=100 * L["gradient_end"], top=_tohex(top), bottom=_tohex(bottom),
+           y0=y0, y1=y1, c0=L["glyph"][0], c1=L["glyph"][1], c2=L["glyph"][2], tile=_path(tile), inner=_path(inner),
+           rim=rim, rimop=L["rim_opacity"], cast=100 * L["cast_offset"],
+           glyph_shadow=glyph_in(shadow, ' stroke-opacity="%.2f" fill-opacity="%.2f"' % (castop, castop)),
+           glyph_hi=glyph_in(L["highlight"]),
+           glyph_main=glyph_in(L["glyph"][1]))   # solid: svgtbinencode drops a gradient stroke (the glyph came out black)
 
 
 def render_png(glyph, accent, size=256, ss=4):

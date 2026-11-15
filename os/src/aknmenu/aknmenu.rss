@@ -29,9 +29,9 @@ RESOURCE MENU_PANE r_aknmenu_menu
 		};
 	}
 
-// the launcher's entry: the caption and the icon (aknmenu_icon.mbm, drawn by data/make_icon.py)
+// the launcher's entry: the caption and the icon (aknmenu_icon.mif, drawn by data/make_icon.py)
 RESOURCE LOCALISABLE_APP_INFO r_aknmenu_localisable_app_info
 	{
 	short_caption = "Menu test";
-	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Menu test"; number_of_icons = 1; icon_file = "\\resource\\apps\\aknmenu_icon.mbm"; };
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Menu test"; number_of_icons = 1; icon_file = "\\resource\\apps\\aknmenu_icon.mif"; };
 	}
