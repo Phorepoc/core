@@ -23,6 +23,7 @@
 #include "../phedevmenu/phedevmenu.h"
 #include "../phedevmenu/pheshells.h"
 #include "../phedevmenu/pheorient.h"
+#include "../phedevmenu/pheshellapps.h"
 
 _LIT(KAiLaunch, "z:\\sys\\bin\\ailaunch.exe");
 _LIT(KMatrixMenu, "z:\\sys\\bin\\matrixmenu.exe");
@@ -304,6 +305,8 @@ static TInt RunShellL()
 		pick = 0;
 	const CPheShell* shell = shells[pick];
 	TBool s3 = pick == 0;
+	// shell-tagged apps (pheshellapps.h): hide the other shells' apps and the ones this shell replaces, apply its handlers
+	TRAP_IGNORE(PheApplyShellAppsL(fs, shell->Id()));
 	RDebug::Print(_L("PH: [shellsel] repo %d, starting %S (fallback %d)"), rerr, &shell->Id(), fellBack);
 	RProcess launcher;
 	TInt r = KErrNone;
@@ -331,6 +334,7 @@ static TInt RunShellL()
 			SetRepoInt(repo, KPheDevKeyShellTries, 0);
 			shell = shells[0];
 			s3 = ETrue;
+			TRAP_IGNORE(PheApplyShellAppsL(fs, shell->Id()));
 			}
 		else
 			SetRepoInt(repo, KPheDevKeyShellTries, t + 1);
