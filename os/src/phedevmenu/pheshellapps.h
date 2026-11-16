@@ -171,7 +171,7 @@ public:
 			else if (active)
 				{
 				const TInt r = iLs.InsertDataMapping(dt, KDataTypePriorityHigh, TUid::Uid(uid));
-				RDebug::Printf("PH: [shellapps] %S handler %08x: %d", &aShellId, uid, r);
+				RDebug::Print(_L("PH: [shellapps] %S handler %08x: %d"), &aShellId, uid, r);
 				}
 			}
 		}
