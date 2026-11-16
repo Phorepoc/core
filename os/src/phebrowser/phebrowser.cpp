@@ -946,6 +946,13 @@ private:
 		aTab.iLateStart = aTab.iPaintMs < 0 ? aTab.iLoadStart : 0;
 		aTab.iLoadStart = 0;
 		}
+	// a page field gets our editor (and the keyboard) only when the user tapped the page just before: a page's own focus()
+	// or autofocus (x.com's sign-in, DuckDuckGo's results) opened it uninvited, over the address bar, and the next typed
+	// address went into the page's field. Mobile browsers open the keyboard only for a focus that follows a user tap.
+	TBool TappedPageRecently() const
+		{
+		return iPageTapAt && TInt64(User::NTickCount() - iPageTapAt) * TickUs() < 2000000;
+		}
 	static TInt TickUs()
 		{
 		TInt us = 1000;
@@ -1000,7 +1007,7 @@ private:
 				if (e.a == 0)                        // the committed field lost the caret (a tap elsewhere, or on the next
 					iFocusMuted = EFalse;            // field: the engine posts a = 0, then a = 2 for it); NetSurf's own
 				                                     // repeat of the committed field's focus (a = 2 alone) stays muted
-				if (t == iCur && e.a == 2 && !iEditing && iMode == EModeBrowse && !iFocusMuted)
+				if (t == iCur && e.a == 2 && !iEditing && iMode == EModeBrowse && !iFocusMuted && TappedPageRecently())
 					{ iPageInput = ETrue; iPagePassword = e.b == 1; TRAP_IGNORE(StartEditL()); }   // b = 1: a password field
 				break;
 			case PHE_EV_NEW_VIEW:
@@ -1632,7 +1639,7 @@ private:
 							                                            // the bar's move does not matter): a tap on the next field
 							const TInt x = aE.iPosition.iX - el.iPage.iX, y = aE.iPosition.iY - el.iPage.iY;   // focuses it and opens
 							iApi->pointer(iTabs[iCur].iView, PHE_PTR_DOWN, x, y);                             // the editor again
-							iApi->pointer(iTabs[iCur].iView, PHE_PTR_UP, x, y);
+							iApi->pointer(iTabs[iCur].iView, PHE_PTR_UP, x, y); iPageTapAt = User::NTickCount();
 							}
 						}
 					else
@@ -1702,7 +1709,7 @@ private:
 					else
 						{
 						iApi->pointer(iTabs[iCur].iView, PHE_PTR_DOWN, x, y);
-						iApi->pointer(iTabs[iCur].iView, PHE_PTR_UP, x, y);
+						iApi->pointer(iTabs[iCur].iView, PHE_PTR_UP, x, y); iPageTapAt = User::NTickCount();
 						}
 				}
 				break;
@@ -1884,6 +1891,7 @@ private:
 	TBool iPagePassword = EFalse;           // the focused page field is a password
 	static const TInt KSecretMax = 128;
 	TBool iEditing = EFalse;
+	TUint32 iPageTapAt = 0;                  // the last tap passed to the page (User::NTickCount): TappedPageRecently
 	TBool iFocusMuted = EFalse;              // a page field was just committed: ignore focus reports until the next touch
 	TBool iPageInput = EFalse;               // the editor is typing into a page field (PHE_EV_FOCUS), not the address
 	TBool iStartTouch = EFalse;
