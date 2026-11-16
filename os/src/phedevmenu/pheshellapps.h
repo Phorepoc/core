@@ -142,7 +142,7 @@ private:
 class TPheAssocApplier : public MPheTagFile
 	{
 public:
-	TPheAssocApplier(RApaLsSession& aLs, const TDesC& aActive, TBool aInsert) : iLs(aLs), iActive(aActive), iInsert(aInsert) {}
+	TPheAssocApplier(RApaLsSession& aLs, const TDesC& aActive, TInt aMode) : iLs(aLs), iActive(aActive), iMode(aMode) {}		// 0 delete, 1 insert (active shell), 2 report
 	void TagFileL(const TDesC& aShellId, const TDesC8& aText)
 		{
 		const TBool active = aShellId.CompareF(iActive) == 0;
@@ -164,9 +164,15 @@ public:
 			if (type.Length() == 0 || lx.Val(uid, EHex) != KErrNone || uid == 0)
 				continue;
 			TDataType dt(type);
-			if (!iInsert)
+			if (iMode == 0)
 				{
 				iLs.DeleteDataMapping(dt);		// whichever shell set it last
+				}
+			else if (iMode == 2)
+				{
+				TUid handler = KNullUid;
+				const TInt r = iLs.AppForDataType(dt, handler);
+				RDebug::Print(_L("PH: [shellapps] %S: handler of the data type is %08x (%d)"), &aShellId, handler.iUid, r);
 				}
 			else if (active)
 				{
@@ -178,7 +184,7 @@ public:
 private:
 	RApaLsSession& iLs;
 	const TDesC& iActive;
-	TBool iInsert;
+	TInt iMode;
 	};
 
 inline void PheApplyShellAppsL(RFs& aFs, const TDesC& aActiveId)
@@ -235,10 +241,12 @@ inline void PheApplyShellAppsL(RFs& aFs, const TDesC& aActiveId)
 	if (ls.Connect() == KErrNone)
 		{
 		CleanupClosePushL(ls);
-		TPheAssocApplier remove(ls, aActiveId, EFalse);
+		TPheAssocApplier remove(ls, aActiveId, 0);
 		PheForEachTagFileL(aFs, _L(".assoc"), remove);
-		TPheAssocApplier insert(ls, aActiveId, ETrue);
+		TPheAssocApplier insert(ls, aActiveId, 1);
 		PheForEachTagFileL(aFs, _L(".assoc"), insert);
+		TPheAssocApplier report(ls, aActiveId, 2);
+		PheForEachTagFileL(aFs, _L(".assoc"), report);
 		CleanupStack::PopAndDestroy(&ls);
 		}
 	}
