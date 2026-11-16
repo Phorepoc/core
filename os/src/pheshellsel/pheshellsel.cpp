@@ -24,6 +24,7 @@
 #include "../phedevmenu/pheshells.h"
 #include "../phedevmenu/pheorient.h"
 #include "../phedevmenu/pheshellapps.h"
+#include "../phedevmenu/pheshelltheme.h"
 
 _LIT(KAiLaunch, "z:\\sys\\bin\\ailaunch.exe");
 _LIT(KMatrixMenu, "z:\\sys\\bin\\matrixmenu.exe");
@@ -295,6 +296,7 @@ static TInt RunShellL()
 				PheStoreShellId(repo, KPheShellIdS3);
 				repo->Set(KPheDevKeyShellNote, shells[pick]->Name().Left(KPheCenRepTextMax));
 				}
+			TRAP_IGNORE(PheThemeLeaveShellL());		// the given-up shell's theme goes, the one saved before it comes back
 			SetRepoInt(repo, KPheDevKeyShellTries, 0);
 			forced = ETrue;
 			}
@@ -331,6 +333,7 @@ static TInt RunShellL()
 				PheStoreShellId(repo, KPheShellIdS3);
 				repo->Set(KPheDevKeyShellNote, shell->Name().Left(KPheCenRepTextMax));
 				}
+			TRAP_IGNORE(PheThemeLeaveShellL());
 			SetRepoInt(repo, KPheDevKeyShellTries, 0);
 			shell = shells[0];
 			s3 = ETrue;
