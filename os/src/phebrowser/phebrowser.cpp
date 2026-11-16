@@ -117,6 +117,46 @@ static void DownloadDir(RFs& aFs, TDes& aOut)
 	aFs.MkDirAll(aOut);
 	}
 
+// the engine's file name (Content-Disposition or the URL's last segment) made safe for a path: no directories, no characters
+// a file name cannot hold, never empty
+static void SafeName(TDes& aName)
+	{
+	_LIT(KBad, "\\/:*?\"<>|");
+	for (TInt i = 0; i < aName.Length(); ++i)
+		if (aName[i] < 32 || KBad().Locate(aName[i]) >= 0)
+			aName[i] = '_';
+	aName.Trim();
+	while (aName.Length() > 0 && aName[0] == '.')      // no hidden or "." / ".." names
+		aName.Delete(0, 1);
+	if (aName.Length() == 0)
+		aName = _L("download");
+	}
+
+// aDir + aName, or "name (2).ext", "name (3).ext" ... when that file exists: a download never replaces a file
+static void UniquePath(RFs& aFs, const TDesC& aDir, const TDesC& aName, TDes& aOut)
+	{
+	TInt dot = aName.LocateReverse('.');
+	if (dot <= 0)
+		dot = aName.Length();
+	TEntry e;
+	for (TInt n = 1; n < 1000; ++n)
+		{
+		aOut = aDir;
+		if (n == 1)
+			aOut.Append(aName.Left(aOut.MaxLength() - aOut.Length()));
+		else
+			{
+			TBuf<16> suffix;
+			suffix.Format(_L(" (%d)"), n);
+			aOut.Append(aName.Left(Min(dot, aOut.MaxLength() - aOut.Length() - suffix.Length() - (aName.Length() - dot))));
+			aOut.Append(suffix);
+			aOut.Append(aName.Mid(dot));
+			}
+		if (aFs.Entry(aOut, e) == KErrNotFound)
+			return;
+		}
+	}
+
 // ---- settings (a tiny key=value file; CenRep later: this class is the only thing to swap) --------------------------------------
 class CPbSettings
 	{
@@ -230,6 +270,7 @@ public:
 		delete iSecret;
 		delete iPageBmp;
 		iTabs.Close();
+		iDownloads.Close();
 		}
 
 	void ConstructL(const TRect& aRect, CPbSettings* aSettings)
@@ -874,6 +915,13 @@ private:
 				return i;
 		return KErrNotFound;
 		}
+	// a short message that does not wait (event handling goes on underneath)
+	void Note(const TDesC& aText)
+		{
+		CAknInformationNote* n = new CAknInformationNote(EFalse);
+		if (n)
+			TRAP_IGNORE(n->ExecuteLD(aText));
+		}
 	void FetchStr(PheView aV, TInt aWhich, TDes& aOut)
 		{
 		TUint16 tmp[256];
@@ -1019,13 +1067,41 @@ private:
 				return;
 			case PHE_EV_DOWNLOAD:                    // accept into E:\Downloads (else C:\data\Downloads)
 				{
-				TFileName path;
-				DownloadDir(iEikonEnv->FsSession(), path);
+				TFileName dir, path;
+				DownloadDir(iEikonEnv->FsSession(), dir);
 				TBuf<128> name;
 				FetchStr(e.view, PHE_STR_DL_NAME, name);
-				path.Append(name);
+				SafeName(name);
+				UniquePath(iEikonEnv->FsSession(), dir, name, path);
+				TPbDownload d;
+				d.iId = e.id;
+				d.iPath = path;
+				iDownloads.Append(d);
+				TBuf8<256> p8;
+				p8.Copy(path.Left(256));
+				PbTrace("PH: [phebrowser] download %d -> %S", e.id, &p8);
 				iApi->download_accept(e.view, e.id, path.Ptr(), path.Length());
+				TBuf<200> msg;
+				msg.Format(_L("Downloading %S"), &name);
+				Note(msg);
 				}
+				break;
+			case PHE_EV_DOWNLOAD_DONE:               // a = 0 saved, else an error code
+				for (TInt i = 0; i < iDownloads.Count(); ++i)
+					if (iDownloads[i].iId == e.id)
+						{
+						TBuf8<256> p8;
+						p8.Copy(iDownloads[i].iPath.Left(256));
+						PbTrace("PH: [phebrowser] download %d %s (%d): %S", e.id, e.a == 0 ? "saved" : "FAILED", e.a, &p8);
+						TBuf<300> msg;
+						if (e.a == 0)
+							msg.Format(_L("Saved to %S"), &iDownloads[i].iPath);
+						else
+							msg.Format(_L("Download failed (%d)"), e.a);
+						Note(msg);
+						iDownloads.Remove(i);
+						break;
+						}
 				break;
 			default:
 				break;
@@ -1867,6 +1943,8 @@ private:
 	const PheWebEngineApi* iApi = NULL;
 	CPbSettings* iSet = NULL;
 	RArray<TPbTab> iTabs;
+	struct TPbDownload { TUint iId; TFileName iPath; };
+	RArray<TPbDownload> iDownloads;   // accepted downloads still running: their paths for the "saved" note
 	TInt iCur = -1;
 	TPbMode iMode = EModeBrowse;
 	CPbWake* iWake = NULL;
