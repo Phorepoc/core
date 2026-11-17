@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 // phecamera.cpp -- OURS: Camera (P1, photo). A native Avkon app over ECam only, so it runs on any device with an ECam
-// plug-in: a full-screen viewfinder, and under it a control bar with the last shot's thumbnail (left), the shutter
-// (middle) and the camera switch (right, when there is more than one camera). Styled after the Etesian design language
-// (https://language.etesian-design.com): black surface, white round shutter, quiet grey secondary controls.
+// plug-in. FULL SCREEN: no status pane, no softkey bar; the viewfinder fills the screen and the controls are transparent
+// squircle buttons over it (Etesian, as the N9 camera): close (top left) and the menu (top right); along the bottom an
+// icon bar of the last shot's thumbnail (left), the round shutter (middle) and the camera switch (right, when there is
+// more than one camera). Every size follows the real screen (a fraction of its shorter side), portrait or landscape.
+// Hardware keys keep working: the left softkey opens the menu, the right one exits.
 // The still is the largest capture size, as Exif (else JPEG, else a bitmap the app encodes itself), saved to
 // C:\Data\Images\IMG_<date>_<time>.jpg; a full-size still takes seconds, so the shutter shows a busy state until
 // ImageReady. Without a camera (CCamera::CamerasAvailable() == 0) the screen says "No camera".
@@ -14,6 +16,8 @@
 #include <aknapp.h>
 #include <akndoc.h>
 #include <aknappui.h>
+#include <eikbtgpc.h>
+#include <eikmenub.h>
 #include <coecntrl.h>
 #include <eikenv.h>
 #include <eikspane.h>
@@ -32,10 +36,12 @@ _LIT(KImageDir, "C:\\Data\\Images\\");
 
 // Etesian-style colours
 const TRgb KSurface(0, 0, 0);
-const TRgb KBar(0x14, 0x14, 0x14);
 const TRgb KShutter(0xFF, 0xFF, 0xFF);
 const TRgb KBusy(0x80, 0x80, 0x80);
 const TRgb KQuiet(0xB0, 0xB0, 0xB0);
+const TRgb KGlyph(0xFF, 0xFF, 0xFF);
+const TRgb KSquircleFill(0, 0, 0, 0x60);		// transparent: the viewfinder shows through
+const TRgb KSquircleRim(0xFF, 0xFF, 0xFF, 0x70);
 const TRgb KText(0xF6, 0xF8, 0xED);
 
 // encodes a bitmap still to a JPEG file (only for a plug-in that offers no Exif/JPEG format)
@@ -245,13 +251,30 @@ public:
 			Capture();
 			return EKeyWasConsumed;
 			}
+		// the softkey bar is hidden: its keys still work
+		if (aType == EEventKey && aKeyEvent.iCode == EKeyDevice0)
+			{
+			iAvkonAppUi->ProcessCommandL(EAknSoftkeyOptions);
+			return EKeyWasConsumed;
+			}
+		if (aType == EEventKey && aKeyEvent.iCode == EKeyDevice1)
+			{
+			iAvkonAppUi->ProcessCommandL(EAknSoftkeyExit);
+			return EKeyWasConsumed;
+			}
 		return EKeyWasNotConsumed;
 		}
 	void HandlePointerEventL(const TPointerEvent& aEvent)
 		{
 		if (aEvent.iType != TPointerEvent::EButton1Up)
 			return;
-		if (Hit(ShutterRect(), aEvent.iPosition))
+		if (Hit(CloseRect(), aEvent.iPosition))
+			iAvkonAppUi->ProcessCommandL(EAknSoftkeyExit);
+		else if (Hit(MenuRect(), aEvent.iPosition))
+			iAvkonAppUi->ProcessCommandL(EAknSoftkeyOptions);
+		else if (iState == ENoCamera)
+			return;
+		else if (Hit(ShutterRect(), aEvent.iPosition))
 			Capture();
 		else if (iCount > 1 && Hit(SwitchRect(), aEvent.iPosition))
 			Switch();
@@ -292,19 +315,48 @@ private:
 		return r.Contains(aPoint);
 		}
 
-	// layout: the viewfinder above a control bar of a sixth of the height (at least 96 px)
-	TInt BarHeight() const { return Max(96, Rect().Height() / 6); }
-	TRect ViewfinderRect() const { TRect r(Rect()); r.iBr.iY -= BarHeight(); return r; }
+	// layout, all from the real screen: fractions of its shorter side
+	TInt Unit() const { return Max(1, Min(Rect().Width(), Rect().Height())); }
+	TInt Button() const { return Unit() * 15 / 100; }		// a squircle button (54 px on a 360 px wide screen)
+	TInt Margin() const { return Unit() * 5 / 100; }
+	TInt BarHeight() const { return Unit() * 30 / 100; }		// the bottom icon bar (over the viewfinder)
+	TRect ViewfinderRect() const { return Rect(); }
 	TRect BarRect() const { TRect r(Rect()); r.iTl.iY = r.iBr.iY - BarHeight(); return r; }
-	TRect Square(TInt aCentreX, TInt aSide) const
+	TRect Square(TInt aCentreX, TInt aCentreY, TInt aSide) const
 		{
-		const TRect bar = BarRect();
-		const TPoint c(aCentreX, bar.Center().iY);
-		return TRect(c - TPoint(aSide / 2, aSide / 2), TSize(aSide, aSide));
+		return TRect(TPoint(aCentreX - aSide / 2, aCentreY - aSide / 2), TSize(aSide, aSide));
 		}
-	TRect ShutterRect() const { return Square(BarRect().Center().iX, BarHeight() * 64 / 100); }
-	TRect ThumbRect() const { return Square(BarRect().iTl.iX + BarRect().Width() / 6, BarHeight() * 46 / 100); }
-	TRect SwitchRect() const { return Square(BarRect().iBr.iX - BarRect().Width() / 6, BarHeight() * 46 / 100); }
+	TRect BarSquare(TInt aCentreX, TInt aSide) const { return Square(aCentreX, BarRect().Center().iY, aSide); }
+	TRect ShutterRect() const { return BarSquare(BarRect().Center().iX, Unit() * 21 / 100); }
+	TRect ThumbRect() const { return BarSquare(BarRect().iTl.iX + BarRect().Width() / 6, Button()); }
+	TRect SwitchRect() const { return BarSquare(BarRect().iBr.iX - BarRect().Width() / 6, Button()); }
+	TRect CloseRect() const { return TRect(Rect().iTl + TPoint(Margin(), Margin()), TSize(Button(), Button())); }
+	TRect MenuRect() const
+		{
+		return TRect(TPoint(Rect().iBr.iX - Margin() - Button(), Rect().iTl.iY + Margin()), TSize(Button(), Button()));
+		}
+
+	// an Etesian squircle button: a transparent dark fill and a light rim, the viewfinder shows through
+	void DrawSquircle(CWindowGc& aGc, const TRect& aRect) const
+		{
+		const TSize corner(aRect.Width() * 3 / 10, aRect.Height() * 3 / 10);
+		aGc.SetDrawMode(CGraphicsContext::EDrawModePEN);
+		aGc.SetPenStyle(CGraphicsContext::ESolidPen);
+		aGc.SetPenSize(TSize(2, 2));
+		aGc.SetPenColor(KSquircleRim);
+		aGc.SetBrushStyle(CGraphicsContext::ESolidBrush);
+		aGc.SetBrushColor(KSquircleFill);
+		aGc.DrawRoundRect(aRect, corner);
+		aGc.SetBrushStyle(CGraphicsContext::ENullBrush);
+		}
+	void Glyph(CWindowGc& aGc, TBool aLive) const
+		{
+		const TInt w = Max(2, Unit() / 120);
+		aGc.SetPenStyle(CGraphicsContext::ESolidPen);
+		aGc.SetPenSize(TSize(w, w));
+		aGc.SetPenColor(aLive ? KGlyph : KBusy);
+		aGc.SetBrushStyle(CGraphicsContext::ENullBrush);
+		}
 
 	// the viewfinder frame, centred and cropped to fill its area
 	void DrawViewfinder(CWindowGc& aGc) const
@@ -352,11 +404,6 @@ private:
 		{
 		CWindowGc& gc = SystemGc();
 		DrawViewfinder(gc);
-		// the bar
-		gc.SetPenStyle(CGraphicsContext::ENullPen);
-		gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
-		gc.SetBrushColor(KBar);
-		gc.DrawRect(BarRect());
 		// the message over the viewfinder
 		if (iState == ENoCamera)
 			DrawText(gc, _L("No camera"), ViewfinderRect());
@@ -366,12 +413,36 @@ private:
 			DrawText(gc, _L("Starting camera"), ViewfinderRect());
 		else if (iState == EBusy)
 			{
-			TRect r = ViewfinderRect();
-			r.iTl.iY = r.iBr.iY - BarHeight() / 2;
+			TRect r = BarRect();
+			r.iBr.iY = r.iTl.iY;
+			r.iTl.iY -= BarHeight() / 3;
 			DrawText(gc, _L("Saving photo"), r);
 			}
+		// close: an X
+		TRect close(CloseRect());
+		DrawSquircle(gc, close);
+		Glyph(gc, ETrue);
+		close.Shrink(close.Width() * 3 / 10, close.Height() * 3 / 10);
+		gc.DrawLine(close.iTl, close.iBr);
+		gc.DrawLine(TPoint(close.iBr.iX, close.iTl.iY), TPoint(close.iTl.iX, close.iBr.iY));
+		// the menu: three dots
+		const TRect menu(MenuRect());
+		DrawSquircle(gc, menu);
+		gc.SetPenStyle(CGraphicsContext::ENullPen);
+		gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
+		gc.SetBrushColor(KGlyph);
+		const TInt dot = Max(3, menu.Width() / 10);
+		for (TInt i = -1; i <= 1; ++i)
+			{
+			const TPoint c(menu.Center().iX + i * dot * 2, menu.Center().iY);
+			gc.DrawEllipse(TRect(c - TPoint(dot / 2, dot / 2), TSize(dot, dot)));
+			}
+		gc.SetBrushStyle(CGraphicsContext::ENullBrush);
 		if (iState == ENoCamera)
+			{
+			gc.SetPenSize(TSize(1, 1));
 			return;
+			}
 		// the shutter: a white ring around a white disc; grey while a still is on its way
 		const TRect shutter = ShutterRect();
 		const TBool live = iState == EReady;
@@ -386,24 +457,26 @@ private:
 		gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
 		gc.SetBrushColor(live ? KShutter : KBusy);
 		gc.DrawEllipse(disc);
-		// the last shot
+		// the last shot, inside a squircle
 		const TRect thumb = ThumbRect();
+		DrawSquircle(gc, thumb);
 		if (iThumb)
-			gc.DrawBitmap(thumb, iThumb);
-		gc.SetBrushStyle(CGraphicsContext::ENullBrush);
-		gc.SetPenStyle(CGraphicsContext::ESolidPen);
-		gc.SetPenSize(TSize(2, 2));
-		gc.SetPenColor(KQuiet);
-		gc.DrawRoundRect(thumb, TSize(6, 6));
+			{
+			TRect t(thumb);
+			t.Shrink(thumb.Width() / 10, thumb.Height() / 10);
+			gc.DrawBitmap(t, iThumb);
+			}
 		// the switch: a ring with two arrow heads (rear <-> front)
 		if (iCount > 1)
 			{
-			TRect sw(SwitchRect());
-			sw.Shrink(sw.Width() / 6, sw.Height() / 6);
-			gc.SetPenColor(iState == EBusy ? KBusy : KQuiet);
+			const TRect swb(SwitchRect());
+			DrawSquircle(gc, swb);
+			TRect sw(swb);
+			sw.Shrink(sw.Width() * 3 / 10, sw.Height() * 3 / 10);
+			Glyph(gc, iState != EBusy);
 			gc.DrawArc(sw, TPoint(sw.iBr.iX, sw.iTl.iY), TPoint(sw.iTl.iX, sw.iBr.iY));
 			gc.DrawArc(sw, TPoint(sw.iTl.iX, sw.iBr.iY), TPoint(sw.iBr.iX, sw.iTl.iY));
-			const TInt a = sw.Width() / 5;
+			const TInt a = sw.Width() / 4;
 			const TPoint top(sw.Center().iX, sw.iTl.iY), bottom(sw.Center().iX, sw.iBr.iY);
 			gc.DrawLine(top, top + TPoint(-a, -a));
 			gc.DrawLine(top, top + TPoint(-a, a));
@@ -417,7 +490,9 @@ private:
 		{
 		if (!iVf)
 			return;
-		const TSize size = ThumbRect().Size();
+		TRect inner(ThumbRect());
+		inner.Shrink(inner.Width() / 10, inner.Height() / 10);
+		const TSize size = inner.Size();
 		if (!iThumb)
 			{
 			iThumb = new CFbsBitmap;
@@ -462,10 +537,13 @@ public:
 	void ConstructL()
 		{
 		BaseConstructL(EAknEnableSkin);
+		// full screen: no status pane, no softkey bar (the view takes their keys)
 		if (StatusPane())
 			StatusPane()->MakeVisible(EFalse);
+		if (Cba())
+			Cba()->MakeVisible(EFalse);
 		iView = new (ELeave) CPheCameraView;
-		iView->ConstructL(ClientRect());
+		iView->ConstructL(ApplicationRect());
 		AddToStackL(iView);
 		}
 	~CPheCameraAppUi()
@@ -480,6 +558,10 @@ public:
 			{
 		case EPheCamCmdCapture: iView->Capture(); break;
 		case EPheCamCmdSwitch: iView->Switch(); break;
+		case EAknSoftkeyOptions:
+			if (iEikonEnv->AppUiFactory()->MenuBar())
+				iEikonEnv->AppUiFactory()->MenuBar()->TryDisplayMenuBarL();
+			break;
 		case EAknSoftkeyExit:
 		case EEikCmdExit:
 			Exit();
@@ -503,7 +585,7 @@ public:
 		{
 		CAknAppUi::HandleResourceChangeL(aType);
 		if (iView && aType == KEikDynamicLayoutVariantSwitch)
-			iView->SetRect(ClientRect());
+			iView->SetRect(ApplicationRect());
 		}
 private:
 	CPheCameraView* iView = NULL;
