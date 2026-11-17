@@ -2188,7 +2188,9 @@ COMPONENTS = {
                   rss_delta={"about.rss": "src/phorepoc/about/about.rss"}),
     # its Control Panel entry: Device > Phone management (the device-management plug-in is its parent), opens About
     "aboutgsplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.utils/extras/about/aboutgsplugin/group/aboutgsplugin.mmp"),
-    "sysversioninfo": dict(mmp="oss.FCL.sf.os.devicesrv/commonservices/PlatformEnv/sysversioninfo/group/sysversioninfo.mmp"),
+    # phecompat: a per-app product version (\resource\phecompat\product\<sid>.txt, any drive) answers for that one legacy app
+    "sysversioninfo": dict(mmp="oss.FCL.sf.os.devicesrv/commonservices/PlatformEnv/sysversioninfo/group/sysversioninfo.mmp",
+                           drop=["sysversioninfo.cpp"], extra=["src/phorepoc/sysversioninfo/sysversioninfo.cpp"]),
     # OURS: minimal S60 Avkon application (app/document/appui/view + .rss)
     "aknapp": dict(mmp=os.path.join(OS_ROOT, "src/aknapp/aknapp.mmp"), rtti=True,
                    rom_data=["resource\\apps\\aknapp_icon.mif=" + os.path.join(OS_ROOT, "src/aknapp/data/aknapp_icon.mif")]),
