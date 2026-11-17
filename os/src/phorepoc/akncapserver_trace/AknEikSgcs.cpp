@@ -26,6 +26,7 @@
 
 #include "AknEikSgcs.h"
 #include <e32debug.h>
+#include <centralrepository.h>
 #include <eikenv.h>
 #include "eiksrvsp.h"
 #include <AknSgcc.h>
@@ -1018,6 +1019,34 @@ void CEikSgcServer::FadeBitmapGenerationL()
 		}
 #endif						   
 	}
+// Phorepoc (phecompat): does the owner of window group aWgId have a rotation profile (CenRep 0xE7016E00, key = SID,
+// bits 0-1 = rotation offset; see ph_compat.h in the window server)?
+static TBool PhCompatRotationProfile(TInt aWgId)
+    {
+    TThreadId tid;
+    if (CEikonEnv::Static()->WsSession().GetWindowGroupClientThreadId(aWgId, tid) != KErrNone)
+        {
+        return EFalse;
+        }
+    RThread thread;
+    if (thread.Open(tid) != KErrNone)
+        {
+        return EFalse;
+        }
+    const TUint32 sid = thread.SecureId().iId;
+    thread.Close();
+    TInt value = 0;
+    CRepository* rep = NULL;
+    TRAPD(err, rep = CRepository::NewL(TUid::Uid(0xE7016E00)));
+    if (err != KErrNone)
+        {
+        return EFalse;
+        }
+    err = rep->Get(sid, value);
+    delete rep;
+    return err == KErrNone && (value & 3) != 0;
+    }
+
 void CEikSgcServer::SetLayoutL(TInt aSpIndex)
     {
     if (aSpIndex == KErrNotFound)
@@ -1028,11 +1057,23 @@ void CEikSgcServer::SetLayoutL(TInt aSpIndex)
     TWgState& topState = iWgStates->At(aSpIndex);
 
     CEikonEnv* eikEnv = CEikonEnv::Static();
-    
+
+    // Phorepoc (phecompat): an app with a rotation profile is landscape from its first layout. Without this
+    // the group gets the portrait mode until the app sends its own orientation (~250 ms later), and a game
+    // that starts its direct screen access in between (the N-Gage runtime) keeps drawing a portrait frame.
+    TBool phSpecified = topState.IsOrientationSpecified();
+    TBool phLandscape = topState.IsOrientationLandscape();
+    if (!phSpecified && topState.AppScreenMode() < 0 && PhCompatRotationProfile(topState.WgId()))
+        {
+        phSpecified = ETrue;
+        phLandscape = ETrue;
+        RDebug::Printf("PH: sgc wg %d: phecompat profile -> landscape from the first layout", topState.WgId());
+        }
+
     CAknLayoutConfig::TScreenMode mode = CAknSgcClient::CalculateScreenMode(
-        ETrue, 
-        topState.IsOrientationSpecified(), 
-        topState.IsOrientationLandscape(), 
+        ETrue,
+        phSpecified,
+        phLandscape,
         topState.AppScreenMode());
         
     TInt modeIndex = mode.ModeNumber();
