@@ -25,3 +25,5 @@
 ../../config/cenrep/101F8847.txt
 # OURS: the phecompat profile repository (empty by default: no app has a profile; see docs phecompat)
 ../../config/cenrep/E7016E00.txt
+# OURS: RSFW remote drives: release defaults, no drive configured
+../../config/cenrep/101F9775.txt
