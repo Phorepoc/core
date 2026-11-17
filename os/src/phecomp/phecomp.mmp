@@ -26,7 +26,7 @@ START RESOURCE	E7017C00.rss
 TARGET			phecomp.rsc
 END
 
-LIBRARY			euser.lib ws32.lib
+LIBRARY			euser.lib ws32.lib hal.lib
 LIBRARY			ecom.lib
 LIBRARY			wsgraphicdrawer.lib
 LIBRARY			directgdi.lib graphicsresource.lib fbscli.lib gdi.lib bitgdi.lib lookuptable.lib estor.lib

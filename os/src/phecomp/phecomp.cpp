@@ -13,6 +13,7 @@
 // why this stage must be first.
 #include <e32base.h>
 #include <e32debug.h>
+#include <hal.h>
 #include <ecom/implementationproxy.h>
 #include <graphics/wsplugin.h>
 #include <graphics/wsrenderstage.h>
@@ -270,6 +271,7 @@ private:
 	TInt iCount;
 	const MWsWindowTreeNode* iDrawing;		// the window inside a redraw bracket (NULL outside)
 	TUint32 iFrames, iFramesLogged;
+	TUint32 iComposeTicks, iComposeMax, iComposes;	// FastCounter time spent in Compose() since the last summary
 	TUint32 iLastSummary;					// User::NTickCount of the last summary
 	};
 
@@ -890,7 +892,13 @@ void CPheCompStage::End(TRequestStatus* aFinished)
 	if (iCompose)
 		{
 		iProxy.iTarget = iRest->Gc();
+		const TUint32 t0 = User::FastCounter();
 		Compose(aFinished);
+		const TUint32 d = User::FastCounter() - t0;
+		iComposeTicks += d;
+		if (d > iComposeMax)
+			iComposeMax = d;
+		++iComposes;
 		}
 	else
 		Next()->End(aFinished);
@@ -916,7 +924,12 @@ void CPheCompStage::Summary()
 			line.AppendFormat(_L8(" %d:%d"), iGroups[i].iId, iGroups[i].iRedraws);
 			iGroups[i].iRedraws = 0;
 			}
-	RDebug::Printf("PH: [phecomp] %u frames, redraws per group (id:n)%S", iFrames - iFramesLogged, &line);
+	TInt freq = 0;
+	HAL::Get(HAL::EFastCounterFrequency, freq);
+	const TUint32 perUs = freq >= 1000000 ? TUint32(freq / 1000000) : 1;
+	RDebug::Printf("PH: [phecomp] %u frames, compose avg %u us max %u us, redraws per group (id:n)%S", iFrames - iFramesLogged,
+				   iComposes ? iComposeTicks / iComposes / perUs : 0, iComposeMax / perUs, &line);
+	iComposeTicks = iComposeMax = iComposes = 0;
 	iFramesLogged = iFrames;
 	}
 

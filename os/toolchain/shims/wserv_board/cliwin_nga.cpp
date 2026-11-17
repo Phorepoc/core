@@ -23,6 +23,7 @@
 #include "gc.h"
 #include "rootwin.h"
 #include "windowgroup.h"
+#include "inifile.h"
 #include "walkwindowtree.h"
 #include "ScrDev.H"
 #include "wstop.h"
@@ -423,6 +424,66 @@ void CWsClientWindow::CalcBaseArea()
 		}
 	}
 
+// OURS: phecomp's 2-app tiles (wsini PHECOMPTILE "<uid> <uid>", written with PHECOMP=2). The compositor shows the two
+// apps side by side, so neither covers the other: their windows do not cut each other's visible regions, and the server
+// draws both apps whole into their groups' targets (phecomp scales and places them).
+static TUint32 PhGroupUid(const CWsWindowGroup* aGroup)
+	{
+	// the window group name CEikonEnv sets (CApaWindowGroupName): "<nn> <uid hex> <caption> ..."
+	const HBufC* name = aGroup ? const_cast<CWsWindowGroup*>(aGroup)->GroupName() : NULL;
+	if (!name)
+		return 0;
+	const TInt sep = name->Locate(TChar(0));
+	if (sep < 0)
+		return 0;
+	TLex lex(name->Mid(sep + 1));
+	TUint32 uid = 0;
+	return (lex.Val(uid, EHex) == KErrNone && lex.Peek() == TChar(0)) ? uid : 0;
+	}
+
+static TBool PhTileUids(TUint32 aTile[2])
+	{
+	static TInt read;	// 0 not read yet, 1 no tiles, 2 tiles
+	static TUint32 tile[2];
+	if (!read && WsIniFile)		// (not before the ini file is read)
+		{
+		read = 1;
+		TPtrC v;
+		_LIT(KTile, "PHECOMPTILE");
+		if (WsIniFile->FindVar(KTile, v))
+			{
+			TLex lex(v);
+			if (lex.Val(tile[0], EHex) == KErrNone)
+				{
+				lex.SkipSpace();
+				if (lex.Val(tile[1], EHex) == KErrNone)
+					read = 2;
+				}
+			}
+		RDebug::Printf("PH: [wstile] tiles %08x %08x (%d)", tile[0], tile[1], read);
+		}
+	aTile[0] = tile[0];
+	aTile[1] = tile[1];
+	return read == 2;
+	}
+
+// (also walkwindowtree_nga.cpp)
+TBool PhIsTileGroup(const CWsWindowGroup* aGroup)
+	{
+	TUint32 tile[2];
+	if (!aGroup || !PhTileUids(tile))
+		return EFalse;
+	const TUint32 a = PhGroupUid(aGroup);
+	return a && (a == tile[0] || a == tile[1]);
+	}
+
+TBool PhTiledPair(const CWsWindowGroup* aA, const CWsWindowGroup* aB)
+	{
+	if (aA == aB || !PhIsTileGroup(aA) || !PhIsTileGroup(aB))
+		return EFalse;
+	return PhGroupUid(aA) != PhGroupUid(aB);
+	}
+
 void CWsClientWindow::GenerateArea(RWsRegion &aArea, TBool aClipTranslucent) const
 //
 // Create the window area list.
@@ -449,7 +510,7 @@ void CWsClientWindow::GenerateArea(RWsRegion &aArea, TBool aClipTranslucent) con
 				aArea.Tidy();
 				tidyCount=ETidyCountSetting;	// Tidy every ETidyCountSetting times around
 				}
-			if (cwin->IsVisible())
+			if (cwin->IsVisible() && !PhTiledPair(win->WinGroup(), cwin->WinGroup()))
 				{
 				if (cwin->IsTranslucent() && !aClipTranslucent)
 					{
