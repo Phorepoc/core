@@ -433,7 +433,6 @@ TAny* CPheCompStage::ResolveObjectInterface(TUint aTypeId)
 			return static_cast<MPhePointerFilter*>(this);
 		break;
 	case MWsDrawableSourceProvider::EWsObjectInterfaceId:
-	case MWsTextCursor::EWsObjectInterfaceId:
 	case MWsFader::EWsObjectInterfaceId:
 		if (iCompose)
 			return iProxy.ResolveObjectInterface(aTypeId);	// the target being drawn now
