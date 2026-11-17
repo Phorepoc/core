@@ -159,6 +159,7 @@ struct TGroup
 	TBool iTopShown[KMaxTops];		// ... and whether it is visible (activated and not hidden)
 	TBool iTopActive[KMaxTops];		// ... activated
 	TBool iTopHidden[KMaxTops];		// ... made invisible (RWindowBase::SetVisible(EFalse))
+	TBool iTopAlpha[KMaxTops];		// ... draws with an alpha channel over what is behind it (RWindowBase::SetTransparencyAlphaChannel): it covers nothing
 	TBool iCovered;					// behind a group that covers the screen (not shown, no target)
 	TBool iDropped;					// its target was freed while it was covered: repaint when it shows
 	TInt iTops;
@@ -271,6 +272,7 @@ private:
 	TInt iCount;
 	const MWsWindowTreeNode* iDrawing;		// the window inside a redraw bracket (NULL outside)
 	TUint32 iFrames, iFramesLogged;
+	TBool iFrameLog;						// wsini PHECOMPFRAMELOG: one log line per composed frame (the key-to-frame latency measurement)
 	TUint32 iComposeTicks, iComposeMax, iComposes;	// FastCounter time spent in Compose() since the last summary
 	TUint32 iLastSummary;					// User::NTickCount of the last summary
 	};
@@ -293,10 +295,13 @@ CPheCompStage* CPheCompStage::NewL(CWsRenderStage* aNext, MWsIniFile* aIni, MWsS
 void CPheCompStage::ConstructComposeL(MWsIniFile* aIni)
 	{
 	_LIT(KTile, "PHECOMPTILE");
+	_LIT(KCompose, "PHECOMPCOMPOSE");
 	TPtrC tiles;
-	if (!aIni || !aIni->FindVar(KTile, tiles))
+	// compose mode is asked for by PHECOMPCOMPOSE (every group in its own target) or by PHECOMPTILE (which also names the two tiled apps); with neither the stage only traces
+	const TBool haveTiles = aIni && aIni->FindVar(KTile, tiles);
+	if (!aIni || (!haveTiles && !aIni->FindVar(KCompose)))
 		return;
-	TLex lex(tiles);
+	TLex lex(haveTiles ? tiles : TPtrC());
 	while (iTileUids < KMaxTiles && !lex.Eos())
 		{
 		lex.SkipSpace();
@@ -314,6 +319,8 @@ void CPheCompStage::ConstructComposeL(MWsIniFile* aIni)
 		return;
 		}
 	iDevice = dev;
+	_LIT(KFrameLog, "PHECOMPFRAMELOG");
+	iFrameLog = aIni->FindVar(KFrameLog);
 	_LIT(KScene, "PHECOMPSCENE");
 	if (aIni->FindVar(KScene))
 		{
@@ -550,7 +557,12 @@ void CPheCompStage::Prune(const TSize& aSize)
 		TBool shown = EFalse;
 		for (TInt t = 0; t < g->iTops && !shown; ++t)
 			shown = g->iTopShown[t];
-		if (shown && !tile && g->iTarget && g->iUid && g->iBounds.Contains(TPoint(0, 0))
+		// a window that draws with an alpha channel (the task switcher's) lets what is behind it show: the groups behind stay
+		TBool alphaFull = EFalse;
+		for (TInt t = 0; t < g->iTops; ++t)
+			if (g->iTopShown[t] && g->iTopAlpha[t] && g->iTopRect[t].Width() >= aSize.iWidth / 2 && g->iTopRect[t].Height() >= aSize.iHeight / 2)
+				alphaFull = ETrue;
+		if (shown && !tile && g->iTarget && g->iUid && g->iBounds.Contains(TPoint(0, 0)) && !alphaFull
 			&& g->iBounds.Width() >= aSize.iWidth && g->iBounds.Height() >= aSize.iHeight)
 			covered = ETrue;
 		}
@@ -869,7 +881,7 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 					if (TGroup* fg = Group(iOrder[f]))
 						if (fg->iUid && fg->iSource && !fg->iCovered)
 							for (TInt t2 = 0; t2 < fg->iTops; ++t2)
-								if (fg->iTopShown[t2])
+								if (fg->iTopShown[t2] && !fg->iTopAlpha[t2])
 									shown.SubRect(fg->iTopRect[t2]);
 			if (!shown.IsEmpty() && !shown.CheckError())
 				{
@@ -895,6 +907,12 @@ void CPheCompStage::End(TRequestStatus* aFinished)
 		const TUint32 t0 = User::FastCounter();
 		Compose(aFinished);
 		const TUint32 d = User::FastCounter() - t0;
+		if (iFrameLog)
+			{
+			TInt freq = 0;
+			HAL::Get(HAL::EFastCounterFrequency, freq);
+			RDebug::Printf("PH: [phecomp] frame %u composed in %u us", iFrames, d / (freq >= 1000000 ? TUint32(freq / 1000000) : 1));
+			}
 		iComposeTicks += d;
 		if (d > iComposeMax)
 			iComposeMax = d;
@@ -998,6 +1016,7 @@ void CPheCompStage::NodeCreated(const MWsWindowTreeNode& aNode, const MWsWindowT
 			g->iTopRect[g->iTops] = w->AbsRect();
 			g->iTopActive[g->iTops] = EFalse;
 			g->iTopHidden[g->iTops] = EFalse;
+			g->iTopAlpha[g->iTops] = EFalse;
 			g->iTopShown[g->iTops++] = EFalse;
 			}
 		if (g && w)
@@ -1023,6 +1042,7 @@ void CPheCompStage::NodeReleased(const MWsWindowTreeNode& aNode)
 		g->iTopShown[top] = g->iTopShown[g->iTops];
 		g->iTopActive[top] = g->iTopActive[g->iTops];
 		g->iTopHidden[top] = g->iTopHidden[g->iTops];
+		g->iTopAlpha[top] = g->iTopAlpha[g->iTops];
 		TopGone(*g, gone, NULL);
 		UpdateTarget(*g);
 		return;
@@ -1129,6 +1149,16 @@ void CPheCompStage::SiblingOrderChanged(const MWsWindowTreeNode& aNode, TInt aNe
 void CPheCompStage::FlagChanged(const MWsWindowTreeNode& aNode, TFlags aFlag, TBool aNewValue)
 	{
 	iFull = ETrue;
+	if (aFlag == EAlphaChannelTransparencyEnabled && aNode.NodeType() == MWsWindowTreeNode::EWinTreeNodeClient)
+		{
+		TInt at;
+		if (TGroup* ag = GroupOfTop(aNode, at))
+			{
+			ag->iTopAlpha[at] = aNewValue;
+			RDebug::Printf("PH: [phecomp] group %d: top window alpha %d", ag->iId, aNewValue);
+			}
+		return;
+		}
 	if (aFlag != EVisible || aNode.NodeType() != MWsWindowTreeNode::EWinTreeNodeClient)
 		return;
 	TInt top;
