@@ -1713,7 +1713,7 @@ COMPONENTS = {
     "mixtest": dict(mmp=os.path.join(OS_ROOT, "src/mixtest/mixtest.mmp"), test=True),
     # OURS (audio V0): volume keys -> master volume (P&S KPhAudioMasterVolume, applied by the mixer on the real channel)
     "phvolume": dict(mmp=os.path.join(OS_ROOT, "src/phvolume/phvolume.mmp")),
-    # the C++ runtime (cxx17test) and the browser engine (jsc, phwebtest, phebrctl): the cxxrt and webkit-symbian repositories (layers)
+    # the C++ runtime (cxx17test) and the browser engine (jsc, phwebtest, phebrctl): the cxxrt and wpewebkit-symbian repositories (layers)
     # --- MP3 (audio.md "Codec policy"): the S60 MP3 controller (advanced audio controller family) -> DevSound " MP3"
     # -> OUR MP3 HW device -> the release's Aricent MP3 plug-in -> OUR decoder library (minimp3, CC0)
     "mp3audioplaycontrollerplugin": dict(mmp="oss.FCL.sf.mw.mmmw/mmfenh/advancedaudiocontroller/audiocontrollerpluginsvariant/mp3audioplaycontroller/Group/MP3AudioPlayControllerPlugin.mmp"),
