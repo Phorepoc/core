@@ -99,6 +99,8 @@ RESOURCE SSM_COMMAND_LIST r_cmds
 	,r_cmd_phettyd
 	// prio 0x7E05 -- PHOREPOC display-mode follower (src/phedispmode): the screen mode follows a resizable PC display; exits at once elsewhere
 	,r_cmd_phedispmode
+	// prio 0x7E06 -- PHOREPOC remote drives (RSFW): rsfwbootmounter adds the remote file system and mounts the drives configured in CenRep 101F9775
+	,r_cmd_rsfwbootmounter
         };
     }
 
@@ -183,6 +185,19 @@ RESOURCE SSM_START_PROCESS_INFO r_cmd_phvolume
     {
     priority = 0x7E02;
     name = "z:\\sys\\bin\\phvolume.exe";
+    execution_behaviour = ESsmFireAndForget;
+    }
+
+// ---------------------------------------------------------------------------
+// r_cmd_rsfwbootmounter -- PHOREPOC (2026-11-17): the Remote Storage Framework's boot mounter (rsfwbootmounter.exe) adds eremotefs.fsy to the
+// file server and mounts every drive configured in CenRep 101F9775 (File Manager's Map remote drive writes it); it exits when done, and at once
+// when none is configured. Non-critical: a ROM without it skips the start.
+// ---------------------------------------------------------------------------
+//
+RESOURCE SSM_START_PROCESS_INFO r_cmd_rsfwbootmounter
+    {
+    priority = 0x7E06;
+    name = "z:\sys\bin\rsfwbootmounter.exe";
     execution_behaviour = ESsmFireAndForget;
     }
 
