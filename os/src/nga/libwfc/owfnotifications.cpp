@@ -49,11 +49,19 @@
 #include "owfnotifications.h"
 #include <graphics/symbianstream.h>
 #include <e32debug.h>
+#include <hal.h>
 // PH: tracing for the DSA hang hunt: temporary, rate-limited, "PH:" lines go to PhoneLab
 static TInt PhCbCount;
 static TInt PhUpdCount;
 static TUint32 PhUpdT0, PhUpdSum, PhUpdMax;
 static TInt PhUpdN;
+// FastCounter ticks per microsecond on THIS board (the print assumed the A64's 24 MHz: on the x86 counter, around 2.4 GHz, it showed 100 times the real latency)
+static TUint32 PhTicksPerUs()
+	{
+	TInt f = 0;
+	HAL::Get(HAL::EFastCounterFrequency, f);
+	return f >= 1000000 ? TUint32(f / 1000000) : 1;
+	}
 #define PH_EARLY(counter) (++(counter) <= 60 || (counter) % 200 == 0)
 
 // OURS: wake the composer thread (WFC_Context_ComposerThread, wfccontext.c) out of its AUTO_COMPOSE_DELAY wait so
@@ -528,14 +536,14 @@ owfSymProcessAllNotifications(WFC_CONTEXT* context)
     NFPRINT(("+++ START owfSymProcessAllNotifications events=0x%x", pDispCtx->iEventServerUpdate));
     if (PhUpdT0)
     {
-        // r34: update-end to compose-complete latency (FastCounter ticks, 24 MHz), every 60 updates
+        // r34: update-end to compose-complete latency (FastCounter ticks), every 60 updates
         const TUint32 d = User::FastCounter() - PhUpdT0;
         PhUpdT0 = 0;
         PhUpdSum += d;
         if (d > PhUpdMax) PhUpdMax = d;
         if (++PhUpdN == 60)
         {
-            RDebug::Printf("PH: wfc update->composed avg %u us max %u us (60 updates)", PhUpdSum / 60 / 24, PhUpdMax / 24);
+            RDebug::Printf("PH: wfc update->composed avg %u us max %u us (60 updates)", PhUpdSum / 60 / PhTicksPerUs(), PhUpdMax / PhTicksPerUs());
             PhUpdN = 0; PhUpdSum = 0; PhUpdMax = 0;
         }
     }

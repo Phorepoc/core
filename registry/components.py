@@ -265,7 +265,7 @@ COMPONENTS = {
                    drop=["owfnotifications.cpp", "wfcscene.c", "wfccontext.c", "owfthread.c", "owfnativestreamstub.cpp"], extra=["src/nga/libwfc/owfnotifications.cpp", "src/nga/libwfc/owfnativestreamstub.cpp", "src/nga/libwfc/phtrace_wfc.cpp", "src/nga/libwfc/wfcscene.c",
                          # G8: the scene composed on the GPU (phgpucompose.cpp; our wfccontext.c tries it first)
                          "src/nga/libwfc/wfccontext.c", "src/nga/libwfc/phgpucompose.cpp", "src/nga/libwfc/owfthread.c"],
-                   libs=["centralrepository.lib"],
+                   libs=["centralrepository.lib", "hal.lib"],
                    **{"def": f"{G}/graphicscomposition/openwfcinterface/eabi/libWFCu.def"}),
     # (the mmp's ARM TARGET is openwfc_ri_displaychannel.dll; libWFC links it as openwfc_ri_display.lib)
     # for the PREVIOUS one, not itself, so the next compose overlaps the vblank wait (3 composition buffers in the
