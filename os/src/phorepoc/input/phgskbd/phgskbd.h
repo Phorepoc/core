@@ -60,6 +60,8 @@ private:
     void ChooseKeyHeightL();
     void ChooseThemeL();
     void ChoosePopupsL();
+    void ChooseLanguageL();
+    void ChooseOnOffL( TUint32 aKey );
     };
 
 #endif

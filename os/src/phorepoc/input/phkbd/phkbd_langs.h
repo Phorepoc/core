@@ -7,8 +7,11 @@
 #define PHKBD_LANGS_H
 
 #include "phkbd_lang_en.h"
+#include "phkbd_lang_de.h"
+#include "phkbd_lang_fr.h"
+#include "phkbd_lang_es.h"
 
-static const TPhLanguage* const KPhLanguages[] = { &KPhLangEn };
+static const TPhLanguage* const KPhLanguages[] = { &KPhLangEn, &KPhLangDe, &KPhLangFr, &KPhLangEs };
 static const TInt KPhLanguageCount = sizeof( KPhLanguages ) / sizeof( KPhLanguages[0] );
 
 #endif

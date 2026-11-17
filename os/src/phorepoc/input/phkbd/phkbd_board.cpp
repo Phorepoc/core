@@ -67,7 +67,7 @@ CPhKbdBoard* CPhKbdBoard::NewL( const TRect& aRect, CFepUiLayout* aLayout, TInt 
 CPhKbdBoard::CPhKbdBoard( const TRect& aRect, CFepUiLayout* aLayout, TInt aControlId )
     : CFepUiBaseCtrl( aRect, aLayout, aControlId ),
       iKeyHeightPct( 100 ), iTheme( 0 ), iPopups( ETrue ), iPage( 0 ), iShift( EPhLower ), iPressed( -1 ),
-      iAccentSel( -1 ), iTimerPurpose( ENoTimer ), iLang( KPhLanguages[0] ), iFeedback( NULL )
+      iAccentSel( -1 ), iTimerPurpose( ENoTimer ), iLang( KPhLanguages[0] ), iPress3D( ETrue ), iHaptics( ETrue ), iFeedback( NULL )
     {
     SetControlType( ECtrlBaseCtrl | EUserCtrlBase );
     }
@@ -389,19 +389,37 @@ void CPhKbdBoard::DrawKey( CBitmapContext& aGc, const TKey& aKey, TBool aPressed
         {
         fill = aPressed ? iCol.iKeyDown : iCol.iAccent;
         }
-    // a darker bottom edge gives the key its height
+    // 3D: a darker edge below the key is its height; a lighter rim on the top of the face catches the light.
+    // Pressed, the face travels down onto the edge (and darkens), so the key visibly sinks. All sizes follow the key
+    // height and the gap, so any screen size works; with the effect off (KPhImKeyPress3D = 0) the key is flat.
+    const TInt depth = iPress3D ? Max( 2, Min( r.Height() / 12, GapPx( iRect.Width() ) - 1 ) ) : 1;
     aGc.SetPenStyle( CGraphicsContext::ENullPen );
     aGc.SetBrushStyle( CGraphicsContext::ESolidBrush );
-    aGc.SetBrushColor( TRgb( fill.Red() * 55 / 100, fill.Green() * 55 / 100, fill.Blue() * 55 / 100 ) );
     TRect edge( r );
-    edge.Move( 0, 2 );
+    edge.Move( 0, depth );
+    if ( iPress3D )
+        {
+        // a soft contact shadow under the edge
+        aGc.SetBrushColor( TRgb( iCol.iPanel.Red() * 60 / 100, iCol.iPanel.Green() * 60 / 100, iCol.iPanel.Blue() * 60 / 100 ) );
+        TRect shadow( edge );
+        shadow.Move( 0, 1 );
+        aGc.DrawRoundRect( shadow, TSize( radius, radius ) );
+        }
+    aGc.SetBrushColor( TRgb( fill.Red() * 50 / 100, fill.Green() * 50 / 100, fill.Blue() * 50 / 100 ) );
     aGc.DrawRoundRect( edge, TSize( radius, radius ) );
-    aGc.SetBrushColor( fill );
     TRect face( r );
     if ( aPressed )
         {
-        face.Move( 0, 1 );
+        face.Move( 0, depth - 1 );
         }
+    if ( iPress3D && !aPressed )
+        {
+        const TInt lift = 28;
+        aGc.SetBrushColor( TRgb( Min( 255, fill.Red() + lift ), Min( 255, fill.Green() + lift ), Min( 255, fill.Blue() + lift ) ) );
+        aGc.DrawRoundRect( face, TSize( radius, radius ) );
+        face.iTl.iY += 1;
+        }
+    aGc.SetBrushColor( fill );
     aGc.DrawRoundRect( face, TSize( radius, radius ) );
 
     TBuf<4> text;
@@ -573,7 +591,7 @@ void CPhKbdBoard::PressKey( TInt aIndex )
         {
         return;
         }
-    if ( iFeedback )
+    if ( iFeedback && iHaptics )
         {
         iFeedback->InstantFeedback( ETouchFeedbackBasicButton );    // click + buzz as the profile allows
         }
@@ -925,8 +943,14 @@ void CPhKbdBoard::SetLanguage( TInt aIndex )
     iLang = KPhLanguages[aIndex];
     iPage = 0;
     iAccentOpen = EFalse;
-    iName.Copy( TPtrC8( reinterpret_cast<const TUint8*>( iLang->iName ) ) );   // the space bar shows the language
+    PhLangNameToDes( iLang->iName, iName );   // the space bar shows the language
     BuildPage();
+    }
+
+void CPhKbdBoard::SetFeedback( TBool aHaptics, TBool aPress3D )
+    {
+    iHaptics = aHaptics;
+    iPress3D = aPress3D;
     }
 
 TInt CPhKbdBoard::Language() const

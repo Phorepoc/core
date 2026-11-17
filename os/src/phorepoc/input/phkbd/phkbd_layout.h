@@ -58,6 +58,8 @@ private:
     TBool iPopups;
     TBool iOverlay;
     TInt iLanguage;                         // index into KPhLanguages
+    TBool iHaptics;
+    TBool iPress3D;
     };
 
 #endif

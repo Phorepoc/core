@@ -14,12 +14,13 @@
 #include <phgskbdrsc.rsg>
 #include "phgskbd.h"
 #include "phimreg.h"
+#include "phkbd_langs.h"
 
 namespace
     {
     const TInt KHeights[] = { 80, 90, 100, 110, 120 };
     const TInt KHeightCount = sizeof( KHeights ) / sizeof( KHeights[0] );
-    enum TItem { EItemKeyboard, EItemHeight, EItemTheme, EItemPopups, EItemCount };
+    enum TItem { EItemKeyboard, EItemHeight, EItemTheme, EItemPopups, EItemLanguage, EItemHaptics, EItemPress3D, EItemCount };
 
     void SetFepLastUsedInput( TInt aMode )
         {
@@ -104,6 +105,17 @@ void CPhGsKbdContainer::RefreshItemsL()
     TInt popups = 1;
     PhImGetSetting( KPhImKeyPopups, 1, popups );
     Line( *iItems, _L( "Key press preview" ), popups ? _L( "On" ) : _L( "Off" ) );
+    TInt lang = 0;
+    PhImGetSetting( KPhImKeyLanguage, 0, lang );
+    TBuf<24> langName;
+    PhLangNameToDes( KPhLanguages[( lang >= 0 && lang < KPhLanguageCount ) ? lang : 0]->iName, langName );
+    Line( *iItems, _L( "Language" ), langName );
+    TInt haptics = 1;
+    PhImGetSetting( KPhImKeyHaptics, 1, haptics );
+    Line( *iItems, _L( "Vibration on key press" ), haptics ? _L( "On" ) : _L( "Off" ) );
+    TInt press3d = 1;
+    PhImGetSetting( KPhImKeyPress3D, 1, press3d );
+    Line( *iItems, _L( "3D key effect" ), press3d ? _L( "On" ) : _L( "Off" ) );
     iListBox->HandleItemAdditionL();
     }
 
@@ -208,6 +220,9 @@ void CPhGsKbdPlugin::HandleListBoxSelectionL()
         case EItemHeight:   ChooseKeyHeightL(); break;
         case EItemTheme:    ChooseThemeL(); break;
         case EItemPopups:   ChoosePopupsL(); break;
+        case EItemLanguage: ChooseLanguageL(); break;
+        case EItemHaptics:  ChooseOnOffL( KPhImKeyHaptics ); break;
+        case EItemPress3D:  ChooseOnOffL( KPhImKeyPress3D ); break;
         default: break;
         }
     PhContainer()->RefreshItemsL();
@@ -300,6 +315,48 @@ void CPhGsKbdPlugin::ChoosePopupsL()
     if ( ChooseL( items, cur ) && cur != old )
         {
         PhImSetSetting( KPhImKeyPopups, cur == 0 ? 1 : 0 );
+        }
+    CleanupStack::PopAndDestroy( items );
+    }
+
+void CPhGsKbdPlugin::ChooseLanguageL()
+    {
+    CDesCArrayFlat* items = new ( ELeave ) CDesCArrayFlat( KPhLanguageCount );
+    CleanupStack::PushL( items );
+    for ( TInt i = 0; i < KPhLanguageCount; ++i )
+        {
+        TBuf<24> name;
+        PhLangNameToDes( KPhLanguages[i]->iName, name );
+        items->AppendL( name );
+        }
+    TInt cur = 0;
+    PhImGetSetting( KPhImKeyLanguage, 0, cur );
+    if ( cur < 0 || cur >= KPhLanguageCount )
+        {
+        cur = 0;
+        }
+    const TInt old = cur;
+    if ( ChooseL( items, cur ) && cur != old )
+        {
+        PhImSetSetting( KPhImKeyLanguage, cur );
+        }
+    CleanupStack::PopAndDestroy( items );
+    }
+
+// an On / Off switch for the setting aKey (default On)
+void CPhGsKbdPlugin::ChooseOnOffL( TUint32 aKey )
+    {
+    CDesCArrayFlat* items = new ( ELeave ) CDesCArrayFlat( 2 );
+    CleanupStack::PushL( items );
+    items->AppendL( _L( "On" ) );
+    items->AppendL( _L( "Off" ) );
+    TInt on = 1;
+    PhImGetSetting( aKey, 1, on );
+    TInt cur = on ? 0 : 1;
+    const TInt old = cur;
+    if ( ChooseL( items, cur ) && cur != old )
+        {
+        PhImSetSetting( aKey, cur == 0 ? 1 : 0 );
         }
     CleanupStack::PopAndDestroy( items );
     }

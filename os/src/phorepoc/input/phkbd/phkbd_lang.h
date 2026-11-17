@@ -59,6 +59,24 @@ struct TPhLanguage
     TInt iAccentCount;
     };
 
+// a language name (UTF-8, 1- and 2-byte sequences) as text for display
+inline void PhLangNameToDes( const char* aName, TDes& aOut )
+    {
+    aOut.Zero();
+    for ( const TUint8* p = reinterpret_cast<const TUint8*>( aName ); *p && aOut.Length() < aOut.MaxLength(); ++p )
+        {
+        if ( *p >= 0xC0 && p[1] )
+            {
+            aOut.Append( TChar( ( ( *p & 0x1F ) << 6 ) | ( p[1] & 0x3F ) ) );
+            ++p;
+            }
+        else
+            {
+            aOut.Append( TChar( *p ) );
+            }
+        }
+    }
+
 #define PH_K( c ) { c, EKChar, 10 }
 #define PH_KF( kind, w ) { 0, kind, w }
 

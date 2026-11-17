@@ -42,7 +42,7 @@ CPhKbdLayout* CPhKbdLayout::NewL( MLayoutOwner* aLayoutOwner, const TAny* /*aIni
     }
 
 CPhKbdLayout::CPhKbdLayout( MLayoutOwner* aLayoutOwner )
-    : CFepUiLayout( aLayoutOwner ), iKeyHeightPct( 100 ), iTheme( 0 ), iPopups( ETrue ), iOverlay( ETrue ), iLanguage( 0 )
+    : CFepUiLayout( aLayoutOwner ), iKeyHeightPct( 100 ), iTheme( 0 ), iPopups( ETrue ), iOverlay( ETrue ), iLanguage( 0 ), iHaptics( ETrue ), iPress3D( ETrue )
     {
     }
 
@@ -62,6 +62,12 @@ void CPhKbdLayout::ReloadSettings()
     PhImGetSetting( KPhImKeyOverlay, 1, overlay );
     iOverlay = overlay != 0;
     PhImGetSetting( KPhImKeyLanguage, 0, iLanguage );
+    TInt haptics = 1;
+    PhImGetSetting( KPhImKeyHaptics, 1, haptics );
+    iHaptics = haptics != 0;
+    TInt press3d = 1;
+    PhImGetSetting( KPhImKeyPress3D, 1, press3d );
+    iPress3D = press3d != 0;
     }
 
 void CPhKbdLayout::ConstructL()
@@ -90,6 +96,7 @@ void CPhKbdLayout::ConstructL()
 
     iBoard = CPhKbdBoard::NewL( boardRect, this, EIdBoard );
     iBoard->SetCustomisation( iKeyHeightPct, iTheme, iPopups );
+    iBoard->SetFeedback( iHaptics, iPress3D );
     iBoard->SetLanguage( iLanguage );
     AddControlL( iBoard, ETrue );
 
@@ -109,6 +116,7 @@ void CPhKbdLayout::Arrange()
         TRAP_IGNORE( iIcf->SizeChangedL( icfRect, font->HeightInPixels(), font->FontMaxHeight(), font ) );
         }
     iBoard->SetCustomisation( iKeyHeightPct, iTheme, iPopups );
+    iBoard->SetFeedback( iHaptics, iPress3D );
     iBoard->SetRect( boardRect );
     }
 

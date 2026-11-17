@@ -24,6 +24,8 @@ const TUint32 KPhImKeyTheme           = 3;            // phkbd colour scheme (0 
 const TUint32 KPhImKeyPopups          = 4;            // phkbd key-press preview popup (1 on, 0 off)
 const TUint32 KPhImKeyLanguage        = 5;            // phkbd active language (index into its language table)
 const TUint32 KPhImKeyOverlay         = 6;            // phkbd: 1 = keyboard panel over the app (default), 0 = full screen with its own text box
+const TUint32 KPhImKeyHaptics         = 7;            // phkbd: tactile pulse on key down (1 on = default, 0 off)
+const TUint32 KPhImKeyPress3D         = 8;            // phkbd: 3D key press effect (1 on = default, 0 flat)
 
 const TInt32  PHIM_ENTRY_INTERFACE    = 0xE7015801;   // ECom interface UID of a registry entry
 const TInt    KPhImNameMax            = 40;

@@ -66,6 +66,8 @@ public:
     // the keyboard language (index into KPhLanguages): swaps the pages and the accents, back to the letters page
     void SetLanguage( TInt aIndex );
     TInt Language() const;
+    // press feedback: the 3D key effect and the tactile pulse (user settings)
+    void SetFeedback( TBool aHaptics, TBool aPress3D );
     void SetEnterDimmed( TBool aDim );
     void ResetPage();
 
@@ -137,6 +139,8 @@ private:
     TTime iLastShiftTap;
     TBuf<24> iName;
     const TPhLanguage* iLang;           // the active language (data: phkbd_lang_*.h)
+    TBool iPress3D;                     // 3D key press effect (setting KPhImKeyPress3D)
+    TBool iHaptics;                     // tactile feedback on key down (setting KPhImKeyHaptics)
     MTouchFeedback* iFeedback;          // tactile feedback (key click + vibration), NULL when the image has none
     CFont* iKeyFont;                    // letter keys
     CFont* iFnFont;                     // function-key words
