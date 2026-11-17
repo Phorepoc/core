@@ -29,7 +29,7 @@
 
 // PHOREPOC: camera plug-ins may also come from an installed package (a SIS on C:), not only from ROM. The release
 // resolved them with KRomOnlyResolverUid (and with the default resolver in debug builds). Now every registered
-// implementation is a candidate and the highest version_no wins, so an installed driver package (the camera-a64
+// implementation is a candidate and the highest version_no wins, so an installed driver package (a camera driver
 // Catalogue package) replaces the image's fallback plug-in. What makes this safe is the platform's own rules, not the
 // resolver: ECom reads registrations on C: only from \resource\plugins\, which only the software installer writes,
 // and the loader refuses a plug-in DLL whose capabilities are not a superset of the client process's, so a plug-in

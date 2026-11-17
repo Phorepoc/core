@@ -1619,7 +1619,7 @@ COMPONENTS = {
     # CFbsBitmaps; ECOM 0x1020707F, ROM-only resolver) + the S60 test app that shows its viewfinder. x86 first; nothing below ECam exists in the release.
     "ecam": dict(mmp="oss.FCL.sf.os.mm/imagingandcamerafws/camerafw/mmpfiles/ECam.mmp"),
     # camera plug-ins from ROM or from an installed package (a trusted SIS on C:), the highest version wins
-    # (src/phorepoc/ecam: PheEcamSelectL instead of KRomOnlyResolverUid; the camera-a64 package needs this core)
+    # (src/phorepoc/ecam: PheEcamSelectL instead of KRomOnlyResolverUid)
     "ecampluginsupport": dict(mmp="oss.FCL.sf.os.mm/imagingandcamerafws/camerafw/mmpfiles/ECamPluginSupport.mmp",
                               drop=["EcamPluginSupport.cpp", "ECamInfo.cpp"],
                               extra=["src/phorepoc/ecam/EcamPluginSupport.cpp", "src/phorepoc/ecam/ECamInfo.cpp"]),
