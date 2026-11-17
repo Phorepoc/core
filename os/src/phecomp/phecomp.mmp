@@ -4,7 +4,7 @@
 // phecomp.mmp -- OURS: phecomp, the window compositor as an NGA window-server render stage (phecomp.cpp, README.md)
 #include <platform_paths.hrh>
 
-TARGET			e7017c00.dll
+TARGET			phecomp.dll
 TARGETTYPE		PLUGIN
 UID				0x10009D8D 0xE7017C00
 CAPABILITY		PowerMgmt ReadDeviceData WriteDeviceData ProtServ
@@ -23,7 +23,7 @@ SOURCE			directgdigcwrapper.cpp utils.cpp
 
 SOURCEPATH		.
 START RESOURCE	E7017C00.rss
-TARGET			e7017c00.rsc
+TARGET			phecomp.rsc
 END
 
 LIBRARY			euser.lib ws32.lib hal.lib
