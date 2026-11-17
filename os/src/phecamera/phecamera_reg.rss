@@ -11,6 +11,6 @@ UID3 0xE7016C60
 RESOURCE APP_REGISTRATION_INFO
 	{
 	app_file = "phecamera";
-	localisable_resource_file = "\resource\apps\phecamera";
+	localisable_resource_file = "\\resource\\apps\\phecamera";
 	localisable_resource_id = R_PHECAMERA_LOCALISABLE_APP_INFO;
 	}
