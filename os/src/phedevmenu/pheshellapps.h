@@ -26,6 +26,11 @@
 #include <apgcli.h>
 #include <apmstd.h>
 #include "pheshells.h"
+#include <mcsmenu.h>
+#include <mcsmenuitem.h>
+#include <mcsmenufilter.h>
+#include <mcsmenuoperation.h>
+#include <mcsdef.h>
 
 const TUid KPheUikonCategory = { 0x101F8773 };
 const TUint32 KPheUikAppHiddenList = 0x10;
@@ -187,6 +192,126 @@ private:
 	TInt iMode;
 	};
 
+// The S^3 menu (matrixmenu) does not read the Uikon hidden-applications list: its items live in the menu content service (MCS, the "matrixmenudata"
+// menu) and carry their own flags. The managed applications' items get TMenuItem::EHidden set (aHide) or cleared (the other managed ones); the
+// menu reads the flag when it starts. An application the MCS has no item for yet (just installed) is picked up at the next start.
+inline TUint32 PheMenuUidL(const TDesC& aText)
+	{
+	TLex lx(aText);
+	lx.SkipSpace();
+	TUint32 u = 0;
+	if (aText.Length() > 2 && aText[0] == '0' && (aText[1] == 'x' || aText[1] == 'X'))
+		{
+		lx.Inc(2);
+		lx.Val(u, EHex);
+		}
+	else
+		lx.Val(u, EDecimal);
+	return u;
+	}
+
+inline void PheApplyMenuHiddenL(const RArray<TUint32>& aManaged, const RArray<TUint32>& aHide)
+	{
+	RMenu menu;
+	CleanupClosePushL(menu);
+	menu.OpenL(_L("matrixmenudata"));
+	CMenuFilter* filter = CMenuFilter::NewLC();
+	filter->SetType(KMenuTypeApp);
+	RArray<TMenuItem> items;
+	CleanupClosePushL(items);
+	menu.GetItemsL(items, menu.RootFolderL(), filter, ETrue);
+	TInt changed = 0, seen = 0;
+	RDebug::Printf("PH: [shellapps] menu: %d application items", items.Count());
+	for (TInt i = 0; i < items.Count(); i++)
+		{
+		CMenuItem* it = CMenuItem::OpenL(menu, items[i]);
+		CleanupStack::PushL(it);
+		TBool exists = EFalse;
+		TPtrC uidText = it->GetAttributeL(KMenuAttrUid, exists);
+		const TUint32 uid = exists ? PheMenuUidL(uidText) : 0;
+		if (uid && aManaged.Find(uid) != KErrNotFound)
+			{
+			seen++;
+			const TBool want = aHide.Find(uid) != KErrNotFound;
+			const TBool have = (it->Flags() & TMenuItem::EHidden) != 0;
+			if (want != have)
+				{
+				it->SetFlags(TMenuItem::EHidden, want);
+				TRequestStatus st;
+				CMenuOperation* op = it->SaveL(st);
+				// the operation is an active object: this thread has an active scheduler (PheMenuThread), run what is ready until it completes
+				while (st == KRequestPending)
+					{
+					User::WaitForAnyRequest();
+					TInt rerr = KErrNone;
+					CActiveScheduler::RunIfReady(rerr, CActive::EPriorityIdle);
+					}
+				delete op;
+				if (st.Int() == KErrNone)
+					changed++;
+				RDebug::Printf("PH: [shellapps] menu item %08x %s: %d", uid, want ? "hidden" : "shown", st.Int());
+				}
+			}
+		CleanupStack::PopAndDestroy(it);
+		}
+	RDebug::Printf("PH: [shellapps] menu: %d managed items found, %d changed", seen, changed);
+	CleanupStack::PopAndDestroy(3, &menu);		// items, filter, menu
+	}
+
+// the menu part alone, for a thread that retries until the menu content service is up: pheshellsel runs in SSM's security-check phase, before the
+// menu server can be reached (RMenu::OpenL leaves KErrServerTerminated); matrixmenu is started right after, and the flags are set once it answers
+inline void PheApplyMenuOnlyL(RFs& aFs, const TDesC& aActiveId)
+	{
+	RArray<TUint32> managed, hide;
+	CleanupClosePushL(managed);
+	CleanupClosePushL(hide);
+	TPheHiddenCollector apps(aActiveId, managed, hide);
+	PheForEachTagFileL(aFs, _L(".apps"), apps);
+	TPheHiddenCollector hides(aActiveId, managed, hide);
+	hides.iHideMode = ETrue;
+	PheForEachTagFileL(aFs, _L(".hides"), hides);
+	if (managed.Count())
+		PheApplyMenuHiddenL(managed, hide);
+	CleanupStack::PopAndDestroy(2, &managed);
+	}
+
+static TBuf<48> PheMenuThreadShell;
+static TInt PheMenuThread(TAny*)
+	{
+	CTrapCleanup* tc = CTrapCleanup::New();
+	CActiveScheduler* sched = new CActiveScheduler;
+	if (sched)
+		CActiveScheduler::Install(sched);
+	RFs fs;
+	if (tc && fs.Connect() == KErrNone)
+		{
+		for (TInt i = 0; i < 60; i++)
+			{
+			TInt e = KErrNone;
+			TRAP(e, PheApplyMenuOnlyL(fs, PheMenuThreadShell));
+			if (e == KErrNone)
+				break;
+			RDebug::Printf("PH: [shellapps] menu (try %d): %d", i, e);
+			User::After(2000000);
+			}
+		fs.Close();
+		}
+	delete sched;
+	delete tc;
+	return 0;
+	}
+
+inline void PheStartMenuHideThread(const TDesC& aActiveId)
+	{
+	PheMenuThreadShell.Copy(aActiveId.Left(48));
+	RThread t;
+	if (t.Create(_L("PheMenuHide"), PheMenuThread, 0x4000, 0x2000, 0x80000, NULL, EOwnerProcess) == KErrNone)
+		{
+		t.Resume();
+		t.Close();
+		}
+	}
+
 inline void PheApplyShellAppsL(RFs& aFs, const TDesC& aActiveId)
 	{
 	// visibility
@@ -226,6 +351,12 @@ inline void PheApplyShellAppsL(RFs& aFs, const TDesC& aActiveId)
 				next.Append((TText)(hide[i] & 0xFFFF));
 				hidden++;
 				}
+		// The list is 25 UID slots of two 16-bit halves, ended by a NULL slot or by the full length. The menu content service reads this very
+		// property (CMcsRunningAppsFswMonitor::UpdateFswHiddenApplicationsL) and indexes retrievedList[2*i] without a length check until it meets
+		// a NULL slot: a short list without the terminator makes the MCS server panic USER 9 (ETDes16IndexOutOfRange) and every RMenu call fail
+		// with KErrServerTerminated. So the value is always padded with zeros to the full 50 characters, as the stock writer does.
+		while (next.Length() < next.MaxLength())
+			next.Append((TText)0);
 		TInt r = RProperty::Set(KPheUikonCategory, KPheUikAppHiddenList, next);
 		if (r == KErrNotFound)
 			{
@@ -234,6 +365,7 @@ inline void PheApplyShellAppsL(RFs& aFs, const TDesC& aActiveId)
 			r = RProperty::Set(KPheUikonCategory, KPheUikAppHiddenList, next);
 			}
 		RDebug::Print(_L("PH: [shellapps] shell %S: %d tagged apps, %d hidden: %d"), &aActiveId, managed.Count(), hidden, r);
+		// the menu items: see PheStartMenuHideThread (the menu server is not up yet)
 		}
 	CleanupStack::PopAndDestroy(2, &managed);
 	// handlers

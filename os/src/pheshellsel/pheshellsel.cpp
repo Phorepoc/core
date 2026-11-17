@@ -347,6 +347,7 @@ static TInt RunShellL()
 		r = StartAndRendezvous(KAiLaunch, KNullDesC, launcher);
 		if (r == KErrNone)
 			StartMatrixMenuInBackground();
+		PheStartMenuHideThread(shell->Id());		// the S^3 menu: item flags of the shell-tagged apps, once its menu server answers
 		}
 	if (r == KErrNone && !s3 && shell->iIdleUid)
 		{
