@@ -40,8 +40,7 @@ const TRgb KShutter(0xFF, 0xFF, 0xFF);
 const TRgb KBusy(0x80, 0x80, 0x80);
 const TRgb KQuiet(0xB0, 0xB0, 0xB0);
 const TRgb KGlyph(0xFF, 0xFF, 0xFF);
-const TRgb KSquircleFill(0, 0, 0, 0x60);		// transparent: the viewfinder shows through
-const TRgb KSquircleRim(0xFF, 0xFF, 0xFF, 0x70);
+const TRgb KOutline(0x30, 0x30, 0x30);
 const TRgb KText(0xF6, 0xF8, 0xED);
 
 // encodes a bitmap still to a JPEG file (only for a plug-in that offers no Exif/JPEG format)
@@ -336,18 +335,21 @@ private:
 		return TRect(TPoint(Rect().iBr.iX - Margin() - Button(), Rect().iTl.iY + Margin()), TSize(Button(), Button()));
 		}
 
-	// an Etesian squircle button: a transparent dark fill and a light rim, the viewfinder shows through
+	// an Etesian squircle button: transparent (no fill, the viewfinder shows through), a white rim with a thin dark
+	// outline so it reads over a bright scene too (an alpha brush is drawn opaque on this window)
 	void DrawSquircle(CWindowGc& aGc, const TRect& aRect) const
 		{
 		const TSize corner(aRect.Width() * 3 / 10, aRect.Height() * 3 / 10);
-		aGc.SetDrawMode(CGraphicsContext::EDrawModePEN);
-		aGc.SetPenStyle(CGraphicsContext::ESolidPen);
-		aGc.SetPenSize(TSize(2, 2));
-		aGc.SetPenColor(KSquircleRim);
-		aGc.SetBrushStyle(CGraphicsContext::ESolidBrush);
-		aGc.SetBrushColor(KSquircleFill);
-		aGc.DrawRoundRect(aRect, corner);
 		aGc.SetBrushStyle(CGraphicsContext::ENullBrush);
+		aGc.SetPenStyle(CGraphicsContext::ESolidPen);
+		aGc.SetPenSize(TSize(1, 1));
+		aGc.SetPenColor(KOutline);
+		TRect outer(aRect);
+		outer.Grow(2, 2);
+		aGc.DrawRoundRect(outer, corner);
+		aGc.SetPenSize(TSize(2, 2));
+		aGc.SetPenColor(KGlyph);
+		aGc.DrawRoundRect(aRect, corner);
 		}
 	void Glyph(CWindowGc& aGc, TBool aLive) const
 		{
