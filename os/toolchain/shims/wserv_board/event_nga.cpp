@@ -30,6 +30,7 @@
 #include "W32CLICK.H"
 #include "server.h"
 #include "windowgroup.h"
+#include "ScrDev.H"
 #include "KEYCLICK.H"
 #include "wstop.h"
 #include "panics.h"
@@ -526,12 +527,32 @@ TEventQueueWalkRet FindScreenDeviceChangedEvent(TAny *aHandlePtr, TWsEvent *aEve
 	return(EEventQueueWalkOk);
 	}
 	
+extern TInt PhLegacyAppMode();			// scrdev_nga.cpp (wsini LEGACY_APPMODE)
+
 void TWindowServerEvent::SendScreenDeviceChangedEvents(CScreen* aScreen)
 	{
 	TSglQueIter<TEventRequestItem> iter(iScreenDeviceChangedQueue .Queue());
 	TEventRequestItem *qPtr;
+	TInt phNotified = 0, phSkipped = 0;
 	while((qPtr=iter++)!=NULL)
+		{
+		// R1 (etesian-port.md section 29): with per-client modes a window group hears of a mode change only when ITS mode is the one that is now
+		// current (the client that asked for it, and the legacy ones when the server returns to their mode): the others keep the layout they have
+		if (PhLegacyAppMode() >= 0)
+			{
+			CWsWindowGroup* grp = const_cast<CWsWindowGroup*>(static_cast<const CWsWindowGroup*>(qPtr->iWindow));
+			DWsScreenDevice* dev = grp ? grp->Device() : NULL;
+			if (dev && dev->AppMode() != aScreen->ScreenSizeMode())
+				{
+				++phSkipped;
+				continue;
+				}
+			}
 		SendScreenDeviceChangedEvent(qPtr->iWindow);
+		++phNotified;
+		}
+	if (PhLegacyAppMode() >= 0)
+		RDebug::Printf("PH: [clientmode] screen mode now %d: %d window groups told, %d (in their own mode) not", aScreen->ScreenSizeMode(), phNotified, phSkipped);
 	if(CClick::IsHandler())
 		{
 		TClickMakerData clickMakerData;

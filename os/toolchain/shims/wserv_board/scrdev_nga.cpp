@@ -30,6 +30,23 @@
 #include "wstop.h"
 #include "EVENT.H"
 #include "panics.h"
+#include "inifile.h"
+
+// R1 (etesian-port.md section 29): per-client screen modes. wsini LEGACY_APPMODE <n>: every client sees screen mode n as its current mode (the legacy S60
+// mode its layout packs exist for) until it asks for another one itself, and is told of a screen mode change only when its own mode is the one that
+// changed (event_nga.cpp SendScreenDeviceChangedEvents). Without the key nothing changes: a client's current mode is the server's.
+TInt PhLegacyAppMode()
+	{
+	static TInt legacy = -2;
+	if (legacy == -2)
+		{
+		_LIT(KLegacy, "LEGACY_APPMODE");
+		TInt v;
+		legacy = (WsIniFile && WsIniFile->FindVar(KLegacy, v)) ? v : -1;
+		RDebug::Printf("PH: [clientmode] LEGACY_APPMODE %d", legacy);
+		}
+	return legacy;
+	}
 #include "../CLIENT/w32comm.h"
 #include "devicemap.h"
 #include <graphics/wsdisplaycontrol.h>
@@ -189,7 +206,7 @@ void DWsScreenDevice::CommandL(TInt aOpcode, const TAny *aCmdData)
 			SetReply(iScreen->NumScreenSizeModes());
 			break;
 		case EWsSdOpGetScreenMode:
-			SetReply(iScreen->ScreenSizeMode());
+			SetReply(PhLegacyAppMode() >= 0 ? iAppMode : iScreen->ScreenSizeMode());
 			break;
 		case EWsSdOpSetScreenMode:
 			{
@@ -668,6 +685,8 @@ void DWsScreenDevice::SetScreenMode(TInt aMode)
 	if (!iScreen->IsValidScreenSizeMode(aMode))
 		OwnerPanic(EWservPanicScreenModeNumber);
 	iScreen->doSetScreenMode(aMode);
+	if (PhLegacyAppMode() >= 0)
+		SetAppScreenMode(aMode);						// the client that changed the mode sees the mode it asked for
 	}
 
 TSize DWsScreenDevice::AppScreenSizeInPixels() const
@@ -728,8 +747,11 @@ void DWsScreenDevice::ConstructL()
 //
 	{
 	NewObjL();
-	const TSizeMode& mode=iScreen->ScreenSizeModeData(iScreen->ScreenSizeMode());
 	TInt modeNumber = iScreen->ScreenSizeMode();
+	const TInt legacy = PhLegacyAppMode();
+	if (legacy >= 0 && iScreen->IsValidScreenSizeMode(legacy))
+		modeNumber = legacy;						// a new client starts in the legacy mode, not in whatever mode the server is in now
+	const TSizeMode& mode=iScreen->ScreenSizeModeData(modeNumber);
 	TInt flags = iScreen->ModeFlagsL(modeNumber);
 	if (flags & MWsScreenConfigList::EDynamic)
 		{

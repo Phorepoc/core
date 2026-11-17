@@ -1,0 +1,16 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// phemodetest: switches the window server's screen mode and back (docs/phorepoc/etesian-port.md section 29, R1: per-client screen modes).
+// Started by SSM at boot (-O ssm-test=phemodetest); a window server session and a screen device only.
+TARGET			phemodetest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015798
+CAPABILITY		WriteDeviceData
+VENDORID		0
+EPOCSTACKSIZE	0x4000
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+SOURCEPATH		.
+SOURCE			phemodetest.cpp
+LIBRARY			euser.lib ws32.lib
+SMPSAFE
