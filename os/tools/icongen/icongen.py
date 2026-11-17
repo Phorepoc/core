@@ -343,6 +343,8 @@ def _cog():
 
 
 GLYPHS = {
+    # a camera: the body, its lens and the viewfinder hump (Camera, phecamera)
+    "camera": [("rrect", 2.5, 7, 19, 13, 2.5), ("poly", [(8, 7), (9.6, 4), (14.4, 4), (16, 7)]), ("circle", 12, 13.5, 4)],
     # a globe: the browser
     "globe": [("circle", 12, 12, 9), ("ellipse", 12, 12, 4, 9), ("line", [(3, 12), (21, 12)]),
               ("line", [(4.6, 7.2), (19.4, 7.2)]), ("line", [(4.6, 16.8), (19.4, 16.8)])],

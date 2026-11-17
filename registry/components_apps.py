@@ -323,3 +323,8 @@ for _k in ("osncore", "alfresourcepool", "glxfullscreenview", "alfwidgetmodel", 
 COMPONENTS["pheeh"] = dict(mmp=os.path.join(OS_ROOT, "src/pheeh/pheeh.mmp"), allow_wsd=True, static_ctors=True, eh=True,
                            x32_sys_archives=["libgcc_eh.a", "libsupc++.a"],
                            **{"def": os.path.join(OS_ROOT, "src/pheeh/pheeh.def")})
+
+# Camera (OURS, P1 photo): a native Avkon app over ECam only, so it runs on any device with an ECam plug-in and says
+# "No camera" without one; stills go to C:\Data\Images
+COMPONENTS["phecamera"] = dict(mmp=os.path.join(OS_ROOT, "src/phecamera/phecamera.mmp"),
+                               rom_data=["resource\\apps\\phecamera_icon.mif=" + os.path.join(OS_ROOT, "src/phecamera/data/phecamera_icon.mif")])
