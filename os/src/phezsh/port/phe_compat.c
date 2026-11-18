@@ -110,12 +110,17 @@ char *mktemp(char *tmpl)
 	return tmpl;
 }
 
-/* no signal delivery to wait for yet (the libc's signal emulation is cooperative): fail like an interrupted wait */
+/* The libc has no sigsuspend, but it has sigpause(sig): wait for that signal with it unblocked, run its handler, EINTR.
+ * The one zsh waits for is SIGCHLD (the libc raises it from its child Logon watcher), so: unless the mask blocks SIGCHLD,
+ * sleep until a child changes state; otherwise (or when the libc's signals are not set up) return at once like an
+ * interrupted wait, and zsh's wait loop checks its children again. */
 int sigsuspend(const sigset_t *mask)
 {
-	(void)mask;
-	errno = EINTR;
-	return -1;
+	if (mask && sigismember(mask, SIGCHLD) == 1) {
+		errno = EINTR;
+		return -1;
+	}
+	return sigpause(SIGCHLD);
 }
 
 /* process times: the libc has no per-process CPU accounting; the elapsed clock only */
