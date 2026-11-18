@@ -10,6 +10,8 @@ UID				0x1000008d 0xE7015E10
 CAPABILITY		CommDD PowerMgmt ReadDeviceData WriteDeviceData TrustedUI ProtServ NetworkControl NetworkServices LocalServices ReadUserData WriteUserData
 VENDORID		0
 EPOCALLOWDLLDATA
+// INT32_MAX and friends in the C++ files that include NimBLE headers
+MACRO			__STDC_LIMIT_MACROS __STDC_CONSTANT_MACROS
 DEFFILE			pheblehost.def
 
 OS_LAYER_SYSTEMINCLUDE_SYMBIAN

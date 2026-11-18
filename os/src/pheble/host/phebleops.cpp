@@ -312,7 +312,7 @@ void DiscDone(TInt aError)
 	if (!gDisc)
 		return;
 	TPtrC8 out(reinterpret_cast<const TUint8*>(gDisc->iEntries), gDisc->iCount * sizeof(TPheBleGattEntry));
-	PheBleServerComplete(gDisc->iId, aError, 0, aError == KErrNone ? out : KNullDesC8);
+	PheBleServerComplete(gDisc->iId, aError, 0, aError == KErrNone ? out : TPtrC8());
 	User::Free(gDisc);
 	gDisc = NULL;
 	}
