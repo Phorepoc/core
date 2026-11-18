@@ -1,0 +1,12 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// phepebble.mmp -- OURS: the Pebble Protocol codec (a static library for the phepebble companion; see
+// phepebble_codec.h). Host test: test/pebble_codec_test.cpp.
+TARGET			phepebble.lib
+TARGETTYPE		lib
+
+OS_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phepebble_codec.cpp
+USERINCLUDE		.
