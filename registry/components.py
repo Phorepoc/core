@@ -348,6 +348,8 @@ COMPONENTS = {
     "phecomp": dict(mmp=os.path.join(OS_ROOT, "src/phecomp/phecomp.mmp"), nga=True),
     # OURS: R1 test client (etesian-port.md section 29): switches the window server's screen mode and back; SSM_TEST=phemodetest
     "phemodetest": dict(mmp=os.path.join(OS_ROOT, "src/phemodetest/phemodetest.mmp"), test=True),
+    # OURS: R2e test client: a native group (asks for screen mode 0, draws a full-screen grid); SSM_TEST=phenative
+    "phenative": dict(mmp=os.path.join(OS_ROOT, "src/phenative/phenative.mmp"), test=True),
     # "keyrouter.dll" (wsini KEYROUTERPLUGIN overrides) and LEAVES without it -- the NGA boot's EWsPanicFailedToInitialise
     "keyrouter": dict(mmp=f"{G}/windowing/windowserverplugins/keyeventrouting/group/keyeventrouting.mmp", nga=True,
                       drop=["keyrouter.cpp"], extra=["toolchain/shims/keyrouter_board/keyrouter.cpp"],   # no combined power/end key

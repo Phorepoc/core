@@ -909,6 +909,7 @@ void DWsScreenDevice::SetAppScreenMode(TInt aMode)
 	iAppMode=aMode;
 	iAppRotation=sizeMode.iRotation;
 	CWsWindowGroup::SetScreenDeviceValidStates(this);
+	PhAnnounceGroups(iScreen);		// R2: a client's own mode decides how its group is placed
 	}
 
 #define ROTATION_TO_FLAG(x) 1<<x

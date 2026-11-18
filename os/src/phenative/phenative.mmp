@@ -1,0 +1,16 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// phenative: a window server client that asks for the native screen mode (mode 0 of the native board) and draws a full-screen window in it
+// (R2e, docs/phorepoc/etesian-port.md section 29: a native group next to doubled legacy groups). SSM_TEST=phenative.
+TARGET			phenative.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015799
+CAPABILITY		WriteDeviceData
+VENDORID		0
+EPOCSTACKSIZE	0x4000
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+SOURCEPATH		.
+SOURCE			phenative.cpp
+LIBRARY			euser.lib ws32.lib gdi.lib fbscli.lib bitgdi.lib
+SMPSAFE

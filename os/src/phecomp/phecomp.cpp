@@ -307,6 +307,7 @@ private:
 	TInt iCount;
 	const MWsWindowTreeNode* iDrawing;		// the window inside a redraw bracket (NULL outside)
 	TUint32 iFrames, iFramesLogged;
+	TInt iCursorLog;
 	TInt iDbg;								// wsini PHECOMPDBG <n> (diagnostics): 1 = do not draw the rest, 2 = clear red
 	TBool iFrameLog;						// wsini PHECOMPFRAMELOG: one log line per composed frame (the key-to-frame latency measurement)
 	TUint32 iComposeTicks, iComposeMax, iComposes;	// FastCounter time spent in Compose() since the last summary
@@ -709,7 +710,20 @@ void CPheCompStage::DrawCursor(const MWsTextCursor::TTextCursorInfo& aInfo)
 						break;
 						}
 	if (!target)
+		{
+		if (iFrameLog && iCursorLog < 40)
+			{
+			++iCursorLog;
+			RDebug::Printf("PH: [phecomp] cursor NOT drawn: no group target holds window %d,%d", abs.iTl.iX, abs.iTl.iY);
+			}
 		return;
+		}
+	if (iFrameLog && iCursorLog < 40)
+		{
+		++iCursorLog;
+		RDebug::Printf("PH: [phecomp] cursor drawn: group %d, window %d,%d, cursor %d,%d %dx%d type %d", target->iId, abs.iTl.iX, abs.iTl.iY,
+					   aInfo.iCursorRect.iTl.iX, aInfo.iCursorRect.iTl.iY, aInfo.iCursorRect.Width(), aInfo.iCursorRect.Height(), aInfo.iTextCursorType);
+		}
 	MWsGraphicsContext* gc = target->iTarget->Gc();
 	gc->SetDrawMode(MWsGraphicsContext::EDrawModePEN);
 	if (aInfo.iTextCursorType == TTextCursor::ETypeRectangle)
