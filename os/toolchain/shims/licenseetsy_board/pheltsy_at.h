@@ -86,7 +86,7 @@ public:
 	const TDesC8& Imei() const { return iImei; }
 	TBool Ready() const { return iReady; }
 
-	enum TCmdKind { ECmdPoll, ECmdCode, ECmdDial, ECmdAnswer, ECmdHangUp, ECmdClcc, ECmdCmgs, ECmdCmgr, ECmdCmgd };
+	enum TCmdKind { ECmdPoll, ECmdCode, ECmdDial, ECmdAnswer, ECmdHangUp, ECmdClcc, ECmdCmgs, ECmdCmgr, ECmdCmgd, ECmdDiag, ECmdCeer };
 
 	// PIN1 (aPuk empty) or PUK1 + new PIN: queued ahead of the poll; the result comes back through PheCodeResult
 	TInt EnterCode(const TDesC& aCode, const TDesC& aPuk)
@@ -117,6 +117,7 @@ public:
 			}
 		c.Append(';');
 		iInCall = ETrue;
+		RDebug::Printf("[pheltsy] dial %S", &c);
 		return Queue(ECmdDial, c);
 		}
 	TInt Answer()	{ return Queue(ECmdAnswer, _L8("ATA")); }
@@ -128,12 +129,21 @@ public:
 			return KErrNotReady;
 		iSmsHex.Copy(_L8("00"));
 		for (TInt i = 0; i < aTpdu.Length(); ++i)
-			iSmsHex.AppendNumFixedWidthUC(aTpdu[i], EHex, 2);
+			{
+			TUint8 b = aTpdu[i];
+#ifdef PHE_LTSY_SMS
+			if (i == 0 && (b & 3) == 1)
+				b |= 0x20;							// TP-SRR (23.040 9.2.3.5): ask the network for a delivery report; it comes back as "+CDS"
+#endif
+			iSmsHex.AppendNumFixedWidthUC(b, EHex, 2);
+			}
+		RDebug::Printf("[pheltsy] SMS send: %d byte TPDU", aTpdu.Length());
 		TBuf8<48> c(_L8("AT+CMGS="));
 		c.AppendNum(aTpdu.Length());
 		return Queue(ECmdCmgs, c);
 		}
 	const TDesC& Smsc() const { return iSmsc; }
+	TBool SmscKnown() const { return iSmsc.Length() > 0 || iDiag >= KDiag; }	// AT+CSCA? is the first diagnostic: answered or given up
 	TBool AudioReady() const { return iAudioReady; }
 	// M5: the call audio route (the board's sound driver routes the modem's PCM to the earpiece and microphone)
 	void VoiceRoute(TBool aOn)
@@ -143,6 +153,13 @@ public:
 		// the route switch is the power unit's DTR (the board's UART PDD owns it), not the USB AT port's
 		if (aOn) iPower.SetSignals(KSignalDTR, 0); else iPower.SetSignals(0, KSignalDTR);
 		RDebug::Printf("[pheltsy] voice route %s", aOn ? "on" : "off");
+		}
+
+	// the board's power-path trace (its modem unit samples the PMIC for a few seconds when RTS is raised; harmless elsewhere)
+	void TraceBurst()
+		{
+		if (iPowerOpen)
+			iPower.SetSignals(KSignalRTS, 0);
 		}
 
 	// driven by the fake modem's 100 ms ticker
@@ -178,7 +195,13 @@ public:
 		}
 
 private:
-	enum { KInit = 14, KInitSimFirst = 10, KPoll = 13, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
+	#ifdef PHE_LTSY_SMS
+	enum { KInitSms = 1 };					// + AT+CPMS (every message store = the modem's ME store)
+#else
+	enum { KInitSms = 0 };
+#endif
+	enum { KDiag = 6 };	// (AT+QMBNCFG List/AutoSel are not sent: the phone reset right at that command on two boots in a row)
+	enum { KInit = 14 + KInitSms, KInitSimFirst = 10, KPoll = 13, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
 		{
 		if (!iOpen || iQn >= KQ)
@@ -332,7 +355,7 @@ private:
 			// AT+CREG/CGREG/CEREG, AT+CGSN), with <n>=2 instead of Zephyr's 1 so the URCs carry LAC/TAC + cell id
 			// (3GPP TS 27.007 7.2 / 10.1.20 / 10.1.22); Zephyr's AT+CFUN=4 is left out (RF stays on, its power-on default).
 			// Calls + SMS from the specs: +CLIP=1 caller id (27.007 7.6), +CRC=1 "+CRING: VOICE" (27.007 6.11), PDU mode
-			// +CMGF=0 (27.005 3.2.3), new SMS stored + "+CMTI" (+CNMI=2,1,0,0,0, 27.005 3.4.1), the SMSC +CSCA? (27.005 3.3.1).
+			// +CMGF=0 (27.005 3.2.3), new SMS stored + "+CMTI" (+CNMI=2,1,0,1,0, 27.005 3.4.1), the SMSC +CSCA? (27.005 3.3.1).
 			// Packet service: left as the modem has it (it attaches by itself, as on any phone; an LTE registration IS an attach).
 			// The engine never opens a data connection. Read-only diagnostics for a modem that does not register (the answers
 			// are logged by the line echo): AT+CFUN? (1 = full function), the network mode, AT+CGATT? (attach state). A modem that
@@ -342,7 +365,10 @@ private:
 			static const char* const KInitCmds[KInit] = { "ATE0", "AT+CMEE=1", "AT+CFUN?", "AT+CFUN=1", "AT+QCFG=\"nwscanmode\"", "AT+CGATT?",
 														  "AT+CREG=2", "AT+CGREG=2", "AT+CEREG=2", "AT+CGSN", "AT+CLIP=1", "AT+CRC=1", "AT+CMGF=0",
 #ifdef PHE_LTSY_SMS
-														  "AT+CNMI=2,1,0,0,0" };
+														  // 27.005 3.2.2 / 3.4.1 (EG25 AT manual): read / write / receive store = "ME" (one store for the
+														  // +CMTI index and the AT+CMGR / AT+CMGD that follows), then CNMI <mode>2 <mt>1 stored + "+CMTI:
+														  // <mem>,<index>", <bm>0, <ds>1 status reports as "+CDS: <length>" + PDU, <bfr>0
+														  "AT+CPMS=\"ME\",\"ME\",\"ME\"", "AT+CNMI=2,1,0,1,0" };
 #else
 														  "AT+CNMI=0,0,0,0,0" };
 #endif
@@ -369,6 +395,23 @@ private:
 			iLastClcc = iTicks;
 			iClccStat = -1;
 			Send(_L8("AT+CLCC"));
+			return;
+			}
+		// read-only radio diagnostics, once after the init (the answers are logged by the line echo): the IMS / VoLTE state, the
+		// MBN profiles (the carrier configuration the modem selected), the voice domain, the network and the serving cell. The last
+		// two are repeated, with AT+CEER (why the last call or registration failed), when the CS registration is denied.
+		if (iReady && iDiag < KDiag)
+			{
+			static const char* const KDiagCmds[KDiag] = { "AT+CSCA?", "AT+QCFG=\"ims\"", "AT+QCFG=\"volte_disable\"", "AT+CVMOD?", "AT+QNWINFO", "AT+QENG=\"servingcell\"" };
+			iKind = ECmdDiag;
+			Send(TPtrC8((const TUint8*)KDiagCmds[iDiag]));
+			return;
+			}
+		if (iWantCeer)
+			{
+			iWantCeer = EFalse;
+			iKind = ECmdCeer;
+			Send(_L8("AT+CEER"));
 			return;
 			}
 		static const char* const KPollCmds[KPoll] = { "AT+CPIN?", "AT+CREG?", "AT+CGREG?", "AT+CEREG?", "AT+COPS=3,2", "AT+COPS?", "AT+COPS=3,0",
@@ -423,7 +466,7 @@ private:
 				TBuf<24> smsc;
 				if (aOk && DecodePdu(iPdu, tpdu, smsc))
 					{
-					RDebug::Printf("[pheltsy] SMS %d read (%d byte TPDU)", iCmgrIndex, tpdu.Length());
+					RDebug::Printf("[pheltsy] SMS %d read (%d byte TPDU, first octet 0x%02x)", iCmgrIndex, tpdu.Length(), (TInt)tpdu[0]);
 					iObs.PheSmsReceived(tpdu, smsc);
 					}
 				TBuf8<24> del(_L8("AT+CMGD="));
@@ -432,6 +475,11 @@ private:
 				return;
 				}
 			case ECmdCmgd:
+				return;
+			case ECmdDiag:
+				++iDiag;							// whatever the answer (a command this firmware lacks answers ERROR): next one
+				return;
+			case ECmdCeer:
 				return;
 			default:
 				break;
@@ -511,10 +559,27 @@ private:
 			if (run > longest)
 				longest = run;
 			}
-		if (longest >= 12)
+		const TBool callLine = aLine.Find(_L8("+CLIP")) == 0 || aLine.Find(_L8("+CLCC")) == 0 || aLine.Find(_L8("+CRING")) == 0;
+		if (longest >= 12 && !callLine)
 			RDebug::Printf("[pheltsy] << (a line with an identifier, %d characters: not logged)", l.Length());
 		else
 			RDebug::Printf("[pheltsy] << %S", &l);
+#ifdef PHE_LTSY_SMS
+		if (iCdsNext)								// the PDU line after "+CDS: <length>": a status report (TP-MTI 2)
+			{
+			iCdsNext = EFalse;
+			TBuf8<180> tpdu;
+			TBuf<24> smsc;
+			if (DecodePdu(aLine, tpdu, smsc))
+				{
+				RDebug::Printf("[pheltsy] status report received (%d byte TPDU, TP-MR %d)", tpdu.Length(), tpdu.Length() > 2 ? (TInt)tpdu[1] : -1);
+				iObs.PheSmsReceived(tpdu, smsc);
+				}
+			return;
+			}
+		if (aLine.Find(_L8("+CDS: ")) == 0)
+			{ iCdsNext = ETrue; return; }
+#endif
 		if (aLine == _L8("RDY"))
 			{ iRdy = ETrue; return; }
 		if (aLine == _L8("OK"))
@@ -536,12 +601,15 @@ private:
 				{
 				iInCall = ETrue;
 				iLastClcc = iTicks - 10;
+				iWantCeer = ETrue;				// and ask why (AT+CEER: the release cause)
+				iNextPoll = iTicks;
 				}
 			if (iCmdActive) CommandDone(EFalse);
 			return;
 			}
 		if (aLine == _L8("RING") || aLine.Find(_L8("+CRING: ")) == 0)
 			{
+			TraceBurst();
 			if (!iInCall) { iInCall = ETrue; iLastClcc = iTicks - 10; }
 			return;
 			}
@@ -562,7 +630,11 @@ private:
 			return;
 			}
 		if (aLine.Find(_L8("+CMGR: ")) == 0)
-			{ iPduNext = ETrue; iCmgrIndex = iCmgrPendingIndex; return; }
+			{
+			iPduNext = ETrue;
+			iCmgrIndex = iCmd.Length() > 8 ? Num(iCmd.Mid(8)) : iCmgrPendingIndex;	// the index of the AT+CMGR=<n> in flight
+			return;
+			}
 		if (aLine.Find(_L8("+CSCA: ")) == 0)	// +CSCA: "<sca>",<tosca>
 			{
 			TPtrC8 f[2];
@@ -665,7 +737,17 @@ private:
 		if (n <= base)
 			return;
 		const TInt stat = Num(f[base]);
+		const TInt prevStat = iDomReg[aDomain];
 		iDomReg[aDomain] = stat;
+		if (prevStat != stat)
+			TraceBurst();							// the board samples its power path for a few seconds around a registration change
+		if (aDomain == KDomCs && (stat == 3 || stat == 0))
+			{
+			iWantCeer = ETrue;						// why: AT+CEER, and the network / serving cell again
+			if (iDiag >= KDiag)
+				iDiag = KDiag - 2;
+			iNextPoll = iTicks;
+			}
 		if (n > base + 2 && (stat == 1 || stat == 5 || stat == 6 || stat == 7))
 			{
 			iNet.iLac = Num(f[base + 1], EHex);
@@ -821,7 +903,8 @@ private:
 	TQueued iQ[KQ];
 	TInt iQn;
 	TCmdKind iKind;
-	TBool iInCall, iClccMt, iPduSent, iPduNext, iAudioReady;
+	TBool iInCall, iClccMt, iPduSent, iPduNext, iAudioReady, iCdsNext, iWantCeer;
+	TInt iDiag;
 	TInt iLastClcc, iClccStat, iMr, iCmgrIndex, iCmgrPendingIndex;
 	TBuf8<44> iClccNumber;
 	TBuf8<360> iSmsHex;
@@ -837,7 +920,7 @@ private:
 	TInt iTicks, iCmdStart, iNextPoll, iStep;
 	TBuf8<48> iCmd;
 	TBuf8<256> iRx;
-	TBuf8<256> iLine;
+	TBuf8<420> iLine;					// a +CMGR / +CDS PDU line: SMSC + up to 176 TPDU bytes in hex
 	TBuf8<16> iImsi, iImei;
 	TBuf8<24> iIccid;
 	TInt iDomReg[3];							// the last <stat> of +CREG / +CGREG / +CEREG

@@ -1,0 +1,117 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// pheblehost.mmp -- OURS (BLE plan): the LE host -- Apache NimBLE 1.9.0 (os/third_party/nimble, Apache-2.0) on the
+// Symbian NPL (port/), its custom HCI transport bound to the HCI router (pheblerouter.dll loads this DLL), the bond
+// store and the "!PheBle" server. Loaded into the Bluetooth stack's process (c32exe).
+TARGET			pheblehost.dll
+TARGETTYPE		dll
+UID				0x1000008d 0xE7015E10
+CAPABILITY		CommDD PowerMgmt ReadDeviceData WriteDeviceData TrustedUI ProtServ NetworkControl NetworkServices LocalServices ReadUserData WriteUserData
+VENDORID		0
+EPOCALLOWDLLDATA
+// INT32_MAX and friends in the C++ files that include NimBLE headers
+MACRO			__STDC_LIMIT_MACROS __STDC_CONSTANT_MACROS
+DEFFILE			pheblehost.def
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+OS_LAYER_LIBC_SYSTEMINCLUDE
+USERINCLUDE		../inc ../port/include
+USERINCLUDE		../../../third_party/nimble/nimble/include
+USERINCLUDE		../../../third_party/nimble/nimble/host/include
+USERINCLUDE		../../../third_party/nimble/nimble/host/util/include
+USERINCLUDE		../../../third_party/nimble/nimble/host/services/gap/include
+USERINCLUDE		../../../third_party/nimble/nimble/host/services/gatt/include
+USERINCLUDE		../../../third_party/nimble/nimble/host/store/ram/include
+USERINCLUDE		../../../third_party/nimble/nimble/transport/include
+USERINCLUDE		../../../third_party/nimble/porting/nimble/include
+USERINCLUDE		../../../third_party/nimble/ext/tinycrypt/include
+
+SOURCEPATH		.
+SOURCE			pheblehost.cpp pheblestore.cpp pheblesrv.cpp phebleops.cpp
+SOURCEPATH		../port/src
+SOURCE			npl_symbian.cpp
+SOURCEPATH		../../../third_party/nimble/nimble/host/src
+SOURCE			ble_att.c
+SOURCE			ble_att_clt.c
+SOURCE			ble_att_cmd.c
+SOURCE			ble_att_svr.c
+SOURCE			ble_cs.c
+SOURCE			ble_dtm.c
+SOURCE			ble_eatt.c
+SOURCE			ble_eddystone.c
+SOURCE			ble_gap.c
+SOURCE			ble_gattc.c
+SOURCE			ble_gatts.c
+SOURCE			ble_gatts_lcl.c
+SOURCE			ble_hs.c
+SOURCE			ble_hs_adv.c
+SOURCE			ble_hs_atomic.c
+SOURCE			ble_hs_cfg.c
+SOURCE			ble_hs_conn.c
+SOURCE			ble_hs_flow.c
+SOURCE			ble_hs_hci.c
+SOURCE			ble_hs_hci_cmd.c
+SOURCE			ble_hs_hci_evt.c
+SOURCE			ble_hs_hci_util.c
+SOURCE			ble_hs_id.c
+SOURCE			ble_hs_log.c
+SOURCE			ble_hs_mbuf.c
+SOURCE			ble_hs_misc.c
+SOURCE			ble_hs_mqueue.c
+SOURCE			ble_hs_periodic_sync.c
+SOURCE			ble_hs_pvcy.c
+SOURCE			ble_hs_shutdown.c
+SOURCE			ble_hs_startup.c
+SOURCE			ble_hs_stop.c
+SOURCE			ble_ibeacon.c
+SOURCE			ble_iso.c
+SOURCE			ble_l2cap.c
+SOURCE			ble_l2cap_coc.c
+SOURCE			ble_l2cap_sig.c
+SOURCE			ble_l2cap_sig_cmd.c
+SOURCE			ble_sm.c
+SOURCE			ble_sm_alg.c
+SOURCE			ble_sm_cmd.c
+SOURCE			ble_sm_lgcy.c
+SOURCE			ble_sm_sc.c
+SOURCE			ble_store.c
+SOURCE			ble_store_util.c
+SOURCE			ble_uuid.c
+SOURCEPATH		../../../third_party/nimble/nimble/host/util/src
+SOURCE			addr.c
+SOURCEPATH		../../../third_party/nimble/nimble/host/services/gap/src
+SOURCE			ble_svc_gap.c
+SOURCEPATH		../../../third_party/nimble/nimble/host/services/gatt/src
+SOURCE			ble_svc_gatt.c
+SOURCEPATH		../../../third_party/nimble/nimble/host/store/ram/src
+SOURCE			ble_store_ram.c
+SOURCEPATH		../../../third_party/nimble/porting/nimble/src
+SOURCE			endian.c
+SOURCE			mem.c
+SOURCE			nimble_port.c
+SOURCE			os_mbuf.c
+SOURCE			os_mempool.c
+SOURCE			os_msys.c
+SOURCEPATH		../../../third_party/nimble/ext/tinycrypt/src
+SOURCE			aes_decrypt.c
+SOURCE			aes_encrypt.c
+SOURCE			cbc_mode.c
+SOURCE			ccm_mode.c
+SOURCE			cmac_mode.c
+SOURCE			ctr_mode.c
+SOURCE			ctr_prng.c
+SOURCE			ecc.c
+SOURCE			ecc_dh.c
+SOURCE			ecc_dsa.c
+SOURCE			ecc_platform_specific.c
+SOURCE			hmac.c
+SOURCE			hmac_prng.c
+SOURCE			sha256.c
+SOURCE			utils.c
+SOURCEPATH		../../../third_party/nimble/nimble/transport/src
+SOURCE			transport.c
+
+LIBRARY			euser.lib efsrv.lib estor.lib hal.lib libc.lib
+
+SMPSAFE

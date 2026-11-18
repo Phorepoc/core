@@ -1,0 +1,20 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// pheble.mmp -- OURS (BLE plan): the client library of the LE host (pheble.h, RPheBle).
+TARGET			pheble.dll
+TARGETTYPE		dll
+UID				0x1000008d 0xE7015E13
+CAPABILITY		All -Tcb
+VENDORID		0
+DEFFILE			pheble.def
+
+USERINCLUDE		../inc
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			pheble.cpp
+
+LIBRARY			euser.lib
+
+SMPSAFE

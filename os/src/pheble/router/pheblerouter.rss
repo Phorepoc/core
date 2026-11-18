@@ -1,0 +1,30 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// pheblerouter.rss -- OURS: ECOM registration of the HCI router as an HCTL implementation.
+
+#include <ecom/registryinfo.rh>
+#include <bluetooth/hci/hctlbase.hrh>
+
+RESOURCE REGISTRY_INFO theInfo
+	{
+	dll_uid = 0xE7015E12;
+	interfaces =
+		{
+		INTERFACE_INFO
+			{
+			interface_uid = KHCTLBaseEcomInterfaceUid;
+			implementations =
+				{
+				IMPLEMENTATION_INFO
+					{
+					implementation_uid = 0xE7015E11;
+					version_no = 1;
+					display_name = "PheBle HCI router";
+					default_data = "";
+					opaque_data = "";
+					}
+				};
+			}
+		};
+	}
