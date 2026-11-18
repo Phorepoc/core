@@ -42,7 +42,7 @@
 	void SetBrushOrigin(const TPoint& aOrigin) { T()->SetBrushOrigin(aOrigin); }
 	void SetBrushStyle(TBrushStyle aBrushStyle) { T()->SetBrushStyle(aBrushStyle); }
 	void SetDrawMode(TDrawMode aDrawMode) { T()->SetDrawMode(aDrawMode); }
-	void SetOrigin(const TPoint& aPoint) { T()->SetOrigin(aPoint); }
+	void SetOrigin(const TPoint& aPoint) { if (iOriginLog > 0) { --iOriginLog; RDebug::Printf("PH: [phecomp] SetOrigin %d,%d", aPoint.iX, aPoint.iY); } T()->SetOrigin(aPoint); }
 	void SetPenColor(const TRgb& aColor) { T()->SetPenColor(aColor); }
 	void SetPenStyle(TPenStyle aPenStyle) { T()->SetPenStyle(aPenStyle); }
 	void SetPenSize(const TSize& aSize) { T()->SetPenSize(aSize); }

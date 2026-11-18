@@ -109,6 +109,7 @@ class TGcProxy : public MWsGraphicsContext
 	{
 public:
 	MWsGraphicsContext* iTarget;
+	TInt iOriginLog;				// diagnostics (PHECOMPFRAMELOG): the next SetOrigin calls are logged
 	const TRegion* iShape;			// the shape of the window being drawn (screen coordinates), NULL if it has none
 	inline MWsGraphicsContext* T() const { return iTarget; }
 	// a shaped window draws only inside its shape. With change tracking the server draws each window whole, not clipped
@@ -295,6 +296,7 @@ private:
 	TInt iCount;
 	const MWsWindowTreeNode* iDrawing;		// the window inside a redraw bracket (NULL outside)
 	TUint32 iFrames, iFramesLogged;
+	TInt iDbg;								// wsini PHECOMPDBG <n> (diagnostics): 1 = do not draw the rest, 2 = clear red
 	TBool iFrameLog;						// wsini PHECOMPFRAMELOG: one log line per composed frame (the key-to-frame latency measurement)
 	TUint32 iComposeTicks, iComposeMax, iComposes;	// FastCounter time spent in Compose() since the last summary
 	TUint32 iLastSummary;					// User::NTickCount of the last summary
@@ -344,6 +346,9 @@ void CPheCompStage::ConstructComposeL(MWsIniFile* aIni)
 	iDevice = dev;
 	_LIT(KFrameLog, "PHECOMPFRAMELOG");
 	iFrameLog = aIni->FindVar(KFrameLog);
+	_LIT(KDbgKey, "PHECOMPDBG");
+	iDbg = 0;
+	aIni->FindVar(KDbgKey, iDbg);
 	_LIT(KScene, "PHECOMPSCENE");
 	if (aIni->FindVar(KScene))
 		{
@@ -938,13 +943,18 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 		dirty.Copy(all);
 		}
 	Next()->Begin(&dirty);
+	// the next stage's context is shared: the window server's text cursor (MWsTextCursor, resolved from the next stage) draws in window
+	// coordinates and leaves the window's origin set -- a group composed with that origin lands that far down (the editors' 42 px)
+	iNextGc->SetOrigin(TPoint(0, 0));
+	iNextGc->SetBrushOrigin(TPoint(0, 0));
 	iNextGc->SetClippingRegion(dirty);
 	iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModeWriteAlpha);
 	iNextGc->SetBrushStyle(MWsGraphicsContext::ESolidBrush);
-	iNextGc->SetBrushColor(TRgb(0, 0, 0, 255));
+	iNextGc->SetBrushColor((iDbg & 2) ? TRgb(255, 0, 0, 255) : TRgb(0, 0, 0, 255));
 	iNextGc->Clear();
 	iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModePEN);
-	iSources->DrawResource(iRestSource, screen, screen);
+	if (!(iDbg & 1))
+		iSources->DrawResource(iRestSource, screen, screen);
 	// a group placed smaller than the screen (R2): the rest of the screen is black, not the root window's white
 	if (!tiling)
 		for (TInt o = 0; o < iOrderCount; ++o)
@@ -1342,11 +1352,24 @@ void CPheCompStage::WindowRedrawStart(const MWsWindowTreeNode& aNode, const TReg
 	iDrawing = &aNode;
 	if (iCompose)
 		iDirty.Union(aRegion);
+	if (iFrameLog)
+		iProxy.iOriginLog = (Group(GroupOf(aNode)) && Group(GroupOf(aNode))->iName.Find(_L8("otepad")) >= 0) ? 40 : 0;
+	if (iFrameLog && iProxy.iOriginLog > 0 && aNode.Window())
+		{
+		const TRect r = aNode.Window()->AbsRect();
+		RDebug::Printf("PH: [phecomp] redraw start: group %d window %d,%d %dx%d", GroupOf(aNode) ? Group(GroupOf(aNode)) ? Group(GroupOf(aNode))->iId : -1 : -1, r.iTl.iX, r.iTl.iY, r.Width(), r.Height());
+		}
 	TGroup* g = Group(GroupOf(aNode));
 	if (g)
 		++g->iRedraws;
 	if (!iCompose)
 		return;
+	// the root window's drawing (its colour, white by default) is not shown: what no group draws is black, as the screen is cleared
+	if (aNode.NodeType() == MWsWindowTreeNode::EWinTreeNodeRoot)
+		{
+		iProxy.iTarget = iSink->Gc();
+		return;
+		}
 	// the window server's drawing of this window goes to its group's target (made at the first redraw)
 	if (g && g->iCovered)
 		{
