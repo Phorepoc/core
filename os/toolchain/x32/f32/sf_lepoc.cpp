@@ -1777,6 +1777,21 @@ TInt FileRead(RFile& aFile, TUint8* aDest, TInt aSize)
 // Only \sys\bin\ is searched: only the software installer writes there (and checks what a package may declare).
 _LIT8(KCpuHandlerArm, "cpuhandler_arm.exe");
 
+// A drive the loader may probe with a file-server request of its own (ArmHandlerInstalled, ForeignCpuRedirect: both look in \sys\bin\ of
+// every drive, from the loader thread). Not a remote or substituted drive: a remote drive (RSFW's eremotefs) answers from its own drive
+// thread, and that thread can be inside RRsfwSession::StartServer, which has the loader create remotefe.exe: a probe from the loader thread
+// then waits for the drive thread that waits for the loader (the boot hung there with a remote drive mounted, every later process creation
+// queued behind the loader). The release loader never opens a file on a remote or substituted drive either (RefreshDriveInfo, sf_cache.cpp:659-660:
+// "Don't cache remote or substituted drives"; SearchSingleDir skips a drive without a cache). EFsDrive runs in the main file server
+// thread and does not wait for the drive thread.
+static TBool LoaderMayProbeDrive(TInt aDrive)
+	{
+	TDriveInfo info;
+	if (gTheLoaderFs.Drive(info, aDrive) != KErrNone)
+		return EFalse;
+	return !(info.iDriveAtt & (KDriveAttRemote | KDriveAttSubsted));
+	}
+
 // an ARM handler in \sys\bin\ of any drive (GetInfoFromHeader: the software installer may only accept ARM programs that can run)
 static TBool ArmHandlerInstalled()
 	{
@@ -1786,6 +1801,8 @@ static TBool ArmHandlerInstalled()
 		{
 		TChar c;
 		if (RFs::DriveToChar(d, c) != KErrNone)
+			continue;
+		if (!LoaderMayProbeDrive(d))
 			continue;
 		TBuf<48> full;
 		full.Append(c);
@@ -1823,6 +1840,8 @@ static TInt ForeignCpuRedirect(RLdrReq& aReq, SSecurityInfo& aForeign, TUidType&
 		TChar c;
 		if (RFs::DriveToChar(d, c) != KErrNone)
 			continue;
+		if (!LoaderMayProbeDrive(d))
+			continue;				// not a remote drive: see LoaderMayProbeDrive
 		TBuf<KMaxFileName> full;
 		full.Append(c);
 		full.Append(':');
