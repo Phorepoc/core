@@ -19,6 +19,7 @@
 
 
 // INCLUDES
+#include <e32base.h>
 #include <e32debug.h>
 
 #include "mdebug.h"
@@ -91,11 +92,10 @@ void DoOutput(TDesC8& aData)
         TInt n = Min(200, aData.Length() - pos);
         line.Copy(_L8("[rsfw] "));
         line.Append(aData.Mid(pos, n));
-        TInt nl = line.Locate('
-');
-        if (nl != KErrNotFound)
+        // the macros end every message with a newline: RawPrint adds its own
+        while (line.Length() > 0 && line[line.Length() - 1] < 0x20)
             {
-            line.SetLength(nl);
+            line.SetLength(line.Length() - 1);
             }
         RDebug::RawPrint(line);
         pos += n;
