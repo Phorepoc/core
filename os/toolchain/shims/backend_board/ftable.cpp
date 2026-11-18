@@ -1746,7 +1746,10 @@ void CFileTable::CheckOrigins(wchar_t**& aEnvp, int& aCount)
 void CFileTable::DoTransferAll(RSemaphore &sem,TDesC& name)
 {
    //coverity[unchecked_value]
-   sem.Wait(100000);  //Is this the optimum time to wait
+   // Phorepoc: the child signals once its fd-transfer server runs. 2010 waited 100 ms and then gave up silently, so
+   // a child slower to start (an emulator, a loaded system) got none of the parent's fds (pipes, files). Wait 10 s.
+   if (sem.Wait(10000000) != KErrNone)
+       RDebug::Printf("PH: [spawn] child did not start its fd-transfer server in 10 s: no fds handed over");
 
    RFileDesTransferSession session;
    TInt err = session.Connect(name);

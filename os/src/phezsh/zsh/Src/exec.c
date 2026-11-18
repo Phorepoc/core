@@ -489,8 +489,13 @@ phe_spawn_argv(char **argv, int in, int out)
      * A console fd does not go over at all, and the child keeps its own stdio for it. */
     for (i = 0; i < 3; i++) {
 	int src = (i == 0 && in > 0) ? in : (i == 1 && out > 0) ? out : -1;
-	if (src < 0)
-	    src = tmp[i] = fcntl(i, F_DUPFD, 10);
+	if (src < 0) {
+	    /* only a pipe or a file goes over; a dup of a console fd would close the shell's own stdio
+	     * when it is closed again */
+	    struct stat st;
+	    if (fstat(i, &st) == 0 && (S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode)))
+		src = tmp[i] = fcntl(i, F_DUPFD, 10);
+	}
 	if (src >= 0)
 	    posix_spawn_file_actions_adddup2(&fa, src, i);
     }
