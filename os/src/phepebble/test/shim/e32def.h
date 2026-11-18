@@ -14,6 +14,4 @@ typedef uint32_t TUint32;
 typedef int TInt;
 typedef unsigned int TUint;
 typedef int TBool;
-#define ETrue 1
-#define EFalse 0
 #endif

@@ -15,6 +15,7 @@
 
 #include <e32def.h>
 #include <e32err.h>
+#include <e32const.h>
 
 // Pebble Pairing Service (16-bit 0xFED9) and the reversed (watch-hosted) PPoGATT service, as 32-bit short ids.
 const TUint32 KPebbleCharConnStatus  = 0x00000001;  // read, notify: 4 bytes (bonded/encrypted/... bits)
@@ -57,7 +58,8 @@ public:
 	/** A device advertising a name that starts with the scan prefix. */
 	virtual void LeDeviceFound(const TPebbleLeAddr& aAddr, const TUint8* aName, TInt aNameLength, TInt aRssi) = 0;
 	virtual void LeScanStopped(TInt aError) = 0;
-	/** Connection up (KErrNone, services discovered, MTU exchanged) or failed. */
+	/** Connection up (KErrNone, services discovered, MTU exchanged; a bonded peer's link already encrypted with the stored
+	    keys) or failed. */
 	virtual void LeConnected(TInt aError) = 0;
 	virtual void LeDisconnected(TInt aReason) = 0;
 	/** Pairing finished: KErrNone and the method, or an error. Bonded peers reconnect encrypted without a new pairing. */

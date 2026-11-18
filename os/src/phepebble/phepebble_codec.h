@@ -18,6 +18,7 @@
 
 #include <e32def.h>
 #include <e32err.h>
+#include <e32const.h>
 
 // Endpoints used by the companion (PebbleOS include/pbl/pp/protocol.h).
 const TUint16 KPebbleEpClock         = 0x000B;
