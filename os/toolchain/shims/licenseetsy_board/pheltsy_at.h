@@ -157,7 +157,7 @@ public:
 		++iTicks;
 		if (iCmdActive)
 			{
-			const TInt limit = iKind == ECmdCmgs ? 600 : iKind == ECmdDial ? 300 : 50;	// CMGS 60 s, ATD 30 s, else 5 s
+			const TInt limit = iKind == ECmdCmgs ? 600 : (iKind == ECmdDial || iCmd == _L8("AT+CFUN=1")) ? 300 : 50;	// CMGS 60 s, ATD / CFUN 30 s, else 5 s
 			if (iTicks - iCmdStart > limit)
 				{
 				RDebug::Printf("[pheltsy] timeout: %S", iKind == ECmdCode ? &KPheHidden() : &iCmd);
@@ -178,7 +178,7 @@ public:
 		}
 
 private:
-	enum { KInit = 13, KInitSimFirst = 9, KPoll = 13, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
+	enum { KInit = 14, KInitSimFirst = 10, KPoll = 13, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
 		{
 		if (!iOpen || iQn >= KQ)
@@ -335,10 +335,11 @@ private:
 			// +CMGF=0 (27.005 3.2.3), new SMS stored + "+CMTI" (+CNMI=2,1,0,0,0, 27.005 3.4.1), the SMSC +CSCA? (27.005 3.3.1).
 			// Packet service: left as the modem has it (it attaches by itself, as on any phone; an LTE registration IS an attach).
 			// The engine never opens a data connection. Read-only diagnostics for a modem that does not register (the answers
-			// are logged by the line echo): AT+CFUN? (1 = full function), the network mode, AT+CGATT? (attach state).
+			// are logged by the line echo): AT+CFUN? (1 = full function), the network mode, AT+CGATT? (attach state). A modem that
+			// answers +CFUN: 4 (RF off, "airplane mode": it searches for nothing) is put to full function: AT+CFUN=1.
 			// Messages: without PHE_LTSY_SMS the engine neither enables new-message indications (CNMI mode 0: none) nor reads
 			// or deletes anything (see Line(): SMS lines are dropped unread); a board that wants SMS defines PHE_LTSY_SMS.
-			static const char* const KInitCmds[KInit] = { "ATE0", "AT+CMEE=1", "AT+CFUN?", "AT+QCFG=\"nwscanmode\"", "AT+CGATT?",
+			static const char* const KInitCmds[KInit] = { "ATE0", "AT+CMEE=1", "AT+CFUN?", "AT+CFUN=1", "AT+QCFG=\"nwscanmode\"", "AT+CGATT?",
 														  "AT+CREG=2", "AT+CGREG=2", "AT+CEREG=2", "AT+CGSN", "AT+CLIP=1", "AT+CRC=1", "AT+CMGF=0",
 #ifdef PHE_LTSY_SMS
 														  "AT+CNMI=2,1,0,0,0" };
