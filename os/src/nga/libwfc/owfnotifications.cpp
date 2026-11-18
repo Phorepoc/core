@@ -55,7 +55,7 @@ static TInt PhCbCount;
 static TInt PhUpdCount;
 static TUint32 PhUpdT0, PhUpdSum, PhUpdMax;
 static TInt PhUpdN;
-// FastCounter ticks per microsecond on THIS board (the print assumed the A64's 24 MHz: on the x86 counter, around 2.4 GHz, it showed 100 times the real latency)
+// FastCounter ticks per microsecond on THIS board (the print assumed a 24 MHz counter: on the x86 counter, around 2.4 GHz, it showed 100 times the real latency)
 static TUint32 PhTicksPerUs()
 	{
 	TInt f = 0;
