@@ -178,7 +178,7 @@ public:
 		}
 
 private:
-	enum { KInit = 11, KInitSimFirst = 6, KPoll = 10, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
+	enum { KInit = 11, KInitSimFirst = 6, KPoll = 11, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
 		{
 		if (!iOpen || iQn >= KQ)
@@ -362,10 +362,11 @@ private:
 			return;
 			}
 		static const char* const KPollCmds[KPoll] = { "AT+CPIN?", "AT+CREG?", "AT+COPS=3,2", "AT+COPS?", "AT+COPS=3,0",
-													  "AT+COPS?", "AT+CSQ", "AT+QSPN", "AT+CIMI", "AT+QDAI?" };
-		// no usable SIM: skip AT+QSPN (it answers a bare ERROR) and AT+CIMI; IMSI known: skip AT+CIMI
+													  "AT+COPS?", "AT+CSQ", "AT+QSPN", "AT+CIMI", "AT+QCCID", "AT+QDAI?" };
+		// no usable SIM: skip AT+QSPN (it answers a bare ERROR), AT+CIMI and AT+QCCID; IMSI / ICCID known: skip theirs
 		// the audio subsystem: AT+QDAI? errors until ~15-18 s after RDY (boot 983); polled until it answers, then never again
-		if ((iStep == KPoll - 3 && iSim != EPheSimReady) || (iStep == KPoll - 2 && (iImsi.Length() || iSim != EPheSimReady)) ||
+		if ((iStep == KPoll - 4 && iSim != EPheSimReady) || (iStep == KPoll - 3 && (iImsi.Length() || iSim != EPheSimReady)) ||
+			(iStep == KPoll - 2 && (iIccid.Length() || iSim != EPheSimReady)) ||
 			(iStep == KPoll - 1 && iAudioReady))
 			{
 			CommandDone(ETrue);
@@ -565,11 +566,18 @@ private:
 			{ ParseCsq(aLine.Mid(6)); return; }
 		if (aLine.Find(_L8("+QSPN: ")) == 0)
 			{ ParseQspn(aLine.Mid(7)); return; }
+		if (aLine.Find(_L8("+QCCID: ")) == 0)
+			{
+			// the SIM card serial (ICCID, up to 20 digits): a subscriber identifier, logged as its last four only
+			iIccid.Copy(aLine.Mid(8).Left(iIccid.MaxLength()));
+			{ const TPtrC8 tail(iIccid.Right(4)); RDebug::Printf("[pheltsy] ICCID read: ...%S (%d digits)", &tail, iIccid.Length()); }
+			return;
+			}
 		// a bare number: the answer of AT+CGSN (IMEI) / AT+CIMI (IMSI)
 		if (iCmdActive && aLine.Length() >= 6 && aLine.Length() <= 16 && IsDigits(aLine))
 			{
 			if (iCmd == _L8("AT+CGSN")) iImei.Copy(aLine);
-			else if (iCmd == _L8("AT+CIMI")) { iImsi.Copy(aLine); RDebug::Printf("[pheltsy] IMSI read (%d digits)", iImsi.Length()); }
+			else if (iCmd == _L8("AT+CIMI")) { iImsi.Copy(aLine); const TPtrC8 tail(iImsi.Right(4)); RDebug::Printf("[pheltsy] IMSI read: ...%S (%d digits)", &tail, iImsi.Length()); }
 			}
 		}
 	static TBool IsDigits(const TDesC8& a)
@@ -780,6 +788,7 @@ private:
 	TBuf8<256> iRx;
 	TBuf8<256> iLine;
 	TBuf8<16> iImsi, iImei;
+	TBuf8<24> iIccid;
 	TPheSim iSim;
 	TPheNet iNet;
 	};
