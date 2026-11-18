@@ -47,6 +47,46 @@ TInt PhLegacyAppMode()
 		}
 	return legacy;
 	}
+
+// R2 / W3 (etesian-port.md section 29): per-group scale and placement. A group whose screen device (its app screen mode, R1) is smaller than the
+// screen is shown scaled: the integer scale that fits, centred. The window server announces it to the render stage (MPheGroupPlacement), which
+// draws the group that way (W4) and maps the pointer back (W5). With LEGACY_APPMODE unset every group is placed 1:1 and nothing is announced.
+class MPheGroupPlacement
+	{
+public:
+	enum { ETypeId = 0xE7017C03 };
+	virtual void GroupPlacement(TInt aGroupId, const TSize& aAppSize, TInt aScale, const TPoint& aOrigin) = 0;
+	};
+
+void PhAnnounceGroup(CScreen* aScreen, CWsWindowGroup* aGroup)
+	{
+	if (PhLegacyAppMode() < 0 || !aScreen || !aGroup || !aGroup->Device())
+		return;
+	MWsWindowTreeObserver* stage = aScreen->WindowTreeObserver();
+	if (!stage)
+		return;
+	MPheGroupPlacement* sink = static_cast<MPheGroupPlacement*>(stage->ResolveObjectInterface(MPheGroupPlacement::ETypeId));
+	if (!sink)
+		return;
+	const TSize app = aGroup->Device()->AppScreenSizeInPixels();
+	const TSize screen = aScreen->SizeInPixels();
+	TInt scale = 1;
+	TPoint origin(0, 0);
+	if (app.iWidth > 0 && app.iHeight > 0 && app.iWidth <= screen.iWidth && app.iHeight <= screen.iHeight && app != screen)
+		{
+		scale = Min(screen.iWidth / app.iWidth, screen.iHeight / app.iHeight);
+		origin = TPoint((screen.iWidth - app.iWidth * scale) / 2, (screen.iHeight - app.iHeight * scale) / 2);
+		}
+	sink->GroupPlacement(aGroup->Identifier(), app, scale, origin);
+	}
+
+void PhAnnounceGroups(CScreen* aScreen)
+	{
+	if (PhLegacyAppMode() < 0 || !aScreen)
+		return;
+	for (CWsWindowGroup* g = aScreen->RootWindow()->Child(); g; g = g->NextSibling())
+		PhAnnounceGroup(aScreen, g);
+	}
 #include "../CLIENT/w32comm.h"
 #include "devicemap.h"
 #include <graphics/wsdisplaycontrol.h>
@@ -686,7 +726,10 @@ void DWsScreenDevice::SetScreenMode(TInt aMode)
 		OwnerPanic(EWservPanicScreenModeNumber);
 	iScreen->doSetScreenMode(aMode);
 	if (PhLegacyAppMode() >= 0)
+		{
 		SetAppScreenMode(aMode);						// the client that changed the mode sees the mode it asked for
+		PhAnnounceGroups(iScreen);
+		}
 	}
 
 TSize DWsScreenDevice::AppScreenSizeInPixels() const

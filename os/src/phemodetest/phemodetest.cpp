@@ -38,7 +38,7 @@ static TInt Run()
 	ws.Flush();
 	RDebug::Printf("PH: [modetest] switched to mode %d: current mode %d, size %dx%d", n - 1, screen->CurrentScreenMode(), screen->SizeInPixels().iWidth,
 				   screen->SizeInPixels().iHeight);
-	User::After(30 * 1000000);
+	User::After(150 * 1000000);
 	screen->SetScreenMode(first);
 	ws.Flush();
 	RDebug::Printf("PH: [modetest] back to mode %d: current mode %d, size %dx%d", first, screen->CurrentScreenMode(), screen->SizeInPixels().iWidth,

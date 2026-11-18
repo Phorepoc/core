@@ -41,6 +41,7 @@
 
 // OURS: RWindowBase::FixNativeOrientation windows turn with the screen (cliwin_nga.cpp)
 void PhApplyFixedNativeRotations(const CScreen& aScreen);
+void PhAnnounceGroups(CScreen* aScreen);
 
 GLREF_D CDebugLogBase *wsDebugLog;
 
@@ -991,6 +992,7 @@ void CScreen::doSetScreenMode(TInt aMode,TBool aInsideStartup)
 			//Previously, the update rotation was deferred, leaving the size mode out of step with the actual rotation
 			//It also returns false if the orientation is "intentionally" not modified.
 			(void) UpdateOrientation(&oldRotation);	
+			PhAnnounceGroups(this);		// R2: the screen changed size: the groups' placement with it (scrdev_nga.cpp)
 			
 			//SetDigitiserAreas needs revisiting if/when we support dynamic resolutions
             //on a screen with touch input.

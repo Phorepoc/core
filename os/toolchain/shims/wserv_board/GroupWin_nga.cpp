@@ -30,6 +30,7 @@
 #include "panics.h"
 #include "windowelementset.h"
 #include "pointer.h"
+void PhAnnounceGroup(CScreen* aScreen, CWsWindowGroup* aGroup);   // OURS, R2 (scrdev_nga.cpp)
 
 GLREF_D TPtr nullDescriptor;
 GLREF_D CDebugLogBase* wsDebugLog;
@@ -335,6 +336,7 @@ void CWsWindowGroup::ConstructL(const TWsClCmdCreateWindowGroup &aCmd)
 			}			
 		}
 	iMessageArray=new(ELeave) CArrayVarSeg<TWsMessage>(1);
+	PhAnnounceGroup(iScreen, this);		// R2: where this group is placed on the screen (scrdev_nga.cpp)
 	if (CClick::IsHandler())
 		{
 		TGroupWindowOpenData params;

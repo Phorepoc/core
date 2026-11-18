@@ -163,6 +163,17 @@ struct TGroup
 	TBool iCovered;					// behind a group that covers the screen (not shown, no target)
 	TBool iDropped;					// its target was freed while it was covered: repaint when it shows
 	TInt iTops;
+	// R2 (W3): where the window server places this group on the screen: its screen device's size (the app screen mode), the
+	// integer scale it is shown at and the origin of the scaled screen. Scale 1 at the origin = shown as it is.
+	TSize iAppSize;
+	TInt iScale;
+	TPoint iOrigin;
+	inline TBool Scaled() const { return iScale > 1 || iOrigin != TPoint(0, 0); }
+	inline TRect Placed(const TRect& aRect) const
+		{
+		return Scaled() ? TRect(iOrigin.iX + aRect.iTl.iX * iScale, iOrigin.iY + aRect.iTl.iY * iScale,
+								iOrigin.iX + aRect.iBr.iX * iScale, iOrigin.iY + aRect.iBr.iY * iScale) : aRect;
+		}
 	};
 
 // asked by the window server's pointer pre-processing (core wserv_board pointer_nga.cpp): may move or drop a pointer event
@@ -173,13 +184,25 @@ public:
 	virtual TBool FilterPointer(TRawEvent& aEvent) = 0;	// EFalse = drop it
 	};
 
-NONSHARABLE_CLASS(CPheCompStage) : public CWsRenderStage, public MWsWindowTreeObserver, public MWsDrawAnnotationObserver,
-	public MPhePointerFilter
+// R2 (W3): the window server tells the stage where it places a window group (core wserv_board scrdev_nga.cpp)
+class MPheGroupPlacement
 	{
 public:
+	enum { ETypeId = 0xE7017C03 };
+	virtual void GroupPlacement(TInt aGroupId, const TSize& aAppSize, TInt aScale, const TPoint& aOrigin) = 0;
+	};
+
+NONSHARABLE_CLASS(CPheCompStage) : public CWsRenderStage, public MWsWindowTreeObserver, public MWsDrawAnnotationObserver,
+	public MPhePointerFilter, public MPheGroupPlacement
+	{
+public:
+	// MPheGroupPlacement
+	void GroupPlacement(TInt aGroupId, const TSize& aAppSize, TInt aScale, const TPoint& aOrigin);
 	static CPheCompStage* NewL(CWsRenderStage* aNext, MWsIniFile* aIni, MWsScreenRedraw* aRedraw);
 	// MPhePointerFilter
 	TBool FilterPointer(TRawEvent& aEvent);
+	TBool MapScaled(TRawEvent& aEvent);
+	TInt iPressGroup;
 	~CPheCompStage();
 	// CWsRenderStage
 	void Begin(const TRegion* aRegion);
@@ -283,7 +306,7 @@ CPheCompStage* CPheCompStage::NewL(CWsRenderStage* aNext, MWsIniFile* aIni, MWsS
 	CleanupStack::PushL(self);
 	self->BaseConstructL();
 	self->iRedraw = aRedraw;
-	self->iDragTile = self->iPressTile = KErrNotFound;
+	self->iDragTile = self->iPressTile = self->iPressGroup = KErrNotFound;
 	self->SetNext(aNext);
 	self->ConstructComposeL(aIni);
 	CleanupStack::Pop(self);
@@ -431,6 +454,10 @@ TAny* CPheCompStage::ResolveObjectInterface(TUint aTypeId)
 	case MPhePointerFilter::ETypeId:
 		if (iCompose)
 			return static_cast<MPhePointerFilter*>(this);
+		break;
+	case MPheGroupPlacement::ETypeId:
+		if (iCompose)
+			return static_cast<MPheGroupPlacement*>(this);
 		break;
 	case MWsDrawableSourceProvider::EWsObjectInterfaceId:
 	case MWsFader::EWsObjectInterfaceId:
@@ -643,10 +670,90 @@ TRect CPheCompStage::TileRect(TInt aTile, const TSize& aScreen) const
 // tiling: a press in the focused tile goes to its app, mapped to the app's own (full-screen) coordinates; a press in the
 // other tile only focuses it (click-to-focus); a press on a tile's frame band drags the tile; anything else is dropped.
 // Not tiling: every event passes unchanged.
+void CPheCompStage::GroupPlacement(TInt aGroupId, const TSize& aAppSize, TInt aScale, const TPoint& aOrigin)
+	{
+	for (TInt i = 0; i < iCount; ++i)
+		if (iGroups[i].iId == aGroupId)
+			{
+			TGroup& g = iGroups[i];
+			if (g.iAppSize == aAppSize && g.iScale == aScale && g.iOrigin == aOrigin)
+				return;
+			g.iAppSize = aAppSize;
+			g.iScale = aScale;
+			g.iOrigin = aOrigin;
+			RDebug::Printf("PH: [phecomp] group %d placed: app screen %dx%d at x%d, origin %d,%d", aGroupId, aAppSize.iWidth,
+						   aAppSize.iHeight, aScale, aOrigin.iX, aOrigin.iY);
+			iFull = ETrue;
+			if (iRedraw)
+				iRedraw->ScheduleRender(0);
+			return;
+			}
+	}
+
+// W5: a press on a scaled group goes to the window server in that group's own coordinates (the front group whose window is
+// under the point decides)
+TBool CPheCompStage::MapScaled(TRawEvent& aEvent)
+	{
+	TBool any = EFalse;
+	for (TInt i = 0; i < iCount && !any; ++i)
+		any = iGroups[i].Scaled();
+	if (!any)
+		return ETrue;
+	const TRawEvent::TType type = aEvent.Type();
+	if (type != TRawEvent::EButton1Down && type != TRawEvent::EButton1Up && type != TRawEvent::EPointerMove)
+		return ETrue;
+	const TSize size = iDevice->SizeInPixels();
+	if (size.iWidth > size.iHeight)
+		return ETrue;						// a turned mode: the digitiser's coordinates differ (not placed here)
+	const TPoint p = aEvent.Pos();
+	if (type == TRawEvent::EButton1Down)
+		{
+		iPressGroup = KErrNotFound;
+		for (TInt o = 0; o < iOrderCount && iPressGroup == KErrNotFound; ++o)
+			{
+			TGroup* g = Group(iOrder[o]);
+			if (!g || !g->iSource || g->iCovered)
+				continue;
+			for (TInt t = 0; t < g->iTops; ++t)
+				if (g->iTopShown[t] && g->Placed(g->iTopRect[t]).Contains(p))
+					{
+					iPressGroup = g->iId;
+					break;
+					}
+			}
+		}
+	if (iPressGroup == KErrNotFound)
+		{
+		// a move without a press: the front group's mapping
+		for (TInt o = 0; o < iOrderCount && iPressGroup == KErrNotFound; ++o)
+			if (TGroup* g = Group(iOrder[o]))
+				if (g->iSource && !g->iCovered && g->iTops && g->Placed(g->iBounds).Contains(p))
+					iPressGroup = g->iId;
+		if (iPressGroup == KErrNotFound)
+			return ETrue;
+		}
+	TInt scale = 1;
+	TPoint origin(0, 0);
+	for (TInt i = 0; i < iCount; ++i)
+		if (iGroups[i].iId == iPressGroup)
+			{
+			scale = iGroups[i].iScale;
+			origin = iGroups[i].iOrigin;
+			}
+	if (type == TRawEvent::EButton1Up)
+		iPressGroup = KErrNotFound;
+	if (scale == 1 && origin == TPoint(0, 0))
+		return ETrue;
+	aEvent.Set(type, (p.iX - origin.iX) / scale, (p.iY - origin.iY) / scale);
+	return ETrue;
+	}
+
 TBool CPheCompStage::FilterPointer(TRawEvent& aEvent)
 	{
-	if (!iCompose || !iTiling)
+	if (!iCompose)
 		return ETrue;
+	if (!iTiling)
+		return MapScaled(aEvent);
 	const TRawEvent::TType type = aEvent.Type();
 	if (type != TRawEvent::EButton1Down && type != TRawEvent::EButton1Up && type != TRawEvent::EPointerMove)
 		return ETrue;
@@ -802,7 +909,10 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 	TRegionFix<1> all(screen);
 	// only what changed, unless the layout changed (tiles are scaled: always whole)
 	RRegion dirty;
-	if (iFull || tiling || iDirty.CheckError() || size != iLastSize)
+	TBool placed = EFalse;
+	for (TInt i = 0; i < iCount && !placed; ++i)
+		placed = iGroups[i].Scaled() && iGroups[i].iTarget;
+	if (iFull || tiling || placed || iDirty.CheckError() || size != iLastSize)
 		dirty.Copy(all);
 	else
 		{
@@ -881,11 +991,14 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 						if (fg->iUid && fg->iSource && !fg->iCovered)
 							for (TInt t2 = 0; t2 < fg->iTops; ++t2)
 								if (fg->iTopShown[t2] && !fg->iTopAlpha[t2])
-									shown.SubRect(fg->iTopRect[t2]);
+									shown.SubRect(fg->Placed(fg->iTopRect[t2]));
 			if (!shown.IsEmpty() && !shown.CheckError())
 				{
 				iNextGc->SetClippingRegion(shown);
-				iSources->DrawResource(g->iSource, screen, screen);
+				if (g->Scaled() && g->iAppSize.iWidth)
+					iSources->DrawResource(g->iSource, g->Placed(TRect(g->iAppSize)), TRect(g->iAppSize));
+				else
+					iSources->DrawResource(g->iSource, screen, screen);
 				iNextGc->SetClippingRegion(dirty);
 				}
 			shown.Close();
@@ -997,6 +1110,9 @@ void CPheCompStage::NodeCreated(const MWsWindowTreeNode& aNode, const MWsWindowT
 		g.iTarget = NULL;
 		g.iSource = NULL;
 		g.iTops = 0;
+		g.iAppSize = TSize(0, 0);
+		g.iScale = 1;
+		g.iOrigin = TPoint(0, 0);
 		g.iDropped = EFalse;
 		g.iCovered = EFalse;
 		SetUid(g);
