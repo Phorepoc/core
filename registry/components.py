@@ -729,7 +729,7 @@ COMPONENTS = {
     "ssmclecli": dict(mmp=f"{_SSM}/systemstatemgr/cle/group/clecli.mmp", ssm=True),   # static libs of sysstatemgr
     "ssmclesrv": dict(mmp=f"{_SSM}/systemstatemgr/cle/group/clesrv.mmp", ssm=True),
     "ssmmapperutility": dict(mmp=f"{_SSM}/ssmmapperutility/group/ssmmapperutility.mmp"),   # shared (syslangutil, ssmuiproviderdll): every ROM
-    "ssmstartsafe": dict(mmp=f"{_SSM}/systemstatemgr/ss/group/ssmstartsafe.mmp", ssm=True),
+    "ssmstartsafe": dict(mmp=f"{_SSM}/systemstatemgr/ss/group/ssmstartsafe.mmp", ssm=True, flags=["-D_DEBUG"]),   # TRACE (diagnosis, remove with rsfwprobe): CFireAndForget's retries, errors and timeouts
     "ssmpolicybase": dict(mmp=f"{_SSM}/ssmpolicyplugins/ssmpolicybase/group/ssmpolicybase.mmp", ssm=True),
     "ssmstatepolicybase": dict(mmp=f"{_SSM}/ssmpolicyplugins/ssmstatepolicybase/group/ssmstatepolicybase.mmp", ssm=True),
     "ssmswppolicybase": dict(mmp=f"{_SSM}/ssmpolicyplugins/ssmswppolicybase/group/ssmswppolicybase.mmp", ssm=True),
