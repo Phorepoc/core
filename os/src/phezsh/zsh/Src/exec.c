@@ -32,6 +32,7 @@
 #ifdef PHE_NO_FORK
 static pid_t phe_spawn_cmd(LinkList args, int flags);
 void phe_tty_adopt(int pid);	/* port/phe_tty.cpp */
+void phe_debug(const char *fmt, int a, int b);	/* port/phe_debug.cpp */
 static pid_t phe_reexec(Eprog prog, Wordcode beg, int in, int out);
 #endif
 
@@ -493,9 +494,12 @@ phe_spawn_argv(char **argv, int in, int out)
 	    /* only a pipe or a file goes over; a dup of a console fd would close the shell's own stdio
 	     * when it is closed again */
 	    struct stat st;
-	    if (fstat(i, &st) == 0 && (S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode)))
+	    int fr = fstat(i, &st);
+	    if (fr == 0 && (S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode)))
 		src = tmp[i] = fcntl(i, F_DUPFD, 10);
+	    phe_debug("PH: [zsh] spawn: fd %d st_mode 0x%x", i, fr == 0 ? (int)st.st_mode : -1);
 	}
+	phe_debug("PH: [zsh] spawn: fd %d <- %d", i, src);
 	if (src >= 0)
 	    posix_spawn_file_actions_adddup2(&fa, src, i);
     }
@@ -511,7 +515,9 @@ phe_spawn_argv(char **argv, int in, int out)
 	    zerr("%s: %e", argv[0], r);
 	return -1;
     }
-    phe_tty_adopt(pid);
+    phe_debug("PH: [zsh] spawned pid %d (adopt %d)", (int)pid, !getenv("PHE_NOADOPT"));
+    if (!getenv("PHE_NOADOPT"))	/* A/B test: PHE_NOADOPT=1 = the child is not put on our tty */
+	phe_tty_adopt(pid);
     return pid;
 }
 

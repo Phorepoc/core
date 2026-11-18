@@ -31,7 +31,8 @@ int execve(const char *path, char *const argv[], char *const envp[])
 		errno = r;
 		return -1;
 	}
-	phe_tty_adopt(pid);
+	if (!getenv("PHE_NOADOPT"))	/* A/B test, as in exec.c */
+		phe_tty_adopt(pid);
 	while (waitpid(pid, &st, 0) < 0)
 		if (errno != EINTR)
 			_exit(127);

@@ -81,6 +81,7 @@ class CStdioSession : public CSession2
 public:
 	~CStdioSession()
 		{
+		RDebug::Printf("PH: [stdio] session %08x closed after %d writes (tty %d)", (TUint)this, iWrites, iTtyId);
 		delete iKeys;
 		if (!iRead.IsNull())
 			iRead.Complete(KErrCancel);
@@ -96,8 +97,11 @@ private:
 		// returned, and the child already runs): without a tty yet, ask again on each request
 		if (!iResolved || iTtyId < 0)
 			{
+			TInt was = iResolved ? iTtyId : -100;
 			iTtyId = Srv().TtyOf(aMsg, iResolved);
 			iResolved = ETrue;
+			if (iTtyId != was)   // (zsh spawn diagnosis: which session writes where)
+				RDebug::Printf("PH: [stdio] session %08x: tty %d (was %d)", (TUint)this, iTtyId, was);
 			}
 		}
 	TInt WriteL(const RMessage2& aMsg);
@@ -115,6 +119,7 @@ private:
 
 	TBool iResolved;
 	TInt iTtyId;
+	TInt iWrites;
 	TBuf8<200> iLog;            // the current output line of a client without a tty
 	RMessage2 iRead;            // the pending stdin read
 	TBuf8<512> iLine;           // the line being edited
@@ -136,6 +141,8 @@ void CKeyReader::RunL()
 TInt CStdioSession::WriteL(const RMessage2& aMsg)
 	{
 	TInt total = aMsg.Int1();
+	if (++iWrites <= 4 || (iWrites & 63) == 0)   // (zsh spawn diagnosis, bounded)
+		RDebug::Printf("PH: [stdio] session %08x: write #%d, %d bytes, tty %d", (TUint)this, iWrites, total, iTtyId);
 	HBufC8* buf = HBufC8::NewLC(total);
 	TPtr8 p = buf->Des();
 	aMsg.ReadL(0, p);

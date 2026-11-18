@@ -6,6 +6,7 @@
 // child is adopted by the tty zsh itself belongs to (if any). phestdio asks again on each request of a process
 // without a tty, so output written in the moment before the adoption is the only part that misses the tty.
 #include <e32std.h>
+#include <e32debug.h>
 #include "../../phetty/phetty.h"
 
 extern "C" void phe_tty_adopt(int aPid)
@@ -14,7 +15,7 @@ extern "C" void phe_tty_adopt(int aPid)
 	if (tty.ConnectNoStart() != KErrNone)
 		return;
 	TInt id = tty.TtyOf((TUint)RProcess().Id());
-	if (id >= 0)
-		tty.Adopt(id, (TUint)aPid);
+	TInt r = id >= 0 ? tty.Adopt(id, (TUint)aPid) : id;
+	RDebug::Printf("PH: [zsh] adopt pid %d on tty %d: %d", aPid, id, r);
 	tty.Close();
 	}

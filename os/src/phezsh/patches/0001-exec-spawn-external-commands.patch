@@ -1,18 +1,19 @@
 --- a/Src/exec.c
 +++ b/Src/exec.c
-@@ -29,6 +29,11 @@
+@@ -29,6 +29,12 @@
  
  #include "zsh.mdh"
  #include "exec.pro"
 +#ifdef PHE_NO_FORK
 +static pid_t phe_spawn_cmd(LinkList args, int flags);
 +void phe_tty_adopt(int pid);	/* port/phe_tty.cpp */
++void phe_debug(const char *fmt, int a, int b);	/* port/phe_debug.cpp */
 +static pid_t phe_reexec(Eprog prog, Wordcode beg, int in, int out);
 +#endif
  
  /* Flags for last argument of addvars */
  
-@@ -460,6 +465,96 @@
+@@ -460,6 +466,101 @@
  
  #define POUNDBANGLIMIT 128
  
@@ -44,9 +45,12 @@
 +	    /* only a pipe or a file goes over; a dup of a console fd would close the shell's own stdio
 +	     * when it is closed again */
 +	    struct stat st;
-+	    if (fstat(i, &st) == 0 && (S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode)))
++	    int fr = fstat(i, &st);
++	    if (fr == 0 && (S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode)))
 +		src = tmp[i] = fcntl(i, F_DUPFD, 10);
++	    phe_debug("PH: [zsh] spawn: fd %d st_mode 0x%x", i, fr == 0 ? (int)st.st_mode : -1);
 +	}
++	phe_debug("PH: [zsh] spawn: fd %d <- %d", i, src);
 +	if (src >= 0)
 +	    posix_spawn_file_actions_adddup2(&fa, src, i);
 +    }
@@ -62,7 +66,9 @@
 +	    zerr("%s: %e", argv[0], r);
 +	return -1;
 +    }
-+    phe_tty_adopt(pid);
++    phe_debug("PH: [zsh] spawned pid %d (adopt %d)", (int)pid, !getenv("PHE_NOADOPT"));
++    if (!getenv("PHE_NOADOPT"))	/* A/B test: PHE_NOADOPT=1 = the child is not put on our tty */
++	phe_tty_adopt(pid);
 +    return pid;
 +}
 +
@@ -109,7 +115,7 @@
  /**/
  static int
  zexecve(char *pth, char **argv, char **newenvp)
-@@ -2892,6 +2987,9 @@
+@@ -2892,6 +2993,9 @@
      int save[10];
      int fil, dfil, is_cursh = 0, do_exec = 0, redir_err = 0, i;
      int nullexec = 0, magic_assign = 0, forked = 0, old_lastval;
@@ -119,7 +125,7 @@
      int is_shfunc = 0, is_builtin = 0, is_exec = 0, use_defpath = 0;
      /* Various flags to the command. */
      int cflags = 0, orig_cflags = 0, checked = 0, oautocont = -1;
-@@ -2971,6 +3069,27 @@
+@@ -2971,6 +3075,27 @@
  	 * a bit further before we make the decision.
  	 */
  	text = getjobtext(state->prog, eparams->beg);
@@ -147,7 +153,7 @@
  	switch (execcmd_fork(state, how, type, varspc, &filelist,
  			     text, oautocont, close_if_forked)) {
  	case -1:
-@@ -3620,6 +3739,16 @@
+@@ -3620,6 +3745,16 @@
       **************************************************************************/
  
      if (!forked) {
@@ -164,7 +170,7 @@
  	if (!do_exec &&
  	    (((is_builtin || is_shfunc) && output) ||
  	     (!is_cursh && (last1 != 1 || nsigtrapped || havefiles() ||
-@@ -4241,6 +4370,20 @@
+@@ -4241,6 +4376,20 @@
  		restore_params(restorelist, removelist);
  
  	} else {
@@ -185,7 +191,7 @@
  	    if (!subsh) {
  	        /* for either implicit or explicit "exec", decrease $SHLVL
  		 * as we're now done as a shell */
-@@ -4721,6 +4864,32 @@
+@@ -4721,6 +4870,32 @@
      }
      child_block();
      cmdoutval = 0;
