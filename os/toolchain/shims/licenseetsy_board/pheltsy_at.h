@@ -178,7 +178,7 @@ public:
 		}
 
 private:
-	enum { KInit = 11, KPoll = 10, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
+	enum { KInit = 11, KInitSimFirst = 6, KPoll = 10, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
 		{
 		if (!iOpen || iQn >= KQ)
@@ -425,6 +425,21 @@ private:
 			default:
 				break;
 			}
+		if (!iReady && !aOk && iStep >= KInitSimFirst)
+			{
+			// +CLIP/+CRC/+CMGF/+CNMI/+CSCA answer ERROR while no SIM is usable (empty slot, PIN not yet entered): remember it
+			// and run them again once the SIM is ready, or the call/SMS settings would stay at the modem's defaults
+			iInitFailed = ETrue;
+			RDebug::Printf("[pheltsy] init %S failed (repeated when the SIM is ready)", &iCmd);
+			}
+		if (iReady && iInitRetry)
+			{
+			iInitRetry = EFalse;
+			iReady = EFalse;
+			iStep = KInitSimFirst;
+			RDebug::Printf("[pheltsy] SIM ready: repeating the SIM-dependent init");
+			return;
+			}
 		++iStep;
 		if (!iReady && iStep >= KInit)
 			{
@@ -450,6 +465,11 @@ private:
 		if (aSim == iSim)
 			return;
 		iSim = aSim;
+		if (aSim == EPheSimReady && iInitFailed)
+			{
+			iInitFailed = EFalse;
+			iInitRetry = ETrue;
+			}
 		RDebug::Printf("[pheltsy] SIM -> %d (1 absent, 2 PIN, 3 PUK, 4 ready, 5 blocked)", (TInt)aSim);
 		iObs.PheSimChanged();
 		}
@@ -745,6 +765,7 @@ private:
 	TBool iPowerOpen;
 	TInt iOpenTicks;
 	TBool iOpen, iRdy, iReady, iCmdActive, iNetDirty;
+	TBool iInitFailed, iInitRetry;				// a SIM-dependent init command failed / run them again now (CBase: zero-filled)
 	TInt iTicks, iCmdStart, iNextPoll, iStep;
 	TBuf8<48> iCmd;
 	TBuf8<256> iRx;
