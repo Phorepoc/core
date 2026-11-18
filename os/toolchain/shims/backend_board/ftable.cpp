@@ -1288,6 +1288,13 @@ int CFileTable::posix_spawn(int* aPid, const wchar_t* aFile,
 	if (aFileActions && !(aFileActions->_fa->iActions.IsEmpty()))
 		{
 		PassFileActionsToChild(childproc, aFileActions);
+		// Phorepoc (zsh pipe diagnosis, bounded): the parent's pipes and files and their marks before the hand-over
+		for (TInt i = 3, n = 0; i < iFids.Count() && n < 12; ++i)
+			if (iFids[i] && (iFids[i]->Attributes() & KPipeFd || iFids[i]->Type() == CFileDescBase::EFileDesc))
+				{
+				RDebug::Printf("PH: [spawn] parent: fd %d type %d attr 0x%x", i, iFids[i]->Type(), iFids[i]->Attributes());
+				++n;
+				}
 		}
 
 	// begin critical section
@@ -1524,6 +1531,13 @@ void CFileTable::CheckOrigins(wchar_t**& aEnvp, int& aCount)
 	CFileDesTransferServer* pServer = NULL;
 	TRAP(err, pServer = NewFDTransferServerL(sem));  //how to handle this
 	InheritFiles(pServer);   //check errors here
+	// Phorepoc (zsh pipe diagnosis, bounded): what this child got from its parent
+	for (TInt i = 3, n = 0; i < iFids.Count() && n < 12; ++i)
+		if (iFids[i])
+			{
+			RDebug::Printf("PH: [spawn] child: inherited fd %d type %d attr 0x%x", i, iFids[i]->Type(), iFids[i]->Attributes());
+			++n;
+			}
 	delete pServer;
 
 	// Finally, do launch-method-specific stuff

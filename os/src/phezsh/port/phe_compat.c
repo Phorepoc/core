@@ -17,13 +17,29 @@ pid_t phe_fork(void)
 }
 
 #include "termios.h"
+#include <string.h>
+#include <sys/stat.h>
 
-/* no terminal device yet (interactive rung): every fd answers "not a terminal" */
+/* No terminal device yet (interactive rung). tcgetattr answers a phetty console (a character device) with the
+ * settings phetty actually has -- a cooked line with echo -- and anything else with "not a terminal". zsh reads the
+ * tty settings after every foreground job (gettyinfo); an error there is a zerr, which aborts the rest of the
+ * command line ("zsh -fc 'exit 3'; print rc=$?" lost its print). tcsetattr stays a no-op error zsh ignores. */
 int tcgetattr(int fd, struct termios *t)
 {
-	(void)fd; (void)t;
-	errno = ENOTTY;
-	return -1;
+	struct stat st;
+	if (fstat(fd, &st) != 0 || !S_ISCHR(st.st_mode)) {
+		errno = ENOTTY;
+		return -1;
+	}
+	memset(t, 0, sizeof *t);
+	t->c_iflag = ICRNL;
+	t->c_oflag = OPOST | ONLCR;
+	t->c_cflag = CS8;
+	t->c_lflag = ISIG | ICANON | ECHO | ECHOE;
+	t->c_cc[VERASE] = 8;
+	t->c_cc[VINTR] = 3;
+	t->c_ispeed = t->c_ospeed = B38400;
+	return 0;
 }
 
 int tcsetattr(int fd, int act, const struct termios *t)
