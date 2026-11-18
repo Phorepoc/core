@@ -14,6 +14,9 @@
 _LIT(KPheTtyServerName, "!phettyd");
 _LIT(KPheTtyServerExe, "phettyd.exe");
 _LIT(KPheShellExe, "pheshell.exe");
+_LIT(KPheZshExe, "zsh.exe");               // zsh (os/src/phezsh), when the image or C: has it
+// the shell a tty runs (EPtNew a2)
+enum TPheShellKind { EPheShellEshell = 0, EPheShellZsh = 1 };
 const TUint32 KPheTtyUid = 0xE7015901;
 const TUint32 KPheTtyCenRepUid = 0xE7015904;       // key 1 = enabled (PHETTY=on|off), key 2 = ttys started at boot
 const TInt KPheTtyMax = 8;
@@ -24,7 +27,7 @@ const TInt KPheShellSlot = 3;                      // process parameter slot car
 
 enum TPheTtyOp
 	{
-	EPtNew,          // a0 cols, a1 rows (0 = default) -> tty id
+	EPtNew,          // a0 cols, a1 rows (0 = default), a2 TPheShellKind -> tty id
 	EPtList,         // a0 des8 (write): one byte per live tty id -> count
 	EPtInfo,         // a0 id, a1 TPckg<TPheTtyInfo> (write)
 	EPtResize,       // a0 id, a1 cols, a2 rows
@@ -40,7 +43,8 @@ enum TPheTtyOp
 	EPtConTitle,     // a0 id, a1 des16 (read)
 	EPtShellState,   // a0 id -> 0 = dead, 1 = running, 2 = running and restarted at least once
 	EPtAdopt,        // a0 id, a1 process id: a program that tty's shell started (its stdio goes to the tty)
-	EPtTtyOf         // a0 process id -> the tty that adopted it, or KErrNotFound (the stdio server asks)
+	EPtTtyOf,        // a0 process id -> the tty that adopted it, or KErrNotFound (the stdio server asks)
+	EPtShells        // -> bit (1 << TPheShellKind) set for each shell the image (or C:) has
 	};
 
 struct TPheTtyInfo
@@ -68,7 +72,8 @@ class RPheTty : public RSessionBase
 public:
 	TInt Connect();                       // connects; starts phettyd first if it is not running (EFalse start: aStart)
 	TInt ConnectNoStart();
-	TInt New(TInt aCols = 0, TInt aRows = 0);
+	TInt New(TInt aCols = 0, TInt aRows = 0, TInt aShell = EPheShellEshell);
+	TInt Shells();
 	TInt List(TUint8* aIds, TInt aMax);
 	TInt Info(TInt aId, TPheTtyInfo& aInfo);
 	TInt Resize(TInt aId, TInt aCols, TInt aRows);

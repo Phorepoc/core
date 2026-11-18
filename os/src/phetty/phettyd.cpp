@@ -76,6 +76,7 @@ public:
 	RProcess iProc;
 	CShellWatcher* iWatch;
 	TInt iShellState;      // 0 dead, 1 running, 2 restarted
+	TInt iShellKind;       // TPheShellKind: pheshell (eshell) or zsh
 	TInt iFast;            // consecutive short-lived shells
 	TUint iStartTick;
 	TBuf8<8> iEsc;         // pending escape / UTF-8 bytes of EPtBytes
@@ -88,18 +89,21 @@ public:
 	~CPheServer();
 	CSession2* NewSessionL(const TVersion& aVersion, const RMessage2& aMessage) const;
 	CTty* Tty(TInt aId) const { return (aId >= 1 && aId <= KPheTtyMax) ? iTty[aId - 1] : NULL; }
-	TInt NewTty(TInt aCols, TInt aRows);
+	TInt NewTty(TInt aCols, TInt aRows, TInt aShell = EPheShellEshell);
 	void KillTty(TInt aId);
 	void ForgetSession(const CPheSession* aS);
 	TUint8* Tmp() { return iTmp; }
 	// programs a tty's shell started (EPtAdopt): their stdio goes to that tty (the stdio server asks with EPtTtyOf)
 	void Adopt(TInt aTty, TUint aPid);
 	TInt TtyOf(TUint aPid);
+	// the shells there are (EPtShells): a process of each is created and killed before it ran, once
+	TInt Shells();
 private:
 	CPheServer() : CServer2(EPriorityStandard) {}
 	CTty* iTty[KPheTtyMax];
 	TUint8 iTmp[4096 + 16];
 	struct TAdopted { TUint iPid; TInt iTty; };
+	TInt iShells = -1;                   // Shells(), once known
 	TAdopted iAdopted[32];               // a slot is free when its process is gone (checked on reuse)
 	};
 
@@ -123,6 +127,23 @@ void CPheServer::Adopt(TInt aTty, TUint aPid)
 		slot = 0;                        // 32 live programs at once: the oldest entry goes
 	iAdopted[slot].iPid = aPid;
 	iAdopted[slot].iTty = aTty;
+	}
+
+static TBool HasExe(const TDesC& aExe)
+	{
+	RProcess p;
+	if (p.Create(aExe, KNullDesC) != KErrNone)
+		return EFalse;
+	p.Kill(KErrNone);
+	p.Close();
+	return ETrue;
+	}
+
+TInt CPheServer::Shells()
+	{
+	if (iShells < 0)
+		iShells = (HasExe(KPheShellExe) ? 1 << EPheShellEshell : 0) | (HasExe(KPheZshExe) ? 1 << EPheShellZsh : 0);
+	return iShells;
 	}
 
 TInt CPheServer::TtyOf(TUint aPid)
@@ -176,12 +197,25 @@ void CTty::SpawnShell()
 	if (iProc.Handle())
 		return;
 	RProcess p;
-	TInt r = p.Create(KPheShellExe, KNullDesC);
-	if (r == KErrNone)
+	// zsh is a P.I.P.S. program: its stdio goes through the stdio server, which asks which tty adopted the process
+	// (EPtTtyOf); "-i" because the tty is not a terminal device to the libc yet, so zsh would not prompt on its own
+	// only one of the two shells in the image (or on C:): a tty runs the one there is
+	TBool zsh = iShellKind == EPheShellZsh;
+	TInt r = zsh ? p.Create(KPheZshExe, _L("-i")) : p.Create(KPheShellExe, KNullDesC);
+	if (r == KErrNotFound)
+		{
+		zsh = !zsh;
+		r = zsh ? p.Create(KPheZshExe, _L("-i")) : p.Create(KPheShellExe, KNullDesC);
+		if (r == KErrNone)
+			iShellKind = zsh ? EPheShellZsh : EPheShellEshell;
+		}
+	if (r == KErrNone && !zsh)
 		r = p.SetParameter(KPheShellSlot, iId);
+	if (r == KErrNone && zsh)
+		iServer.Adopt(iId, (TUint)p.Id());
 	if (r != KErrNone)
 		{
-		RDebug::Printf("[phettyd] tty %d: pheshell create failed %d", iId, r);
+		RDebug::Printf("[phettyd] tty %d: %s create failed %d", iId, zsh ? "zsh" : "pheshell", r);
 		p.Close();
 		iShellState = 0;
 		AppendText("\r\n[phettyd] cannot start pheshell\r\n");
@@ -194,7 +228,7 @@ void CTty::SpawnShell()
 	iProc.Resume();
 	if (iShellState == 0)
 		iShellState = 1;
-	RDebug::Printf("[phettyd] tty %d: pheshell started, pid %d", iId, (TInt)iProc.Id());
+	RDebug::Printf("[phettyd] tty %d: %s started, pid %d", iId, zsh ? "zsh" : "pheshell", (TInt)iProc.Id());
 	}
 
 void CTty::KillShell()
@@ -462,7 +496,7 @@ CSession2* CPheServer::NewSessionL(const TVersion& aVersion, const RMessage2&) c
 	return new (ELeave) CPheSession;
 	}
 
-TInt CPheServer::NewTty(TInt aCols, TInt aRows)
+TInt CPheServer::NewTty(TInt aCols, TInt aRows, TInt aShell)
 	{
 	for (TInt i = 0; i < KPheTtyMax; i++)
 		if (!iTty[i])
@@ -471,6 +505,7 @@ TInt CPheServer::NewTty(TInt aCols, TInt aRows)
 			if (!t)
 				return KErrNoMemory;
 			t->iId = i + 1;
+			t->iShellKind = aShell == EPheShellZsh ? EPheShellZsh : EPheShellEshell;
 			t->iCols = aCols ? Clamp(aCols, 10, 250) : KPheTtyDefCols;
 			t->iRows = aRows ? Clamp(aRows, 2, 100) : KPheTtyDefRows;
 			TRAPD(r, t->ConstructL());
@@ -526,7 +561,7 @@ void CPheSession::ServiceL(const RMessage2& m)
 	CPheServer& srv = Srv();
 	TInt op = m.Function();
 	CTty* t = NULL;
-	if (op != EPtNew && op != EPtList && op != EPtReadCancel && op != EPtConReadCancel && op != EPtTtyOf)
+	if (op != EPtNew && op != EPtList && op != EPtReadCancel && op != EPtConReadCancel && op != EPtTtyOf && op != EPtShells)
 		{
 		t = srv.Tty(m.Int0());
 		if (!t)
@@ -538,7 +573,7 @@ void CPheSession::ServiceL(const RMessage2& m)
 	switch (op)
 		{
 	case EPtNew:
-		m.Complete(srv.NewTty(m.Int0(), m.Int1()));
+		m.Complete(srv.NewTty(m.Int0(), m.Int1(), m.Int2()));
 		break;
 	case EPtList:
 		{
@@ -656,6 +691,9 @@ void CPheSession::ServiceL(const RMessage2& m)
 	case EPtAdopt:
 		srv.Adopt(t->iId, (TUint)m.Int1());
 		m.Complete(KErrNone);
+		break;
+	case EPtShells:
+		m.Complete(srv.Shells());
 		break;
 	case EPtTtyOf:
 		m.Complete(srv.TtyOf((TUint)m.Int0()));

@@ -29,6 +29,7 @@ RESOURCE MENU_PANE r_pheterm_menu
 	items =
 		{
 		MENU_ITEM { command = EPheCmdNew; txt = "New tty"; },
+		MENU_ITEM { command = EPheCmdNewZsh; txt = "New zsh tty"; },
 		MENU_ITEM { command = EPheCmdNext; txt = "Next tty"; },
 		MENU_ITEM { command = EPheCmdClose; txt = "Close tty"; },
 		MENU_ITEM { command = EPheCmdTty1; txt = "Switch to tty 1"; },

@@ -135,9 +135,10 @@ public:
 	TInt CurrentId() const { return iCur >= 0 && iCur < iViews.Count() ? iViews[iCur].iId : 0; }
 	RPheTty& Tty() { return iTty; }
 	TInt ListIds(TUint8* aIds) { return iTty.List(aIds, KPheTtyMax); }
-	void NewTty()
+	// aShell: TPheShellKind; with only one shell in the image the daemon starts that one whatever is asked
+	void NewTty(TInt aShell = EPheShellEshell)
 		{
-		TInt id = iTty.New(iCols, iRows);
+		TInt id = iTty.New(iCols, iRows, aShell);
 		if (id > 0)
 			Switch(id);
 		}
@@ -315,6 +316,9 @@ public:
 			aPane->SetItemDimmed(EPheCmdTty1 + i - 1, !live || i == iView->CurrentId());
 			}
 		aPane->SetItemDimmed(EPheCmdNew, n >= KPheTtyMax);
+		// both shells there: the user picks one ("New tty" = eshell, "New zsh tty"); one shell: "New tty" starts it
+		const TInt both = (1 << EPheShellEshell) | (1 << EPheShellZsh);
+		aPane->SetItemDimmed(EPheCmdNewZsh, n >= KPheTtyMax || (iView->Tty().Shells() & both) != both);
 		aPane->SetItemDimmed(EPheCmdNext, n < 2);
 		}
 	void HandleCommandL(TInt aCommand)
@@ -322,6 +326,7 @@ public:
 		switch (aCommand)
 			{
 		case EPheCmdNew: iView->NewTty(); break;
+		case EPheCmdNewZsh: iView->NewTty(EPheShellZsh); break;
 		case EPheCmdNext: iView->NextTty(); break;
 		case EPheCmdClose: iView->CloseTty(); break;
 		case EAknSoftkeyExit:
