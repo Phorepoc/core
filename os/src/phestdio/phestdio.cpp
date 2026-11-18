@@ -33,7 +33,7 @@ public:
 	~CStdioServer() { iTty.Close(); }
 	CSession2* NewSessionL(const TVersion& aVersion, const RMessage2& aMessage) const;
 	// the tty a client process belongs to, or < 0
-	TInt TtyOf(const RMessage2& aMsg)
+	TInt TtyOf(const RMessage2& aMsg, TBool aQuiet = EFalse)
 		{
 		if (!iTtyOk)
 			iTtyOk = iTty.ConnectNoStart() == KErrNone;   // (phettyd may start after us)
@@ -50,7 +50,7 @@ public:
 		TUint pid = (TUint)p.Id();
 		p.Close();
 		TInt tty = iTty.TtyOf(pid);
-		if (tty < 0)
+		if (tty < 0 && !aQuiet)
 			RDebug::Printf("PH: [stdio] process %u: no tty (%d)", pid, tty);
 		return tty;
 		}
@@ -92,9 +92,11 @@ private:
 	CStdioServer& Srv() { return *const_cast<CStdioServer*>(static_cast<const CStdioServer*>(Server())); }
 	void Resolve(const RMessage2& aMsg)
 		{
-		if (!iResolved)
+		// a process can be adopted after its first request (a spawning zsh adopts its child once posix_spawn has
+		// returned, and the child already runs): without a tty yet, ask again on each request
+		if (!iResolved || iTtyId < 0)
 			{
-			iTtyId = Srv().TtyOf(aMsg);
+			iTtyId = Srv().TtyOf(aMsg, iResolved);
 			iResolved = ETrue;
 			}
 		}

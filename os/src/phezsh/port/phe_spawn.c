@@ -15,6 +15,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+void phe_tty_adopt(int pid);	/* phe_tty.cpp */
+
 int execve(const char *path, char *const argv[], char *const envp[])
 {
 	pid_t pid;
@@ -29,6 +31,7 @@ int execve(const char *path, char *const argv[], char *const envp[])
 		errno = r;
 		return -1;
 	}
+	phe_tty_adopt(pid);
 	while (waitpid(pid, &st, 0) < 0)
 		if (errno != EINTR)
 			_exit(127);

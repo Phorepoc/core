@@ -31,6 +31,7 @@
 #include "exec.pro"
 #ifdef PHE_NO_FORK
 static pid_t phe_spawn_cmd(LinkList args, int flags);
+void phe_tty_adopt(int pid);	/* port/phe_tty.cpp */
 static pid_t phe_reexec(Eprog prog, Wordcode beg, int in, int out);
 #endif
 
@@ -475,7 +476,7 @@ phe_spawn_argv(char **argv, int in, int out)
 {
     posix_spawn_file_actions_t fa;
     pid_t pid;
-    int r, i;
+    int r, i, tmp[3] = { -1, -1, -1 };
 
     fflush(stdout);
     fflush(stderr);
@@ -483,16 +484,29 @@ phe_spawn_argv(char **argv, int in, int out)
     for (i = 3; i <= max_zsh_fd; i++)
 	if (fdtable[i] == FDT_INTERNAL && i != in && i != out)
 	    posix_spawn_file_actions_addclose(&fa, i);
-    if (in > 0)
-	posix_spawn_file_actions_adddup2(&fa, in, 0);
-    if (out > 0)
-	posix_spawn_file_actions_adddup2(&fa, out, 1);
+    /* The libc hands over fds 3 and up only (a child's 0-2 are its own stdio): whatever the shell has on
+     * 0-2 now (a pipe, a redirected file) goes over as a copy at 10+ and is put back on 0-2 in the child.
+     * A console fd does not go over at all, and the child keeps its own stdio for it. */
+    for (i = 0; i < 3; i++) {
+	int src = (i == 0 && in > 0) ? in : (i == 1 && out > 0) ? out : -1;
+	if (src < 0)
+	    src = tmp[i] = fcntl(i, F_DUPFD, 10);
+	if (src >= 0)
+	    posix_spawn_file_actions_adddup2(&fa, src, i);
+    }
     r = posix_spawn(&pid, argv[0], &fa, NULL, argv, environ);
     posix_spawn_file_actions_destroy(&fa);
+    for (i = 0; i < 3; i++)
+	if (tmp[i] >= 0)
+	    close(tmp[i]);
     if (r) {
-	zerr("%s: %e", argv[0], r);
+	if (r == ENOENT)
+	    zerr("command not found: %s", argv[0]);
+	else
+	    zerr("%s: %e", argv[0], r);
 	return -1;
     }
+    phe_tty_adopt(pid);
     return pid;
 }
 

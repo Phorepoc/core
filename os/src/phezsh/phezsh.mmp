@@ -30,7 +30,9 @@ SOURCE			rlimits.c sched.c
 SOURCEPATH		zsh/Src/Modules
 SOURCE			datetime.c langinfo.c parameter.c
 SOURCEPATH		port
-SOURCE			phe_main.c phe_compat.c phe_spawn.c phe_debug.cpp
+SOURCE			phe_main.c phe_compat.c phe_spawn.c phe_debug.cpp phe_tty.cpp
+SOURCEPATH		../phetty
+SOURCE			pheclient.cpp
 
 STATICLIBRARY	libcrt0.lib
 LIBRARY			libc.lib libm.lib euser.lib

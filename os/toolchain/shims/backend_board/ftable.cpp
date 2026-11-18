@@ -1723,7 +1723,9 @@ void CFileTable::CheckOrigins(wchar_t**& aEnvp, int& aCount)
 									err = lexr.Val(fd2);
 									if (err == KErrNone)
 										{
-										dup2(fd1, fd2, err);
+										int e = 0;
+										if (dup2(fd1, fd2, e) < 0)	// Phorepoc: say so (it failed silently)
+											RDebug::Printf("PH: [spawn] child: dup2(%d, %d) failed, errno %d", fd1, fd2, e);
 										}
 									}
 								break;
