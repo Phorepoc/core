@@ -178,7 +178,7 @@ public:
 		}
 
 private:
-	enum { KInit = 11, KInitSimFirst = 6, KPoll = 11, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
+	enum { KInit = 12, KInitSimFirst = 8, KPoll = 11, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
 		{
 		if (!iOpen || iQn >= KQ)
@@ -333,9 +333,17 @@ private:
 			// (3GPP TS 27.007 7.2 / 10.1.20 / 10.1.22); Zephyr's AT+CFUN=4 is left out (RF stays on, its power-on default).
 			// Calls + SMS from the specs: +CLIP=1 caller id (27.007 7.6), +CRC=1 "+CRING: VOICE" (27.007 6.11), PDU mode
 			// +CMGF=0 (27.005 3.2.3), new SMS stored + "+CMTI" (+CNMI=2,1,0,0,0, 27.005 3.4.1), the SMSC +CSCA? (27.005 3.3.1).
-			static const char* const KInitCmds[KInit] = { "ATE0", "AT+CMEE=1", "AT+CREG=2", "AT+CGREG=2", "AT+CEREG=2",
-														  "AT+CGSN", "AT+CLIP=1", "AT+CRC=1", "AT+CMGF=0", "AT+CNMI=2,1,0,0,0",
-														  "AT+CSCA?" };
+			// Packet service: detached (AT+CGATT=0) and asked back (AT+CGATT?, logged): the engine never opens a data
+			// connection, and a modem that attached by itself at power-up (a roaming SIM would cost money) is told to leave.
+			// Messages: without PHE_LTSY_SMS the engine neither enables new-message indications (CNMI mode 0: none) nor reads
+			// or deletes anything (see Line(): SMS lines are dropped unread); a board that wants SMS defines PHE_LTSY_SMS.
+			static const char* const KInitCmds[KInit] = { "ATE0", "AT+CMEE=1", "AT+CGATT=0", "AT+CGATT?", "AT+CREG=2", "AT+CGREG=2",
+														  "AT+CEREG=2", "AT+CGSN", "AT+CLIP=1", "AT+CRC=1", "AT+CMGF=0",
+#ifdef PHE_LTSY_SMS
+														  "AT+CNMI=2,1,0,0,0" };
+#else
+														  "AT+CNMI=0,0,0,0,0" };
+#endif
 			Send(TPtrC8((const TUint8*)KInitCmds[iStep]));
 			return;
 			}
@@ -481,6 +489,16 @@ private:
 	// ---- the parser: final results end the current command; +CPIN/+CREG/+COPS/+CSQ/+QSPN update the state (solicited or URC)
 	void Line(const TDesC8& aLine)
 		{
+#ifndef PHE_LTSY_SMS
+		// a stored-message notice, a delivered message, a message read or listed, the service centre: dropped unread, never
+		// logged (messages are the user's, and the engine must not read or delete any)
+		if (aLine.Find(_L8("+CMT")) == 0 || aLine.Find(_L8("+CDS")) == 0 || aLine.Find(_L8("+CMGR")) == 0 ||
+			aLine.Find(_L8("+CMGL")) == 0 || aLine.Find(_L8("+CSCA")) == 0)
+			{
+			RDebug::Printf("[pheltsy] << (a message line: not read, not logged)");
+			return;
+			}
+#endif
 		TBuf8<120> l(aLine.Left(120));
 		TBool digits = l.Length() >= 14;		// an IMEI / IMSI / ICCID line: identifies the device or the subscriber, never logged whole
 		for (TInt i = 0; digits && i < l.Length(); ++i)
