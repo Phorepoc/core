@@ -1,0 +1,14 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// phepebble.hrh -- OURS: menu commands of the Pebble app
+#ifndef PHEPEBBLE_HRH
+#define PHEPEBBLE_HRH
+enum TPhePebbleUiCommands
+	{
+	EPhePebbleCmdUiPair = 0x6300,
+	EPhePebbleCmdUiTest,
+	EPhePebbleCmdUiReconnect,
+	EPhePebbleCmdUiForget
+	};
+#endif

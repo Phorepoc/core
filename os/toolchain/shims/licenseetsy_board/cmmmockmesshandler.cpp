@@ -788,8 +788,17 @@ private:
         pkg.PackData( &used );
         Complete( EMmTsyPhoneBookStoreGetInfoIPC, &pkg );
         }
-    void DoSmspList()
+    void DoSmspList( TInt aTries = 0 )
         {
+#ifdef PHE_LTSY
+        if ( iAt && !iAt->SmscKnown() && aTries < 90 )
+            {
+            // the SIM's service centre comes from AT+CSCA? once the modem is up; the SMS stack asks at its first start, earlier.
+            // Answering now would hand it the scripted number, which CTSY / the SMS settings then keep: ask again every second
+            Post( EFmSmspList, 10, 0, aTries + 1 );
+            return;
+            }
+#endif
         CArrayPtrFlat<TSmsParameters>* list = new CArrayPtrFlat<TSmsParameters>( 2 );
         if ( !list )
             return;
@@ -803,8 +812,12 @@ private:
             p->iValidityPeriod = 167;                          // 1 day (relative)
             p->iServiceCenterAddress.Copy( KFmSmsc );
 #ifdef PHE_LTSY
-            if ( iAt && iAt->Smsc().Length() )      // pheltsy: AT+CSCA?
+            if ( iAt )                              // pheltsy: AT+CSCA? -- the SIM's number, none if the SIM has none (not the scripted one)
+                {
                 p->iServiceCenterAddress.Copy( iAt->Smsc() );
+                if ( !iAt->Smsc().Length() )
+                    p->iParameterIndicator &= ~KServiceCentreAddress;
+                }
 #endif
             p->iMobileScTON = RMobilePhone::EInternationalNumber;
             p->iMobileScNPI = RMobilePhone::EIsdnNumberPlan;
@@ -918,7 +931,7 @@ private:
                 case EFmAnswer: DoAnswer(); break;
                 case EFmSmsSent: DoSmsSent(); break;
                 case EFmSmsDeliver: DoSmsDeliver(); break;
-                case EFmSmspList: DoSmspList(); break;
+                case EFmSmspList: DoSmspList( arg2 ); break;
                 case EFmIccType: DoIccType(); break;
                 case EFmPbInit: DoPbInit( arg ); break;
                 case EFmPbCache: DoPbCache( arg ); break;

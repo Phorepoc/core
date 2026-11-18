@@ -1087,6 +1087,16 @@ COMPONENTS = {
     # opens BrowserNG on a URL at boot (SSM_TEST=phebrlaunch): the phone has no C:ootui.txt cycle
     "phebrlaunch": dict(mmp=os.path.join(OS_ROOT, "src/phebrlaunch/phebrlaunch.mmp"), test=True),
     "phetelprobe": dict(mmp=os.path.join(OS_ROOT, "src/phetelprobe/phetelprobe.mmp")),
+    # OURS (BLE plan, docs os/src/pheble/README.md): Bluetooth LE on Apache NimBLE 1.9.0 (os/third_party/nimble, Apache-2.0).
+    # pheblerouter = an HCTL plug-in wrapping the board HCTL (LE traffic -> NimBLE, BR/EDR -> the 2010 stack); pheblehost = NimBLE +
+    # the Symbian NPL + the bond store + the "!PheBle" server; pheble = the client library; phebletest = the LE scan test.
+    # A board turns BLE on with corehci_symbian.ini hctl_uid= 0xE7015E11 + pheblerouter.ini (os/src/pheble/data) in its zdata.
+    "pheblehost": dict(mmp=os.path.join(OS_ROOT, "src/pheble/host/pheblehost.mmp"), allow_wsd=True, defs=["__SOFTFP="],
+                       cdriver=True, c_std="gnu11"),   # NimBLE and TinyCrypt are C (C11)
+    "pheblerouter": dict(mmp=os.path.join(OS_ROOT, "src/pheble/router/pheblerouter.mmp")),   # <- pheblehost
+    "pheble": dict(mmp=os.path.join(OS_ROOT, "src/pheble/client/pheble.mmp")),
+    "phebletest": dict(mmp=os.path.join(OS_ROOT, "src/pheble/test/phebletest.mmp"), test=True),   # <- pheble
+    "phepebble_le": dict(mmp=os.path.join(OS_ROOT, "src/pheble/pebble/phepebble_le.mmp")),   # STATICLIBRARY <- phepebblesrv
     "phesmsprobe": dict(mmp=os.path.join(OS_ROOT, "src/phesmsprobe/phesmsprobe.mmp")),   # OURS: telephony T1, the SMS stack over the fake modem
     # OURS (VDU V4): the MMF video play controller for MP4/3GP (ECOM 0x101F4F47; mp4demux -> CMMFDevVideoPlay -> phevdec ->
     # NV12 -> DSA); phevidtest plays .vde-test/*.mp4 through CVideoPlayerUtility (tools/vdu/make_vde_test.sh makes them).

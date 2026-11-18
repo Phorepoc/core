@@ -1,0 +1,19 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// phebletest.mmp -- OURS (BLE plan rung 4): the LE scan test (lists named advertisers; PASS = a "Pebble ..." seen).
+TARGET			phebletest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015E14
+CAPABILITY		LocalServices
+VENDORID		0
+
+USERINCLUDE		../inc
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			phebletest.cpp
+
+LIBRARY			euser.lib pheble.lib
+
+SMPSAFE
