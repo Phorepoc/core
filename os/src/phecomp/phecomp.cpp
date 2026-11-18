@@ -945,6 +945,28 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 	iNextGc->Clear();
 	iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModePEN);
 	iSources->DrawResource(iRestSource, screen, screen);
+	// a group placed smaller than the screen (R2): the rest of the screen is black, not the root window's white
+	if (!tiling)
+		for (TInt o = 0; o < iOrderCount; ++o)
+			if (TGroup* g = Group(iOrder[o]))
+				if (g->Scaled() && g->iSource && g->iAppSize.iWidth && !g->iCovered)
+					{
+					RRegion band;
+					band.Copy(dirty);
+					band.SubRect(g->Placed(TRect(g->iAppSize)));
+					if (!band.IsEmpty() && !band.CheckError())
+						{
+						iNextGc->SetClippingRegion(band);
+						iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModeWriteAlpha);
+						iNextGc->SetBrushStyle(MWsGraphicsContext::ESolidBrush);
+						iNextGc->SetBrushColor(TRgb(0, 0, 0, 255));
+						iNextGc->Clear();
+						iNextGc->SetDrawMode(MWsGraphicsContext::EDrawModePEN);
+						iNextGc->SetClippingRegion(dirty);
+						}
+					band.Close();
+					break;						// the front placed group decides
+					}
 	// tiling: three passes, back to front -- the groups behind the front tile where the window server put them, the tiles,
 	// then the groups in front of the front tile (overlays: the task switcher, notes, menus) above the tiles
 	TInt frontTile = iOrderCount;

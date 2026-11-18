@@ -257,6 +257,7 @@ COMPONENTS = {
                        flags=["-include", "e32debug.h"]),
     # the Khronos OpenWF-C reference compositor (C, over P.I.P.S. libc/libpthread/libm)
     "libwfc": dict(mmp=f"{G}/graphicscomposition/openwfcompositionengine/group/openwfc.mmp", nga=True,
+                   incs_first=["toolchain/shims/libwfc_board/inc"],   # PH: owfscreen.h with a larger source/scratch size (R2b, native 720x1440)
                    rom="libWFC.dll", cdriver=True, allow_wsd=True, static_ctors=True,
                    # wfcSetContextAttribi traced (src/nga/libwfc/phtrace_wfc.cpp defines the exported name)
                    defs=["__SOFTFP=", "wfcSetContextAttribi=ph_real_wfcSetContextAttribi", "wfcSetElementAttribiv=ph_real_wfcSetElementAttribiv", "wfcSetElementAttribfv=ph_real_wfcSetElementAttribfv", "wfcInsertElement=ph_real_wfcInsertElement", "wfcRemoveElement=ph_real_wfcRemoveElement", "wfcSetElementAttribi=ph_real_wfcSetElementAttribi", "wfcSetElementAttribf=ph_real_wfcSetElementAttribf"],
