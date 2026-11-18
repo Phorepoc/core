@@ -1799,6 +1799,19 @@ COMPONENTS = {
     "rsfwmountstore": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/mountstore/group/rsfwmountstore.mmp"),   # <- rsfwmountman
     "rsfwmountutils": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/mountmanager/group/rsfwmountutils.mmp"),   # <- rsfwmountman
     "rsfwcontrol": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/remotefileengine/group/rsfwcontrol.mmp"),   # <- rsfwmountman
+    # --- RSFW, the Remote Storage Framework (EPL): a remote share as a drive letter. eremotefs.fsy (the file-system plug-in)
+    # -> rsfwsession -> remotefe.exe (the remote file engine: cache, state machines) -> an access-protocol ECOM plug-in
+    # (rsfwdavaccess = WebDAV over the HTTP framework; a later SMB plug-in goes beside it). rsfwbootmounter.exe adds the fsy and
+    # mounts the drives configured in CenRep 101F9775. rsfwgsplugin is the remote-drive settings view File Manager loads (ECOM 101f9777).
+    # Not built: rsfwmountconfbc (a BIO message control for the remote-drive configuration message: needs the Messaging BIO stack).
+    "rsfwsession": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/remotefileengine/group/rsfwsession.mmp"),
+    "rsfwconfig": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/mountstore/group/rsfwconfig.mmp"),
+    "rsfwcommon": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/remotefileengine/group/rsfwcommon.mmp"),
+    "rsfwnotplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/rsfwnotifierplugins/group/rsfwnotplugin.mmp"),
+    "remotefe": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/remotefileengine/group/remotefe.mmp"),
+    "eremotefs": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/remotefilesystemplugin/group/eremotefs.mmp", rom="eremotefs.fsy"),
+    "rsfwdavaccess": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/webdavaccessplugin/group/rsfwdavaccess.mmp"),
+    "rsfwgsplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/gsplugin/group/rsfwgsplugin.mmp"),   # the remote-drive settings view File Manager loads (ECOM 101f9777)
     "memstatepopup": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.files/filesystemuis/memstatepopup/group/MemStatePopup.mmp"),   # <- filemanagerview
     "memscanclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.files/filesystemuis/memscaneng/group/memscanclient.mmp"),   # <- memstatepopup
     "drmuihandling": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.drm/commondrm/drmutility/group/DRMUiHandling.mmp"),   # <- filemanagerview
