@@ -1,0 +1,3 @@
+EXPORTS
+	_Z16PheBleHostAttachP14MPheBleHciSink @ 1 NONAME
+	_Z16PheBleHostDetachP14MPheBleHciSink @ 2 NONAME
