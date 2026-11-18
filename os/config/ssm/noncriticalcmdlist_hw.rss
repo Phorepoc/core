@@ -99,9 +99,9 @@ RESOURCE SSM_COMMAND_LIST r_cmds
 	,r_cmd_phettyd
 	// prio 0x7E05 -- PHOREPOC display-mode follower (src/phedispmode): the screen mode follows a resizable PC display; exits at once elsewhere
 	,r_cmd_phedispmode
-	// prio 0x7E06 -- PHOREPOC remote drives (RSFW): rsfwbootmounter adds the remote file system and mounts the drives configured in CenRep 101F9775
+	// prio 0xFFA5 -- PHOREPOC remote drives (RSFW): rsfwbootmounter adds the remote file system and mounts the drives configured in CenRep 101F9775
 	,r_cmd_rsfwbootmounter
-	// prio 0x7E07 -- PHOREPOC diagnosis: the RSFW start probe (starts the engine and the mounter, reports how they ended)
+	// prio 0xFFA6 -- PHOREPOC diagnosis: the RSFW start probe (starts the engine and the mounter, reports how they ended)
 	,r_cmd_rsfwprobe
         };
     }
@@ -198,7 +198,7 @@ RESOURCE SSM_START_PROCESS_INFO r_cmd_phvolume
 //
 RESOURCE SSM_START_PROCESS_INFO r_cmd_rsfwbootmounter
     {
-    priority = 0x7E06;
+    priority = 0xFFA5;   // above the activity monitor (0x7EF1, critical, waits for a signal): the commands below it wait for it
     name = "z:\\sys\\bin\\rsfwbootmounter.exe";
     execution_behaviour = ESsmFireAndForget;
     }
@@ -210,7 +210,7 @@ RESOURCE SSM_START_PROCESS_INFO r_cmd_rsfwbootmounter
 //
 RESOURCE SSM_START_PROCESS_INFO r_cmd_rsfwprobe
     {
-    priority = 0x7E07;
+    priority = 0xFFA6;   // as the boot mounter: above the activity monitor
     name = "z:\\sys\\bin\\rsfwprobe.exe";
     execution_behaviour = ESsmFireAndForget;
     }
