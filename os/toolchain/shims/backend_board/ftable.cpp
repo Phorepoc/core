@@ -31,6 +31,7 @@
 #include <sys/syslimits.h>  // for checking maximum no of FDs that can be opened
 #include "sysif.h"
 #include "fdesc.h"
+#include <e32debug.h>
 #include "ltime.h"
 #include "lposix.h"
 #include "systemspecialfilercg.h"
@@ -1258,7 +1259,12 @@ int CFileTable::posix_spawn(int* aPid, const wchar_t* aFile,
 
 	if (err != KErrNone)
 		{
-		return ECHILD;
+		// Phorepoc: say why (the 2010 code answered ECHILD for every failure): a missing program is
+		// ENOENT, and the Symbian error goes to the log.
+		RDebug::Printf("PH: [spawn] RProcess::Create failed: %d", err);
+		int e = ECHILD;
+		MapError(err, e);
+		return e;
 		}
 
 #ifdef SYMBIAN_OE_POSIX_SIGNALS

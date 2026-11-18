@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <spawn.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -19,6 +20,11 @@ int execve(const char *path, char *const argv[], char *const envp[])
 	pid_t pid;
 	int st, r;
 	r = posix_spawn(&pid, path, 0, 0, argv, envp);
+	if (r && strchr(path, '/')) {
+		/* zsh walks $path and tries "<dir>/<name>"; the loader knows no such folders, it finds every program by
+		 * name in sys/bin. So a failed "<dir>/<name>" is tried once more as "<name>". */
+		r = posix_spawn(&pid, strrchr(path, '/') + 1, 0, 0, argv, envp);
+	}
 	if (r) {
 		errno = r;
 		return -1;
