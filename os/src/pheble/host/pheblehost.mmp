@@ -26,7 +26,7 @@ USERINCLUDE		../../../third_party/nimble/porting/nimble/include
 USERINCLUDE		../../../third_party/nimble/ext/tinycrypt/include
 
 SOURCEPATH		.
-SOURCE			pheblehost.cpp pheblestore.cpp pheblesrv.cpp
+SOURCE			pheblehost.cpp pheblestore.cpp pheblesrv.cpp phebleops.cpp
 SOURCEPATH		../port/src
 SOURCE			npl_symbian.cpp
 SOURCEPATH		../../../third_party/nimble/nimble/host/src

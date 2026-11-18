@@ -9,8 +9,7 @@
 // packets from the router are copied and posted to NimBLE's event queue, so every NimBLE call happens on its task.
 // Server requests are posted the same way; results come back to the server thread through a locked queue + a kick.
 //
-// Rung 4 implements scanning (StartScan / NextAdvert / StopScan). Connect, GATT and pairing answer KErrNotSupported
-// until rung P2-P4 (docs: os/src/pheble/README.md).
+// Scanning lives here; connect, pairing and GATT are in phebleops.cpp.
 
 #include <e32base.h>
 #include <e32debug.h>
@@ -332,4 +331,12 @@ TInt PheBleHostScan(TBool aStart, TBool aActive, TInt aTimeoutMs)
 	r->iTimeoutMs = aTimeoutMs;
 	ble_npl_eventq_put(nimble_port_get_dflt_eventq(), &r->iEv);
 	return KErrNone;
+	}
+
+TInt PheBleHostMtu(TUint16 aConn)
+	{
+	if (!gStarted)
+		return KErrPheBleNotReady;
+	uint16_t mtu = ble_att_mtu(aConn);
+	return mtu ? mtu : KErrNotFound;
 	}

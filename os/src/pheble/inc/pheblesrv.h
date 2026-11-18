@@ -30,7 +30,25 @@ enum TPheBleOp
 	EPheBleCancelAll
 	};
 
+/** A request for NimBLE's task (phebleops.cpp). */
+struct TOpReq
+	{
+	TInt iOp;                  // TPheBleOp
+	TUint iId;                 // the server's request id, echoed in PheBleServerComplete
+	TUint16 iConn;
+	TUint16 iHandle;
+	TUint16 iValue;            // CCCD value
+	TBool iFlag;               // write: with response; ConfirmNumeric: accept
+	TPheBleAddr iAddr;
+	TInt iLen;                 // set by PheBleHostRequest
+	const TUint8* iData;       // set by PheBleHostRequest (its own copy)
+	};
+
 // NimBLE's task -> server thread (thread-safe; copies)
+/** Complete request aId: local error, the peer's ATT error, data (read value, connection handle, discovery entries). */
+void PheBleServerComplete(TUint aId, TInt aError, TInt aAttError, const TDesC8& aData);
+/** A link event for every session (notifications carry aValue). */
+void PheBleServerEvent(const TPheBleEvent& aEvent, const TDesC8& aValue);
 void PheBleServerAdvert(const TPheBleAdvert& aAdvert);
 void PheBleServerScanDone(TInt aReason);
 void PheBleServerHostReset();
@@ -38,6 +56,9 @@ void PheBleServerHostReset();
 TInt PheBleServerStart();
 // server thread -> NimBLE's task
 TInt PheBleHostScan(TBool aStart, TBool aActive, TInt aTimeoutMs);
+TInt PheBleHostRequest(const TOpReq& aReq, const TDesC8& aData);
+/** The ATT MTU of a connection (NimBLE takes its own lock: callable from the server thread). */
+TInt PheBleHostMtu(TUint16 aConn);
 // NimBLE's bond store
 void PheBleStoreInit();
 

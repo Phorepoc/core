@@ -111,6 +111,7 @@ public:
 	IMPORT_C void NextEvent(TPheBleEventBuf& aEvent, TDes8& aValue, TRequestStatus& aStatus);
 
 	// security: bond as initiator; IO capability DisplayYesNo (numeric comparison when the peer can), Just Works otherwise
+	/** Completes with the TPheBlePairing method (>= 0) or an error. */
 	IMPORT_C void Pair(TUint16 aConn, TRequestStatus& aStatus);
 	IMPORT_C TInt ConfirmNumeric(TUint16 aConn, TBool aAccept);
 	IMPORT_C TInt DeleteBond(const TPheBleAddr& aAddr);

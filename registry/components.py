@@ -1092,6 +1092,7 @@ COMPONENTS = {
     "pheblerouter": dict(mmp=os.path.join(OS_ROOT, "src/pheble/router/pheblerouter.mmp")),   # <- pheblehost
     "pheble": dict(mmp=os.path.join(OS_ROOT, "src/pheble/client/pheble.mmp")),
     "phebletest": dict(mmp=os.path.join(OS_ROOT, "src/pheble/test/phebletest.mmp"), test=True),   # <- pheble
+    "phepebble_le": dict(mmp=os.path.join(OS_ROOT, "src/pheble/pebble/phepebble_le.mmp")),   # STATICLIBRARY <- phepebblesrv
     "phesmsprobe": dict(mmp=os.path.join(OS_ROOT, "src/phesmsprobe/phesmsprobe.mmp")),   # OURS: telephony T1, the SMS stack over the fake modem
     # OURS (VDU V4): the MMF video play controller for MP4/3GP (ECOM 0x101F4F47; mp4demux -> CMMFDevVideoPlay -> phevdec ->
     # NV12 -> DSA); phevidtest plays .vde-test/*.mp4 through CVideoPlayerUtility (tools/vdu/make_vde_test.sh makes them).

@@ -1,0 +1,13 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// phepebble_le.mmp -- OURS (BLE plan): the Pebble companion's LE transport over RPheBle, a static library that
+// phepebblesrv links (PebbleCreateLeTransportL, phepebble_letransport.h).
+TARGET			phepebble_le.lib
+TARGETTYPE		lib
+
+USERINCLUDE		../inc ../../phepebble
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+
+SOURCEPATH		.
+SOURCE			phepebble_le.cpp
