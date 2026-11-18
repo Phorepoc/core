@@ -445,7 +445,10 @@ private:
 			{
 			iReady = ETrue;
 			iStep = 0;
-			RDebug::Printf("[pheltsy] modem ready (init done), IMEI %S", &iImei);
+			{
+			const TPtrC8 tail(iImei.Right(4));					// the IMEI identifies the device: only its last four digits reach a log
+			RDebug::Printf("[pheltsy] modem ready (init done), IMEI ...%S", &tail);
+			}
 			}
 		else if (iReady && iStep >= KPoll)
 			{
@@ -478,7 +481,13 @@ private:
 	void Line(const TDesC8& aLine)
 		{
 		TBuf8<120> l(aLine.Left(120));
-		RDebug::Printf("[pheltsy] << %S", &l);
+		TBool digits = l.Length() >= 14;		// an IMEI / IMSI / ICCID line: identifies the device or the subscriber, never logged whole
+		for (TInt i = 0; digits && i < l.Length(); ++i)
+			digits = l[i] >= '0' && l[i] <= '9';
+		if (digits)
+			RDebug::Printf("[pheltsy] << (%d digits)", l.Length());
+		else
+			RDebug::Printf("[pheltsy] << %S", &l);
 		if (aLine == _L8("RDY"))
 			{ iRdy = ETrue; return; }
 		if (aLine == _L8("OK"))
@@ -560,7 +569,7 @@ private:
 		if (iCmdActive && aLine.Length() >= 6 && aLine.Length() <= 16 && IsDigits(aLine))
 			{
 			if (iCmd == _L8("AT+CGSN")) iImei.Copy(aLine);
-			else if (iCmd == _L8("AT+CIMI")) { iImsi.Copy(aLine); RDebug::Printf("[pheltsy] IMSI %S", &iImsi); }
+			else if (iCmd == _L8("AT+CIMI")) { iImsi.Copy(aLine); RDebug::Printf("[pheltsy] IMSI read (%d digits)", iImsi.Length()); }
 			}
 		}
 	static TBool IsDigits(const TDesC8& a)
