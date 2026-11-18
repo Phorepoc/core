@@ -49,6 +49,11 @@ int tcsetattr(int fd, int act, const struct termios *t)
 	return -1;
 }
 
+/* no process groups on a phetty tty: "not a terminal" for job control, which zsh takes quietly (MONITOR off) where
+ * the link stub's ENOSYS printed "can't set tty pgrp" */
+pid_t tcgetpgrp(int fd) { (void)fd; errno = ENOTTY; return -1; }
+int tcsetpgrp(int fd, pid_t pgrp) { (void)fd; (void)pgrp; errno = ENOTTY; return -1; }
+
 speed_t cfgetospeed(const struct termios *t) { return t->c_ospeed; }
 speed_t cfgetispeed(const struct termios *t) { return t->c_ispeed; }
 

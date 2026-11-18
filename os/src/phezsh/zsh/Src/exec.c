@@ -30,8 +30,10 @@
 #include "zsh.mdh"
 #include "exec.pro"
 #ifdef PHE_NO_FORK
+#include <spawn.h>
 static pid_t phe_spawn_cmd(LinkList args, int flags, int in, int out);
-void phe_tty_adopt(int pid);	/* port/phe_tty.cpp */
+int phe_spawn(pid_t *pid, const char *path, char *const argv[], char *const envp[],
+	      posix_spawn_file_actions_t *fa, int in, int out);	/* port/phe_spawn.c */
 void phe_debug(const char *fmt, int a, int b);	/* port/phe_debug.cpp */
 static pid_t phe_reexec(Eprog prog, Wordcode beg, int in, int out);
 #endif
@@ -477,37 +479,14 @@ phe_spawn_argv(char **argv, int in, int out)
 {
     posix_spawn_file_actions_t fa;
     pid_t pid;
-    int r, i, tmp[3] = { -1, -1, -1 };
+    int r, i;
 
-    fflush(stdout);
-    fflush(stderr);
     posix_spawn_file_actions_init(&fa);
     for (i = 3; i <= max_zsh_fd; i++)
 	if (fdtable[i] == FDT_INTERNAL && i != in && i != out)
 	    posix_spawn_file_actions_addclose(&fa, i);
-    /* The libc hands over fds 3 and up only (a child's 0-2 are its own stdio): whatever the shell has on
-     * 0-2 now (a pipe, a redirected file) goes over as a copy at 10+ and is put back on 0-2 in the child.
-     * A console fd does not go over at all, and the child keeps its own stdio for it. */
-    for (i = 0; i < 3; i++) {
-	int src = (i == 0 && in > 0) ? in : (i == 1 && out > 0) ? out : -1;
-	if (src < 0) {
-	    /* only a pipe or a file goes over; a dup of a console fd would close the shell's own stdio
-	     * when it is closed again */
-	    struct stat st;
-	    int fr = fstat(i, &st);
-	    if (fr == 0 && (S_ISFIFO(st.st_mode) || S_ISREG(st.st_mode)))
-		src = tmp[i] = fcntl(i, F_DUPFD, 10);
-	    phe_debug("PH: [zsh] spawn: fd %d st_mode 0x%x", i, fr == 0 ? (int)st.st_mode : -1);
-	}
-	phe_debug("PH: [zsh] spawn: fd %d <- %d", i, src);
-	if (src >= 0)
-	    posix_spawn_file_actions_adddup2(&fa, src, i);
-    }
-    r = posix_spawn(&pid, argv[0], &fa, NULL, argv, environ);
+    r = phe_spawn(&pid, argv[0], argv, environ, &fa, in, out);	/* port/phe_spawn.c: fds 0-2, quoting */
     posix_spawn_file_actions_destroy(&fa);
-    for (i = 0; i < 3; i++)
-	if (tmp[i] >= 0)
-	    close(tmp[i]);
     if (r) {
 	if (r == ENOENT)
 	    zerr("command not found: %s", argv[0]);
@@ -515,15 +494,11 @@ phe_spawn_argv(char **argv, int in, int out)
 	    zerr("%s: %e", argv[0], r);
 	return -1;
     }
-    phe_debug("PH: [zsh] spawned pid %d (adopt %d)", (int)pid, !getenv("PHE_NOADOPT"));
-    if (!getenv("PHE_NOADOPT"))	/* A/B test: PHE_NOADOPT=1 = the child is not put on our tty */
-	phe_tty_adopt(pid);
     return pid;
 }
 
-/* R3: an external command, its redirections already applied to fds 0-2 of the shell. A pipe end it
- * reads or writes is handed over by its own fd (in/out), not as a copy of 0/1: the original is a
- * zsh-internal fd the child is told to close, and that mark is on the shared description. */
+/* R3: an external command, its redirections (and pipe ends: redup moved them, closing the
+ * originals) already on fds 0-2 of the shell; phe_spawn hands those over. */
 static pid_t
 phe_spawn_cmd(LinkList args, UNUSED(int flags), int in, int out)
 {
@@ -531,7 +506,8 @@ phe_spawn_cmd(LinkList args, UNUSED(int flags), int in, int out)
 
     for (ep = argv; *ep; ep++)
 	unmetafy(*ep, NULL);
-    return phe_spawn_argv(argv, in, out);
+    (void)in; (void)out;
+    return phe_spawn_argv(argv, 0, 0);
 }
 
 /* "zsh -f -c text" on in/out; text is untokenized and metafied (it is unmetafied here). */
