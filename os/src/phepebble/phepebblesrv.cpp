@@ -39,7 +39,7 @@
 
 _LIT(KBondFile, "c:\\private\\e7017d01\\watch.dat");
 static const TUint8 KScanPrefix[] = {'P', 'e', 'b', 'b', 'l', 'e'};
-const TInt KScanSeconds = 15;
+const TInt KScanSeconds = 30;
 const TInt KReconnectSeconds = 30;
 
 class CPebbleService;
@@ -427,7 +427,15 @@ void CPebbleService::LeScanStopped(TInt aError)
 	if (iState == EPhePebbleScanning)
 		{
 		SetState(iHaveBond ? EPhePebbleIdle : EPhePebbleNoWatch);
-		SetInfo(_L("No Pebble found. Is it in pairing mode?"));
+		if (aError == KErrNone)
+			SetInfo(_L("No Pebble found. Is it in pairing mode?"));
+		else
+			{
+			// the search did not run (Bluetooth LE not ready, controller error): say so instead of "not found"
+			TBuf<64> t;
+			t.Format(_L("Bluetooth LE search failed (%d)"), aError);
+			SetInfo(t);
+			}
 		ScheduleReconnect();
 		}
 	}
