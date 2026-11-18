@@ -86,7 +86,7 @@ public:
 	const TDesC8& Imei() const { return iImei; }
 	TBool Ready() const { return iReady; }
 
-	enum TCmdKind { ECmdPoll, ECmdCode, ECmdDial, ECmdAnswer, ECmdHangUp, ECmdClcc, ECmdCmgs, ECmdCmgr, ECmdCmgd };
+	enum TCmdKind { ECmdPoll, ECmdCode, ECmdDial, ECmdAnswer, ECmdHangUp, ECmdClcc, ECmdCmgs, ECmdCmgr, ECmdCmgd, ECmdDiag, ECmdCeer };
 
 	// PIN1 (aPuk empty) or PUK1 + new PIN: queued ahead of the poll; the result comes back through PheCodeResult
 	TInt EnterCode(const TDesC& aCode, const TDesC& aPuk)
@@ -154,6 +154,13 @@ public:
 		RDebug::Printf("[pheltsy] voice route %s", aOn ? "on" : "off");
 		}
 
+	// the board's power-path trace (its modem unit samples the PMIC for a few seconds when RTS is raised; harmless elsewhere)
+	void TraceBurst()
+		{
+		if (iPowerOpen)
+			iPower.SetSignals(KSignalRTS, 0);
+		}
+
 	// driven by the fake modem's 100 ms ticker
 	void Tick()
 		{
@@ -192,6 +199,7 @@ private:
 #else
 	enum { KInitSms = 0 };
 #endif
+	enum { KDiag = 7 };
 	enum { KInit = 14 + KInitSms, KInitSimFirst = 10, KPoll = 13, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
 		{
@@ -388,6 +396,24 @@ private:
 			Send(_L8("AT+CLCC"));
 			return;
 			}
+		// read-only radio diagnostics, once after the init (the answers are logged by the line echo): the IMS / VoLTE state, the
+		// MBN profiles (the carrier configuration the modem selected), the voice domain, the network and the serving cell. The last
+		// two are repeated, with AT+CEER (why the last call or registration failed), when the CS registration is denied.
+		if (iReady && iDiag < KDiag)
+			{
+			static const char* const KDiagCmds[KDiag] = { "AT+QCFG=\"ims\"", "AT+QCFG=\"volte_disable\"", "AT+QMBNCFG=\"List\"",
+														  "AT+QMBNCFG=\"AutoSel\"", "AT+CVMOD?", "AT+QNWINFO", "AT+QENG=\"servingcell\"" };
+			iKind = ECmdDiag;
+			Send(TPtrC8((const TUint8*)KDiagCmds[iDiag]));
+			return;
+			}
+		if (iWantCeer)
+			{
+			iWantCeer = EFalse;
+			iKind = ECmdCeer;
+			Send(_L8("AT+CEER"));
+			return;
+			}
 		static const char* const KPollCmds[KPoll] = { "AT+CPIN?", "AT+CREG?", "AT+CGREG?", "AT+CEREG?", "AT+COPS=3,2", "AT+COPS?", "AT+COPS=3,0",
 													  "AT+COPS?", "AT+CSQ", "AT+QSPN", "AT+CIMI", "AT+QCCID", "AT+QDAI?" };
 		// no usable SIM: skip AT+QSPN (it answers a bare ERROR), AT+CIMI and AT+QCCID; IMSI / ICCID known: skip theirs
@@ -449,6 +475,11 @@ private:
 				return;
 				}
 			case ECmdCmgd:
+				return;
+			case ECmdDiag:
+				++iDiag;							// whatever the answer (a command this firmware lacks answers ERROR): next one
+				return;
+			case ECmdCeer:
 				return;
 			default:
 				break;
@@ -570,12 +601,15 @@ private:
 				{
 				iInCall = ETrue;
 				iLastClcc = iTicks - 10;
+				iWantCeer = ETrue;				// and ask why (AT+CEER: the release cause)
+				iNextPoll = iTicks;
 				}
 			if (iCmdActive) CommandDone(EFalse);
 			return;
 			}
 		if (aLine == _L8("RING") || aLine.Find(_L8("+CRING: ")) == 0)
 			{
+			TraceBurst();
 			if (!iInCall) { iInCall = ETrue; iLastClcc = iTicks - 10; }
 			return;
 			}
@@ -703,7 +737,17 @@ private:
 		if (n <= base)
 			return;
 		const TInt stat = Num(f[base]);
+		const TInt prevStat = iDomReg[aDomain];
 		iDomReg[aDomain] = stat;
+		if (prevStat != stat)
+			TraceBurst();							// the board samples its power path for a few seconds around a registration change
+		if (aDomain == KDomCs && (stat == 3 || stat == 0))
+			{
+			iWantCeer = ETrue;						// why: AT+CEER, and the network / serving cell again
+			if (iDiag >= KDiag)
+				iDiag = KDiag - 2;
+			iNextPoll = iTicks;
+			}
 		if (n > base + 2 && (stat == 1 || stat == 5 || stat == 6 || stat == 7))
 			{
 			iNet.iLac = Num(f[base + 1], EHex);
@@ -859,7 +903,8 @@ private:
 	TQueued iQ[KQ];
 	TInt iQn;
 	TCmdKind iKind;
-	TBool iInCall, iClccMt, iPduSent, iPduNext, iAudioReady, iCdsNext;
+	TBool iInCall, iClccMt, iPduSent, iPduNext, iAudioReady, iCdsNext, iWantCeer;
+	TInt iDiag;
 	TInt iLastClcc, iClccStat, iMr, iCmgrIndex, iCmgrPendingIndex;
 	TBuf8<44> iClccNumber;
 	TBuf8<360> iSmsHex;
