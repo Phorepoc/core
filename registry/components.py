@@ -680,7 +680,10 @@ COMPONENTS = {
     "dcfrepsrv": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.drm/omadrm/drmengine/group/DcfRepSrv.mmp"),
     "drmstdkeystorage": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.drm/omadrm/drmengine/group/DrmStdKeyStorage.mmp"),
     "wmdrmfileserverclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.drm/wmdrm/wmdrmengine/wmdrmfileserver/client/group/wmdrmfileserverclient.mmp"),
-    "lbs": dict(mmp="oss.FCL.sf.os.lbs/locationmgmt/locationcore/LbsClient/LbsApi/group/Lbs.mmp"),
+    # rtti: the release's .def exports the typeinfo of CRequestor, RPositioner, RPositionerSubSessionBase, CPositioningPtrHolder,
+    # TPositionModuleStatusEvent(Base); without RTTI they are unimplemented ordinals (lbs.dll.unimpl: GAP 311-317), and a client
+    # whose RTTI vtables sit over those classes (the Qt Location plug-in of a GPS application) panics EUSRNIMP on first use
+    "lbs": dict(mmp="oss.FCL.sf.os.lbs/locationmgmt/locationcore/LbsClient/LbsApi/group/Lbs.mmp", rtti=True),
     "eposindicator": dict(mmp="oss.FCL.sf.os.lbs/locationmgmt/locationcore/lbslocindicatorlib/group/epos_locationindicatorlibrary.mmp"),
     # the DRM helper's server (CDRMHelper::ConstructL connects to it)
     "drmhelperserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.drm/omadrm/drmhelper/drmhelperserver/group/DRMHelperServer.mmp"),

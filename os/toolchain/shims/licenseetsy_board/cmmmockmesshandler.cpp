@@ -464,8 +464,25 @@ private:
         Complete( EMobilePhoneNotifySignalStrengthChange, &s );
         RDebug::Print( _L("[fakemodem] network '%S', signal %d of 7 bars"), &KFmOperatorLong, (TInt)bars );
         }
-    void DoIdent( TBool aImsi )
+    void DoIdent( TBool aImsi, TInt aTries = 0 )
         {
+#ifdef PHE_LTSY
+        if ( iAt && !( aImsi ? iAt->Imsi() : iAt->Imei() ).Length() )
+            {
+            // the AT engine is live but has not read the value yet (AT+CGSN after the modem answers, AT+CIMI once the SIM is
+            // usable): the scripted one would be a false answer, and CTSY keeps what it is first given. Ask again every second
+            // (up to a minute) while it may still come; an empty slot (IMSI) or no answer by then is KErrNotFound.
+            const TInt ipc = aImsi ? EMobilePhoneGetSubscriberId : EMobilePhoneGetPhoneId;
+            const TBool mayCome = aImsi ? iAt->Sim() != EPheSimAbsent : ETrue;
+            if ( mayCome && aTries < 60 )
+                {
+                Post( EFmIdent, 10, aImsi, aTries + 1 );
+                return;
+                }
+            Complete( ipc, KErrNotFound );
+            return;
+            }
+#endif
         TBuf8<KTmpPckgSize> id;
         id.Copy( aImsi ? KFmImsi() : KFmImei() );
 #ifdef PHE_LTSY
@@ -892,7 +909,7 @@ private:
                 case EFmBoot: DoBoot(); break;
                 case EFmReg: DoReg( arg ); break;
                 case EFmNetwork: DoNetwork(); break;
-                case EFmIdent: DoIdent( arg ); break;
+                case EFmIdent: DoIdent( arg, arg2 ); break;
                 case EFmOperatorName: DoOperatorName(); break;
                 case EFmProviderName: DoProviderName(); break;
                 case EFmDial: DoDial(); break;
