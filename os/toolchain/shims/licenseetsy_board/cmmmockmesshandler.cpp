@@ -467,17 +467,19 @@ private:
     void DoIdent( TBool aImsi, TInt aTries = 0 )
         {
 #ifdef PHE_LTSY
-        if ( iAt && aImsi && !iAt->Imsi().Length() )
+        if ( iAt && !( aImsi ? iAt->Imsi() : iAt->Imei() ).Length() )
             {
-            // the AT engine is live but has not read the SIM (AT+CIMI needs a usable SIM): the scripted IMSI would be a
-            // false answer, and CTSY keeps what it is first given. Ask again every second while the SIM may still come up
-            // (up to a minute); an empty slot, or no answer by then, is KErrNotFound as from a modem without a SIM.
-            if ( iAt->Sim() != EPheSimAbsent && aTries < 60 )
+            // the AT engine is live but has not read the value yet (AT+CGSN after the modem answers, AT+CIMI once the SIM is
+            // usable): the scripted one would be a false answer, and CTSY keeps what it is first given. Ask again every second
+            // (up to a minute) while it may still come; an empty slot (IMSI) or no answer by then is KErrNotFound.
+            const TInt ipc = aImsi ? EMobilePhoneGetSubscriberId : EMobilePhoneGetPhoneId;
+            const TBool mayCome = aImsi ? iAt->Sim() != EPheSimAbsent : ETrue;
+            if ( mayCome && aTries < 60 )
                 {
                 Post( EFmIdent, 10, aImsi, aTries + 1 );
                 return;
                 }
-            Complete( EMobilePhoneGetSubscriberId, KErrNotFound );
+            Complete( ipc, KErrNotFound );
             return;
             }
 #endif

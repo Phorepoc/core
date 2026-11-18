@@ -500,11 +500,17 @@ private:
 			}
 #endif
 		TBuf8<120> l(aLine.Left(120));
-		TBool digits = l.Length() >= 14;		// an IMEI / IMSI / ICCID line: identifies the device or the subscriber, never logged whole
-		for (TInt i = 0; digits && i < l.Length(); ++i)
-			digits = l[i] >= '0' && l[i] <= '9';
-		if (digits)
-			RDebug::Printf("[pheltsy] << (%d digits)", l.Length());
+		// an IMEI / IMSI / ICCID (the bare answer of AT+CGSN / AT+CIMI, "+QCCID: <digits>", ...): a digit run of 12 or more
+		// identifies the device or the subscriber and is never logged
+		TInt run = 0, longest = 0;
+		for (TInt i = 0; i < l.Length(); ++i)
+			{
+			run = (l[i] >= '0' && l[i] <= '9') ? run + 1 : 0;
+			if (run > longest)
+				longest = run;
+			}
+		if (longest >= 12)
+			RDebug::Printf("[pheltsy] << (a line with an identifier, %d characters: not logged)", l.Length());
 		else
 			RDebug::Printf("[pheltsy] << %S", &l);
 		if (aLine == _L8("RDY"))
