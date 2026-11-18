@@ -27,6 +27,7 @@
 #include <graphics/sgimagecollection.h>
 #include <graphics/surface.h>
 #include <graphics/wsscene.h>
+#include <graphics/wscursor.h>
 #include <graphics/wselement.h>
 #include <graphics/directgdidriver.h>
 #include <graphics/directgdiimagetarget.h>
@@ -203,6 +204,16 @@ public:
 	// MPhePointerFilter
 	TBool FilterPointer(TRawEvent& aEvent);
 	TBool MapScaled(TRawEvent& aEvent);
+	// R2d: the window server's text cursor (MWsTextCursor). The display stage draws it into the UI buffer, where the next composition
+	// overdraws it; here it is drawn into the cursor window's group target, so it stays until the window is redrawn (flash off)
+	void DrawCursor(const MWsTextCursor::TTextCursorInfo& aInfo);
+	class TCursor : public MWsTextCursor
+		{
+	public:
+		CPheCompStage* iOwner;
+		void DrawTextCursor(const TTextCursorInfo& aInfo) { iOwner->DrawCursor(aInfo); }
+		TAny* ResolveObjectInterface(TUint) { return NULL; }
+		} iCursor;
 	TInt iPressGroup;
 	~CPheCompStage();
 	// CWsRenderStage
@@ -460,6 +471,13 @@ TAny* CPheCompStage::ResolveObjectInterface(TUint aTypeId)
 		if (iCompose)
 			return static_cast<MPhePointerFilter*>(this);
 		break;
+	case MWsTextCursor::EWsObjectInterfaceId:
+		if (iCompose)
+			{
+			iCursor.iOwner = this;
+			return static_cast<MWsTextCursor*>(&iCursor);
+			}
+		break;
 	case MPheGroupPlacement::ETypeId:
 		if (iCompose)
 			return static_cast<MPheGroupPlacement*>(this);
@@ -675,6 +693,49 @@ TRect CPheCompStage::TileRect(TInt aTile, const TSize& aScreen) const
 // tiling: a press in the focused tile goes to its app, mapped to the app's own (full-screen) coordinates; a press in the
 // other tile only focuses it (click-to-focus); a press on a tile's frame band drags the tile; anything else is dropped.
 // Not tiling: every event passes unchanged.
+void CPheCompStage::DrawCursor(const MWsTextCursor::TTextCursorInfo& aInfo)
+	{
+	if (!aInfo.iWindow || aInfo.iRegion.CheckError() || aInfo.iRegion.IsEmpty())
+		return;
+	const TRect abs = aInfo.iWindow->AbsRect();
+	TGroup* target = NULL;
+	for (TInt o = 0; o < iOrderCount && !target; ++o)
+		if (TGroup* g = Group(iOrder[o]))
+			if (g->iTarget && !g->iCovered)
+				for (TInt t = 0; t < g->iTops; ++t)
+					if (g->iTopShown[t] && g->iTopRect[t].Contains(abs.iTl))
+						{
+						target = g;
+						break;
+						}
+	if (!target)
+		return;
+	MWsGraphicsContext* gc = target->iTarget->Gc();
+	gc->SetDrawMode(MWsGraphicsContext::EDrawModePEN);
+	if (aInfo.iTextCursorType == TTextCursor::ETypeRectangle)
+		{
+		gc->SetBrushStyle(MWsGraphicsContext::ESolidBrush);
+		gc->SetPenStyle(MWsGraphicsContext::ENullPen);
+		gc->SetBrushColor(KRgbBlack);
+		}
+	else
+		{
+		gc->SetBrushStyle(MWsGraphicsContext::ENullBrush);
+		gc->SetPenStyle(MWsGraphicsContext::ESolidPen);
+		gc->SetPenColor(KRgbBlack);
+		}
+	gc->SetClippingRegion(aInfo.iRegion);
+	gc->SetOrigin(aInfo.iWindow->Origin());
+	gc->DrawRect(aInfo.iCursorRect);
+	gc->SetOrigin(TPoint(0, 0));
+	gc->ResetClippingRegion();
+	TRect r(aInfo.iCursorRect);
+	r.Move(aInfo.iWindow->Origin());
+	iDirty.AddRect(r);
+	if (iRedraw)
+		iRedraw->ScheduleRender(0);
+	}
+
 void CPheCompStage::GroupPlacement(TInt aGroupId, const TSize& aAppSize, TInt aScale, const TPoint& aOrigin)
 	{
 	for (TInt i = 0; i < iCount; ++i)
