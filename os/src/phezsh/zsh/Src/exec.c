@@ -31,6 +31,7 @@
 #include "exec.pro"
 #ifdef PHE_NO_FORK
 static pid_t phe_spawn_cmd(LinkList args, int flags);
+static pid_t phe_reexec(Eprog prog, Wordcode beg, int in, int out);
 #endif
 
 /* Flags for last argument of addvars */
@@ -465,27 +466,64 @@ execcursh(Estate state, int do_exec)
 
 #ifdef PHE_NO_FORK
 #include <spawn.h>
-/* Phorepoc (no fork): start an external command as a new process on the shell's current
- * fds 0-2 (the redirections are already in place) and return its pid, or -1. The program
- * is found by name the way the loader finds it (sys/bin on every drive). */
+/* Phorepoc (no fork). A spawned process gets every fd of the shell (the libc hands the whole
+ * table over); the ones zsh keeps for itself (FDT_INTERNAL: pipe ends, saved copies) are
+ * closed in the child as a forked child would close them, else a reader never sees EOF.
+ * in/out (when nonzero) become the child's fds 0/1. Returns the pid, or -1. */
 static pid_t
-phe_spawn_cmd(LinkList args, int flags)
+phe_spawn_argv(char **argv, int in, int out)
 {
-    char **argv = makecline(args), **ep;
+    posix_spawn_file_actions_t fa;
     pid_t pid;
-    int r;
+    int r, i;
 
-    (void)flags;
-    for (ep = argv; *ep; ep++)
-	unmetafy(*ep, NULL);
     fflush(stdout);
     fflush(stderr);
-    r = posix_spawn(&pid, argv[0], NULL, NULL, argv, environ);
+    posix_spawn_file_actions_init(&fa);
+    for (i = 3; i <= max_zsh_fd; i++)
+	if (fdtable[i] == FDT_INTERNAL && i != in && i != out)
+	    posix_spawn_file_actions_addclose(&fa, i);
+    if (in > 0)
+	posix_spawn_file_actions_adddup2(&fa, in, 0);
+    if (out > 0)
+	posix_spawn_file_actions_adddup2(&fa, out, 1);
+    r = posix_spawn(&pid, argv[0], &fa, NULL, argv, environ);
+    posix_spawn_file_actions_destroy(&fa);
     if (r) {
-	errno = r;
 	zerr("%s: %e", argv[0], r);
 	return -1;
     }
+    return pid;
+}
+
+/* R3: an external command, its redirections already applied to fds 0-2 of the shell. */
+static pid_t
+phe_spawn_cmd(LinkList args, UNUSED(int flags))
+{
+    char **argv = makecline(args), **ep;
+
+    for (ep = argv; *ep; ep++)
+	unmetafy(*ep, NULL);
+    return phe_spawn_argv(argv, 0, 0);
+}
+
+/* R4: a command zsh forks before it has expanded anything (a pipeline stage that is not the
+ * last, a background job): run its source text in a fresh zsh ("re-exec"). The child sees
+ * the exported environment only -- not unexported parameters, functions, aliases or options. */
+static pid_t
+phe_reexec(Eprog prog, Wordcode beg, int in, int out)
+{
+    char *text = getpermtext(prog, beg, 0), *argv[5];
+    pid_t pid;
+
+    unmetafy(text, NULL);
+    argv[0] = "zsh";
+    argv[1] = "-f";
+    argv[2] = "-c";
+    argv[3] = text;
+    argv[4] = NULL;
+    pid = phe_spawn_argv(argv, in, out);
+    zfree(text, 0);
     return pid;
 }
 #endif
@@ -3004,6 +3042,27 @@ execcmd_exec(Estate state, Execcmd_params eparams,
 	 * a bit further before we make the decision.
 	 */
 	text = getjobtext(state->prog, eparams->beg);
+#ifdef PHE_NO_FORK
+	{
+	    /* Phorepoc: the parent half of execcmd_fork() for a re-exec'd zsh */
+	    struct timeval bgtime;
+	    pid_t pid;
+	    gettimeofday(&bgtime, NULL);
+	    pid = phe_reexec(state->prog, eparams->beg, input, output);
+	    if (pid < 0) {
+		lastval = 1;
+		errflag |= ERRFLAG_ERROR;
+		return;
+	    }
+	    if (how & Z_ASYNC)
+		lastpid = (zlong) pid;
+	    addproc(pid, text, 0, &bgtime, -1, -1);
+	    if (oautocont >= 0)
+		opts[AUTOCONTINUE] = oautocont;
+	    pipecleanfilelist(jobtab[thisjob].filelist, 1);
+	    return;
+	}
+#endif
 	switch (execcmd_fork(state, how, type, varspc, &filelist,
 			     text, oautocont, close_if_forked)) {
 	case -1:
