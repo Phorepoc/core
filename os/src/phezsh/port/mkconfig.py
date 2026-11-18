@@ -1,3 +1,5 @@
+# Copyright The Phorepoc Authors
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 import re, sys
 src, dst = sys.argv[1], sys.argv[2]
 OFF = set("""

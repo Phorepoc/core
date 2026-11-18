@@ -1,3 +1,4 @@
+/* Generated from zsh 5.9.2's configure (copyright (c) 1992-2017 Paul Falstad and others; zsh licence, zsh/LICENCE). */
 /* config.h -- zsh 5.9.2 for Phorepoc (P.I.P.S. / Open C libc, x32). Generated from the glibc configure result by
    undefining what the P.I.P.S. libc does not provide (os/src/phezsh/README.md). */
 /* config.h.  Generated from config.h.in by configure.  */
