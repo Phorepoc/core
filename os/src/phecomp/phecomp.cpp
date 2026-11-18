@@ -238,8 +238,8 @@ public:
 	// MWsDrawAnnotationObserver
 	void WindowRedrawStart(const MWsWindowTreeNode& aNode, const TRegion& aRegion);
 	void WindowRedrawEnd(const MWsWindowTreeNode& aNode);
-	void WindowAnimRedrawStart(const MWsWindowTreeNode&, const TRegion&) {}
-	void WindowAnimRedrawEnd(const MWsWindowTreeNode&) {}
+	void WindowAnimRedrawStart(const MWsWindowTreeNode& aNode, const TRegion& aRegion);
+	void WindowAnimRedrawEnd(const MWsWindowTreeNode& aNode);
 	void SpriteRedrawStart(const MWsWindowTreeNode&, const TRegion&) {}
 	void SpriteRedrawEnd(const MWsWindowTreeNode&) {}
 	void SpriteFlash(const MWsWindowTreeNode&, TBool) {}
@@ -1433,11 +1433,13 @@ void CPheCompStage::WindowRedrawStart(const MWsWindowTreeNode& aNode, const TReg
 	if (iCompose)
 		iDirty.Union(aRegion);
 	if (iFrameLog)
-		iProxy.iOriginLog = (Group(GroupOf(aNode)) && Group(GroupOf(aNode))->iName.Find(_L8("otepad")) >= 0) ? 40 : 0;
+		iProxy.iOriginLog = (Group(GroupOf(aNode)) && (Group(GroupOf(aNode))->iName.Find(_L8("otepad")) >= 0 || Group(GroupOf(aNode))->iName.Find(_L8("alc")) >= 0)) ? 40 : 0;
 	if (iFrameLog && iProxy.iOriginLog > 0 && aNode.Window())
 		{
 		const TRect r = aNode.Window()->AbsRect();
-		RDebug::Printf("PH: [phecomp] redraw start: group %d window %d,%d %dx%d", GroupOf(aNode) ? Group(GroupOf(aNode)) ? Group(GroupOf(aNode))->iId : -1 : -1, r.iTl.iX, r.iTl.iY, r.Width(), r.Height());
+		const TRect rb = aRegion.BoundingRect();
+		RDebug::Printf("PH: [phecomp] redraw start: group %d node %d window %d,%d %dx%d region %d rects bounds %d,%d %dx%d", GroupOf(aNode) ? Group(GroupOf(aNode)) ? Group(GroupOf(aNode))->iId : -1 : -1,
+					   (TInt)aNode.NodeType(), r.iTl.iX, r.iTl.iY, r.Width(), r.Height(), aRegion.Count(), rb.iTl.iX, rb.iTl.iY, rb.Width(), rb.Height());
 		}
 	TGroup* g = Group(GroupOf(aNode));
 	if (g)
@@ -1470,6 +1472,29 @@ void CPheCompStage::WindowRedrawStart(const MWsWindowTreeNode& aNode, const TReg
 		if (area.Count() != 1 || area.BoundingRect() != w->AbsRect())
 			iProxy.iShape = &area;
 		}
+	}
+
+// R4f: a window's animations (the bitmap animation of a note, anim DLLs) are drawn by the window server AFTER the window's redraw bracket;
+// they belong to the window's group: into its target, as the window itself (not into the rest target, which is composed below every group)
+void CPheCompStage::WindowAnimRedrawStart(const MWsWindowTreeNode& aNode, const TRegion& aRegion)
+	{
+	if (!iCompose)
+		return;
+	iDirty.Union(aRegion);
+	TGroup* g = Group(GroupOf(aNode));
+	if (iFrameLog && g && (g->iName.Find(_L8("alc")) >= 0 || g->iName.Find(_L8("otepad")) >= 0))
+		{
+		const TRect rb = aRegion.BoundingRect();
+		RDebug::Printf("PH: [phecomp] anim redraw start: group %d bounds %d,%d %dx%d", g->iId, rb.iTl.iX, rb.iTl.iY, rb.Width(), rb.Height());
+		}
+	if (g && g->iTarget && !g->iCovered && !(iDbg & 16))		// (PHECOMPDBG 16: the old behaviour, for comparison)
+		iProxy.iTarget = g->iTarget->Gc();
+	}
+
+void CPheCompStage::WindowAnimRedrawEnd(const MWsWindowTreeNode&)
+	{
+	if (iCompose)
+		iProxy.iTarget = iRest->Gc();
 	}
 
 void CPheCompStage::WindowRedrawEnd(const MWsWindowTreeNode&)
