@@ -67,6 +67,7 @@ int tputs(const char *str, int affcnt, int (*putc_)(int))
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <signal.h>
+#include <sys/wait.h>
 
 char *cuserid(char *s) { (void)s; return 0; }
 
@@ -110,17 +111,21 @@ char *mktemp(char *tmpl)
 	return tmpl;
 }
 
-/* The libc has no sigsuspend, but it has sigpause(sig): wait for that signal with it unblocked, run its handler, EINTR.
- * The one zsh waits for is SIGCHLD (the libc raises it from its child Logon watcher), so: unless the mask blocks SIGCHLD,
- * sleep until a child changes state; otherwise (or when the libc's signals are not set up) return at once like an
- * interrupted wait, and zsh's wait loop checks its children again. */
+/* The libc has no sigsuspend. What zsh waits for in it is a child changing state (SIGCHLD): sleep until a child has
+ * exited (waitpid WNOWAIT: the child stays for zsh's own waitpid), then run zsh's SIGCHLD handler as the signal would,
+ * and return like an interrupted wait. Without children, or with SIGCHLD blocked by the mask, return at once; zsh's
+ * wait loop then looks at its job table again. */
+#ifndef WNOWAIT
+#define WNOWAIT 8
+#endif
+void zhandler(int sig);
+
 int sigsuspend(const sigset_t *mask)
 {
-	if (mask && sigismember(mask, SIGCHLD) == 1) {
-		errno = EINTR;
-		return -1;
-	}
-	return sigpause(SIGCHLD);
+	if (!(mask && sigismember(mask, SIGCHLD) == 1) && waitpid(-1, 0, WNOWAIT) > 0)
+		zhandler(SIGCHLD);
+	errno = EINTR;
+	return -1;
 }
 
 /* process times: the libc has no per-process CPU accounting; the elapsed clock only */

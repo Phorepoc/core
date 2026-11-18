@@ -16,7 +16,7 @@ on a pipe (the BusyBox hush NOMMU pattern). There is no kernel fork and no fork 
   `--disable-dynamic --disable-gdbm --disable-pcre --disable-cap --without-tcsetpgrp` and the module set below.
 - `zsh/config.h` is that configure result with what the P.I.P.S. libc does not have taken out:
   `python3 port/mkconfig.py port/config.h.glibc zsh/config.h` (the list is in the script).
-- Upstream files that differ from the tarball are listed in `patches/` (none yet).
+- Upstream files that differ from the tarball: `patches/` holds each change as a diff against 5.9.2 (all under `#ifdef PHE_NO_FORK`).
 
 ## Licence (scan of the whole 5.9.2 tarball)
 

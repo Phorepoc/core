@@ -1,0 +1,94 @@
+--- a/Src/exec.c
++++ b/Src/exec.c
+@@ -29,6 +29,9 @@
+ 
+ #include "zsh.mdh"
+ #include "exec.pro"
++#ifdef PHE_NO_FORK
++static pid_t phe_spawn_cmd(LinkList args, int flags);
++#endif
+ 
+ /* Flags for last argument of addvars */
+ 
+@@ -460,6 +463,33 @@
+ 
+ #define POUNDBANGLIMIT 128
+ 
++#ifdef PHE_NO_FORK
++#include <spawn.h>
++/* Phorepoc (no fork): start an external command as a new process on the shell's current
++ * fds 0-2 (the redirections are already in place) and return its pid, or -1. The program
++ * is found by name the way the loader finds it (sys/bin on every drive). */
++static pid_t
++phe_spawn_cmd(LinkList args, int flags)
++{
++    char **argv = makecline(args), **ep;
++    pid_t pid;
++    int r;
++
++    (void)flags;
++    for (ep = argv; *ep; ep++)
++	unmetafy(*ep, NULL);
++    fflush(stdout);
++    fflush(stderr);
++    r = posix_spawn(&pid, argv[0], NULL, NULL, argv, environ);
++    if (r) {
++	errno = r;
++	zerr("%s: %e", argv[0], r);
++	return -1;
++    }
++    return pid;
++}
++#endif
++
+ /**/
+ static int
+ zexecve(char *pth, char **argv, char **newenvp)
+@@ -2892,6 +2922,9 @@
+     int save[10];
+     int fil, dfil, is_cursh = 0, do_exec = 0, redir_err = 0, i;
+     int nullexec = 0, magic_assign = 0, forked = 0, old_lastval;
++#ifdef PHE_NO_FORK
++    int phe_spawn = 0;	/* Phorepoc: spawn the external command, see below */
++#endif
+     int is_shfunc = 0, is_builtin = 0, is_exec = 0, use_defpath = 0;
+     /* Various flags to the command. */
+     int cflags = 0, orig_cflags = 0, checked = 0, oautocont = -1;
+@@ -3620,6 +3653,16 @@
+      **************************************************************************/
+ 
+     if (!forked) {
++#ifdef PHE_NO_FORK
++	/* Phorepoc (no fork): an external simple command that would be forked is spawned
++	 * from the shell itself instead -- the redirections below are applied in this
++	 * process with their fds saved (forked == 0), the program is started with
++	 * posix_spawn on the resulting fds 0-2, and fixfds() restores them. */
++	if (!do_exec && !is_cursh && type == WC_SIMPLE && !(how & Z_ASYNC) &&
++	    (last1 != 1 || nsigtrapped || havefiles() || fdtable_flocks))
++	    phe_spawn = 1;
++	else
++#endif
+ 	if (!do_exec &&
+ 	    (((is_builtin || is_shfunc) && output) ||
+ 	     (!is_cursh && (last1 != 1 || nsigtrapped || havefiles() ||
+@@ -4241,6 +4284,20 @@
+ 		restore_params(restorelist, removelist);
+ 
+ 	} else {
++#ifdef PHE_NO_FORK
++	    if (phe_spawn) {
++		/* the parent half of execcmd_fork() for a process we start here */
++		struct timeval bgtime;
++		pid_t pid;
++		gettimeofday(&bgtime, NULL);
++		pid = phe_spawn_cmd(args, cflags);
++		if (pid > 0)
++		    addproc(pid, text, 0, &bgtime, -1, -1);
++		else
++		    lastval = 127;
++		goto err;
++	    }
++#endif
+ 	    if (!subsh) {
+ 	        /* for either implicit or explicit "exec", decrease $SHLVL
+ 		 * as we're now done as a shell */
