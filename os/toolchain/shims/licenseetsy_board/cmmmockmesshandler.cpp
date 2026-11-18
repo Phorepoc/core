@@ -464,8 +464,23 @@ private:
         Complete( EMobilePhoneNotifySignalStrengthChange, &s );
         RDebug::Print( _L("[fakemodem] network '%S', signal %d of 7 bars"), &KFmOperatorLong, (TInt)bars );
         }
-    void DoIdent( TBool aImsi )
+    void DoIdent( TBool aImsi, TInt aTries = 0 )
         {
+#ifdef PHE_LTSY
+        if ( iAt && aImsi && !iAt->Imsi().Length() )
+            {
+            // the AT engine is live but has not read the SIM (AT+CIMI needs a usable SIM): the scripted IMSI would be a
+            // false answer, and CTSY keeps what it is first given. Ask again every second while the SIM may still come up
+            // (up to a minute); an empty slot, or no answer by then, is KErrNotFound as from a modem without a SIM.
+            if ( iAt->Sim() != EPheSimAbsent && aTries < 60 )
+                {
+                Post( EFmIdent, 10, aImsi, aTries + 1 );
+                return;
+                }
+            Complete( EMobilePhoneGetSubscriberId, KErrNotFound );
+            return;
+            }
+#endif
         TBuf8<KTmpPckgSize> id;
         id.Copy( aImsi ? KFmImsi() : KFmImei() );
 #ifdef PHE_LTSY
@@ -892,7 +907,7 @@ private:
                 case EFmBoot: DoBoot(); break;
                 case EFmReg: DoReg( arg ); break;
                 case EFmNetwork: DoNetwork(); break;
-                case EFmIdent: DoIdent( arg ); break;
+                case EFmIdent: DoIdent( arg, arg2 ); break;
                 case EFmOperatorName: DoOperatorName(); break;
                 case EFmProviderName: DoProviderName(); break;
                 case EFmDial: DoDial(); break;
