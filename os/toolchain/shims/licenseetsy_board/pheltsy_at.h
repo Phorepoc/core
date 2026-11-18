@@ -178,7 +178,7 @@ public:
 		}
 
 private:
-	enum { KInit = 12, KInitSimFirst = 8, KPoll = 11, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
+	enum { KInit = 13, KInitSimFirst = 9, KPoll = 13, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
 		{
 		if (!iOpen || iQn >= KQ)
@@ -333,12 +333,13 @@ private:
 			// (3GPP TS 27.007 7.2 / 10.1.20 / 10.1.22); Zephyr's AT+CFUN=4 is left out (RF stays on, its power-on default).
 			// Calls + SMS from the specs: +CLIP=1 caller id (27.007 7.6), +CRC=1 "+CRING: VOICE" (27.007 6.11), PDU mode
 			// +CMGF=0 (27.005 3.2.3), new SMS stored + "+CMTI" (+CNMI=2,1,0,0,0, 27.005 3.4.1), the SMSC +CSCA? (27.005 3.3.1).
-			// Packet service: detached (AT+CGATT=0) and asked back (AT+CGATT?, logged): the engine never opens a data
-			// connection, and a modem that attached by itself at power-up (a roaming SIM would cost money) is told to leave.
+			// Packet service: left as the modem has it (it attaches by itself, as on any phone; an LTE registration IS an attach).
+			// The engine never opens a data connection. Read-only diagnostics for a modem that does not register (the answers
+			// are logged by the line echo): AT+CFUN? (1 = full function), the network mode, AT+CGATT? (attach state).
 			// Messages: without PHE_LTSY_SMS the engine neither enables new-message indications (CNMI mode 0: none) nor reads
 			// or deletes anything (see Line(): SMS lines are dropped unread); a board that wants SMS defines PHE_LTSY_SMS.
-			static const char* const KInitCmds[KInit] = { "ATE0", "AT+CMEE=1", "AT+CGATT=0", "AT+CGATT?", "AT+CREG=2", "AT+CGREG=2",
-														  "AT+CEREG=2", "AT+CGSN", "AT+CLIP=1", "AT+CRC=1", "AT+CMGF=0",
+			static const char* const KInitCmds[KInit] = { "ATE0", "AT+CMEE=1", "AT+CFUN?", "AT+QCFG=\"nwscanmode\"", "AT+CGATT?",
+														  "AT+CREG=2", "AT+CGREG=2", "AT+CEREG=2", "AT+CGSN", "AT+CLIP=1", "AT+CRC=1", "AT+CMGF=0",
 #ifdef PHE_LTSY_SMS
 														  "AT+CNMI=2,1,0,0,0" };
 #else
@@ -369,7 +370,7 @@ private:
 			Send(_L8("AT+CLCC"));
 			return;
 			}
-		static const char* const KPollCmds[KPoll] = { "AT+CPIN?", "AT+CREG?", "AT+COPS=3,2", "AT+COPS?", "AT+COPS=3,0",
+		static const char* const KPollCmds[KPoll] = { "AT+CPIN?", "AT+CREG?", "AT+CGREG?", "AT+CEREG?", "AT+COPS=3,2", "AT+COPS?", "AT+COPS=3,0",
 													  "AT+COPS?", "AT+CSQ", "AT+QSPN", "AT+CIMI", "AT+QCCID", "AT+QDAI?" };
 		// no usable SIM: skip AT+QSPN (it answers a bare ERROR), AT+CIMI and AT+QCCID; IMSI / ICCID known: skip theirs
 		// the audio subsystem: AT+QDAI? errors until ~15-18 s after RDY (boot 983); polled until it answers, then never again
@@ -583,7 +584,11 @@ private:
 		if (aLine.Find(_L8("+CPIN: ")) == 0)
 			{ ParseCpin(aLine.Mid(7)); return; }
 		if (aLine.Find(_L8("+CREG: ")) == 0)
-			{ ParseCreg(aLine.Mid(7)); return; }
+			{ ParseReg(aLine.Mid(7), KDomCs); return; }
+		if (aLine.Find(_L8("+CGREG: ")) == 0)
+			{ ParseReg(aLine.Mid(8), KDomPs); return; }
+		if (aLine.Find(_L8("+CEREG: ")) == 0)
+			{ ParseReg(aLine.Mid(8), KDomEps); return; }
 		if (aLine.Find(_L8("+COPS: ")) == 0)
 			{ ParseCops(aLine.Mid(7)); return; }
 		if (aLine.Find(_L8("+CSQ: ")) == 0)
@@ -644,28 +649,49 @@ private:
 		return lex.Val(v, aRadix) == KErrNone ? (TInt)v : -1;
 		}
 	// +CREG: [<n>,]<stat>[,<lac>,<ci>[,<AcT>]] -- the URC form has no <n>; a solicited answer has it
-	void ParseCreg(const TDesC8& aArgs)
+	// +CREG (circuit-switched), +CGREG (packet) and +CEREG (EPS / LTE) share one format: solicited "<n>,<stat>[,<lac|tac>,<ci>[,<AcT>]]",
+	// unsolicited "<stat>[,<lac|tac>,<ci>[,<AcT>]]". An LTE-only registration shows in +CEREG while +CREG stays 0 (3GPP TS 27.007
+	// 7.2 / 10.1.20 / 10.1.22), so the registration the TSY reports is the best of the three: registered in any domain
+	// (home 1 / roaming 5; 6 / 7 = the same with SMS only), else searching in any, else denied in any, else the CS answer.
+	enum { KDomCs, KDomPs, KDomEps, KDoms };
+	void ParseReg(const TDesC8& aArgs, TInt aDomain)
 		{
 		TPtrC8 f[6];
 		const TInt n = Fields(aArgs, f, 6);
-		const TBool solicited = iCmdActive && iCmd == _L8("AT+CREG?");
+		static const char* const KQuery[KDoms] = { "AT+CREG?", "AT+CGREG?", "AT+CEREG?" };
+		const TBool solicited = iCmdActive && iCmd == TPtrC8((const TUint8*)KQuery[aDomain]);
 		const TInt base = solicited ? 1 : 0;
 		if (n <= base)
 			return;
-		RMobilePhone::TMobilePhoneRegistrationStatus reg;
-		switch (Num(f[base]))
-			{
-			case 0: reg = RMobilePhone::ENotRegisteredNoService; break;
-			case 1: reg = RMobilePhone::ERegisteredOnHomeNetwork; break;
-			case 2: reg = RMobilePhone::ENotRegisteredSearching; break;
-			case 3: reg = RMobilePhone::ERegistrationDenied; break;
-			case 5: reg = RMobilePhone::ERegisteredRoaming; break;
-			default: reg = RMobilePhone::ERegistrationUnknown; break;
-			}
-		if (n > base + 2)
+		const TInt stat = Num(f[base]);
+		iDomReg[aDomain] = stat;
+		if (n > base + 2 && (stat == 1 || stat == 5 || stat == 6 || stat == 7))
 			{
 			iNet.iLac = Num(f[base + 1], EHex);
 			iNet.iCellId = Num(f[base + 2], EHex);
+			}
+		RDebug::Printf("[pheltsy] %s registration state %d", aDomain == KDomCs ? "CS" : aDomain == KDomPs ? "PS" : "EPS", stat);
+		TInt best = -1;
+		for (TInt d = 0; d < KDoms && best < 0; ++d)
+			if (iDomReg[d] == 1 || iDomReg[d] == 5 || iDomReg[d] == 6 || iDomReg[d] == 7)
+				best = iDomReg[d];
+		for (TInt d = 0; d < KDoms && best < 0; ++d)
+			if (iDomReg[d] == 2)
+				best = 2;
+		for (TInt d = 0; d < KDoms && best < 0; ++d)
+			if (iDomReg[d] == 3)
+				best = 3;
+		if (best < 0)
+			best = iDomReg[KDomCs];
+		RMobilePhone::TMobilePhoneRegistrationStatus reg;
+		switch (best)
+			{
+			case 0: reg = RMobilePhone::ENotRegisteredNoService; break;
+			case 1: case 6: reg = RMobilePhone::ERegisteredOnHomeNetwork; break;
+			case 2: reg = RMobilePhone::ENotRegisteredSearching; break;
+			case 3: reg = RMobilePhone::ERegistrationDenied; break;
+			case 5: case 7: reg = RMobilePhone::ERegisteredRoaming; break;
+			default: reg = RMobilePhone::ERegistrationUnknown; break;
 			}
 		if (reg != iNet.iReg)
 			{
@@ -813,6 +839,7 @@ private:
 	TBuf8<256> iLine;
 	TBuf8<16> iImsi, iImei;
 	TBuf8<24> iIccid;
+	TInt iDomReg[3];							// the last <stat> of +CREG / +CGREG / +CEREG
 	TPheSim iSim;
 	TPheNet iNet;
 	};
