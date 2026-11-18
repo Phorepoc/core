@@ -250,6 +250,7 @@ public:
         DoSmsDeliver();
         }
     CPheAt* iAt;
+    TBool iTickSeen;						// CBase zero-fills: EFalse until the first tick
 #endif
     static CFakeModem* NewL( CMmMessageRouter* aRouter )
         {
@@ -320,6 +321,7 @@ private:
         CTimer::ConstructL();
         CActiveScheduler::Add( this );
 #ifdef PHE_LTSY
+        RDebug::Printf( "[pheltsy] CFakeModem::ConstructL (message manager %s)", Mgr() ? "attached" : "not yet attached" );
         TRAPD( atErr, iAt = CPheAt::NewL( *this ) );
         RDebug::Printf( "[pheltsy] AT engine -> %d (registration/network/signal from the EG25-G)", atErr );
 #endif
@@ -862,6 +864,11 @@ private:
         if ( !Mgr() )
             return;
 #ifdef PHE_LTSY
+        if ( !iTickSeen )
+            {
+            iTickSeen = ETrue;
+            RDebug::Printf( "[pheltsy] first tick with the message manager attached (AT engine %s)", iAt ? "present" : "absent" );
+            }
         if ( iAt )
             iAt->Tick();
 #endif
