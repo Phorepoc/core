@@ -101,6 +101,8 @@ RESOURCE SSM_COMMAND_LIST r_cmds
 	,r_cmd_phedispmode
 	// prio 0x7E06 -- PHOREPOC remote drives (RSFW): rsfwbootmounter adds the remote file system and mounts the drives configured in CenRep 101F9775
 	,r_cmd_rsfwbootmounter
+	// prio 0x7E07 -- PHOREPOC diagnosis: the Remote File Engine itself, started before the mounter
+	,r_cmd_remotefe
         };
     }
 
@@ -197,7 +199,19 @@ RESOURCE SSM_START_PROCESS_INFO r_cmd_phvolume
 RESOURCE SSM_START_PROCESS_INFO r_cmd_rsfwbootmounter
     {
     priority = 0x7E06;
-    name = "z:\sys\bin\rsfwbootmounter.exe";
+    name = "z:\\sys\\bin\\rsfwbootmounter.exe";
+    execution_behaviour = ESsmFireAndForget;
+    }
+
+// ---------------------------------------------------------------------------
+// r_cmd_remotefe -- PHOREPOC (2026-11-18, diagnosis): the Remote File Engine started at boot, before the boot mounter, so its first trace lines
+// and the semaphore RRsfwSession::StartServer waits for are seen without a client. Drop it when the connection works (RSFW starts the engine itself).
+// ---------------------------------------------------------------------------
+//
+RESOURCE SSM_START_PROCESS_INFO r_cmd_remotefe
+    {
+    priority = 0x7E07;
+    name = "z:\\sys\\bin\\remotefe.exe";
     execution_behaviour = ESsmFireAndForget;
     }
 
