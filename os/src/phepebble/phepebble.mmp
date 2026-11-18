@@ -1,0 +1,32 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// phepebble.mmp -- OURS: the Pebble app (phepebbleapp.cpp): pair / status / test; the work runs in phepebblesrv.exe
+#include <platform_paths.hrh>
+
+TARGET			phepebble.exe
+TARGETTYPE		exe
+UID				0x100039CE 0xE7017D00
+
+CAPABILITY		None
+VENDORID		0
+
+SOURCEPATH		.
+SOURCE			phepebbleapp.cpp
+
+START RESOURCE	phepebble.rss
+HEADER
+TARGETPATH		/resource/apps
+END
+
+START RESOURCE	phepebble_reg.rss
+DEPENDS			phepebble.rsg
+TARGETPATH		/private/10003a3f/apps
+END
+
+USERINCLUDE		.
+APP_LAYER_SYSTEMINCLUDE
+
+LIBRARY			euser.lib apparc.lib cone.lib eikcore.lib avkon.lib eikcoctl.lib ws32.lib gdi.lib aknskins.lib
+
+EPOCSTACKSIZE	0x5000

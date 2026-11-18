@@ -1,0 +1,43 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// phepebble.rss -- OURS: the Pebble app's resources (phepebbleapp.cpp)
+NAME PHPB
+
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.rsg>
+#include <appinfo.rh>
+#include "phepebble.hrh"
+
+RESOURCE RSS_SIGNATURE { }
+RESOURCE TBUF r_default_document_name { buf = ""; }
+
+RESOURCE EIK_APP_INFO
+	{
+	menubar = r_phepebble_menubar;
+	cba = R_AVKON_SOFTKEYS_OPTIONS_EXIT;
+	}
+
+RESOURCE MENU_BAR r_phepebble_menubar
+	{
+	titles = { MENU_TITLE { menu_pane = r_phepebble_menu; } };
+	}
+
+RESOURCE MENU_PANE r_phepebble_menu
+	{
+	items =
+		{
+		MENU_ITEM { command = EPhePebbleCmdUiPair; txt = "Pair a watch"; },
+		MENU_ITEM { command = EPhePebbleCmdUiTest; txt = "Send test notification"; },
+		MENU_ITEM { command = EPhePebbleCmdUiReconnect; txt = "Reconnect"; },
+		MENU_ITEM { command = EPhePebbleCmdUiForget; txt = "Forget watch"; },
+		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
+		};
+	}
+
+RESOURCE LOCALISABLE_APP_INFO r_phepebble_localisable_app_info
+	{
+	short_caption = "Pebble";
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Pebble"; number_of_icons = 0; };
+	}

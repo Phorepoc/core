@@ -328,3 +328,8 @@ COMPONENTS["pheeh"] = dict(mmp=os.path.join(OS_ROOT, "src/pheeh/pheeh.mmp"), all
 # "No camera" without one; stills go to C:\Data\Images
 COMPONENTS["phecamera"] = dict(mmp=os.path.join(OS_ROOT, "src/phecamera/phecamera.mmp"),
                                rom_data=["resource\\apps\\phecamera_icon.mif=" + os.path.join(OS_ROOT, "src/phecamera/data/phecamera_icon.mif")])
+
+# the Pebble companion (src/phepebble): the app (pair / status / test) and its background service (LE link, Pebble session,
+# SMS + missed-call bridge). The service links a stand-in LE transport until the LE host provides PebbleCreateLeTransportL()
+COMPONENTS["phepebble"] = dict(mmp=os.path.join(OS_ROOT, "src/phepebble/phepebble.mmp"))
+COMPONENTS["phepebblesrv"] = dict(mmp=os.path.join(OS_ROOT, "src/phepebble/phepebblesrv.mmp"))
