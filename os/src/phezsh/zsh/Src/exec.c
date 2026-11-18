@@ -507,14 +507,11 @@ phe_spawn_cmd(LinkList args, UNUSED(int flags))
     return phe_spawn_argv(argv, 0, 0);
 }
 
-/* R4: a command zsh forks before it has expanded anything (a pipeline stage that is not the
- * last, a background job): run its source text in a fresh zsh ("re-exec"). The child sees
- * the exported environment only -- not unexported parameters, functions, aliases or options. */
+/* "zsh -f -c text" on in/out; text is untokenized and metafied (it is unmetafied here). */
 static pid_t
-phe_reexec(Eprog prog, Wordcode beg, int in, int out)
+phe_reexec_text(char *text, int in, int out)
 {
-    char *text = getpermtext(prog, beg, 0), *argv[5];
-    pid_t pid;
+    char *argv[5];
 
     unmetafy(text, NULL);
     argv[0] = "zsh";
@@ -522,7 +519,18 @@ phe_reexec(Eprog prog, Wordcode beg, int in, int out)
     argv[2] = "-c";
     argv[3] = text;
     argv[4] = NULL;
-    pid = phe_spawn_argv(argv, in, out);
+    return phe_spawn_argv(argv, in, out);
+}
+
+/* R4: a command zsh forks before it has expanded anything (a pipeline stage that is not the
+ * last, a background job): run its source text in a fresh zsh ("re-exec"). The child sees
+ * the exported environment only -- not unexported parameters, functions, aliases or options. */
+static pid_t
+phe_reexec(Eprog prog, Wordcode beg, int in, int out)
+{
+    char *text = getpermtext(prog, beg, 0);
+    pid_t pid = phe_reexec_text(text, in, out);
+
     zfree(text, 0);
     return pid;
 }
@@ -4837,6 +4845,32 @@ getoutput(char *cmd, int qt)
     }
     child_block();
     cmdoutval = 0;
+#ifdef PHE_NO_FORK
+    {
+	/* Phorepoc: the substitution runs in a re-exec'd zsh writing into the pipe */
+	char *text = ztrdup(cmd);
+	untokenize(text);
+	pid = phe_reexec_text(text, 0, pipes[1]);
+	zsfree(text);
+	if (pid > 0) {
+	    LinkList retval;
+
+	    cmdoutpid = pid;
+	    zclose(pipes[1]);
+	    retval = readoutput(pipes[0], qt, NULL);
+	    fdtable[pipes[0]] = FDT_UNUSED;
+	    waitforpid(pid, 0);		/* unblocks */
+	    lastval = cmdoutval;
+	    return retval;
+	}
+	zclose(pipes[0]);
+	zclose(pipes[1]);
+	errflag |= ERRFLAG_ERROR;
+	cmdoutpid = 0;
+	child_unblock();
+	return NULL;
+    }
+#endif
     if ((cmdoutpid = pid = zfork(NULL)) == -1) {
 	/* fork error */
 	zclose(pipes[0]);
