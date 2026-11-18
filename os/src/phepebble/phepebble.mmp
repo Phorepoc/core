@@ -8,5 +8,5 @@ TARGETTYPE		lib
 
 OS_LAYER_SYSTEMINCLUDE
 SOURCEPATH		.
-SOURCE			phepebble_codec.cpp
+SOURCE			phepebble_codec.cpp phepebble_ppogatt.cpp phepebble_session.cpp
 USERINCLUDE		.
