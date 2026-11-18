@@ -1319,6 +1319,12 @@ int CFileTable::posix_spawn(int* aPid, const wchar_t* aFile,
 	TBuf<20> name(KFDTransferSvr);
 	name.AppendNum(childproc.Id(), EHex);
 	DoTransferAll(sem,name);
+	// Phorepoc: a posix_spawn_file_actions close marks the fd's DESCRIPTION "not for the child" (shared by every dup
+	// of it) and 2010 never cleared it: every later spawn skipped that pipe or file, and a dup of it handed over in
+	// the same spawn was skipped too. Clear it once this child has its fds.
+	for (TInt i = 0; i < iFids.Count(); ++i)
+		if (iFids[i])
+			iFids[i]->SetAttributes(KSpawnCloseInChild, EFalse);
 
 	// Add to iChildren array and close handle
 	AddChild(tchild);

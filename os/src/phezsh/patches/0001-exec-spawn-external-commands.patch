@@ -5,7 +5,7 @@
  #include "zsh.mdh"
  #include "exec.pro"
 +#ifdef PHE_NO_FORK
-+static pid_t phe_spawn_cmd(LinkList args, int flags);
++static pid_t phe_spawn_cmd(LinkList args, int flags, int in, int out);
 +void phe_tty_adopt(int pid);	/* port/phe_tty.cpp */
 +void phe_debug(const char *fmt, int a, int b);	/* port/phe_debug.cpp */
 +static pid_t phe_reexec(Eprog prog, Wordcode beg, int in, int out);
@@ -13,7 +13,7 @@
  
  /* Flags for last argument of addvars */
  
-@@ -460,6 +466,101 @@
+@@ -460,6 +466,103 @@
  
  #define POUNDBANGLIMIT 128
  
@@ -72,15 +72,17 @@
 +    return pid;
 +}
 +
-+/* R3: an external command, its redirections already applied to fds 0-2 of the shell. */
++/* R3: an external command, its redirections already applied to fds 0-2 of the shell. A pipe end it
++ * reads or writes is handed over by its own fd (in/out), not as a copy of 0/1: the original is a
++ * zsh-internal fd the child is told to close, and that mark is on the shared description. */
 +static pid_t
-+phe_spawn_cmd(LinkList args, UNUSED(int flags))
++phe_spawn_cmd(LinkList args, UNUSED(int flags), int in, int out)
 +{
 +    char **argv = makecline(args), **ep;
 +
 +    for (ep = argv; *ep; ep++)
 +	unmetafy(*ep, NULL);
-+    return phe_spawn_argv(argv, 0, 0);
++    return phe_spawn_argv(argv, in, out);
 +}
 +
 +/* "zsh -f -c text" on in/out; text is untokenized and metafied (it is unmetafied here). */
@@ -115,7 +117,7 @@
  /**/
  static int
  zexecve(char *pth, char **argv, char **newenvp)
-@@ -2892,6 +2993,9 @@
+@@ -2892,6 +2995,9 @@
      int save[10];
      int fil, dfil, is_cursh = 0, do_exec = 0, redir_err = 0, i;
      int nullexec = 0, magic_assign = 0, forked = 0, old_lastval;
@@ -125,7 +127,7 @@
      int is_shfunc = 0, is_builtin = 0, is_exec = 0, use_defpath = 0;
      /* Various flags to the command. */
      int cflags = 0, orig_cflags = 0, checked = 0, oautocont = -1;
-@@ -2971,6 +3075,27 @@
+@@ -2971,6 +3077,27 @@
  	 * a bit further before we make the decision.
  	 */
  	text = getjobtext(state->prog, eparams->beg);
@@ -153,7 +155,7 @@
  	switch (execcmd_fork(state, how, type, varspc, &filelist,
  			     text, oautocont, close_if_forked)) {
  	case -1:
-@@ -3620,6 +3745,16 @@
+@@ -3620,6 +3747,16 @@
       **************************************************************************/
  
      if (!forked) {
@@ -170,7 +172,7 @@
  	if (!do_exec &&
  	    (((is_builtin || is_shfunc) && output) ||
  	     (!is_cursh && (last1 != 1 || nsigtrapped || havefiles() ||
-@@ -4241,6 +4376,20 @@
+@@ -4241,6 +4378,20 @@
  		restore_params(restorelist, removelist);
  
  	} else {
@@ -180,7 +182,7 @@
 +		struct timeval bgtime;
 +		pid_t pid;
 +		gettimeofday(&bgtime, NULL);
-+		pid = phe_spawn_cmd(args, cflags);
++		pid = phe_spawn_cmd(args, cflags, input, output);
 +		if (pid > 0)
 +		    addproc(pid, text, 0, &bgtime, -1, -1);
 +		else
@@ -191,7 +193,7 @@
  	    if (!subsh) {
  	        /* for either implicit or explicit "exec", decrease $SHLVL
  		 * as we're now done as a shell */
-@@ -4721,6 +4870,32 @@
+@@ -4721,6 +4872,32 @@
      }
      child_block();
      cmdoutval = 0;

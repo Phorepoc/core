@@ -30,7 +30,7 @@
 #include "zsh.mdh"
 #include "exec.pro"
 #ifdef PHE_NO_FORK
-static pid_t phe_spawn_cmd(LinkList args, int flags);
+static pid_t phe_spawn_cmd(LinkList args, int flags, int in, int out);
 void phe_tty_adopt(int pid);	/* port/phe_tty.cpp */
 void phe_debug(const char *fmt, int a, int b);	/* port/phe_debug.cpp */
 static pid_t phe_reexec(Eprog prog, Wordcode beg, int in, int out);
@@ -521,15 +521,17 @@ phe_spawn_argv(char **argv, int in, int out)
     return pid;
 }
 
-/* R3: an external command, its redirections already applied to fds 0-2 of the shell. */
+/* R3: an external command, its redirections already applied to fds 0-2 of the shell. A pipe end it
+ * reads or writes is handed over by its own fd (in/out), not as a copy of 0/1: the original is a
+ * zsh-internal fd the child is told to close, and that mark is on the shared description. */
 static pid_t
-phe_spawn_cmd(LinkList args, UNUSED(int flags))
+phe_spawn_cmd(LinkList args, UNUSED(int flags), int in, int out)
 {
     char **argv = makecline(args), **ep;
 
     for (ep = argv; *ep; ep++)
 	unmetafy(*ep, NULL);
-    return phe_spawn_argv(argv, 0, 0);
+    return phe_spawn_argv(argv, in, out);
 }
 
 /* "zsh -f -c text" on in/out; text is untokenized and metafied (it is unmetafied here). */
@@ -4382,7 +4384,7 @@ execcmd_exec(Estate state, Execcmd_params eparams,
 		struct timeval bgtime;
 		pid_t pid;
 		gettimeofday(&bgtime, NULL);
-		pid = phe_spawn_cmd(args, cflags);
+		pid = phe_spawn_cmd(args, cflags, input, output);
 		if (pid > 0)
 		    addproc(pid, text, 0, &bgtime, -1, -1);
 		else
