@@ -99,8 +99,8 @@ RESOURCE SSM_COMMAND_LIST r_cmds
 	,r_cmd_phettyd
 	// prio 0x7E05 -- PHOREPOC display-mode follower (src/phedispmode): the screen mode follows a resizable PC display; exits at once elsewhere
 	,r_cmd_phedispmode
-	// prio 0xFFA5 -- PHOREPOC remote drives (RSFW): rsfwbootmounter adds the remote file system and mounts the drives configured in CenRep 101F9775
-	,r_cmd_rsfwbootmounter
+	// prio 0xFFA5 -- PHOREPOC diagnosis: the smallest process (one debug line), to see whether our own processes start from this list at all
+	,r_cmd_rsfwprobe0
 	// prio 0xFFA6 -- PHOREPOC diagnosis: the RSFW start probe (starts the engine and the mounter, reports how they ended)
 	,r_cmd_rsfwprobe
         };
@@ -191,15 +191,14 @@ RESOURCE SSM_START_PROCESS_INFO r_cmd_phvolume
     }
 
 // ---------------------------------------------------------------------------
-// r_cmd_rsfwbootmounter -- PHOREPOC (2026-11-17): the Remote Storage Framework's boot mounter (rsfwbootmounter.exe) adds eremotefs.fsy to the
-// file server and mounts every drive configured in CenRep 101F9775 (File Manager's Map remote drive writes it); it exits when done, and at once
-// when none is configured. Non-critical: a ROM without it skips the start.
+// r_cmd_rsfwprobe0 -- PHOREPOC (2026-11-18, diagnosis): src/rsfwprobe/rsfwprobe0.cpp, the smallest process (one [rsfwprobe0] debug line). The release's own
+// list already starts rsfwbootmounter.exe (30.5 s), so there is no RSFW mounter entry of ours any more.
 // ---------------------------------------------------------------------------
 //
-RESOURCE SSM_START_PROCESS_INFO r_cmd_rsfwbootmounter
+RESOURCE SSM_START_PROCESS_INFO r_cmd_rsfwprobe0
     {
-    priority = 0xFFA5;   // above the activity monitor (0x7EF1, critical, waits for a signal): the commands below it wait for it
-    name = "z:\\sys\\bin\\rsfwbootmounter.exe";
+    priority = 0xFFA5;   // above the task switcher's MULTIPLE_WAIT (0x7F96): everything below it never starts on this board
+    name = "z:\\sys\\bin\\rsfwprobe0.exe";
     execution_behaviour = ESsmFireAndForget;
     }
 
