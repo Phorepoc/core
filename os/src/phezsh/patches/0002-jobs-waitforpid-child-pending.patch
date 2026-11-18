@@ -1,0 +1,26 @@
+--- a/Src/jobs.c
++++ b/Src/jobs.c
+@@ -29,6 +29,9 @@
+ 
+ #include "zsh.mdh"
+ #include "jobs.pro"
++#ifdef PHE_NO_FORK
++int phe_child_pending(pid_t pid);	/* port/phe_tty.cpp */
++#endif
+ 
+ /*
+  * Job control in zsh
+@@ -1583,7 +1586,13 @@
+      * the loop body, we expect this to happen in signal_suspend()
+      * via zhandler(), after which this test terminates the loop.
+      */
++#ifdef PHE_NO_FORK
++    /* Phorepoc: kill(pid, 0) keeps succeeding for an exited process (its kernel object lives on while any handle
++     * does), so this loop never ended -- $(...) hung. Ask whether the child still runs or waits to be reaped. */
++    while (!errflag && phe_child_pending(pid)) {
++#else
+     while (!errflag && (kill(pid, 0) >= 0 || errno != ESRCH)) {
++#endif
+ 	if (first)
+ 	    first = 0;
+ 	else if (!wait_cmd)

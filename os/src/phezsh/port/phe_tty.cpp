@@ -19,3 +19,23 @@ extern "C" void phe_tty_adopt(int aPid)
 	RDebug::Printf("PH: [zsh] adopt pid %d on tty %d: %d", aPid, id, r);
 	tty.Close();
 	}
+
+// zsh's waitforpid (jobs.c): does this child still run, or has it exited without being reaped yet (one more
+// signal_suspend then reaps it)? kill(pid, 0) cannot tell: it succeeds while the process object exists.
+#include <sys/types.h>
+#include <sys/wait.h>
+#ifndef WNOWAIT
+#define WNOWAIT 8
+#endif
+extern "C" int phe_child_pending(pid_t aPid)
+	{
+	RProcess p;
+	if (p.Open(TProcessId((TUint)aPid)) != KErrNone)
+		return 0;
+	TBool running = p.ExitType() == EExitPending;
+	p.Close();
+	if (running)
+		return 1;
+	int st;
+	return waitpid(aPid, &st, WNOHANG | WNOWAIT) == aPid;
+	}

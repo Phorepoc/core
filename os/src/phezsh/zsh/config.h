@@ -901,7 +901,7 @@
 #define HAVE_TCGETATTR 1
 
 /* Define to 1 if you have the 'tcsetpgrp' function. */
-/* #undef HAVE_TCSETPGRP */
+#define HAVE_TCSETPGRP 1
 
 /* Define to 1 if you have the <termcap.h> header file. */
 /* #undef HAVE_TERMCAP_H */
