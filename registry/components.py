@@ -724,8 +724,8 @@ COMPONENTS = {
     "e32strt": dict(mmp="oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/estart/estart.mmp", ssm=True,
                     drop=["estart.cpp"], extra=["toolchain/shims/estart_board/estart.cpp"],
                     flags=["-iquote", os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.os.kernelhwsrv/userlibandfileserver/fileserver/estart")]),
-    "sysstatemgr": dict(mmp=f"{_SSM}/systemstatemgr/ssm/group/ssmserver.mmp", ssm=True),
-    "ssmcmd": dict(mmp=f"{_SSM}/systemstatemgr/cmd/group/ssmcmd.mmp", rtti=True, ssm=True),   # dynamic_cast (command factory)
+    "sysstatemgr": dict(mmp=f"{_SSM}/systemstatemgr/ssm/group/ssmserver.mmp", ssm=True, flags=["-D_DEBUG"]),   # TRACE (diagnosis, remove with rsfwprobe): SSM's own trace of every state and command
+    "ssmcmd": dict(mmp=f"{_SSM}/systemstatemgr/cmd/group/ssmcmd.mmp", rtti=True, ssm=True, flags=["-D_DEBUG"]),   # dynamic_cast (command factory); TRACE as above
     "ssmclecli": dict(mmp=f"{_SSM}/systemstatemgr/cle/group/clecli.mmp", ssm=True),   # static libs of sysstatemgr
     "ssmclesrv": dict(mmp=f"{_SSM}/systemstatemgr/cle/group/clesrv.mmp", ssm=True),
     "ssmmapperutility": dict(mmp=f"{_SSM}/ssmmapperutility/group/ssmmapperutility.mmp"),   # shared (syslangutil, ssmuiproviderdll): every ROM
