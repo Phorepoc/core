@@ -143,6 +143,7 @@ public:
 		return Queue(ECmdCmgs, c);
 		}
 	const TDesC& Smsc() const { return iSmsc; }
+	TBool SmscKnown() const { return iSmsc.Length() > 0 || iDiag >= KDiag; }	// AT+CSCA? is the first diagnostic: answered or given up
 	TBool AudioReady() const { return iAudioReady; }
 	// M5: the call audio route (the board's sound driver routes the modem's PCM to the earpiece and microphone)
 	void VoiceRoute(TBool aOn)
@@ -199,7 +200,7 @@ private:
 #else
 	enum { KInitSms = 0 };
 #endif
-	enum { KDiag = 7 };
+	enum { KDiag = 8 };
 	enum { KInit = 14 + KInitSms, KInitSimFirst = 10, KPoll = 13, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
 		{
@@ -401,7 +402,7 @@ private:
 		// two are repeated, with AT+CEER (why the last call or registration failed), when the CS registration is denied.
 		if (iReady && iDiag < KDiag)
 			{
-			static const char* const KDiagCmds[KDiag] = { "AT+QCFG=\"ims\"", "AT+QCFG=\"volte_disable\"", "AT+QMBNCFG=\"List\"",
+			static const char* const KDiagCmds[KDiag] = { "AT+CSCA?", "AT+QCFG=\"ims\"", "AT+QCFG=\"volte_disable\"", "AT+QMBNCFG=\"List\"",
 														  "AT+QMBNCFG=\"AutoSel\"", "AT+CVMOD?", "AT+QNWINFO", "AT+QENG=\"servingcell\"" };
 			iKind = ECmdDiag;
 			Send(TPtrC8((const TUint8*)KDiagCmds[iDiag]));
