@@ -1800,11 +1800,11 @@ COMPONENTS = {
     # Not built: rsfwmountconfbc (a BIO message control for the remote-drive configuration message: needs the Messaging BIO stack).
     "rsfwsession": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/remotefileengine/group/rsfwsession.mmp"),
     "rsfwconfig": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/mountstore/group/rsfwconfig.mmp"),
-    "rsfwcommon": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/remotefileengine/group/rsfwcommon.mmp"),
+    "rsfwcommon": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/remotefileengine/group/rsfwcommon.mmp", drop=["mdebug.cpp"], extra=["toolchain/shims/rsfw_mdebug/mdebug.cpp"], flags=["-D_DEBUG"]),   # TRACE (serial): remove with toolchain/shims/rsfw_mdebug
     "rsfwnotplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/rsfwnotifierplugins/group/rsfwnotplugin.mmp"),
-    "remotefe": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/remotefileengine/group/remotefe.mmp"),
+    "remotefe": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/remotefileengine/group/remotefe.mmp", drop=["mdebug.cpp"], extra=["toolchain/shims/rsfw_mdebug/mdebug.cpp"], flags=["-D_DEBUG"]),   # TRACE (serial): remove with toolchain/shims/rsfw_mdebug
     "eremotefs": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/remotefilesystemplugin/group/eremotefs.mmp", rom="eremotefs.fsy"),
-    "rsfwdavaccess": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/webdavaccessplugin/group/rsfwdavaccess.mmp"),
+    "rsfwdavaccess": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/webdavaccessplugin/group/rsfwdavaccess.mmp", drop=["mdebug.cpp"], extra=["toolchain/shims/rsfw_mdebug/mdebug.cpp"], flags=["-D_DEBUG"]),   # TRACE (serial): remove with toolchain/shims/rsfw_mdebug
     "rsfwgsplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.remotestorage/remotestoragefw/gsplugin/group/rsfwgsplugin.mmp"),   # the remote-drive settings view File Manager loads (ECOM 101f9777)
     "memstatepopup": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.files/filesystemuis/memstatepopup/group/MemStatePopup.mmp"),   # <- filemanagerview
     "memscanclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.files/filesystemuis/memscaneng/group/memscanclient.mmp"),   # <- memstatepopup
