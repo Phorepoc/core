@@ -418,7 +418,7 @@ void CPheBleSession::ServiceL(const RMessage2& aMessage)
 		req.iValue = (TUint16)((TUint)aMessage.Int1() >> 16);
 		Request(aMessage, req, KNullDesC8);
 		return;
-	case EPheBleMtu:
+	case EPheBleGetMtu:
 		aMessage.Complete(PheBleHostMtu((TUint16)aMessage.Int0()));
 		return;
 	case EPheBleCancelAll:

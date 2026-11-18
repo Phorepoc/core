@@ -26,7 +26,7 @@ enum TPheBleOp
 	EPheBleRead,               // a0 conn, a1 handle, a2 value, a3 result
 	EPheBleWrite,              // a0 conn | handle << 16, a1 value, a2 with response, a3 result
 	EPheBleSubscribe,          // a0 conn, a1 cccd | value << 16, a3 result
-	EPheBleMtu,                // a0 conn
+	EPheBleGetMtu,             // a0 conn
 	EPheBleCancelAll
 	};
 

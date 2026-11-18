@@ -520,7 +520,7 @@
 #endif
 
 #ifndef MYNEWT_VAL_BLE_VERSION
-#define MYNEWT_VAL_BLE_VERSION (42)
+#define MYNEWT_VAL_BLE_VERSION (50)
 #endif
 
 #ifndef MYNEWT_VAL_BLE_WHITELIST

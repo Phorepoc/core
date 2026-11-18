@@ -16,7 +16,7 @@ A board turns BLE on with two files in its zdata: `corehci_symbian.ini` `hctl_ui
 
 ## Configuration (changes against NimBLE's Linux syscfg.h)
 BLE_TRANSPORT_LL custom (not socket); BLE_ROLE_PERIPHERAL/BROADCASTER 0; BLE_SM_BONDING 1, BLE_SM_SC 1, BLE_SM_LEGACY 1,
-BLE_SM_MITM 0, BLE_SM_IO_CAP DISPLAY_YESNO, key distribution ENC|ID both ways; BLE_MAX_CONNECTIONS 2; BLE_VERSION 42;
+BLE_SM_MITM 0, BLE_SM_IO_CAP DISPLAY_YESNO, key distribution ENC|ID both ways; BLE_MAX_CONNECTIONS 2; BLE_VERSION 50 (unchanged; 42 is not a value NimBLE accepts);
 BLE_ATT_PREFERRED_MTU 339; BLE_TRANSPORT_ACL_SIZE 1024; BLE_TRANSPORT_EVT_SIZE 257; BLE_STORE_MAX_BONDS 8,
 MAX_CCCDS 16; MSYS_1_BLOCK_COUNT 64; BLE_GATT_MAX_PROCS 8; BLE_HS_LOG_LVL 2; BLE_HS_AUTO_START 0.
 

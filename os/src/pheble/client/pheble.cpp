@@ -89,7 +89,7 @@ EXPORT_C void RPheBle::Subscribe(TUint16 aConn, TUint16 aCccdHandle, TUint16 aVa
 
 EXPORT_C TInt RPheBle::Mtu(TUint16 aConn)
 	{
-	return SendReceive(EPheBleMtu, TIpcArgs(aConn));
+	return SendReceive(EPheBleGetMtu, TIpcArgs(aConn));
 	}
 
 EXPORT_C void RPheBle::CancelAll()

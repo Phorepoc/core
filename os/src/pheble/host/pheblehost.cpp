@@ -18,6 +18,7 @@
 #include "pheblesrv.h"
 
 extern "C" {
+#include "os/os.h"
 #include "nimble/nimble_port.h"
 #include "nimble/transport.h"
 #include "nimble/transport_impl.h"

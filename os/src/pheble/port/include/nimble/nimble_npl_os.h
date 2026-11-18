@@ -17,6 +17,9 @@ extern "C" {
 #endif
 
 #define BLE_NPL_OS_ALIGNMENT 4
+#ifndef UINT32_MAX     /* C++ without __STDC_LIMIT_MACROS */
+#define UINT32_MAX 0xffffffffU
+#endif
 #define BLE_NPL_TIME_FOREVER UINT32_MAX
 
 struct ble_npl_eventq *ble_npl_eventq_dflt_get(void);
