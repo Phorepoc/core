@@ -43,8 +43,11 @@ TInt RPheTty::Connect()
 	return r;
 	}
 
-TInt RPheTty::New(TInt aCols, TInt aRows)
-	{ return SendReceive(EPtNew, TIpcArgs(aCols, aRows)); }
+TInt RPheTty::New(TInt aCols, TInt aRows, TInt aShell)
+	{ return SendReceive(EPtNew, TIpcArgs(aCols, aRows, aShell)); }
+
+TInt RPheTty::Shells()
+	{ return SendReceive(EPtShells, TIpcArgs()); }
 
 TInt RPheTty::List(TUint8* aIds, TInt aMax)
 	{

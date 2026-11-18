@@ -1,0 +1,38 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// phezsh.mmp -- zsh 5.9.2 (upstream, MIT-style LICENCE; zsh/ holds the unmodified Src files the build uses plus the
+// files its own build generates, see README.md) on the P.I.P.S. libc. The ROM name is zsh.exe.
+// No fork(): external commands are started with posix_spawn (port/phe_spawn.c).
+// Static modules: zsh/main, rlimits, sched, datetime, langinfo, parameter (bltinmods.list).
+TARGET			zsh.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157A0
+CAPABILITY		NetworkServices LocalServices ReadUserData WriteUserData UserEnvironment
+VENDORID		0
+EPOCHEAPSIZE	0x40000 0x2000000
+EPOCSTACKSIZE	0x14000
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+OS_LAYER_LIBC_SYSTEMINCLUDE
+USERINCLUDE		port
+USERINCLUDE		zsh/Src
+USERINCLUDE		zsh/Src/Builtins
+USERINCLUDE		zsh/Src/Modules
+MACRO			HAVE_CONFIG_H
+
+SOURCEPATH		zsh/Src
+SOURCE			builtin.c compat.c cond.c context.c exec.c glob.c hashnameddir.c hashtable.c hist.c init.c input.c
+SOURCE			jobs.c lex.c linklist.c loop.c math.c mem.c module.c openssh_bsd_setres_id.c options.c params.c
+SOURCE			parse.c pattern.c prompt.c signals.c signames.c sort.c string.c subst.c text.c utils.c
+SOURCEPATH		zsh/Src/Builtins
+SOURCE			rlimits.c sched.c
+SOURCEPATH		zsh/Src/Modules
+SOURCE			datetime.c langinfo.c parameter.c
+SOURCEPATH		port
+SOURCE			phe_main.c phe_compat.c phe_spawn.c phe_debug.cpp
+
+STATICLIBRARY	libcrt0.lib
+LIBRARY			libc.lib libm.lib euser.lib
+
+SMPSAFE

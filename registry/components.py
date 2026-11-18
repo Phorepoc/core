@@ -1731,6 +1731,8 @@ COMPONENTS = {
     # OURS (Applications grid, first open): brings the already-started launcher forward once at boot so WSERV rasterises its icons
     "phemenuwarm": dict(mmp=os.path.join(OS_ROOT, "src/phemenuwarm/phemenuwarm.mmp")),
     "pheshellsel": dict(mmp=os.path.join(OS_ROOT, "src/pheshellsel/pheshellsel.mmp")),   # UI shell selector at boot (S^3 / S^4, dev menu key 1/6)
+    # zsh 5.9.2 on the P.I.P.S. libc (os/src/phezsh/README.md): zsh.exe; no fork, externals via posix_spawn
+    "phezsh": dict(mmp=os.path.join(OS_ROOT, "src/phezsh/phezsh.mmp"), rom="zsh.exe", defs=["__SOFTFP="]),
     "mixtest": dict(mmp=os.path.join(OS_ROOT, "src/mixtest/mixtest.mmp"), test=True),
     # OURS (audio V0): volume keys -> master volume (P&S KPhAudioMasterVolume, applied by the mixer on the real channel)
     "phvolume": dict(mmp=os.path.join(OS_ROOT, "src/phvolume/phvolume.mmp")),

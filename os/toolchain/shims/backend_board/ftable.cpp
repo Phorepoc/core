@@ -1330,193 +1330,116 @@ int CFileTable::posix_spawn(int* aPid, const wchar_t* aFile,
 	}
 
 // -----------------------------------------------------------------------------
-// CFileTable::waitpid
-// -----------------------------------------------------------------------------
+// CFileTable::waitpid -- Phorepoc's rewrite of the 2010 version (zsh R2, docs: core os/src/phezsh/README.md):
+// WNOHANG for any child, status = reason<<8 | type, a child is reaped once, a vanished child is skipped, WNOWAIT.
+#ifndef WNOWAIT
+#define WNOWAIT 8
+#endif
+
+static int PheEncodeStatus(const RProcess& aProc)
+	{
+	return (aProc.ExitReason() << 8) | (aProc.ExitType() & 0x7f);
+	}
+
+
 int CFileTable::waitpid(int aPid, int* aStatus, int aOptions, int& anErrno)
 	{
-	TInt err = KErrNone;
-	RProcess child;
-
+	// the children this call may report, by process id (the table changes while we walk it)
+	RArray<TProcessId> pids;
 	if (aPid == -1)
 		{
-		// wait on any child
-		// array of child processes that are still alive
 		const RArray<TChild>& children = GetChildren();
-		TInt cnt = children.Count();
-		if (cnt == 0)
-			{
-			anErrno = ECHILD;
-			return -1;
-			}
+		for (TInt i = 0; i < children.Count(); ++i)
+			pids.Append(children[i].iPid);
+		}
+	else if (FindChild(TProcessId(aPid)) != KErrNotFound)
+		{
+		pids.Append(TProcessId(aPid));
+		}
 
-		RArray<TUint> theliving(4);
-		TInt i;
-		for (i = 0; i < cnt; ++i)
+	for (;;)
+		{
+		// a dead child: report it (and reap it unless WNOWAIT)
+		TInt live = 0;
+		for (TInt i = 0; i < pids.Count(); )
 			{
-			TInt pid = children[i].iPid;
-			err = child.Open(pid);
-			if (err != KErrNone)
+			RProcess child;
+			if (child.Open(pids[i]) != KErrNone)
 				{
-				// unable to open child...possibly dead and gone
-				RemoveChild(i);
-				--cnt;
+				// gone without a trace: forget it
+				TInt idx = FindChild(pids[i]);
+				if (idx != KErrNotFound)
+					RemoveChild(idx);
+				pids.Remove(i);
 				continue;
 				}
-
-			if (child.ExitType() == EExitPending)
-				{
-				theliving.Append(i);
-				child.Close();
-				// continue to next child to check if there is a dead child in list
-				}
-			else
+			if (child.ExitType() != EExitPending)
 				{
 				if (aStatus)
-					{
-					*aStatus = child.ExitReason();
-					*aStatus = *aStatus << 8;
-					//coverity[unchecked_value]
-					*aStatus |= child.ExitType();
-					}
+					*aStatus = PheEncodeStatus(child);
 				child.Close();
-				RemoveChild(i);
-				theliving.Close();
-
-				return pid;
+				TProcessId pid = pids[i];
+				if (!(aOptions & WNOWAIT))
+					{
+					TInt idx = FindChild(pid);
+					if (idx != KErrNotFound)
+						RemoveChild(idx);
+					}
+				pids.Close();
+				return (int)(TUint)pid;
 				}
-			}
-
-		// we are here - implies no child was dead
-		cnt = theliving.Count();
-		TRequestStatus* reqarray = new TRequestStatus[cnt];
-		TInt reqcnt = 0;
-		for (i = 0; i < cnt; ++i)
-			{
-			err = child.Open(children[theliving[i]].iPid);
-			if (err != KErrNone)
-				{
-				RemoveChild(theliving[i]);
-				theliving.Remove(i);
-				--cnt;
-				continue;
-				}
-			child.Logon(reqarray[reqcnt++]);
 			child.Close();
+			++live;
+			++i;
 			}
 
-		// wait for any of the children to die
-		CLocalSystemInterface::WaitForNRequest(reqarray, reqcnt);
-
-		for (i = 0; i < reqcnt; ++i)
+		if (live == 0)
 			{
-			if (reqarray[i].Int() != KRequestPending)
-				{
-				TInt pid = -1;
-				if (reqarray[i].Int() < KErrNone)
-					{
-					// error
-					anErrno = ECHILD;
-					}
-				else
-					{
-					// req.Int(), if valid, returns the ExitReason of the child
-					if (aStatus)
-						{
-						*aStatus = reqarray[i].Int();
-						}
-					pid = children[theliving[i]].iPid;
-					}
-
-				// time to return. Cleanup outstanding requests
-				// reuse i - we don't care anymore
-				for (i = 0; i < reqcnt; ++i)
-					{
-					if (reqarray[i].Int() == KRequestPending)
-						{
-						// outstanding logon request
-						err = child.Open(children[theliving[i]].iPid);
-						if (err == KErrNone)
-							{
-							child.LogonCancel(reqarray[i]);
-							child.Close();
-							}
-						}
-					}
-				theliving.Close();
-				delete[] reqarray;
-				return pid;
-				}
-			}
-		//coverity[leaked_storage]
-		}
-	else
-		{
-		// wait for a specific child
-		// first ensure that the child is one of mine
-		TInt idx = FindChild(TProcessId(aPid));
-		if (idx == KErrNotFound)
-			{
-			// not my child.
+			pids.Close();
 			anErrno = ECHILD;
 			return -1;
 			}
-
-		err = child.Open(TProcessId(aPid));
-		if (err != KErrNone)
+		if (aOptions & WNOHANG)
 			{
-			// unable to open child...possibly dead and gone
-			RemoveChild(idx);
-			anErrno = ECHILD;
+			pids.Close();
+			return 0;
+			}
+
+		// all alive: wait until one of them dies, then look again
+		TRequestStatus* reqs = new TRequestStatus[live];
+		RProcess* procs = new RProcess[live];
+		if (!reqs || !procs)
+			{
+			delete[] reqs;
+			delete[] procs;
+			pids.Close();
+			anErrno = ENOMEM;
 			return -1;
 			}
-
-		if (child.ExitType() != EExitPending)
+		TInt n = 0;
+		for (TInt i = 0; i < pids.Count() && n < live; ++i)
 			{
-			// Already dead
-			if (aStatus)
-				{
-				*aStatus = child.ExitReason();
-				*aStatus = *aStatus << 8;
-				//coverity[unchecked_value]
-				*aStatus |= child.ExitType();
-
-				}
+			if (procs[n].Open(pids[i]) != KErrNone)
+				continue;
+			procs[n].Logon(reqs[n]);
+			++n;
 			}
-		else
+		if (n)
+			CLocalSystemInterface::WaitForNRequest(reqs, n);
+		for (TInt i = 0; i < n; ++i)
 			{
-			// still alive
-			if (aOptions & WNOHANG)
+			if (reqs[i].Int() == KRequestPending)
 				{
-				child.Close();
-				return 0;
+				procs[i].LogonCancel(reqs[i]);
+				User::WaitForRequest(reqs[i]);
 				}
-
-			TRequestStatus req;
-			child.Logon(req);
-			User::WaitForRequest(req);
-			if (req.Int() < KErrNone)
-				{
-				child.Close();
-				RemoveChild(idx);
-				anErrno = ECHILD;
-				return -1;
-				}
-			// req.Int(), if valid, returns the ExitReason of the child
-			if (aStatus)
-				{
-				*aStatus = req.Int();
-				*aStatus = *aStatus << 8;
-				//coverity[unchecked_value]
-				*aStatus |= child.ExitType();
-
-				}
+			procs[i].Close();
 			}
-		child.Close();
-		RemoveChild(idx);
-		return aPid;
+		delete[] reqs;
+		delete[] procs;
 		}
-	return -1;
 	}
+// -----------------------------------------------------------------------------
 
 TInt CFileTable::InheritFiles(CFileDesTransferServer* server)
 {
