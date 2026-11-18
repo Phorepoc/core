@@ -6,8 +6,9 @@
 // the engine shape decision is in telephony-plan.md section 15). Compiled only with PHELTSY=1 (-DPHE_LTSY on
 // licenseetsy); the default build is the plain fake modem.
 //
-// CPheAt owns the modem's serial channel (RBusDevComm unit 3 = the modem UART's PDD:
-// opening it powers the EG25-G) and runs a polled AT loop on the fake modem's 100 ms ticker:
+// CPheAt owns the modem's channels: RBusDevComm unit 3 (the modem UART's PDD: opening it powers the EG25-G and holds the power,
+// STATUS and the call audio route) and the AT channel = the USB serial port of the EG25-G's interface 2 (a Comm unit, TryOpenAt);
+// it runs a polled AT loop on the fake modem's 100 ms ticker:
 //   init (after "RDY"): Zephyr's EG2x-G init (ATE0, AT+CMEE=1, AT+CREG/CGREG/CEREG=2, AT+CGSN) + the call/SMS set
 //   every 5 s: AT+CPIN?, AT+CREG?, AT+COPS=3,2 + AT+COPS? (MCC/MNC), AT+COPS=3,0 + AT+COPS? (long name), AT+CSQ,
 //              AT+QSPN (the SIM's service provider name), AT+CIMI (until the IMSI is known)
@@ -74,8 +75,10 @@ public:
 		if (iOpen)
 			{
 			PowerDown();
-			iPort.Close();					// the kernel finishes: STATUS high -> VBAT off (forced after 30 s)
+			iPort.Close();
 			}
+		if (iPowerOpen)
+			iPower.Close();					// the kernel finishes: STATUS high -> VBAT off (forced after 30 s)
 		}
 	const TPheNet& Net() const { return iNet; }
 	TPheSim Sim() const { return iSim; }
@@ -135,9 +138,10 @@ public:
 	// M5: the call audio route (the board's sound driver routes the modem's PCM to the earpiece and microphone)
 	void VoiceRoute(TBool aOn)
 		{
-		if (!iOpen)
+		if (!iPowerOpen)
 			return;
-		if (aOn) iPort.SetSignals(KSignalDTR, 0); else iPort.SetSignals(0, KSignalDTR);
+		// the route switch is the power unit's DTR (the board's UART PDD owns it), not the USB AT port's
+		if (aOn) iPower.SetSignals(KSignalDTR, 0); else iPower.SetSignals(0, KSignalDTR);
 		RDebug::Printf("[pheltsy] voice route %s", aOn ? "on" : "off");
 		}
 
@@ -145,7 +149,11 @@ public:
 	void Tick()
 		{
 		if (!iOpen)
+			{
+			if (iPowerOpen)
+				TryOpenAt();					// the modem enumerates on USB ~15-20 s after it is powered
 			return;
+			}
 		++iTicks;
 		if (iCmdActive)
 			{
@@ -170,7 +178,7 @@ public:
 		}
 
 private:
-	enum { KInit = 11, KPoll = 10, KQ = 6 };
+	enum { KInit = 11, KPoll = 10, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
 		{
 		if (!iOpen || iQn >= KQ)
@@ -188,10 +196,29 @@ private:
 		iNet.iAccess = RMobilePhone::ENetworkAccessUnknown;
 		CActiveScheduler::Add(this);
 		TInt r = User::LoadLogicalDevice(_L("ECOMM"));
-		r = iPort.Open(3);
-		RDebug::Printf("[pheltsy] RBusDevComm::Open(3) -> %d", r);
+		// unit 3 = the modem UART's PDD: opening it powers the EG25-G (and holds the power, the STATUS line and the call
+		// audio route switch); the AT channel itself is the USB serial port (TryOpenAt), once the modem has enumerated
+		r = iPower.Open(KPheUnitPower);
+		RDebug::Printf("[pheltsy] RBusDevComm::Open(%d) (modem power) -> %d", KPheUnitPower, r);
 		if (r != KErrNone)
-			User::Leave(r);						// no MODEM=1 kernel: no engine, the scripted values stay
+			User::Leave(r);						// no MODEM=1 kernel (or the unit is in use): no engine, the scripted values stay
+		iPowerOpen = ETrue;
+		}
+	// The AT channel: Comm.USB unit 8 + the EG25-G's USB interface 2 (u3g port 2; interfaces 0/1 are DIAG/NMEA, 3 the modem
+	// port). The unit exists once the USB host has attached the device; until then Open fails, so it is
+	// retried once a second.
+	void TryOpenAt()
+		{
+		if (++iOpenTicks % 10 != 1)
+			return;
+		const TInt r = iPort.Open(KPheUnitAt);
+		if (r != KErrNone)
+			{
+			if (iOpenTicks == 1 || iOpenTicks % 300 == 1)		// first try, then every 30 s
+				RDebug::Printf("[pheltsy] AT port unit %d not there yet (%d)", KPheUnitAt, r);
+			return;
+			}
+		RDebug::Printf("[pheltsy] AT port: RBusDevComm::Open(%d) (USB serial) -> 0 after %d s", KPheUnitAt, iOpenTicks / 10);
 		iOpen = ETrue;
 		TCommConfig cfg;
 		iPort.Config(cfg);
@@ -199,9 +226,10 @@ private:
 		cfg().iDataBits = EData8;
 		cfg().iStopBits = EStop1;
 		cfg().iParity = EParityNone;
-		cfg().iHandshake = KConfigFreeRTS | KConfigFreeDTR;
+		cfg().iHandshake = 0;
 		cfg().iTerminatorCount = 0;
 		iPort.SetConfig(cfg);
+		iRdy = ETrue;							// no "RDY" URC on the USB port: the modem is up once the device enumerated
 		Read();
 		}
 	void Read()
@@ -210,7 +238,7 @@ private:
 		iPort.ReadOneOrMore(iStatus, iRx);
 		SetActive();
 		}
-	void DoCancel() { iPort.ReadCancel(); }
+	void DoCancel() { if (iOpen) iPort.ReadCancel(); }
 	void RunL()
 		{
 		if (iStatus.Int() == KErrNone)
@@ -712,7 +740,10 @@ private:
 	TBuf8<400> iPdu;
 	TBuf<24> iSmsc;
 	MPheAtObserver& iObs;
-	RBusDevComm iPort;
+	RBusDevComm iPort;							// the AT channel (Comm.USB unit KPheUnitAt)
+	RBusDevComm iPower;							// unit 3: the modem power, STATUS and the call audio route
+	TBool iPowerOpen;
+	TInt iOpenTicks;
 	TBool iOpen, iRdy, iReady, iCmdActive, iNetDirty;
 	TInt iTicks, iCmdStart, iNextPoll, iStep;
 	TBuf8<48> iCmd;
