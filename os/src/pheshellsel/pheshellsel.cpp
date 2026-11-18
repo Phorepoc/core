@@ -264,6 +264,48 @@ static void ApplyOrientation()
 	RDebug::Printf("PH: [shellsel] orientation %d applied: %d", wanted, r);
 	}
 
+// The start-up keys a stalled start-up list waits for. SSM's non-critical list begins with two commands that wait, without a
+// time-out, for KPSPhonePhase1Ok and KPSIdlePhase1Ok (= 101): when one is never published nothing after them starts and the UI
+// looks normal. This process lives as long as the shell, so it can name the missing key: one line, a minute after it started
+// (a normal boot has long passed both by then). -1x values are read errors.
+static void LogStartupKeys()
+	{
+	const TUid KPSUidStartup = {0x101F8766};
+	const TUid KPSUidAiInformation = {0x101FD657};
+	TInt state = -1, idle = -1, phone = -1, activeIdle = -1;
+	const TInt e1 = RProperty::Get(KPSUidStartup, 0x41, state);			// KPSGlobalSystemState
+	const TInt e2 = RProperty::Get(KPSUidStartup, 0x43, idle);			// KPSIdlePhase1Ok (101 = ready)
+	const TInt e3 = RProperty::Get(KPSUidStartup, 0x44, phone);			// KPSPhonePhase1Ok (101 = ready)
+	const TInt e4 = RProperty::Get(KPSUidAiInformation, 1, activeIdle);	// KActiveIdleUid
+	RDebug::Printf("PH: [shellsel] start-up keys after 60 s: system state %d (%d), idle phase1 %d (%d), phone phase1 %d (%d), active idle uid %x (%d)",
+				   state, e1, idle, e2, phone, e3, activeIdle, e4);
+	}
+
+// wait for the shell launcher to exit, logging the start-up keys once after 60 s
+static void WaitLauncherExit(TRequestStatus& aSt)
+	{
+	RTimer t;
+	if (t.CreateLocal() != KErrNone)
+		{
+		User::WaitForRequest(aSt);
+		return;
+		}
+	TRequestStatus ts;
+	t.After(ts, 60000000);
+	User::WaitForRequest(aSt, ts);
+	if (aSt == KRequestPending)
+		{
+		LogStartupKeys();				// the timer fired first
+		User::WaitForRequest(aSt);
+		}
+	else
+		{
+		t.Cancel();
+		User::WaitForRequest(ts);
+		}
+	t.Close();
+	}
+
 static TInt RunShellL()
 	{
 	ApplyOrientation();
@@ -431,7 +473,7 @@ static TInt RunShellL()
 			User::WaitForRequest(st);
 		}
 	else
-		User::WaitForRequest(st);
+		WaitLauncherExit(st);
 	RDebug::Printf("PH: [shellsel] shell launcher exited: type %d reason %d", (TInt)launcher.ExitType(), launcher.ExitReason());
 	r = launcher.ExitType() == EExitKill ? KErrNone : launcher.ExitReason();
 	launcher.Close();
