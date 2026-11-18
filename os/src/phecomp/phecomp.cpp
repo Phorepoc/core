@@ -644,12 +644,17 @@ void CPheCompStage::SceneElements(TBool aShow, const TRect& aScreen)
 		if (!g || !g->iTarget || !g->iTarget->iElement || g->iCovered)
 			continue;
 		MWsElement* e = g->iTarget->iElement;
-		e->SetDestinationRectangle(aScreen);
-		e->SetSourceRectangle(aScreen);
+		// R4: a group the window server places (R2: its app screen scaled and centred) is scaled by the compositor itself: the element's
+		// source is the group's app screen in its target, its destination the placed rectangle (OpenWF-C, on the GPU where there is one)
+		const TBool placed = g->Scaled() && g->iAppSize.iWidth;
+		const TRect src = placed ? TRect(g->iAppSize) : aScreen;
+		const TRect dest = placed ? g->Placed(src) : aScreen;
+		e->SetSourceRectangle(src);
+		e->SetDestinationRectangle(dest);
 		// only the group's own windows: clip the element to their extent (the UI element shows the rest)
-		TRect clip(g->iBounds);
-		clip.Intersection(aScreen);
-		e->SetDestinationClippingRect(clip.IsEmpty() ? aScreen : clip);
+		TRect clip(placed ? g->Placed(g->iBounds) : g->iBounds);
+		clip.Intersection(dest);
+		e->SetDestinationClippingRect(clip.IsEmpty() ? dest : clip);
 		if (!below)
 			{
 			// the first time: put ours at the bottom, walk up to the top of the others, and put it back above that

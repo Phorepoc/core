@@ -32,6 +32,9 @@ static TInt Run()
 	RWindow win(ws);
 	win.Construct(group, 1);
 	win.SetExtent(TPoint(0, 0), size);
+	group.SetNonFading(ETrue);
+	win.SetFaded(EFalse, RWindowTreeNode::EFadeIncludeChildren);
+	win.SetNonFading(ETrue);		// (the window server fades a window of a group that has no focus: the grid came out at a quarter of its brightness)
 	win.SetBackgroundColor(TRgb(20, 40, 80));
 	win.Activate();
 	CWindowGc* gc = NULL;
