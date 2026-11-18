@@ -1098,8 +1098,6 @@ COMPONENTS = {
     # OURS: minimal system starter (stands in for SSM during UI bring-up)
     "bootui": dict(mmp=os.path.join(OS_ROOT, "src/bootui/bootui.mmp")),
     "nettest": dict(mmp=os.path.join(OS_ROOT, "src/nettest/nettest.mmp")),
-    "rsfwprobe": dict(mmp=os.path.join(OS_ROOT, "src/rsfwprobe/rsfwprobe.mmp")),   # diagnosis probe of the RSFW start (SSM non-critical list); remove with the RSFW trace
-    "rsfwprobe0": dict(mmp=os.path.join(OS_ROOT, "src/rsfwprobe/rsfwprobe0.mmp")),   # the smallest SSM-started process (one debug line); remove with the probe
     # OURS: the WLAN regression benchmark (scan, available IAPs, an application's connection, DNS/HTTP/latency/throughput,
     # the idle disconnect + reconnect, N cycles); "[phewlantest] RESULT"
     "phewlantest": dict(mmp=os.path.join(OS_ROOT, "src/phewlantest/phewlantest.mmp"), flags=["-I", os.path.join(SYMBIAN, "symbian-rcl3/oss.FCL.sf.os.wlan/wlan_plat/wlan_management_api/inc")]),

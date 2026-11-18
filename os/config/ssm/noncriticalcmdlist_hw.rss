@@ -99,10 +99,6 @@ RESOURCE SSM_COMMAND_LIST r_cmds
 	,r_cmd_phettyd
 	// prio 0x7E05 -- PHOREPOC display-mode follower (src/phedispmode): the screen mode follows a resizable PC display; exits at once elsewhere
 	,r_cmd_phedispmode
-	// prio 0xFFA5 -- PHOREPOC diagnosis: the smallest process (one debug line), to see whether our own processes start from this list at all
-	,r_cmd_rsfwprobe0
-	// prio 0xFFA6 -- PHOREPOC diagnosis: the RSFW start probe (starts the engine and the mounter, reports how they ended)
-	,r_cmd_rsfwprobe
         };
     }
 
@@ -187,30 +183,6 @@ RESOURCE SSM_START_PROCESS_INFO r_cmd_phvolume
     {
     priority = 0x7E02;
     name = "z:\\sys\\bin\\phvolume.exe";
-    execution_behaviour = ESsmFireAndForget;
-    }
-
-// ---------------------------------------------------------------------------
-// r_cmd_rsfwprobe0 -- PHOREPOC (2026-11-18, diagnosis): src/rsfwprobe/rsfwprobe0.cpp, the smallest process (one [rsfwprobe0] debug line). The release's own
-// list already starts rsfwbootmounter.exe (30.5 s), so there is no RSFW mounter entry of ours any more.
-// ---------------------------------------------------------------------------
-//
-RESOURCE SSM_START_PROCESS_INFO r_cmd_rsfwprobe0
-    {
-    priority = 0xFFA5;   // above the task switcher's MULTIPLE_WAIT (0x7F96): everything below it never starts on this board
-    name = "z:\\sys\\bin\\rsfwprobe0.exe";
-    execution_behaviour = ESsmFireAndForget;
-    }
-
-// ---------------------------------------------------------------------------
-// r_cmd_rsfwprobe -- PHOREPOC (2026-11-18, diagnosis): src/rsfwprobe starts remotefe.exe and rsfwbootmounter.exe by name like RSFW does and logs the
-// loader's answer, how each ended, and what the file server says about drive J: ([rsfwprobe] lines on the serial port). Drop it when the connection works.
-// ---------------------------------------------------------------------------
-//
-RESOURCE SSM_START_PROCESS_INFO r_cmd_rsfwprobe
-    {
-    priority = 0xFFA6;   // as the boot mounter: above the activity monitor
-    name = "z:\\sys\\bin\\rsfwprobe.exe";
     execution_behaviour = ESsmFireAndForget;
     }
 

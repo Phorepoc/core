@@ -76,10 +76,6 @@ RESOURCE SSM_COMMAND_LIST r_cmds
         // prio 0xFFE8 -- PHOREPOC (telephony T1, 2026-10-16): the telephony audio routing server + accept-all policy; the Phone
         // engine (started below at 0xFFE3) cannot construct without it (src/phetelaudio)
         r_cmd_phetelaudio,
-        // prio 0xFFE8 -- PHOREPOC diagnosis (RSFW): the two probes started here, as phetelaudio is (which prints), to compare with their start from the
-        // non-critical list (where they print nothing); remove with the probes
-        r_cmd_rsfwprobe0e,
-        r_cmd_rsfwprobee,
         // prio 0xFFE7
         // PHOREPOC 2026-10-18: r_cmd_menu (matrixmenu) is started by pheshellsel for the S^3 shell (r_cmd_idle below)
         r_cmd_idle,
@@ -196,25 +192,6 @@ RESOURCE SSM_START_PROCESS_INFO r_cmd_phetelaudio
     {
     priority = 0xFFE8;
     name = "z:\\sys\\bin\\phetelaudio.exe";
-    execution_behaviour = ESsmFireAndForget;
-    }
-
-// ---------------------------------------------------------------------------
-// r_cmd_rsfwprobe0e / r_cmd_rsfwprobee -- PHOREPOC (2026-11-18, diagnosis): src/rsfwprobe/rsfwprobe0.cpp and rsfwprobe.cpp, started with the same
-// kind of entry and priority as phetelaudio. They are also in the non-critical list, where they print nothing.
-// ---------------------------------------------------------------------------
-//
-RESOURCE SSM_START_PROCESS_INFO r_cmd_rsfwprobe0e
-    {
-    priority = 0xFFE8;
-    name = "z:\\sys\\bin\\rsfwprobe0.exe";
-    execution_behaviour = ESsmFireAndForget;
-    }
-
-RESOURCE SSM_START_PROCESS_INFO r_cmd_rsfwprobee
-    {
-    priority = 0xFFE8;
-    name = "z:\\sys\\bin\\rsfwprobe.exe";
     execution_behaviour = ESsmFireAndForget;
     }
 
