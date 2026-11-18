@@ -3,7 +3,7 @@
 //
 // phebletest.cpp -- OURS (BLE plan rung 4): the LE scan test. Turns Bluetooth on (RBTPowerControl is not needed: the
 // stack is up once Bluetooth is on in Settings, or SSM_TEST=btpower), connects to "!PheBle", scans actively for
-// 20 s and logs every advert with a name, once per address. Exit proof on the PinePhone with the Pebble 2 HR in range:
+// 20 s and logs every advert with a name, once per address. Exit proof on a phone with a Pebble 2 HR in range:
 // a line "phebletest: Pebble DE7F 54:a5:2e:b6:9e:f4 ..." and "phebletest: PASS". Argument: seconds (default 20).
 
 #include <e32base.h>
