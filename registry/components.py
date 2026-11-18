@@ -696,15 +696,18 @@ COMPONENTS = {
     "caf": dict(mmp="oss.FCL.sf.os.security/contentmgmt/contentaccessfwfordrm/group/caf.mmp"),
     "f32agentui": dict(mmp="oss.FCL.sf.os.security/contentmgmt/contentaccessfwfordrm/group/f32agentui.mmp"),
     "f32agent": dict(mmp="oss.FCL.sf.os.security/contentmgmt/contentaccessfwfordrm/group/f32agent.mmp"),
-    # OURS: null provider (real ordinal table) -- see toolchain/shims/c32_null/
-    # C32: the REAL client half (CC_CLI.CPP: RCommServ/RComm -- P.I.P.S. backend embeds an RCommServ)
-    # + OURS null StartC32 (c32_null.cpp) in place of CC_UTL.CPP's root-server launch; the server
-    # half stays out (no comms subsystem on this board), so Connect() fails cleanly KErrNotFound.
+    # C32 = the comms (serial) server AND its client API (RCommServ/RComm). x32_real without x32_mmp makes it the REAL
+    # component on both architectures (build_mmp.py: `real = x32_real and not x32_mmp`): the drop/extra below only
+    # describe the OLD null provider (toolchain/shims/c32_null/, no server half) and are ignored. On the phone the
+    # server runs (RCommServ::Connect -> 0, boot 2734) and loads CSYs by name: see "ecuart" below.
     "c32": dict(mmp="oss.FCL.sf.os.commsfw/serialserver/c32serialserver/group/C32.MMP",
                 drop=["cc_utl.cpp", "cs_man.cpp", "cs_port.cpp", "cs_ses.cpp", "cs_svr.cpp", "cs_time.cpp",
                       "cs_utl.cpp", "cs_v02.cpp", "cs_roles.cpp", "cs_thread.cpp", "cs_glob.cpp", "cs_log.cpp"],
                 extra=["toolchain/shims/c32_null/c32_null.cpp"],
                 x32_real=True),
+    # ECUART.CSY: the serial CSY (RComm "COMM::<unit>" -> the serial LDD's unit): C32's LoadCommModule(ECUART) failed
+    # KErrNotFound without it; it runs on the board's Comm PDDs (its UARTs, USB serial units)
+    "ecuart": dict(mmp="oss.FCL.sf.os.commsfw/serialserver/serialportcsy/ECUART.MMP", rom="ecuart.csy", arm_only=True),
     "alarmshared": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appsupport/commonappservices/alarmserver/Group/AlarmShared.mmp"),
     "alarmclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appsupport/commonappservices/alarmserver/Group/AlarmClient.mmp"),
     # the alarm server itself: eiksrvs starts it once akncapserver is up (EIKSRVUI.CPP
