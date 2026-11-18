@@ -547,3 +547,17 @@ void ble_npl_task_yield(void)
 	}
 
 } // extern "C"
+
+// ---- compiler runtime ----
+
+extern "C" int __popcountdi2(unsigned long long aValue)
+	{
+	// __builtin_popcountll (NimBLE's bit masks) on x32: the x32 runtime has no libgcc popcount
+	int n = 0;
+	while (aValue)
+		{
+		aValue &= aValue - 1;
+		++n;
+		}
+	return n;
+	}
