@@ -43,7 +43,7 @@ namespace {
 // handed over / answered, bounded (the first KTraceMax lines per process) so a stuck loop cannot flood the log. The router
 // runs on the stack thread and the LE host's commands are queued from its own thread: a plain increment (a lost update only
 // shifts the bound by one).
-const TInt KTraceMax = 160;      // (an ECOM plug-in has no writable static data: the counter is the member iTrace)
+const TInt KTraceMax = 300;      // (an ECOM plug-in has no writable static data: the counter is the member iTrace)
 #define RTRC(...) do { if (iTrace < KTraceMax) { ++iTrace; RDebug::Printf(__VA_ARGS__); } } while (0)
 
 const TInt KPheBleRouterImplUid = 0xE7015E11;
@@ -466,6 +466,7 @@ void CPheBleRouter::Pump()
 		iQLock.Signal();
 		if (!acl)
 			break;
+		RTRC("pheblerouter: LE ACL -> controller handle %03x len %d", acl->Length() >= 2 ? Get16(*acl, 0) & 0x0FFF : 0, acl->Length());
 		SendFramed(iLeAclFrame, *acl, ETrue);
 		delete acl;
 		}
@@ -562,6 +563,7 @@ void CPheBleRouter::SplitCompletedPackets(const TDesC8& aEvent)
 		return;
 		}
 	TInt n = aEvent[2];
+	RTRC("pheblerouter: Number Of Completed Packets, %d handle(s), first %03x x%d", n, n ? Get16(aEvent, 3) & 0x0FFF : 0, n ? Get16(aEvent, 5) : 0);
 	if (aEvent.Length() < 3 + 4 * n)
 		{
 		ToStack(aEvent);
@@ -649,6 +651,7 @@ void CPheBleRouter::MhdoProcessAclData(const TDesC8& aData)
 	{
 	if (aData.Length() >= 2 && IsLe((TUint16)(Get16(aData, 0) & 0x0FFF)))
 		{
+		RTRC("pheblerouter: ACL from controller handle %03x len %d -> LE host", Get16(aData, 0) & 0x0FFF, aData.Length());
 		if (iHost)
 			iHost->PbhAcl(aData);
 		return;
@@ -678,6 +681,7 @@ void CPheBleRouter::UpdateStackChannels()
 
 void CPheBleRouter::MhcoChannelOpen(THCITransportChannel aChannels)
 	{
+	RTRC("pheblerouter: inner channel open %d (now %d)", (TInt)aChannels, (TInt)(iInnerOpen | aChannels));
 	iInnerOpen |= aChannels;
 	UpdateStackChannels();
 	Pump();
@@ -685,6 +689,7 @@ void CPheBleRouter::MhcoChannelOpen(THCITransportChannel aChannels)
 
 void CPheBleRouter::MhcoChannelClosed(THCITransportChannel aChannels)
 	{
+	RTRC("pheblerouter: inner channel closed %d", (TInt)aChannels);
 	iInnerOpen &= ~aChannels;
 	UpdateStackChannels();
 	}

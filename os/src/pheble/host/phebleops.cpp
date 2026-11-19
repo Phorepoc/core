@@ -106,7 +106,7 @@ void Event(TInt aType, TUint16 aConn, TInt aError, const TDesC8& aValue = KNullD
 
 int MtuDone(uint16_t aConn, const ble_gatt_error* aErr, uint16_t aMtu, void*)
 	{
-	(void)aErr;
+	OLOG("phebleops: mtu exchange done, handle %d status %d mtu %d", aConn, aErr ? aErr->status : -1, aMtu);
 	if (gConnectId && aConn == gConnecting)
 		{
 		TPckgBuf<TUint16> h(aConn);
@@ -142,6 +142,7 @@ TBool PeerBonded(uint16_t aConn)
 
 void ConnectFailed(TInt aError)
 	{
+	OLOG("phebleops: connect failed %d (handle %d, request %u)", aError, gConnecting, gConnectId);
 	if (gConnectId)
 		PheBleServerComplete(gConnectId, aError, 0, KNullDesC8);
 	gConnectId = 0;
@@ -520,6 +521,7 @@ void RunOp(TOpReq& r)
 		return;
 		}
 	case EPheBleDisconnect:
+		OLOG("phebleops: disconnect requested by the client, handle %d", r.iConn);
 		rc = ble_gap_terminate(r.iConn, BLE_ERR_REM_USER_CONN_TERM);
 		break;
 	case EPheBlePair:
