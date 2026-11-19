@@ -74,7 +74,13 @@ void RxHandler(ble_npl_event* aEv)
 		else if (buf)
 			ble_transport_free(buf);
 		else
-			HLOG("pheblehost: event 0x%02x dropped (no buffer)", code);
+			{
+			// a scan floods the discardable pool: say so for the first few and then every 256th (one line per advert filled the log)
+			static TInt dropped = 0;
+			if (dropped < 4 || (dropped & 0xFF) == 0)
+				HLOG("pheblehost: event 0x%02x dropped (no buffer), %d so far", code, dropped);
+			++dropped;
+			}
 		}
 	User::Free(p);
 	}
@@ -285,7 +291,12 @@ int GapEvent(struct ble_gap_event* aEvent, void*)
 		{
 		const ble_gap_disc_desc& d = aEvent->disc;
 		TPheBleAdvert adv;
-		Mem::FillZ(&adv, sizeof(adv));
+		// not FillZ(&adv, sizeof(adv)): iName is a TBuf8<31>, and zeroing its descriptor header makes its max length 0 -- the first
+		// advert WITH a name then died in iName.Copy with USER 23 (TDes8 overflow), killing the PheBleHost thread (boot 2813, the
+		// Pebble's name in the first report after "scan start rc 0").
+		Mem::FillZ(&adv.iAddr, sizeof(adv.iAddr));
+		Mem::FillZ(adv.iData, sizeof(adv.iData));
+		adv.iName.Zero();
 		Mem::Copy(adv.iAddr.iAddr, d.addr.val, 6);
 		adv.iAddr.iType = d.addr.type;
 		adv.iRssi = d.rssi;
