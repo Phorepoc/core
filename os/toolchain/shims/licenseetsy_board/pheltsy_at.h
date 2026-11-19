@@ -200,7 +200,7 @@ private:
 #else
 	enum { KInitSms = 0 };
 #endif
-	enum { KRat = 6 };
+	enum { KRat = 7 };
 	void RatDiag(const char* aWhy) { if (iRatLeft == 0) { iRatLeft = KRat; iRatWhy = aWhy; } }
 	enum { KDiag = 10 };	// (AT+QMBNCFG List/AutoSel are not sent: the phone reset right at that command on two boots in a row)
 	enum { KInit = 14 + KInitSms, KInitSimFirst = 10, KPoll = 13, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
@@ -412,10 +412,10 @@ private:
 		// the same read-only questions again during a call (RING, dial, answer, hang-up): which radio access technology the
 		// call runs on and whether IMS is up. AT+CEREG?/AT+CREG? carry <AcT> (Quectel AT manual 10.14 / 6.2, 7 = E-UTRAN),
 		// AT+QNWINFO the selected technology and band (6.9), AT+QENG="servingcell" the state and the cell (6.17), AT+CLCC the
-		// <mode> of each call (7.16); AT+QCFG="ims" is not in that manual (Quectel's QCFG document). Never AT+QMBNCFG.
+		// <mode> of each call (7.16); AT+QCFG="ims" and AT+CIREG? (3GPP 27.007 IMS registration, firmware-dependent) are not in that manual. Never AT+QMBNCFG.
 		if (iRatLeft > 0)
 			{
-			static const char* const KRatCmds[KRat] = { "AT+CEREG?", "AT+CREG?", "AT+QNWINFO", "AT+QENG=\"servingcell\"", "AT+QCFG=\"ims\"", "AT+CLCC" };
+			static const char* const KRatCmds[KRat] = { "AT+CEREG?", "AT+CREG?", "AT+QNWINFO", "AT+QENG=\"servingcell\"", "AT+QCFG=\"ims\"", "AT+CIREG?", "AT+CLCC" };
 			iKind = ECmdRat;
 			RDebug::Printf("[pheltsy] RAT-DIAG %d/%d (%s)", KRat - iRatLeft + 1, (TInt)KRat, iRatWhy);
 			Send(TPtrC8((const TUint8*)KRatCmds[KRat - iRatLeft]));
