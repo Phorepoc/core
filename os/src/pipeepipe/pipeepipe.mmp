@@ -1,0 +1,15 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// pipeepipe.mmp -- OURS: probe that a write to a pipe with no reader reports EPIPE (and raises SIGPIPE)
+TARGET			pipeepipe.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7015790
+CAPABILITY		None
+EPOCHEAPSIZE	0x10000 0x100000
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+OS_LAYER_LIBC_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			pipeepipe.cpp
+STATICLIBRARY	libcrt0.lib
+LIBRARY			libc.lib euser.lib
