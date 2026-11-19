@@ -32,6 +32,7 @@
 #ifdef PHE_NO_FORK
 #include <spawn.h>
 static pid_t phe_spawn_cmd(LinkList args, int flags, int in, int out);
+static int phe_spawn_status = 127;	/* the exit status a failed spawn stands for (126 / 127) */
 int phe_spawn(pid_t *pid, const char *path, char *const argv[], char *const envp[],
 	      posix_spawn_file_actions_t *fa, int in, int out);	/* port/phe_spawn.c */
 void phe_debug(const char *fmt, int a, int b);	/* port/phe_debug.cpp */
@@ -488,10 +489,14 @@ phe_spawn_argv(char **argv, int in, int out)
     r = phe_spawn(&pid, argv[0], argv, environ, &fa, in, out);	/* port/phe_spawn.c: fds 0-2, quoting */
     posix_spawn_file_actions_destroy(&fa);
     if (r) {
+	/* what zexecve() does in the forked child: say why, then exit 126 (EACCES/ENOEXEC) or 127. The message is a
+	 * warning, not zerr(): the error happens in the child there, so the parent's errflag stays clear and the rest of
+	 * the input line (`nosuchprog; print $?`) still runs. */
 	if (r == ENOENT)
-	    zerr("command not found: %s", argv[0]);
+	    zwarn("command not found: %s", argv[0]);
 	else
-	    zerr("%s: %e", argv[0], r);
+	    zwarn("%e: %s", r, argv[0]);
+	phe_spawn_status = (r == EACCES || r == ENOEXEC) ? 126 : 127;
 	return -1;
     }
     return pid;
@@ -4364,7 +4369,7 @@ execcmd_exec(Estate state, Execcmd_params eparams,
 		if (pid > 0)
 		    addproc(pid, text, 0, &bgtime, -1, -1);
 		else
-		    lastval = 127;
+		    lastval = phe_spawn_status;
 		goto err;
 	    }
 #endif

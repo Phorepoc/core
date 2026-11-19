@@ -1,12 +1,13 @@
 --- a/Src/exec.c
 +++ b/Src/exec.c
-@@ -29,6 +29,14 @@
+@@ -29,6 +29,15 @@
  
  #include "zsh.mdh"
  #include "exec.pro"
 +#ifdef PHE_NO_FORK
 +#include <spawn.h>
 +static pid_t phe_spawn_cmd(LinkList args, int flags, int in, int out);
++static int phe_spawn_status = 127;	/* the exit status a failed spawn stands for (126 / 127) */
 +int phe_spawn(pid_t *pid, const char *path, char *const argv[], char *const envp[],
 +	      posix_spawn_file_actions_t *fa, int in, int out);	/* port/phe_spawn.c */
 +void phe_debug(const char *fmt, int a, int b);	/* port/phe_debug.cpp */
@@ -15,7 +16,7 @@
  
  /* Flags for last argument of addvars */
  
-@@ -460,6 +468,77 @@
+@@ -460,6 +469,81 @@
  
  #define POUNDBANGLIMIT 128
  
@@ -39,10 +40,14 @@
 +    r = phe_spawn(&pid, argv[0], argv, environ, &fa, in, out);	/* port/phe_spawn.c: fds 0-2, quoting */
 +    posix_spawn_file_actions_destroy(&fa);
 +    if (r) {
++	/* what zexecve() does in the forked child: say why, then exit 126 (EACCES/ENOEXEC) or 127. The message is a
++	 * warning, not zerr(): the error happens in the child there, so the parent's errflag stays clear and the rest of
++	 * the input line (`nosuchprog; print $?`) still runs. */
 +	if (r == ENOENT)
-+	    zerr("command not found: %s", argv[0]);
++	    zwarn("command not found: %s", argv[0]);
 +	else
-+	    zerr("%s: %e", argv[0], r);
++	    zwarn("%e: %s", r, argv[0]);
++	phe_spawn_status = (r == EACCES || r == ENOEXEC) ? 126 : 127;
 +	return -1;
 +    }
 +    return pid;
@@ -93,7 +98,7 @@
  /**/
  static int
  zexecve(char *pth, char **argv, char **newenvp)
-@@ -2892,6 +2971,9 @@
+@@ -2892,6 +2976,9 @@
      int save[10];
      int fil, dfil, is_cursh = 0, do_exec = 0, redir_err = 0, i;
      int nullexec = 0, magic_assign = 0, forked = 0, old_lastval;
@@ -103,7 +108,7 @@
      int is_shfunc = 0, is_builtin = 0, is_exec = 0, use_defpath = 0;
      /* Various flags to the command. */
      int cflags = 0, orig_cflags = 0, checked = 0, oautocont = -1;
-@@ -2971,6 +3053,27 @@
+@@ -2971,6 +3058,27 @@
  	 * a bit further before we make the decision.
  	 */
  	text = getjobtext(state->prog, eparams->beg);
@@ -131,7 +136,7 @@
  	switch (execcmd_fork(state, how, type, varspc, &filelist,
  			     text, oautocont, close_if_forked)) {
  	case -1:
-@@ -3620,6 +3723,16 @@
+@@ -3620,6 +3728,16 @@
       **************************************************************************/
  
      if (!forked) {
@@ -148,7 +153,7 @@
  	if (!do_exec &&
  	    (((is_builtin || is_shfunc) && output) ||
  	     (!is_cursh && (last1 != 1 || nsigtrapped || havefiles() ||
-@@ -4241,6 +4354,20 @@
+@@ -4241,6 +4359,20 @@
  		restore_params(restorelist, removelist);
  
  	} else {
@@ -162,14 +167,14 @@
 +		if (pid > 0)
 +		    addproc(pid, text, 0, &bgtime, -1, -1);
 +		else
-+		    lastval = 127;
++		    lastval = phe_spawn_status;
 +		goto err;
 +	    }
 +#endif
  	    if (!subsh) {
  	        /* for either implicit or explicit "exec", decrease $SHLVL
  		 * as we're now done as a shell */
-@@ -4721,6 +4848,32 @@
+@@ -4721,6 +4853,32 @@
      }
      child_block();
      cmdoutval = 0;
