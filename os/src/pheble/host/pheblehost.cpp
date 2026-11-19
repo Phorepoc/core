@@ -37,6 +37,7 @@ TBool gStarted = EFalse;
 TBool gSynced = EFalse;
 RLibrary gPin;
 RMutex gRouterLock;          // gRouter changes on the stack thread, NimBLE's task reads it
+ble_npl_eventq gRxQ;         // the router's events and ACL, run by RxThread (the controller's context, see RxThread)
 
 // ---------------------------------------------------------------- router -> NimBLE task
 
@@ -87,7 +88,22 @@ void PostRx(const TDesC8& aData, TBool aAcl)
 	p->iAcl = aAcl;
 	p->iLen = aData.Length();
 	memcpy(p->iData, aData.Ptr(), aData.Length());
-	ble_npl_eventq_put(nimble_port_get_dflt_eventq(), &p->iEv);
+	ble_npl_eventq_put(&gRxQ, &p->iEv);
+	}
+
+// The controller's side of NimBLE's transport has its own context in every NimBLE port (a controller task, a UART rx task): the
+// host blocks inside ble_hs_hci_cmd_tx on a semaphore until the Command Complete arrives, and the Command Complete is
+// acknowledged by ble_transport_to_hs_evt called FROM THE CONTROLLER'S CONTEXT. Posting the router's events to the host's own
+// default queue (as before) made the host wait for an event that only the host's thread could run: every sync sat out the 2 s
+// HCI timeout and NimBLE reset with reason 19 (BLE_HS_ETIMEOUT_HCI) for ever (boot 2812 trace: HCI_Reset answered by the router
+// 2 lines after it was queued, no ack seen). The events now run on this thread.
+TInt RxThread(TAny*)
+	{
+	CTrapCleanup* cleanup = CTrapCleanup::New();
+	for (;;)
+		ble_npl_eventq_run(&gRxQ);
+	delete cleanup;       // (not reached)
+	return KErrNone;
 	}
 
 ble_npl_event gStartEv;
@@ -158,6 +174,14 @@ TInt StartHost()
 	PheBleStoreInit();       // the bond store (a file in the private dir)
 	ble_npl_event_init(&gStartEv, StartHandler, NULL);
 	ble_npl_event_init(&gStopEv, StopHandler, NULL);
+
+	ble_npl_eventq_init(&gRxQ);
+	RThread rx;
+	err = rx.Create(_L("PheBleRx"), RxThread, 0x4000, NULL, NULL, EOwnerProcess);
+	if (err != KErrNone)
+		return err;
+	rx.Resume();
+	rx.Close();
 
 	RThread t;
 	err = t.Create(_L("PheBleHost"), HostThread, 0x8000, NULL, NULL, EOwnerProcess);
