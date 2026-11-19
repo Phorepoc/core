@@ -7,3 +7,5 @@ Licences: our own code is EPL-2.0 with GNU General Public License, version 2 or 
 Corporation and/or its subsidiary(-ies) and the Symbian Foundation. Files derived from it
 keep Nokia's copyright notice (or "Portions Copyright (c) Nokia Corporation") alongside ours. Third-party files keep
 their own copyright and licence, as their headers say.
+
+Tabler Icons (os/data/icons/status/tabler): MIT, Copyright (c) 2020-2026 Pawel Kuna; source https://github.com/tabler/tabler-icons, tag v3.52.0; licence text in os/data/icons/status/tabler/LICENSE.
