@@ -10,4 +10,6 @@ The status pane's indicator icons (`qgn_stat_*` in avkon.rss), drawn in a 23-26 
   conventions by `os/tools/statusicons/gen.py` (original artwork).
 
 pdk's `tools/mif_gen.py` searches this directory first. Tabler draws with `currentColor` and a 2 px stroke on the 24 grid; the build stages
-it as black and sets the stroke to `STAT_STROKE` (2.5, about 1.5 px in the cell: 2 gives a 1.25 px line that reads thin at 15 px).
+it as black, rewrites every path to absolute M/L/C/Z (the NVG encoder drops a path with an arc command, which is every rounded corner of
+the set: `tools/svgnorm.py`), crops the 24 grid to its 21-unit live area (less padding, bigger glyph) and sets the stroke to `STAT_STROKE`
+(2.6 = 1.9 px in the 15 px cell).
