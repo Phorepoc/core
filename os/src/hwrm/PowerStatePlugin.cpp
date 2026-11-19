@@ -3,7 +3,7 @@
 
 // OURS (2026-10-08): HWRM's power-state plug-in, in place of the adapt.stubs one
 // (systemswstubs/hwrmstubplugins/src/PowerStatePlugin.cpp: never notifies, so Avkon's battery pane stayed empty).
-// Same class and header (proxy.cpp creates it). Every 10 s it reads the battery from the board's power HAL
+// Same class and header (proxy.cpp creates it). Every second it reads the battery from the board's power HAL
 // (phhal.h EPhHalPowerBattery: fuel gauge %, charging, mV, external power) and reports what changed
 // through MHWRMPowerStatePluginCallback -> HWRMServer publishes KPSUidHWRMPowerState -> SysAp's UpdateBatteryBarsL
 // -> CAknBatteryNotify (the status pane). A board without a battery answers KErrNotSupported: nothing is reported,
@@ -16,7 +16,10 @@
 #include "PowerStatePlugin.h"
 #include "../phorepoc/inc/phhal.h"
 
-const TInt KPollUs = 10000000;
+// The battery is read every second (a HAL call that copies the kernel's last reading: cheap); a change of the charger shows
+// within a second. The guard ping / boot-guard timeout / process checks keep their old 10 s cadence (KGuardEvery polls).
+const TInt KPollUs = 1000000;
+const TInt KGuardEvery = 10;
 
 // the developer menu's "Boot guard timeout" (CenRep 0xE7015A01 key 3, src/phedevmenu/phedevmenu.h) -> the kernel's boot guard.
 // No repository / no key (or a board without the HAL function) = nothing is sent: the kernel keeps its built-in default.
@@ -97,13 +100,20 @@ TInt CPowerStatePlugin::Callback( TAny* aPtr )
     // exist and this server's scheduler still runs (this callback). No ping within 180 s of boot, or none for 60 s later
     // = the watchdog is left to fire -> golden slot A.
     // (the repository may not be up yet in the first seconds: ask again for the first 5 minutes, i.e. every boot's whole guard window)
-    if ( self->iKey < 30 )
+    // This callback runs every KPollUs (1 s: the charging indicator follows the cable within a second); the guard work below is
+    // the old 10 s cadence, iKey counts the callbacks.
+    const TBool guardTick = ( self->iKey % KGuardEvery ) == 0;
+    if ( guardTick && self->iKey < 30 * KGuardEvery )
         SendGuardTimeout();
-    const TBool ws = ProcessExists( _L( "\\ewsrv.exe" ) ), hs = ProcessExists( _L( "\\homescreen.exe" ) );
-    if ( ws && hs )
-        UserSvr::HalFunction( EHalGroupPower, EPhHalPowerGuardPing, 0, 0 );
-    if ( ++self->iKey <= 20 )
-        RDebug::Printf( "PH: guard ping check wserv=%d homescreen=%d", ws, hs );
+    if ( guardTick )
+        {
+        const TBool ws = ProcessExists( _L( "\\ewsrv.exe" ) ), hs = ProcessExists( _L( "\\homescreen.exe" ) );
+        if ( ws && hs )
+            UserSvr::HalFunction( EHalGroupPower, EPhHalPowerGuardPing, 0, 0 );
+        if ( self->iKey <= 20 * KGuardEvery )
+            RDebug::Printf( "PH: guard ping check wserv=%d homescreen=%d", ws, hs );
+        }
+    ++self->iKey;
     TInt b[4] = { -1, 0, 0, 0 };
     TPckg<TInt[4]> pk( b );
     const TInt r = UserSvr::HalFunction( EHalGroupPower, EPhHalPowerBattery, &pk, 0 );
