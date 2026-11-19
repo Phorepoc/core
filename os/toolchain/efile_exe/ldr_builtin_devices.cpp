@@ -37,6 +37,7 @@ static TBool DeviceInstalled(const TDesC8& aFileName, TBool aPhysical)
 		{ "wlanldd", "wlan" },					// WLanLogicalDevice.cpp: LDD_NAME "wlan" (the REAL UMAC LDD, built into ekern)
 		{ "wlanpdd", "wlan" },					// a64wlanpdd.cpp: "wlan.phys" (OURS, the WHA PDD over the rtw88 chip core)
 		{ "ecamerasc", "camerasc" },			// cameraldd.cpp: KDevCameraScName "CameraSc" (its PDD file "camerasc.pdd" matches "CameraSc.*" as is)
+		{ "pipelib", "symbianpipe" },			// dpipe.cpp: DPipeDevice::Install -> RPipe::Name() "SymbianPipe" (euser RPipe::Create loads "PIPELIB"; Open C pipe())
 		};
 	for (TUint i = 0; i < sizeof(KAliases) / sizeof(KAliases[0]); ++i)
 		if (name.CompareF(TPtrC8((const TUint8*)KAliases[i].iFile)) == 0)
