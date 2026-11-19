@@ -202,7 +202,7 @@ private:
 #endif
 	enum { KRat = 6 };
 	void RatDiag(const char* aWhy) { if (iRatLeft == 0) { iRatLeft = KRat; iRatWhy = aWhy; } }
-	enum { KDiag = 6 };	// (AT+QMBNCFG List/AutoSel are not sent: the phone reset right at that command on two boots in a row)
+	enum { KDiag = 10 };	// (AT+QMBNCFG List/AutoSel are not sent: the phone reset right at that command on two boots in a row)
 	enum { KInit = 14 + KInitSms, KInitSimFirst = 10, KPoll = 13, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
 		{
@@ -404,7 +404,7 @@ private:
 		// two are repeated, with AT+CEER (why the last call or registration failed), when the CS registration is denied.
 		if (iReady && iDiag < KDiag)
 			{
-			static const char* const KDiagCmds[KDiag] = { "AT+CSCA?", "AT+QCFG=\"ims\"", "AT+QCFG=\"volte_disable\"", "AT+CVMOD?", "AT+QNWINFO", "AT+QENG=\"servingcell\"" };
+			static const char* const KDiagCmds[KDiag] = { "AT+CSCA?", "AT+QCFG=\"ims\"", "AT+QCFG=\"volte_disable\"", "AT+CVMOD?", "AT+QCFG=\"usbnet\"", "AT+CGDCONT?", "AT+CGACT?", "AT+CGPADDR", "AT+QNWINFO", "AT+QENG=\"servingcell\"" };
 			iKind = ECmdDiag;
 			Send(TPtrC8((const TUint8*)KDiagCmds[iDiag]));
 			return;
