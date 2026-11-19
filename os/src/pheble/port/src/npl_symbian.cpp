@@ -138,6 +138,16 @@ int phe_npl_init(void)
 
 void phe_nimble_vlog(int lvl, const char *fmt, va_list args)
 	{
+	// bounded: at DEBUG level a stuck host would repeat its lines for ever (the first KNimbleLogMax lines are kept, then one note)
+	static int count = 0;
+	const int KNimbleLogMax = 300;
+	if (count > KNimbleLogMax)
+		return;
+	if (count++ == KNimbleLogMax)
+		{
+		RDebug::Printf("nimble[9] log capped after %d lines", KNimbleLogMax);
+		return;
+		}
 	char buf[200];
 	vsnprintf(buf, sizeof(buf), fmt, args);
 	TPtrC8 p((const TUint8*)buf);

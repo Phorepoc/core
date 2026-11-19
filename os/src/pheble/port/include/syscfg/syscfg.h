@@ -748,7 +748,7 @@
 #endif
 
 #ifndef MYNEWT_VAL_BLE_HS_LOG_LVL
-#define MYNEWT_VAL_BLE_HS_LOG_LVL (2)
+#define MYNEWT_VAL_BLE_HS_LOG_LVL (0)      /* DEBUG while the LE host is brought up (2026-11-19); phe_nimble_vlog bounds the output. 2 = WARN */
 #endif
 
 #ifndef MYNEWT_VAL_BLE_HS_LOG_MOD
