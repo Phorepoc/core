@@ -306,12 +306,86 @@ static void WaitLauncherExit(TRequestStatus& aSt)
 	t.Close();
 	}
 
+// Background services of installed packages: every esourcepheservices*.txt on any drive lists processes to start at boot, before the shell.
+// Plain text, one "start=<exe>" per line, "!:" in a path = the drive the file is on, "#" starts a comment; the exes start fire-and-forget
+// (a service that needs another waits for it itself). A package installs one file and removes it again with the package; a missing exe is
+// logged and skipped, nothing here can stop the boot.
+_LIT(KServicesDir, "\\resource\\phe\\services\\");
+
+static void StartServiceFile(RFs& aFs, TChar aDrive, const TDesC& aPath)
+	{
+	RFile f;
+	if (f.Open(aFs, aPath, EFileRead | EFileShareReadersOnly) != KErrNone)
+		return;
+	TInt size = 0;
+	f.Size(size);
+	HBufC8* buf = HBufC8::New(size);
+	if (buf)
+		{
+		TPtr8 bp = buf->Des();
+		if (f.Read(bp) == KErrNone)
+			{
+			TPtrC8 rest(*buf);
+			while (rest.Length())
+				{
+				TInt nl = rest.Locate('\n');
+				TPtrC8 line = nl < 0 ? rest : rest.Left(nl);
+				rest.Set(nl < 0 ? TPtrC8() : rest.Mid(nl + 1));
+				TBuf<KMaxFileName + 8> l;
+				l.Copy(line.Left(l.MaxLength()));
+				l.Trim();
+				_LIT(KStart, "start=");
+				if (l.Left(KStart().Length()).CompareF(KStart) != 0)
+					continue;
+				TFileName exe(l.Mid(KStart().Length()));
+				exe.Trim();
+				if (exe.Length() > 2 && exe[0] == '!' && exe[1] == ':')
+					{
+					exe[0] = (TText)aDrive;
+					}
+				RDebug::Print(_L("PH: [shellsel] service from %S:"), &aPath);
+				StartFireAndForget(exe);
+				}
+			}
+		delete buf;
+		}
+	f.Close();
+	}
+
+static void StartServices(RFs& aFs)
+	{
+	TDriveList drives;
+	if (aFs.DriveList(drives) != KErrNone)
+		return;
+	for (TInt d = 0; d < KMaxDrives; d++)
+		{
+		if (!drives[d])
+			continue;
+		TChar letter;
+		if (RFs::DriveToChar(d, letter) != KErrNone)
+			continue;
+		TFileName pattern;
+		pattern.Format(_L("%c:%S*.txt"), (TUint)letter, &KServicesDir);
+		CDir* dir = NULL;
+		if (aFs.GetDir(pattern, KEntryAttNormal, ESortByName, dir) != KErrNone || !dir)
+			continue;
+		for (TInt i = 0; i < dir->Count(); i++)
+			{
+			TFileName path;
+			path.Format(_L("%c:%S%S"), (TUint)letter, &KServicesDir, &(*dir)[i].iName);
+			StartServiceFile(aFs, letter, path);
+			}
+		delete dir;
+		}
+	}
+
 static TInt RunShellL()
 	{
 	ApplyOrientation();
 	RFs fs;
 	User::LeaveIfError(fs.Connect());
 	CleanupClosePushL(fs);
+	StartServices(fs);
 	RPheShells shells;
 	CleanupClosePushL(shells);
 	PheListShellsL(fs, shells);
