@@ -306,7 +306,7 @@ static void WaitLauncherExit(TRequestStatus& aSt)
 	t.Close();
 	}
 
-// Background services of installed packages: every esourcepheservices*.txt on any drive lists processes to start at boot, before the shell.
+// Background services of installed packages: every file "resource/phe/services/*.txt" on any drive lists processes to start at boot, before the shell.
 // Plain text, one "start=<exe>" per line, "!:" in a path = the drive the file is on, "#" starts a comment; the exes start fire-and-forget
 // (a service that needs another waits for it itself). A package installs one file and removes it again with the package; a missing exe is
 // logged and skipped, nothing here can stop the boot.
