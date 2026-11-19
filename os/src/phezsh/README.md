@@ -58,3 +58,10 @@ libc), `zsh/zpty`, `zsh/clone`, `zsh/net/socket`, `zsh/db/gdbm`, `zsh/pcre`.
 | 465 | `zexecve()` | `execve` in the forked child or for `exec` / the last command | spawn + wait + `_exit(status)` |
 
 `Modules/clone.c` and `Modules/zpty.c` fork too; both modules are left out.
+
+## Known gaps
+
+- **Pipeline status with a missing last stage.** `print x | nosuchprog; print $?` gives the first stage's status (1 after its
+  write error), real zsh gives 127: a spawn that fails adds no process to the job, so the job's status comes from the stage that
+  did run. A lone `nosuchprog; print $?` is right (127, and the rest of the line runs). Fix direction: keep the spawn status and
+  apply it after the job is waited for (`update_job`).
