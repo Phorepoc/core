@@ -535,7 +535,7 @@ COMPONENTS = {
                   drop=["aknecs.cpp", "AknAppUi.cpp", "AknAdaptiveSearchGrid.cpp", "AknDef.cpp", "akndiscreetpopupcontrol.cpp"],
                   extra=["toolchain/shims/stems/AknEcs.cpp", "src/phorepoc/avkon_trace/AknAppUi.cpp", "src/phorepoc/avkon_layout/AknAdaptiveSearchGrid.cpp",
                          "src/phorepoc/avkon_later/AknTasTimestamp.cpp", "toolchain/shims/avkon_idle/AknDef.cpp",
-                         "src/phorepoc/avkon_fix/akndiscreetpopupcontrol.cpp"],
+                         "src/phorepoc/avkon_fix/akndiscreetpopupcontrol.cpp", "src/phorepoc/avkon_fix/aknlistsinst.cpp"],
                   **{"def": extended_def("symbian-rcl3/oss.FCL.sf.mw.classicui/uifw/AvKon/EABI/AVKONU.DEF",
                                          "src/phorepoc/avkon_later/eabi/avkonu_later.def", "avkonu.def")},
                   import_typeinfo=True),   # the AppUi typeinfo chain: CEikAppUi's real typeinfo from eikcore (see eikcore)
