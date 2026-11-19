@@ -39,6 +39,13 @@
 
 namespace {
 
+// Command trace (2026-11-19, NimBLE "reset, reason 19" = an LE-host HCI command never acknowledged): one line per command
+// handed over / answered, bounded (the first KTraceMax lines per process) so a stuck loop cannot flood the log. The router
+// runs on the stack thread and the LE host's commands are queued from its own thread: a plain increment (a lost update only
+// shifts the bound by one).
+const TInt KTraceMax = 160;      // (an ECOM plug-in has no writable static data: the counter is the member iTrace)
+#define RTRC(...) do { if (iTrace < KTraceMax) { ++iTrace; RDebug::Printf(__VA_ARGS__); } } while (0)
+
 const TInt KPheBleRouterImplUid = 0xE7015E11;
 
 _LIT(KRouterIni, "z:\\private\\101f7989\\bluetooth\\pheblerouter.ini");
@@ -160,6 +167,7 @@ private:
 	TInt iAclReserve;                     // buffers kept for LE when the controller shares its ACL buffers
 	TUint16 iStackAclLen;
 	TBool iReady;
+	TInt iTrace;                          // command trace lines printed (RTRC)
 	};
 
 void CKick::RunL()
@@ -168,7 +176,7 @@ void CKick::RunL()
 	}
 
 CPheBleRouter::CPheBleRouter()
-	: iInFlightOwner(EOwnerNone), iLastOwner(EOwnerNone), iAclReserve(2)
+	: iInFlightOwner(EOwnerNone), iLastOwner(EOwnerNone), iAclReserve(2), iTrace(0)
 	{
 	}
 
@@ -299,10 +307,12 @@ TInt CPheBleRouter::MhiWriteCommand(const TDesC8& aData)
 		}
 	if (iCmdInFlight || iHeldStackCmd)
 		{
+		RTRC("pheblerouter: stack cmd %04x HELD (inflight %d op %04x)", opcode, iCmdInFlight, iInFlightOpcode);
 		iHeldStackCmd = &aData;
 		UpdateStackChannels();
 		return KErrNone;
 		}
+	RTRC("pheblerouter: stack cmd %04x sent", opcode);
 	iCmdInFlight = ETrue;
 	iInFlightOpcode = opcode;
 	iInFlightOwner = iLastOwner = EOwnerStack;
@@ -347,6 +357,7 @@ void CPheBleRouter::Queue(RPointerArray<HBufC8>& aQueue, const TDesC8& aPacket)
 
 void CPheBleRouter::PbsCommand(const TDesC8& aCommand)
 	{
+	RTRC("pheblerouter: LE host cmd %04x len %d queued", aCommand.Length() >= 2 ? Get16(aCommand, 0) : 0, aCommand.Length());
 	Queue(iLeCmds, aCommand);
 	}
 
@@ -401,6 +412,8 @@ void CPheBleRouter::Pump()
 		HBufC8* le = iLeCmds.Count() ? iLeCmds[0] : NULL;
 		iQLock.Signal();
 		TBool leOk = le && iReady && (iInnerOpen & KHCITransportCommandChannel);
+		if (le && !leOk)
+			RTRC("pheblerouter: LE cmd %04x waits: ready %d innerOpen %d", le->Length() >= 2 ? Get16(*le, 0) : 0, iReady, (TInt)iInnerOpen);
 		TBool takeLe = leOk && (!iHeldStackCmd || iLastOwner == EOwnerStack);
 		if (!takeLe && iHeldStackCmd)
 			{
@@ -425,10 +438,12 @@ void CPheBleRouter::Pump()
 		if (opcode == KOpReset || opcode == KOpSetEventMask)
 			{
 			// the stack owns the controller's reset and main event mask (the LE bits are in the stack's mask)
+			RTRC("pheblerouter: LE cmd %04x answered by the router", opcode);
 			FakeComplete(opcode);
 			}
 		else
 			{
+			RTRC("pheblerouter: LE cmd %04x -> controller (len %d)", opcode, le->Length());
 			iCmdInFlight = ETrue;
 			iInFlightOpcode = opcode;
 			iInFlightOwner = iLastOwner = EOwnerLe;
@@ -468,6 +483,8 @@ void CPheBleRouter::CommandDone(const TDesC8& aEvent, TUint16 aOpcode)
 		}
 	if (aOpcode == 0)
 		owner = EOwnerStack;     // a NOP credit update: the stack's command queue counts credits
+	RTRC("pheblerouter: %s op %04x -> %s (inflight %d op %04x)", aEvent[0] == 0x0E ? "CC" : "CS", aOpcode,
+		owner == EOwnerLe ? "LE host" : "stack", iCmdInFlight, iInFlightOpcode);
 
 	if (owner == EOwnerLe)
 		{
@@ -674,6 +691,7 @@ void CPheBleRouter::MhcoChannelClosed(THCITransportChannel aChannels)
 
 void CPheBleRouter::ControllerGone()
 	{
+	RTRC("pheblerouter: controller gone (ready %d inflight %d)", iReady, iCmdInFlight);
 	if (iReady && iHost)
 		iHost->PbhControllerReady(EFalse);
 	iReady = EFalse;
