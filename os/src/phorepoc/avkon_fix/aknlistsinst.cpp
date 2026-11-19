@@ -18,3 +18,7 @@ EXPORT_C AknListBoxLinesTemplate<T>::AknListBoxLinesTemplate(TInt /*aResourceId*
 template EXPORT_C AknListBoxLinesTemplate<CAknColumnListBox>::AknListBoxLinesTemplate(TInt);
 template EXPORT_C AknListBoxLinesTemplate<CEikSettingsListBox>::AknListBoxLinesTemplate(TInt);
 template EXPORT_C AknListBoxLinesTemplate<CEikFormattedCellListBox>::AknListBoxLinesTemplate(TInt);
+
+// The vtable of AknPopupListEmpty<CEikFormattedCellListBox> (ordinal 3670; its Draw and type info were already exported):
+// the template is only ever a base of the popup list boxes, GCC emitted the vtable (COMDAT) nowhere that avkon exports it from.
+template class AknPopupListEmpty<CEikFormattedCellListBox>;
