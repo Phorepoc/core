@@ -86,7 +86,7 @@ public:
 	const TDesC8& Imei() const { return iImei; }
 	TBool Ready() const { return iReady; }
 
-	enum TCmdKind { ECmdPoll, ECmdCode, ECmdDial, ECmdAnswer, ECmdHangUp, ECmdClcc, ECmdCmgs, ECmdCmgr, ECmdCmgd, ECmdDiag, ECmdCeer };
+	enum TCmdKind { ECmdPoll, ECmdCode, ECmdDial, ECmdAnswer, ECmdHangUp, ECmdClcc, ECmdCmgs, ECmdCmgr, ECmdCmgd, ECmdDiag, ECmdCeer, ECmdRat };
 
 	// PIN1 (aPuk empty) or PUK1 + new PIN: queued ahead of the poll; the result comes back through PheCodeResult
 	TInt EnterCode(const TDesC& aCode, const TDesC& aPuk)
@@ -200,6 +200,8 @@ private:
 #else
 	enum { KInitSms = 0 };
 #endif
+	enum { KRat = 6 };
+	void RatDiag(const char* aWhy) { if (iRatLeft == 0) { iRatLeft = KRat; iRatWhy = aWhy; } }
 	enum { KDiag = 6 };	// (AT+QMBNCFG List/AutoSel are not sent: the phone reset right at that command on two boots in a row)
 	enum { KInit = 14 + KInitSms, KInitSimFirst = 10, KPoll = 13, KQ = 6, KPheUnitPower = 3, KPheUnitAt = 10 };
 	TInt Queue(TCmdKind aKind, const TDesC8& aCmd)
@@ -407,6 +409,18 @@ private:
 			Send(TPtrC8((const TUint8*)KDiagCmds[iDiag]));
 			return;
 			}
+		// the same read-only questions again during a call (RING, dial, answer, hang-up): which radio access technology the
+		// call runs on and whether IMS is up. AT+CEREG?/AT+CREG? carry <AcT> (Quectel AT manual 10.14 / 6.2, 7 = E-UTRAN),
+		// AT+QNWINFO the selected technology and band (6.9), AT+QENG="servingcell" the state and the cell (6.17), AT+CLCC the
+		// <mode> of each call (7.16); AT+QCFG="ims" is not in that manual (Quectel's QCFG document). Never AT+QMBNCFG.
+		if (iRatLeft > 0)
+			{
+			static const char* const KRatCmds[KRat] = { "AT+CEREG?", "AT+CREG?", "AT+QNWINFO", "AT+QENG=\"servingcell\"", "AT+QCFG=\"ims\"", "AT+CLCC" };
+			iKind = ECmdRat;
+			RDebug::Printf("[pheltsy] RAT-DIAG %d/%d (%s)", KRat - iRatLeft + 1, (TInt)KRat, iRatWhy);
+			Send(TPtrC8((const TUint8*)KRatCmds[KRat - iRatLeft]));
+			return;
+			}
 		if (iWantCeer)
 			{
 			iWantCeer = EFalse;
@@ -443,6 +457,9 @@ private:
 			case ECmdAnswer:
 			case ECmdHangUp:
 				RDebug::Printf("[pheltsy] %S -> %s", &iCmd, aOk ? "OK" : "failed");
+				RatDiag(kind == ECmdDial ? "dial" : kind == ECmdAnswer ? "answer" : "hang-up");
+				if (kind == ECmdDial && !aOk)
+					RDebug::Printf("[pheltsy] dial failed: with no 2G/3G fallback the call needs IMS registered on LTE; see the RAT-DIAG answers and +CEER");
 				iObs.PheCallCmdResult(kind, aOk ? KErrNone : KErrGeneral);
 				iInCall = ETrue;					// let AT+CLCC say what is left
 				iLastClcc = iTicks - 10;
@@ -480,6 +497,10 @@ private:
 				++iDiag;							// whatever the answer (a command this firmware lacks answers ERROR): next one
 				return;
 			case ECmdCeer:
+				return;
+			case ECmdRat:
+				if (iRatLeft > 0)
+					--iRatLeft;						// whatever the answer: next one
 				return;
 			default:
 				break;
@@ -602,6 +623,7 @@ private:
 				iInCall = ETrue;
 				iLastClcc = iTicks - 10;
 				iWantCeer = ETrue;				// and ask why (AT+CEER: the release cause)
+				RatDiag("call ended or failed");
 				iNextPoll = iTicks;
 				}
 			if (iCmdActive) CommandDone(EFalse);
@@ -610,7 +632,7 @@ private:
 		if (aLine == _L8("RING") || aLine.Find(_L8("+CRING: ")) == 0)
 			{
 			TraceBurst();
-			if (!iInCall) { iInCall = ETrue; iLastClcc = iTicks - 10; }
+			if (!iInCall) { iInCall = ETrue; iLastClcc = iTicks - 10; RatDiag("incoming call"); }
 			return;
 			}
 		if (aLine.Find(_L8("+CLCC: ")) == 0)
@@ -633,6 +655,26 @@ private:
 			{
 			iPduNext = ETrue;
 			iCmgrIndex = iCmd.Length() > 8 ? Num(iCmd.Mid(8)) : iCmgrPendingIndex;	// the index of the AT+CMGR=<n> in flight
+			return;
+			}
+		if (aLine.Find(_L8("+QCFG: \"ims\",")) == 0)	// +QCFG: "ims",<mode>,<state> (Quectel QCFG document; the field meanings: [verify] on the phone)
+			{
+			TPtrC8 f[3];
+			if (Fields(aLine.Mid(13), f, 3) >= 2)
+				{
+				iImsMode = Num(f[0]);
+				iImsState = Num(f[1]);
+				// the seed of the versioned TPheImsRegistrationV1 of the Android-telephony layering (research/android-telephony-audit.md):
+				// state + rat; today only logged, one line per answer, for the call tests
+				RDebug::Printf("[pheltsy] IMS mode %d state %d, EPS act %d, QNWINFO act %S", iImsMode, iImsState, iEpsAct, &iNwInfoAct);
+				}
+			return;
+			}
+		if (aLine.Find(_L8("+QNWINFO: ")) == 0)	// +QNWINFO: "<Act>",<oper>,"<band>",<channel> (manual 6.9)
+			{
+			TPtrC8 f[2];
+			if (Fields(aLine.Mid(10), f, 1) >= 1)
+				iNwInfoAct.Copy(f[0].Left(iNwInfoAct.MaxLength()));
 			return;
 			}
 		if (aLine.Find(_L8("+CSCA: ")) == 0)	// +CSCA: "<sca>",<tosca>
@@ -739,6 +781,8 @@ private:
 		const TInt stat = Num(f[base]);
 		const TInt prevStat = iDomReg[aDomain];
 		iDomReg[aDomain] = stat;
+		if (aDomain == KDomEps && n > base + 3)
+			iEpsAct = Num(f[base + 3]);
 		if (prevStat != stat)
 			TraceBurst();							// the board samples its power path for a few seconds around a registration change
 		if (aDomain == KDomCs && (stat == 3 || stat == 0))
@@ -905,6 +949,10 @@ private:
 	TCmdKind iKind;
 	TBool iInCall, iClccMt, iPduSent, iPduNext, iAudioReady, iCdsNext, iWantCeer;
 	TInt iDiag;
+	TInt iImsMode, iImsState, iEpsAct;
+	TBuf8<20> iNwInfoAct;
+	TInt iRatLeft;								// RAT/IMS diagnostics still to send (0 = none; CBase: zero-filled)
+	const char* iRatWhy;
 	TInt iLastClcc, iClccStat, iMr, iCmgrIndex, iCmgrPendingIndex;
 	TBuf8<44> iClccNumber;
 	TBuf8<360> iSmsHex;
