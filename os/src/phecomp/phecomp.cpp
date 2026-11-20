@@ -98,7 +98,7 @@ private:
 	TSize iSize;
 	};
 
-const TInt KMaxGroups = 32;
+const TInt KMaxGroups = 128;	// a booted S60 UI already holds ~30 groups: the 33rd (an app opened later, e.g. the browser) went untracked and never showed
 const TInt KMaxTiles = 2;
 const TInt KMaxTops = 16;
 
