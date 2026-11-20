@@ -34,40 +34,16 @@
 // Avkon's global popup stack ABOVE ordinary notes (priority 0). Left at 0 it sat behind a note raised later ("2 new messages") in the
 // common notifier app server, and its expiry timer then cancelled it unseen (MPM: CMPMConfirmDlgRoaming, EConfirmDlgVisitorNetwork).
 // KGlobalWindowPriority_Alarm = 2 is above the key-lock and battery notes (1) and equal to an alarm (the later one is on top).
-// TraceGroups prints the dialog's window-group priority and the front window groups, for the phone log.
-static void TraceGroups( const TDesC& aWhy, CCoeControl& aPopup )
-    {
-    CCoeEnv* env = CCoeEnv::Static();
-    RWsSession& ws = env->WsSession();
-    const TInt own = env->RootWin().Identifier();
-    RDebug::Print( _L( "[confq] %S: own wg %d priority %d, dialog window pos %d" ), &aWhy, own,
-        ws.GetWindowGroupOrdinalPriority( own ), aPopup.DrawableWindow() ? aPopup.DrawableWindow()->OrdinalPosition() : -1 );
-    CArrayFixFlat<TInt>* ids = new CArrayFixFlat<TInt>( 8 );
-    if ( ids )
-        {
-        if ( ws.WindowGroupList( ids ) == KErrNone )
-            {
-            for ( TInt i = 0; i < ids->Count() && i < 6; i++ )
-                {
-                TBuf<64> name;
-                ws.GetWindowGroupNameFromIdentifier( ids->At( i ), name );
-                RDebug::Print( _L( "[confq]   z%d wg %d priority %d %S" ), i, ids->At( i ),
-                    ws.GetWindowGroupOrdinalPriority( ids->At( i ) ), &name );
-                }
-            }
-        delete ids;
-        }
-    }
-
+// The trace says whether the popup priority controller is enabled in THIS process (the common notifier app server enables it, so the
+// call must succeed) and what SetPopupPriorityL returned. The window-group priorities themselves cannot be read from here: the ws32
+// client calls that list them (RWsSession::WindowGroupList / GetWindowGroupOrdinalPriority, RWindowTreeNode::OrdinalPosition) are not
+// exported by our ws32 and would be link stubs, which the stub audit refuses.
 static void RaiseQueryPriority( CCoeControl& aPopup )
     {
     TRAPD( err, AknGlobalPopupPriorityController::SetPopupPriorityL( aPopup, KGlobalWindowPriority_Alarm ) );
-    _LIT( KRaised, "query shown" );
-    RDebug::Print( _L( "[confq] SetPopupPriorityL(%d) -> %d" ), KGlobalWindowPriority_Alarm, err );
-    TraceGroups( KRaised, aPopup );
+    RDebug::Print( _L( "[confq] query shown: SetPopupPriorityL(%d) -> %d, global popups allowed %d" ),
+        KGlobalWindowPriority_Alarm, err, AknGlobalPopupPriorityController::GlobalPopupsAllowed() );
     }
-
-
 
 // CONSTANTS
 #if defined(_DEBUG)
