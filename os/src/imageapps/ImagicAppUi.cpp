@@ -743,7 +743,7 @@ void CImagicAppUi::OpenPendingFile()
             iOpenFileName.Zero();
             SetImageIndex(i);
             iBrowserContainer->SetCurrentIndex(i);
-            iBrowserContainer->SetDrawMode(EOneByOne);
+            iBrowserContainer->SetDrawMode(CImagicContainerBrowser::EOneByOne);
             iBrowserContainer->DrawNow();
             return;
             }
