@@ -713,19 +713,8 @@ void CImagicAppUi::OpenFileL(const TDesC& aFileName)
 
 TBool CImagicAppUi::ProcessCommandParametersL(CApaCommandLine& aCommandLine)
     {
-    RFile f;
-    TRAPD(err, aCommandLine.GetFileByHandleL(f));
-    if (err == KErrNone)
-        {
-        TFileName n;
-        f.FullName(n);
-        f.Close();
-        iOpenFileName = n;
-        }
-    else
-        {
-        iOpenFileName = aCommandLine.DocumentName();
-        }
+    // the document name only: GetFileByHandleL() adopts a handle from the creator and panics (KERN-EXEC 0) when the app is started without one
+    iOpenFileName = aCommandLine.DocumentName();
     OpenPendingFile();
     return CAknViewAppUi::ProcessCommandParametersL(aCommandLine);
     }
