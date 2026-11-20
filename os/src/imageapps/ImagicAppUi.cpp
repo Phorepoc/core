@@ -737,4 +737,46 @@ void CImagicAppUi::OpenPendingFile()
             return;
             }
         }
+    // not in the list (a folder the finder does not scan): once the scan is over, add the picture and show it
+    if (iIEngine->IsScanningFiles())
+        return;
+    TFileName name = iOpenFileName;
+    iOpenFileName.Zero();
+    RFs fs;
+    if (fs.Connect() != KErrNone)
+        return;
+    TEntry entry;
+    TSize size;
+    TInt err = fs.Entry(name, entry);
+    if (err == KErrNone)
+        {
+        CImageDecoder* dec = NULL;
+        TRAP(err, dec = CImageDecoder::FileNewL(fs, name));
+        if (err == KErrNone)
+            {
+            size = dec->FrameInfo().iOverallSizeInPixels;
+            delete dec;
+            }
+        }
+    fs.Close();
+    if (err != KErrNone)
+        return;
+    CIEImageList& list = iIEngine->GetImageList();
+    CImageData* data = list.GetImageData(name);
+    if (!data)
+        {
+        TRAP(err, data = list.CreateImageDataL(name, entry.iModified, 0));
+        if (err != KErrNone || !data)
+            return;
+        data->SetFileTime(entry.iModified);
+        data->SetSize(size);
+        list.AddImage(data);
+        }
+    const TInt idx = list.GetImageIndex(data);
+    if (idx < 0)
+        return;
+    SetImageIndex(idx);
+    iBrowserContainer->SetCurrentIndex(idx);
+    iBrowserContainer->SetDrawMode(CImagicContainerBrowser::EOneByOne);
+    iBrowserContainer->DrawNow();
     }

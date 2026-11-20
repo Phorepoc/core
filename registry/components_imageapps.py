@@ -43,10 +43,10 @@ COMPONENTS = {
     "ieutils": dict(mmp=_PB + "group/IEUtils.mmp", flags=_PB_INC, drop=["IEEngineUtils.cpp"], extra=["src/imageapps/IEEngineUtils.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/ieutils.def")}),
     "iebgps": dict(mmp=_PB + "IEBgps/group/IEBgps.mmp", flags=_PB_INC, drop=["IETNGenerator.cpp"], extra=["src/imageapps/IETNGenerator.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgps.def")}),
     "iebgpclient": dict(mmp=_PB + "IEBgpClient/group/IEBgpClient.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgpclient.def")}),
-    "ieengine": dict(mmp=_PB + "group/IEEngine.mmp", flags=_PB_INC, drop=["IEBitmapLoader.cpp", "IEImageFinder.cpp"], extra=["src/imageapps/IEBitmapLoader.cpp", "src/imageapps/IEImageFinder.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/ieengine.def")}),
+    "ieengine": dict(mmp=_PB + "group/IEEngine.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/ieengine.def")}),
     "photobrowser": dict(mmp=_PB_MMP, flags=_PB_INC + ["-fpermissive", "-include", os.path.join(OS_ROOT, "src/imageapps/ImagicAppUi.h")],
-                     drop=["DrawUtility.cpp", "ImagicContainerBrowser.cpp", "TextureLoader.cpp", "ImagicAppUi.cpp"],   # patched copies: implicit int, a case label crossing an initialization; ImagicAppUi(.h/.cpp): opens the one picture File Manager passes (PHOREPOC PATCH; the header is force-included so it wins over AppInc/)
-                     extra=["src/imageapps/DrawUtility.cpp", "src/imageapps/ImagicContainerBrowser.cpp", "src/imageapps/TextureLoader.cpp", "src/imageapps/ImagicAppUi.cpp"]),
+                     drop=["DrawUtility.cpp", "ImagicContainerBrowser.cpp", "ImagicAppUi.cpp"],   # patched copies: implicit int, a case label crossing an initialization; ImagicAppUi(.h/.cpp): opens the one picture File Manager passes (PHOREPOC PATCH; the header is force-included so it wins over AppInc/)
+                     extra=["src/imageapps/DrawUtility.cpp", "src/imageapps/ImagicContainerBrowser.cpp", "src/imageapps/ImagicAppUi.cpp"]),
     # --- the imaging framework's test viewer, re-made in Avkon (its Techview UI libraries are not in the OS)
     "timageviewer": dict(mmp=os.path.join(OS_ROOT, "src/timageviewer/timageviewer.mmp")),
     # --- Image Editor (app.imgeditor): the app, its manager/UI/engine libraries, the filters (loaded by name) and the editing plug-ins (.pgn, entry = ordinal 1)

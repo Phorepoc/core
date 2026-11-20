@@ -15,7 +15,6 @@
 *
 */
 
-#include <e32debug.h>
 #include <ImageConversion.h> //CImageDecoder
 #include <FBS.H> //CFbsBitmap
 #include <BAUTILS.H>
@@ -82,7 +81,6 @@ void CIETNGeneratorAO::RunL()
     {
     DP0_IMAGIC((_L("CIETNGeneratorAO::RunL ++")));
     iError = iStatus.Int();
-    RDebug::Printf("[imagic-tn] RunL status %d state %d for %S", iStatus.Int(), (TInt)iConvertStatus, &iSourceFileName);
 	
 #ifdef _IMAGIC_DEBUG
     TInt mem = 0;
@@ -300,7 +298,6 @@ void CIETNGeneratorAO::ScaleL()
    
     DP2_IMAGIC(_L("CIETNGeneratorAO::Scale to %dx%d"), tgtBitmapize.iWidth, tgtBitmapize.iHeight);
       
-    RDebug::Printf("[imagic-tn] scale bitmap %dx%d to %dx%d", iBitmap->SizeInPixels().iWidth, iBitmap->SizeInPixels().iHeight, tgtBitmapize.iWidth, tgtBitmapize.iHeight);
     iBitmapScaler->Scale(&iStatus, *iBitmap, tgtBitmapize, EFalse);
        
     DP0_IMAGIC((_L("CIETNGeneratorAO::Scale--")));
@@ -456,8 +453,6 @@ void CIETNGeneratorAO::DecodeL()
   
     TInt error = iBitmap->Create(iSourceSize, EColor16M);
     
-    // PHOREPOC PATCH (diagnostic)
-    RDebug::Printf("[imagic-tn] decode frame %dx%d into bitmap %dx%d (reduction factor %d), thumbnail %dx%d", iImageDecoder->FrameInfo().iOverallSizeInPixels.iWidth, iImageDecoder->FrameInfo().iOverallSizeInPixels.iHeight, iSourceSize.iWidth, iSourceSize.iHeight, iImageDecoder->ReductionFactor(iImageDecoder->FrameInfo().iOverallSizeInPixels, iSourceSize), iThumbnailSize.iWidth, iThumbnailSize.iHeight);
     iImageDecoder->Convert(&iStatus, *iBitmap, 0);
     
     DP0_IMAGIC((_L("CIETNGeneratorAO::Decode - convert bitmap... OK")));

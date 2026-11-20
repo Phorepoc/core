@@ -443,14 +443,6 @@ void CImagicContainerBrowser::OpenGLInitL()
            User::Panic( KMakeCurrentFailed, 0 );
            }
        
-       // PHOREPOC PATCH (diagnostic): the window and the EGL surface sizes, to see why the picture fills a part of the screen
-       {
-       EGLint ew = 0, eh = 0;
-       eglQuerySurface(iEglDisplay, iEglSurface, EGL_WIDTH, &ew);
-       eglQuerySurface(iEglDisplay, iEglSurface, EGL_HEIGHT, &eh);
-       RDebug::Printf("[imagic] window pos %d,%d size %dx%d, egl surface %dx%d, screen %dx%d", Position().iX, Position().iY, Size().iWidth, Size().iHeight, ew, eh,
-                      iCoeEnv->ScreenDevice()->SizeInPixels().iWidth, iCoeEnv->ScreenDevice()->SizeInPixels().iHeight);
-       }
 #ifdef SHADOW_PHOTOS        
        glClearColor(1,1,1, 0);
 #else       
@@ -1309,9 +1301,23 @@ void CImagicContainerBrowser::SetDeleteTextures(TBool aValue)
 //DrawCallBack for OpenGL
 TInt CImagicContainerBrowser::DrawCallBackL( TAny* aInstance )
     {
-    //DP0_IMAGIC(_L("CImagicContainerBrowser::DrawCallBack"));
 	// Get pointer to instance
-    ((CImagicContainerBrowser*) aInstance)->DrawL();
+    CImagicContainerBrowser* self = (CImagicContainerBrowser*) aInstance;
+    // PHOREPOC PATCH: a frame in software GL takes longer than the 60 ms frame interval, so the draw timer (user-input priority) was always
+    // due and never let the thumbnail generator or the loader run (the grid stalled after the first pictures). The interval follows the
+    // frame time: at least three times what a frame takes (at most 0.6 s), so the lower priority work gets two thirds of the time.
+    TTime t0; t0.UniversalTime();
+    self->DrawL();
+    TTime t1; t1.UniversalTime();
+    const TInt64 us = t1.MicroSecondsFrom(t0).Int64();
+    TInt want = (TInt)(us * 3);
+    if (want > 600000) want = 600000;
+    if (self->iPeriodic && want > self->iDisplayDrawFreq)
+        {
+        self->iDisplayDrawFreq = want;
+        self->iPeriodic->Cancel();
+        self->iPeriodic->Start(want, want, TCallBack(CImagicContainerBrowser::DrawCallBackL, self));
+        }
     return 0;
     }
     
@@ -1535,7 +1541,6 @@ void CImagicContainerBrowser::SizeChanged()
     iScreenRotateOngoing = ETrue;
     //TSize size = this->Size();
     iScreenSize = this->Size();
-    RDebug::Printf("[imagic] SizeChanged %dx%d", iScreenSize.iWidth, iScreenSize.iHeight);
     iScreenAspectRatio = (TReal)iScreenSize.iWidth / (TReal)iScreenSize.iHeight;
     
     // Reinitialize viewport and projection.
