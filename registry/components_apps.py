@@ -172,8 +172,8 @@ COMPONENTS = {
                                   rsc_incs=_VR_RSC),
     # --- Podcatcher (app.podcatcher RCL_3): the engine (HTTP + OPML/RSS parsing, SQLite, MPX collection helper) and the app;
     # the SQLite template and the default feed list are what the engine copies to its private directory on first run
-    "podcastengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.podcatcher/engine/group/engine.mmp"),
-    "podcast": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.podcatcher/application/group/Podcast.mmp",
+    "podcastengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.podcatcher/engine/group/engine.mmp", flags=["-DSUPPORT_RDEBUG_PRINT"]),   # DIAG: its DP() trace to the serial port
+    "podcast": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.podcatcher/application/group/Podcast.mmp", flags=["-DSUPPORT_RDEBUG_PRINT"],
                     rom_data=["private\\A0009D00\\podcatcher.sqlite.template=baseline/symbian-rcl3/oss.FCL.sf.app.podcatcher/engine/config/podcatcher.sqlite",
                               "private\\A0009D00\\defaultfeeds.xml=baseline/symbian-rcl3/oss.FCL.sf.app.podcatcher/engine/config/defaultfeeds.xml"]),
     # --- the phone applications (app.phone, mw.phonesrv RCL_3): USSD, voice mailbox, SIM toolkit menu (they need a modem / SIM)
