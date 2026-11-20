@@ -599,6 +599,8 @@ void CPheBleRouter::MheoProcessEvent(const TDesC8& aEvent)
 		ToStack(aEvent);
 		return;
 		}
+	if (aEvent[0] != 0x0E && aEvent[0] != 0x0F && aEvent[0] != 0x13 && iLeHandles.Count() > 0)
+		RTRC("pheblerouter: event %02x len %d while an LE link is up", aEvent[0], aEvent.Length());
 	switch (aEvent[0])
 		{
 	case 0x0E:      // Command Complete: ncmd(1) opcode(2)
@@ -649,9 +651,11 @@ void CPheBleRouter::MheoProcessEvent(const TDesC8& aEvent)
 
 void CPheBleRouter::MhdoProcessAclData(const TDesC8& aData)
 	{
+	if (aData.Length() >= 2)
+		RTRC("pheblerouter: ACL from controller handle %03x len %d (%s)", Get16(aData, 0) & 0x0FFF, aData.Length(),
+			IsLe((TUint16)(Get16(aData, 0) & 0x0FFF)) ? "LE host" : "stack");
 	if (aData.Length() >= 2 && IsLe((TUint16)(Get16(aData, 0) & 0x0FFF)))
 		{
-		RTRC("pheblerouter: ACL from controller handle %03x len %d -> LE host", Get16(aData, 0) & 0x0FFF, aData.Length());
 		if (iHost)
 			iHost->PbhAcl(aData);
 		return;
