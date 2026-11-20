@@ -466,8 +466,8 @@ void CPheBleRouter::Pump()
 		iQLock.Signal();
 		if (!acl)
 			break;
-		RTRC("pheblerouter: LE ACL -> controller handle %03x len %d", acl->Length() >= 2 ? Get16(*acl, 0) & 0x0FFF : 0, acl->Length());
-		SendFramed(iLeAclFrame, *acl, ETrue);
+		const TInt wr = SendFramed(iLeAclFrame, *acl, ETrue);
+		RTRC("pheblerouter: LE ACL -> controller handle %03x len %d, write %d", acl->Length() >= 2 ? Get16(*acl, 0) & 0x0FFF : 0, acl->Length(), wr);
 		delete acl;
 		}
 	}
@@ -681,7 +681,8 @@ void CPheBleRouter::UpdateStackChannels()
 
 void CPheBleRouter::MhcoChannelOpen(THCITransportChannel aChannels)
 	{
-	RTRC("pheblerouter: inner channel open %d (now %d)", (TInt)aChannels, (TInt)(iInnerOpen | aChannels));
+	if ((iInnerOpen | aChannels) != iInnerOpen)      // (the H5 HCTL re-reports "open" after every command: log only a change)
+		RTRC("pheblerouter: inner channel open %d (now %d)", (TInt)aChannels, (TInt)(iInnerOpen | aChannels));
 	iInnerOpen |= aChannels;
 	UpdateStackChannels();
 	Pump();
@@ -689,7 +690,8 @@ void CPheBleRouter::MhcoChannelOpen(THCITransportChannel aChannels)
 
 void CPheBleRouter::MhcoChannelClosed(THCITransportChannel aChannels)
 	{
-	RTRC("pheblerouter: inner channel closed %d", (TInt)aChannels);
+	if (iInnerOpen & aChannels)
+		RTRC("pheblerouter: inner channel closed %d (was %d)", (TInt)aChannels, (TInt)iInnerOpen);
 	iInnerOpen &= ~aChannels;
 	UpdateStackChannels();
 	}
