@@ -24,8 +24,8 @@ COMPONENTS = {
     "iebgpclient": dict(mmp=_PB + "IEBgpClient/group/IEBgpClient.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgpclient.def")}),
     "ieengine": dict(mmp=_PB + "group/IEEngine.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/ieengine.def")}),
     "photobrowser": dict(mmp=_PB + "group/Imagic.mmp", flags=_PB_INC + ["-fpermissive"],
-                     drop=["DrawUtility.cpp", "ImagicContainerBrowser.cpp"],   # patched copies: implicit int, a case label crossing an initialization
-                     extra=["src/imageapps/DrawUtility.cpp", "src/imageapps/ImagicContainerBrowser.cpp"]),   # KTNSize: `const KTNSize = 10;` (implicit int)
+                     drop=["DrawUtility.cpp", "ImagicContainerBrowser.cpp", "TextureLoader.cpp"],   # patched copies: implicit int, a case label crossing an initialization
+                     extra=["src/imageapps/DrawUtility.cpp", "src/imageapps/ImagicContainerBrowser.cpp", "src/imageapps/TextureLoader.cpp"]),   # KTNSize: `const KTNSize = 10;` (implicit int)
     # --- the imaging framework's test viewer, re-made in Avkon (its Techview UI libraries are not in the OS)
     "timageviewer": dict(mmp=os.path.join(OS_ROOT, "src/timageviewer/timageviewer.mmp")),
     # --- Image Editor (app.imgeditor): the app, its manager/UI/engine libraries, the filters (loaded by name) and the editing plug-ins (.pgn, entry = ordinal 1)

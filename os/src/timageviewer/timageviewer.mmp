@@ -27,7 +27,7 @@ END
 USERINCLUDE		.
 APP_LAYER_SYSTEMINCLUDE
 
-LIBRARY			euser.lib apparc.lib cone.lib eikcore.lib avkon.lib eikcoctl.lib ws32.lib gdi.lib fbscli.lib efsrv.lib bafl.lib imageconversion.lib bitgdi.lib
+LIBRARY			euser.lib apparc.lib cone.lib eikcore.lib avkon.lib eikcoctl.lib ws32.lib gdi.lib fbscli.lib efsrv.lib bafl.lib imageconversion.lib bitgdi.lib bitmaptransforms.lib
 
 EPOCSTACKSIZE	0x8000
 EPOCHEAPSIZE	0x20000 0x4000000
