@@ -1,0 +1,78 @@
+/*
+* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
+*
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
+*
+* Contributors: Juha Kauppinen, Mika Hokkanen
+* 
+* Description: Photo Browser
+*
+*/
+
+/*
+ =====================
+ This list defines the UID3 for the EXE/DLL in the Photo Browser
+ 
+ By defining and undefining PROTECTED_UID, the build configuration 
+  switches between the UID in the protected and unprotected range.
+  
+ When built with the protected UID and signed with the test 
+  certificate, it works fine with Ivalo but Tube refuses to install.
+  To try out something on Tube, you need to build with the 
+  unprotected UID.
+
+ The protected UIDs have been reserved for Photo Browser in the 
+  S60 UID repository.
+ 
+ =====================
+
+ Don't forget to manually change this line in the package file. 
+ 
+ ImagicApplication/group/Imagic.pkg:
+ 
+ #{"Photo Browser" },(0x2002134F),2,2,1
+ 
+ =====================
+ 
+*/
+
+#define PROTECTED_UID
+
+#ifdef PROTECTED_UID
+
+ #define IDLBgps_UID3            0x20021351
+ #define IDLImageProcessing_UID3 0x20021352
+ #define IEBgps_UID3             0x20021353 
+ #define IEBgpsclient_UID3       0x20021354
+ #define IEEngine_UID3           0x20021350
+ #define Imagic_UID3             0x2002134F
+ #define IEUtils_UID3            0x2002137E
+
+#else
+
+ #define IDLBgps_UID3            0xE0008FBA
+ #define IDLImageProcessing_UID3 0xE0008FBB
+ #define IEBgps_UID3             0xE0008279 
+ #define IEBgpsclient_UID3       0xE000827A
+ #define IEEngine_UID3           0xE0008FBC
+ #define Imagic_UID3             0xE0008FBD
+ #define IEUtils_UID3            0xE0008FBE
+
+#endif
+
+
+/*
+  This is not really related to UID.
+
+  To support Tube PR1, you need to define TUBE_PR1.
+  It's sensor API has some problematic implementation that
+   it requires ReadDeviceData capability from the application.
+*/
+#define TUBE_PR1
+

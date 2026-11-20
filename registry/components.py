@@ -2951,6 +2951,11 @@ for _k in _PHETTY.COMPONENTS:
     assert _k not in COMPONENTS, "components_phetty: key already in components.py: " + _k
 COMPONENTS.update(_PHETTY.COMPONENTS)
 
+import components_imageapps as _IMGAPPS  # noqa: E402
+for _k in _IMGAPPS.COMPONENTS:
+    assert _k not in COMPONENTS, "components_imageapps: key already in components.py: " + _k
+COMPONENTS.update(_IMGAPPS.COMPONENTS)
+
 import components_devmenu as _DEVMENU  # noqa: E402
 for _k in _DEVMENU.COMPONENTS:
     assert _k not in COMPONENTS, "components_devmenu: key already in components.py: " + _k
