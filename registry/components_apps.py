@@ -302,6 +302,7 @@ _RDEFS = {
     "mpxsqlitedbplugin": ["__ENABLE_PODCAST_IN_MUSIC_MENU", "__RAMDISK_PERF_ENABLE"],
     "mpxsqlitepodcastdbplugin": ["__ENABLE_PODCAST_IN_MUSIC_MENU"],
     "voicerecorder": ["SINGLE_CLICK_INCLUDED", "RD_MULTIPLE_DRIVE"],
+    "podcast": ["LANGUAGE_01"],   # languages.rss picks PodcastClient_english.rls by it (without: the STRING_r_* names show as text)
 }
 for _k, _d in _RDEFS.items():
     COMPONENTS[_k]["rdefs"] = _d
