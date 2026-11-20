@@ -41,8 +41,19 @@ public:
 		RDebug::Printf("[timageviewer] open %S", &aFile);
 		iDecoder = CImageDecoder::FileNewL(iEikonEnv->FsSession(), aFile);
 		const TFrameInfo info = iDecoder->FrameInfo(0);
+		// a decode at a reduction factor (1/2, 1/4, 1/8 of each side) for a picture beyond ~2.4 Mpixel: a 12 Mpixel JPEG
+		// as a full 32-bit bitmap is 48 MB. The destination bitmap's size selects the reduced decode.
+		TSize size = info.iOverallSizeInPixels;
+		for (TInt factor = 1; factor <= 3 && (TInt64)size.iWidth * size.iHeight > 2400000; factor++)
+			{
+			TSize reduced;
+			if (iDecoder->ReducedSize(info.iOverallSizeInPixels, factor, reduced) != KErrNone)
+				break;
+			size = reduced;
+			}
+		RDebug::Printf("[timageviewer] frame %dx%d, decode at %dx%d", info.iOverallSizeInPixels.iWidth, info.iOverallSizeInPixels.iHeight, size.iWidth, size.iHeight);
 		iBitmap = new (ELeave) CFbsBitmap;
-		User::LeaveIfError(iBitmap->Create(info.iOverallSizeInPixels, EColor16MU));
+		User::LeaveIfError(iBitmap->Create(size, EColor16MU));
 		iDecoder->Convert(&iRunner->iStatus, *iBitmap, 0);
 		iRunner->Go();
 		}
