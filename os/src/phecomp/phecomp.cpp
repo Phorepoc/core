@@ -249,6 +249,8 @@ private:
 	CPheCompStage() {}
 	void ConstructComposeL(MWsIniFile* aIni);
 	TGroup* Group(const MWsWindowTreeNode* aNode);
+	void AddDirty(const TGroup* aGroup, const TRegion& aRegion);
+	TUint32 iFullTick;	// when a whole frame was last forced (a layout change, a new or newly shown group): whole frames go on for 500 ms
 	static const MWsWindowTreeNode* GroupOf(const MWsWindowTreeNode& aNode);
 	void Summary();
 	TInt MakeTarget(CPheTarget*& aTarget, TAny*& aSource, TBool aSurface = EFalse);
@@ -750,7 +752,13 @@ void CPheCompStage::DrawCursor(const MWsTextCursor::TTextCursorInfo& aInfo)
 	gc->ResetClippingRegion();
 	TRect r(aInfo.iCursorRect);
 	r.Move(aInfo.iWindow->Origin());
-	iDirty.AddRect(r);
+	TBool placed = EFalse;		// a cursor in a placed group: its window coordinates are the app's -- the whole frame, as before
+	for (TInt i = 0; i < iCount && !placed; ++i)
+		placed = iGroups[i].Scaled() && iGroups[i].iTarget;
+	if (placed)
+		iFull = ETrue;
+	else
+		iDirty.AddRect(r);
 	if (iRedraw)
 		iRedraw->ScheduleRender(0);
 	}
@@ -994,10 +1002,9 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 	TRegionFix<1> all(screen);
 	// only what changed, unless the layout changed (tiles are scaled: always whole)
 	RRegion dirty;
-	TBool placed = EFalse;
-	for (TInt i = 0; i < iCount && !placed; ++i)
-		placed = iGroups[i].Scaled() && iGroups[i].iTarget;
-	if (iFull || tiling || placed || iDirty.CheckError() || size != iLastSize)
+	// a placed (scaled) group's redraws reach iDirty already placed (AddDirty): only what changed is composed, not the whole
+	// screen for every change (PHECOMPDBG 32: the old whole-screen frames, for comparison)
+	if (iFull || tiling || iDirty.CheckError() || size != iLastSize || (iDbg & 32) || TInt(User::NTickCount() - iFullTick) < 500)
 		dirty.Copy(all);
 	else
 		{
@@ -1006,6 +1013,8 @@ void CPheCompStage::Compose(TRequestStatus* aFinished)
 		dirty.Tidy();
 		}
 	iDirty.Clear();
+	if (iFull)
+		iFullTick = User::NTickCount();
 	iFull = EFalse;
 	iLastSize = size;
 	if (dirty.IsEmpty() || dirty.CheckError())
@@ -1431,7 +1440,7 @@ void CPheCompStage::WindowRedrawStart(const MWsWindowTreeNode& aNode, const TReg
 	{
 	iDrawing = &aNode;
 	if (iCompose)
-		iDirty.Union(aRegion);
+		AddDirty(Group(GroupOf(aNode)), aRegion);
 	if (iFrameLog)
 		iProxy.iOriginLog = (Group(GroupOf(aNode)) && (Group(GroupOf(aNode))->iName.Find(_L8("otepad")) >= 0 || Group(GroupOf(aNode))->iName.Find(_L8("alc")) >= 0)) ? 40 : 0;
 	if (iFrameLog && iProxy.iOriginLog > 0 && aNode.Window())
@@ -1460,7 +1469,7 @@ void CPheCompStage::WindowRedrawStart(const MWsWindowTreeNode& aNode, const TReg
 		iProxy.iTarget = iSink->Gc();
 		return;
 		}
-	if (g && !g->iTarget && MakeTarget(g->iTarget, g->iSource, ETrue) == KErrNone)
+	if (g && !g->iTarget && MakeTarget(g->iTarget, g->iSource, ETrue) == KErrNone && (iFull = ETrue) != EFalse)
 		RDebug::Printf("PH: [phecomp] group %d '%S': own target (%d targets)", g->iId, &g->iName, ++iTargets);
 	iProxy.iTarget = (g && g->iTarget) ? g->iTarget->Gc() : iRest->Gc();
 	// a shaped window (RWindowBase::SetShape: its window area is not its rectangle) draws only inside the shape
@@ -1480,8 +1489,8 @@ void CPheCompStage::WindowAnimRedrawStart(const MWsWindowTreeNode& aNode, const 
 	{
 	if (!iCompose)
 		return;
-	iDirty.Union(aRegion);
 	TGroup* g = Group(GroupOf(aNode));
+	AddDirty(g, aRegion);
 	if (iFrameLog && g && (g->iName.Find(_L8("alc")) >= 0 || g->iName.Find(_L8("otepad")) >= 0))
 		{
 		const TRect rb = aRegion.BoundingRect();
@@ -1489,6 +1498,19 @@ void CPheCompStage::WindowAnimRedrawStart(const MWsWindowTreeNode& aNode, const 
 		}
 	if (g && g->iTarget && !g->iCovered && !(iDbg & 16))		// (PHECOMPDBG 16: the old behaviour, for comparison)
 		iProxy.iTarget = g->iTarget->Gc();
+	}
+
+// what the window server drew, in screen coordinates: a placed group (R2: an S60 app drawn doubled at an origin) draws in its
+// app's coordinates, so its rectangles are placed first
+void CPheCompStage::AddDirty(const TGroup* aGroup, const TRegion& aRegion)
+	{
+	if (!aGroup || !aGroup->Scaled())
+		{
+		iDirty.Union(aRegion);
+		return;
+		}
+	for (TInt i = 0; i < aRegion.Count(); ++i)
+		iDirty.AddRect(aGroup->Placed(aRegion[i]));
 	}
 
 void CPheCompStage::WindowAnimRedrawEnd(const MWsWindowTreeNode&)
