@@ -40,6 +40,8 @@ public:
 		delete iBitmap; iBitmap = NULL;
 		DrawNow();
 		RDebug::Printf("[timageviewer] open %S", &aFile);
+		// (read before the decoder opens the file: it holds it with a share mode a second open would conflict with)
+		const TInt o = ExifOrientation(aFile);
 		iDecoder = CImageDecoder::FileNewL(iEikonEnv->FsSession(), aFile);
 		const TFrameInfo info = iDecoder->FrameInfo(0);
 		// a decode at a reduction factor (1/2, 1/4, 1/8 of each side) for a picture beyond ~2.4 Mpixel: a 12 Mpixel JPEG
@@ -57,7 +59,6 @@ public:
 		User::LeaveIfError(iBitmap->Create(size, EColor16MU));
 		// the EXIF orientation of a JPEG: the steps that turn the decoded bitmap upright
 		iStepCount = 0; iStepAt = 0;
-		const TInt o = ExifOrientation(aFile);
 		static const TInt KSteps[9][2] = { {-1,-1}, {-1,-1}, {CBitmapRotator::EMirrorVerticalAxis,-1}, {CBitmapRotator::ERotation180DegreesClockwise,-1},
 			{CBitmapRotator::EMirrorHorizontalAxis,-1}, {CBitmapRotator::ERotation90DegreesClockwise,CBitmapRotator::EMirrorVerticalAxis},
 			{CBitmapRotator::ERotation90DegreesClockwise,-1}, {CBitmapRotator::ERotation270DegreesClockwise,CBitmapRotator::EMirrorVerticalAxis},
