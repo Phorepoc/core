@@ -1427,8 +1427,7 @@ COMPONENTS = {
     # place of mcssathandler.cpp (it hard-requires a SAT server) -- toolchain/shims/mcssathandler_null
     "satclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satengine/SatServer/SatClient/group/SatClient.mmp"),
     "etelsat": dict(mmp="oss.FCL.sf.os.cellularsrv/telephonyserver/etelsimtoolkit/group/etelsat.mmp"),   # RSat (the SIM toolkit ETel API), <- satengine
-    "satshellcntrl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satui/satapp/Group/SatShellCntrl.mmp",
-                          no_mifs=["satui.mif", "satui_aif.mif"]),   # the SAT server loads it (its UI-client handler), <- satengine; SATUI.exe (the SIM toolkit menu) needs the SIM: its icons stay out
+    "satshellcntrl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satui/satapp/Group/SatShellCntrl.mmp"),   # the SAT server loads it (its UI-client handler), <- satengine; satui.mif / satui_aif.mif (declared by the same group) now ship with SATUI.exe, the SIM toolkit menu
     "satserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satengine/SatServer/SatServer/group/SatServer.mmp"),
     # the SIM toolkit idle-text content publisher (0x102078EB): the homescreen profile widget declares it -- without it the
     # catalogue's "Time & profile" widget fails its publishers and is removed ("Problem occurred. Widget(s) removed.")
