@@ -23,6 +23,7 @@
 #include <e32debug.h>
 #include <d32comm.h>
 #include <etelmm.h>
+#include <f32file.h>
 
 struct TPheNet
 	{
@@ -348,6 +349,51 @@ private:
 		iCmdActive = ETrue;
 		iCmdStart = iTicks;
 		}
+	// Allowed commands of the operator file: exact lines (case ignored). Never AT+QMBNCFG (the phone reset right at it), nothing
+	// that writes the carrier configuration, ims, nwscanmode or the SIM.
+	static TBool OpAllowed(const TDesC8& aCmd)
+		{
+		static const char* const KOk[] = { "AT+QCFG=\"usbnet\"", "AT+QCFG=\"usbnet\",0", "AT+QCFG=\"usbnet\",1", "AT+CFUN=1,1", "AT+CFUN?",
+										   "AT+CGDCONT?", "AT+CGACT?", "AT+CGPADDR", "AT+CGCONTRDP", "AT+CEREG?", "AT+CEER" };
+		for (TUint i = 0; i < sizeof(KOk) / sizeof(KOk[0]); ++i)
+			if (aCmd.CompareF(TPtrC8((const TUint8*)KOk[i])) == 0)
+				return ETrue;
+		return EFalse;
+		}
+	void ReadOpFile()
+		{
+		iOpRead = ETrue;
+		_LIT(KOpFile, "c:\\pheltsy_at.txt");
+		RFs fs;
+		if (fs.Connect() != KErrNone)
+			return;
+		RFile f;
+		if (f.Open(fs, KOpFile, EFileRead | EFileShareAny) == KErrNone)
+			{
+			TBuf8<256> b;
+			f.Read(b);
+			f.Close();
+			fs.Delete(KOpFile);					// once: a reboot of the modem or the phone must not run it again
+			TLex8 lex(b);
+			while (iOpN < KOpMax && !lex.Eos())
+				{
+				TPtrC8 rest = lex.Remainder();
+				TInt nl = rest.Locate('\n');
+				TPtrC8 line = nl == KErrNotFound ? rest : rest.Left(nl);
+				lex.Inc(nl == KErrNotFound ? rest.Length() : nl + 1);
+				TBuf8<48> c;
+				c.Copy(line.Left(48));
+				c.Trim();
+				if (c.Length() == 0)
+					continue;
+				if (OpAllowed(c))
+					iOp[iOpN++] = c;
+				else
+					RDebug::Printf("[pheltsy] AT-FILE refused: %S", &c);
+				}
+			}
+		fs.Close();
+		}
 	void SendNext()
 		{
 		iKind = ECmdPoll;
@@ -408,6 +454,21 @@ private:
 			iKind = ECmdDiag;
 			Send(TPtrC8((const TUint8*)KDiagCmds[iDiag]));
 			return;
+			}
+		// the operator file (2026-11-20): C:\pheltsy_at.txt, read ONCE after the start-up diagnostics, deleted as soon as it is read.
+		// A short list of allowed commands only (OpAllowed): the mobile-data bench switches the modem's USB personality
+		// (AT+QCFG="usbnet",1 / ,0 + AT+CFUN=1,1) and reads the data path back. The answers are logged by the line echo.
+		if (iReady && iDiag >= KDiag)
+			{
+			if (!iOpRead)
+				ReadOpFile();
+			if (iOpI < iOpN)
+				{
+				iKind = ECmdDiag;
+				RDebug::Printf("[pheltsy] AT-FILE %d/%d: %S", iOpI + 1, iOpN, &iOp[iOpI]);
+				Send(iOp[iOpI++]);
+				return;
+				}
 			}
 		// the same read-only questions again during a call (RING, dial, answer, hang-up): which radio access technology the
 		// call runs on and whether IMS is up. AT+CEREG?/AT+CREG? carry <AcT> (Quectel AT manual 10.14 / 6.2, 7 = E-UTRAN),
@@ -966,6 +1027,10 @@ private:
 	TBool iOpen, iRdy, iReady, iCmdActive, iNetDirty;
 	TBool iInitFailed, iInitRetry;				// a SIM-dependent init command failed / run them again now (CBase: zero-filled)
 	TInt iTicks, iCmdStart, iNextPoll, iStep;
+	enum { KOpMax = 4 };
+	TBuf8<48> iOp[KOpMax];						// the operator file's commands (ReadOpFile)
+	TInt iOpN, iOpI;
+	TBool iOpRead;
 	TBuf8<48> iCmd;
 	TBuf8<256> iRx;
 	TBuf8<420> iLine;					// a +CMGR / +CDS PDU line: SMSC + up to 176 TPDU bytes in hex

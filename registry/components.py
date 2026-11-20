@@ -2389,7 +2389,7 @@ COMPONENTS = {
     "phonetsy": dict(mmp="oss.FCL.sf.os.cellularsrv/telephonyserverplugins/common_tsy/phonetsy/group/phonetsy.mmp", rom="phonetsy.tsy", flags=API_REF_LAST),
     "commontsy": dict(mmp="oss.FCL.sf.os.cellularsrv/telephonyserverplugins/common_tsy/commontsy/group/commontsy.mmp", flags=API_REF_LAST),
     "licenseetsy": dict(mmp="oss.FCL.sf.os.cellularsrv/telephonyserverplugins/licenseetsystub/licensee_tsy_stub/group/licenseetsy.mmp", rom="licenseetsy.dll",
-                        drop=["cmmmockmesshandler.cpp"], extra=["toolchain/shims/licenseetsy_board/cmmmockmesshandler.cpp"], libs=["bafl.lib"],   # bafl: CDesC
+                        drop=["cmmmockmesshandler.cpp"], extra=["toolchain/shims/licenseetsy_board/cmmmockmesshandler.cpp"], libs=["bafl.lib", "efsrv.lib"],   # bafl: CDesC
                         # for registration/operator/signal; needs the MODEM=1 kernel; without it the fake modem is unchanged
                         defs=(["PHE_LTSY"] if os.environ.get("PHELTSY") == "1" else []),
                         flags=["-iquote", os.path.join(SYMBIAN, "symbian-2010/oss.FCL.sf.os.cellularsrv/telephonyserverplugins/licenseetsystub/licensee_tsy_stub/src"),
