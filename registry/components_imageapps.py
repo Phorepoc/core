@@ -20,9 +20,9 @@ for _d in ("group", "Common/Inc", "Common/inc", "EngInc", "IEBgps/inc", "IEBgpCl
 COMPONENTS = {
     # --- Photo Browser ("Imagic"): Avkon + GLES 1.x; engine = ieutils (common) < iebgps (thumbnail server) < iebgpclient < ieengine
     "ieutils": dict(mmp=_PB + "group/IEUtils.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/ieutils.def")}),
-    "iebgps": dict(mmp=_PB + "IEBgps/group/IEBgps.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgps.def")}),
+    "iebgps": dict(mmp=_PB + "IEBgps/group/IEBgps.mmp", flags=_PB_INC, drop=["IETNGenerator.cpp"], extra=["src/imageapps/IETNGenerator.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgps.def")}),
     "iebgpclient": dict(mmp=_PB + "IEBgpClient/group/IEBgpClient.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgpclient.def")}),
-    "ieengine": dict(mmp=_PB + "group/IEEngine.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/ieengine.def")}),
+    "ieengine": dict(mmp=_PB + "group/IEEngine.mmp", flags=_PB_INC, drop=["IEBitmapLoader.cpp"], extra=["src/imageapps/IEBitmapLoader.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/ieengine.def")}),
     "photobrowser": dict(mmp=_PB + "group/Imagic.mmp", flags=_PB_INC + ["-fpermissive"],
                      drop=["DrawUtility.cpp", "ImagicContainerBrowser.cpp", "TextureLoader.cpp"],   # patched copies: implicit int, a case label crossing an initialization
                      extra=["src/imageapps/DrawUtility.cpp", "src/imageapps/ImagicContainerBrowser.cpp", "src/imageapps/TextureLoader.cpp"]),   # KTNSize: `const KTNSize = 10;` (implicit int)
