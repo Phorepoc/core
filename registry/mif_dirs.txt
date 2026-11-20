@@ -91,3 +91,4 @@ baseline/symbian-rcl3/oss.FCL.sf.app.organizer/searchfw/plugins/multimediaplugin
 baseline/symbian-rcl3/oss.FCL.sf.app.organizer/meetingui/attendeeview/Group
 baseline/symbian-rcl3/oss.FCL.sf.app.organizer/meetingui/meetingrequestviewers/group
 baseline/symbian-rcl3/oss.FCL.sf.app.homescreen/menufw/menusuites/foldersuite/group
+baseline/symbian-2010/oss.FCL.sf.incubator.photobrowser/group
