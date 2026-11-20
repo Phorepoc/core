@@ -99,6 +99,8 @@ RESOURCE SSM_COMMAND_LIST r_cmds
 	,r_cmd_phettyd
 	// prio 0x7E05 -- PHOREPOC display-mode follower (src/phedispmode): the screen mode follows a resizable PC display; exits at once elsewhere
 	,r_cmd_phedispmode
+	// prio 0x7E06 -- PHOREPOC Bluetooth power at boot (src/phebtboot): applies the stored power setting (KBTPowerState) at boot; exits at once when it is off
+	,r_cmd_phebtboot
         };
     }
 
@@ -221,6 +223,19 @@ RESOURCE SSM_START_PROCESS_INFO r_cmd_phedispmode
     {
     priority = 0x7E05;
     name = "z:\\sys\\bin\\phedispmode.exe";
+    execution_behaviour = ESsmFireAndForget;
+    }
+
+// ---------------------------------------------------------------------------
+// r_cmd_phebtboot -- PHOREPOC (2026-11-20): src/phebtboot. Reads the stored Bluetooth power setting (CenRep 10204DA9 key 1) and, when it
+// is on, asks the Bluetooth engine to power on (nothing else in the ROM applies the setting at boot). Exits at once when it is off.
+// Non-critical: a ROM without phebtboot.exe (no Bluetooth) skips it.
+// ---------------------------------------------------------------------------
+//
+RESOURCE SSM_START_PROCESS_INFO r_cmd_phebtboot
+    {
+    priority = 0x7E06;
+    name = "z:\\sys\\bin\\phebtboot.exe";
     execution_behaviour = ESsmFireAndForget;
     }
 
