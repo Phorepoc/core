@@ -163,8 +163,8 @@ private:
 	CKick* iKick;
 	TThreadId iStackThread;
 
-	RArray<TUint16> iLeHandles;
-	RArray<TUint16> iStackHandles;        // BR/EDR ACL connection handles (Connection Complete .. Disconnection Complete)
+	RArray<TInt>    iLeHandles;   // TInt, not TUint16: RArray<T>::Find compares a 4-byte TInt at the entry (a 2-byte handle read garbage: IsLe was false, boot 2830)
+	RArray<TInt>    iStackHandles;        // BR/EDR ACL connection handles (Connection Complete .. Disconnection Complete)
 	TInt iAclReserve;                     // buffers kept for LE when the controller shares its ACL buffers
 	TUint16 iStackAclLen;
 	TBool iReady;
