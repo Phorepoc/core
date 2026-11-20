@@ -186,6 +186,11 @@ COMPONENTS = {
     "postcard": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/postcard/postcard/Postcard.mmp"),
     "notui": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/mmsui/notmtm/NotUi.mmp"),
     "notviewer": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/mmsui/notviewer/NotViewer.mmp"),
+    # --- small viewers and handlers: vCard/vCalendar/smart-message viewer, mailto:/sms: URL handler, "save to contacts" launcher, URL scheme handler
+    "bva": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/smartmessaging/bva/group/BVA.mmp"),
+    "msgurlhandler": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/msgurlhandler/urlhandler/group/MsgUrlHandler.mmp"),
+    "newcontactlauncher": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Phonebook2/NewContactLauncher/group/NewContactLauncher.mmp"),
+    "schemeapp": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/browserutilities/schemehandler/SchemeApp/group/SchemeApp.mmp"),
     # --- Certificate saver (mw.securitysrv RCL_3: opens a .cer/.crt from a file or a message) and the touch-screen calibration app
     "certsaver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.securitysrv/pkiutilities/CertSaver/group/CertSaver.mmp"),
     "touchscreencalib": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.settingsuis/systemswuis/touchscreencalib/group/TouchScreenCalib.mmp"),
