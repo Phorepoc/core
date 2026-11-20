@@ -1302,22 +1302,7 @@ void CImagicContainerBrowser::SetDeleteTextures(TBool aValue)
 TInt CImagicContainerBrowser::DrawCallBackL( TAny* aInstance )
     {
 	// Get pointer to instance
-    CImagicContainerBrowser* self = (CImagicContainerBrowser*) aInstance;
-    // PHOREPOC PATCH: a frame in software GL takes longer than the 60 ms frame interval, so the draw timer (user-input priority) was always
-    // due and never let the thumbnail generator or the loader run (the grid stalled after the first pictures). The interval follows the
-    // frame time: at least three times what a frame takes (at most 0.6 s), so the lower priority work gets two thirds of the time.
-    TTime t0; t0.UniversalTime();
-    self->DrawL();
-    TTime t1; t1.UniversalTime();
-    const TInt64 us = t1.MicroSecondsFrom(t0).Int64();
-    TInt want = (TInt)(us * 3);
-    if (want > 600000) want = 600000;
-    if (self->iPeriodic && want > self->iDisplayDrawFreq)
-        {
-        self->iDisplayDrawFreq = want;
-        self->iPeriodic->Cancel();
-        self->iPeriodic->Start(want, want, TCallBack(CImagicContainerBrowser::DrawCallBackL, self));
-        }
+    ((CImagicContainerBrowser*) aInstance)->DrawL();
     return 0;
     }
     
