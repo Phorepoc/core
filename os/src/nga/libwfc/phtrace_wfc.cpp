@@ -192,3 +192,33 @@ extern "C" void ph_wfc_order_trace(int aIdx, int aHandle, int aX, int aY, int aW
 			cur[i][2], cur[i][3], cur[i][4], cur[i][5], cur[i][6], cur[i][7] / 10000, cur[i][7] % 10000);
 		}
 	}
+
+// PH (r35): the time of one composition (WFC_Context_DoCompose, including the display back end's copy into the screen), one
+// summary line a second while frames come: composes, average and longest, how many went the 2010 fastpath (the top opaque layer posted as is)
+#include <hal.h>
+static TUint32 phT0, phTicks, phMax, phN, phFast, phSum;
+extern "C" void ph_wfc_compose_timing(int aEnd, int aFastpath)
+	{
+	const TUint32 now = User::FastCounter();
+	if (!aEnd)
+		{
+		phT0 = now;
+		return;
+		}
+	const TUint32 dt = now - phT0;
+	phTicks += dt;
+	if (dt > phMax)
+		phMax = dt;
+	++phN;
+	phFast += aFastpath ? 1 : 0;
+	const TUint32 tick = User::NTickCount();
+	if (tick - phSum >= 1000)
+		{
+		TInt freq = 0;
+		HAL::Get(HAL::EFastCounterFrequency, freq);
+		const TUint32 perUs = freq >= 1000000 ? TUint32(freq / 1000000) : 1;
+		RDebug::Printf("PH: [wfc] %u composes, avg %u us max %u us, fastpath %u", phN, phTicks / perUs / phN, phMax / perUs, phFast);
+		phTicks = phMax = phN = phFast = 0;
+		phSum = tick;
+		}
+	}

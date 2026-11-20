@@ -1265,6 +1265,8 @@ WFC_Context_PhGpuCompose(WFC_CONTEXT* context)
  *  the composition pipeline.
  *  \param context Context to compose.
  *----------------------------------------------------------------------------*/
+extern void ph_wfc_compose_timing(int aEnd, int aFastpath);   /* PH (r35): phtrace_wfc.cpp, one summary a second */
+
 static void
 WFC_Context_DoCompose(WFC_CONTEXT* context)
 {
@@ -1272,6 +1274,7 @@ WFC_Context_DoCompose(WFC_CONTEXT* context)
     OWF_NODE*               node    = NULL;
 
     OWF_ASSERT(context);
+    ph_wfc_compose_timing(0, 0);
 
     OWF_Mutex_Lock(&context->updateFlagMutex);
 
@@ -1447,6 +1450,7 @@ composed:
     WFC_Scene_UnlockSourcesAndMasks(context->committedScene);
     owfSymProcessAllNotifications(context);
     OWF_Mutex_Unlock(&context->sceneMutex);
+    ph_wfc_compose_timing(1, OWF_DisplayContext_FastpathEnabled(context->displayContext) ? 1 : 0);
     
     OWF_Semaphore_Post(&context->compositionSemaphore);
 }
