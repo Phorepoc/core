@@ -1,0 +1,26 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// pherecfiles.mmp -- OURS: an apparc data recogniser that maps file names to the MIME types the registered handlers declare
+// (.vcf -> text/X-vCard: BVA; .vcs -> text/x-vCalendar; .cer/.crt/.der -> application/x-x509-ca-cert and .p12/.pfx ->
+// application/x-pkcs12: CertSaver). The 2010 release carries only RECTXT/RECAPP recognisers, so without one apparc
+// knows no type for these extensions and File Manager's Open does nothing.
+#include <platform_paths.hrh>
+
+TARGET          pherecfiles.dll
+TARGETTYPE      PLUGIN
+UID             0x10009D8D 0xE7015C01
+VENDORID        VID_DEFAULT
+CAPABILITY      ProtServ
+
+SOURCEPATH      ../src
+SOURCE          pherecfiles.cpp
+
+START RESOURCE  ../data/E7015C01.rss
+TARGET          pherecfiles.rsc
+END
+
+APP_LAYER_SYSTEMINCLUDE
+
+LIBRARY         euser.lib
+LIBRARY         apmime.lib

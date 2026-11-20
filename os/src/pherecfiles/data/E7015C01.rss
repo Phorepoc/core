@@ -1,0 +1,28 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// E7015C01.rss -- ECOM registration of the file-name data recogniser (OURS; after RECTXT's 100012FB.rss)
+#include <ecom/registryinfo.rh>
+
+RESOURCE REGISTRY_INFO r_registry
+    {
+    dll_uid = 0xE7015C01;
+    interfaces =
+        {
+        INTERFACE_INFO
+            {
+            interface_uid = 0x101F7D87;   // the apparc data recogniser interface
+            implementations =
+                {
+                IMPLEMENTATION_INFO
+                    {
+                    implementation_uid = 0xE7015C02;
+                    version_no = 1;
+                    display_name = "PHERECFILES";
+                    default_data = "";
+                    opaque_data = "";
+                    }
+                };
+            }
+        };
+    }

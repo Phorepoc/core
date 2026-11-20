@@ -170,6 +170,36 @@ COMPONENTS = {
     # its Control Panel entry (Applications > Voice recorder: quality and memory in use)
     "gsvoicerecorderplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.voicerec/voicerecorder/gsplugin/group/GSVoiceRecorderPlugin.mmp", flags=_VR_INC,
                                   rsc_incs=_VR_RSC),
+    # --- Podcatcher (app.podcatcher RCL_3): the engine (HTTP + OPML/RSS parsing, SQLite, MPX collection helper) and the app;
+    # the SQLite template and the default feed list are what the engine copies to its private directory on first run
+    "podcastengine": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.podcatcher/engine/group/engine.mmp"),
+    "podcast": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.podcatcher/application/group/Podcast.mmp",
+                    rom_data=["private\\A0009D00\\podcatcher.sqlite.template=baseline/symbian-rcl3/oss.FCL.sf.app.podcatcher/engine/config/podcatcher.sqlite",
+                              "private\\A0009D00\\defaultfeeds.xml=baseline/symbian-rcl3/oss.FCL.sf.app.podcatcher/engine/config/defaultfeeds.xml"]),
+    # --- the phone applications (app.phone, mw.phonesrv RCL_3): USSD, voice mailbox, SIM toolkit menu (they need a modem / SIM)
+    "ussd": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.phone/phoneuis/Ussd/group/ussd.mmp"),
+    "vm": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.phone/phoneuis/vmbx/group/vm.mmp"),
+    "satinternalclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satengine/SatServer/SatInternalClient/group/satinternalclient.mmp"),
+    "satui": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satui/satapp/Group/SatUI.mmp"),
+    # --- Messaging extras (app.messaging RCL_3): audio message editor, postcard editor, MMS notification viewer (+ its MTM UI)
+    "audiomessage": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/audiomsg/group/audiomessage.mmp"),
+    "postcard": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/postcard/postcard/Postcard.mmp"),
+    "notui": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/mmsui/notmtm/NotUi.mmp"),
+    "notviewer": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/mobilemessaging/mmsui/notviewer/NotViewer.mmp"),
+    # --- small viewers and handlers: vCard/vCalendar/smart-message viewer, mailto:/sms: URL handler, "save to contacts" launcher, URL scheme handler
+    "bva": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/smartmessaging/bva/group/BVA.mmp"),
+    "msgurlhandler": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/msgurlhandler/urlhandler/group/MsgUrlHandler.mmp"),
+    "newcontactlauncher": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Phonebook2/NewContactLauncher/group/NewContactLauncher.mmp"),
+    "schemeapp": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/browserutilities/schemehandler/SchemeApp/group/SchemeApp.mmp"),
+    # the BIO controls BVA hosts for the types it registers (it has no UI of its own: with no control for the type it exits at once):
+    # vCard and vCalendar (iCalendar: icalbc does not build against RCL_3 msgbiocontrol: abstract CICalendarBioControl); each ships its BIF (the type -> control table) with the DLL
+    "vcardbc": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/smartmessaging/vcardbc/group/VCardBC.mmp"),
+    "vcalbc": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/smartmessaging/vcalbc/group/VCalBC.mmp"),
+    # OURS: the apparc recogniser that gives .vcf/.vcs/.cer/.crt/.der/.p12/.pfx files the MIME types BVA and CertSaver register for
+    "pherecfiles": dict(mmp=os.path.join(OS_ROOT, "src/pherecfiles/group/pherecfiles.mmp")),
+    # --- Certificate saver (mw.securitysrv RCL_3: opens a .cer/.crt from a file or a message) and the touch-screen calibration app
+    "certsaver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.securitysrv/pkiutilities/CertSaver/group/CertSaver.mmp"),
+    "touchscreencalib": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.settingsuis/systemswuis/touchscreencalib/group/TouchScreenCalib.mmp"),
     # --- FM Radio (app.radio RCL_3 + mmmw radioutility): the UI runs without a tuner (radio server / tuner DD absent)
     # the radio server + the adaptation stub (adapt.stubs: no tuner hardware; the stub lets CRadioUtility open its session so the UI starts)
     "fmradiotunercontrol": dict(mmp="oss.FCL.sf.adapt.stubs/audiostubs/fmradiotunercontrolstub/Group/FMRadioTunerControlStub.mmp"),
@@ -278,6 +308,7 @@ _RDEFS = {
     "mpxsqlitedbplugin": ["__ENABLE_PODCAST_IN_MUSIC_MENU", "__RAMDISK_PERF_ENABLE"],
     "mpxsqlitepodcastdbplugin": ["__ENABLE_PODCAST_IN_MUSIC_MENU"],
     "voicerecorder": ["SINGLE_CLICK_INCLUDED", "RD_MULTIPLE_DRIVE"],
+    "podcast": ["LANGUAGE_01"],   # languages.rss picks PodcastClient_english.rls by it (without: the STRING_r_* names show as text)
 }
 for _k, _d in _RDEFS.items():
     COMPONENTS[_k]["rdefs"] = _d

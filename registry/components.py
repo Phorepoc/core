@@ -1427,8 +1427,7 @@ COMPONENTS = {
     # place of mcssathandler.cpp (it hard-requires a SAT server) -- toolchain/shims/mcssathandler_null
     "satclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satengine/SatServer/SatClient/group/SatClient.mmp"),
     "etelsat": dict(mmp="oss.FCL.sf.os.cellularsrv/telephonyserver/etelsimtoolkit/group/etelsat.mmp"),   # RSat (the SIM toolkit ETel API), <- satengine
-    "satshellcntrl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satui/satapp/Group/SatShellCntrl.mmp",
-                          no_mifs=["satui.mif", "satui_aif.mif"]),   # the SAT server loads it (its UI-client handler), <- satengine; SATUI.exe (the SIM toolkit menu) needs the SIM: its icons stay out
+    "satshellcntrl": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satui/satapp/Group/SatShellCntrl.mmp"),   # the SAT server loads it (its UI-client handler), <- satengine; satui.mif / satui_aif.mif (declared by the same group) now ship with SATUI.exe, the SIM toolkit menu
     "satserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.phonesrv/satengine/SatServer/SatServer/group/SatServer.mmp"),
     # the SIM toolkit idle-text content publisher (0x102078EB): the homescreen profile widget declares it -- without it the
     # catalogue's "Time & profile" widget fails its publishers and is removed ("Problem occurred. Widget(s) removed.")
@@ -1730,6 +1729,7 @@ COMPONENTS = {
     # OURS (audio A0/Q0): two concurrent clients -- CMdaAudioOutputStream 440 Hz + CMdaAudioPlayerUtility 880 Hz WAV
     # OURS (Applications grid, first open): brings the already-started launcher forward once at boot so WSERV rasterises its icons
     "phemenuwarm": dict(mmp=os.path.join(OS_ROOT, "src/phemenuwarm/phemenuwarm.mmp")),
+    "phebtboot": dict(mmp=os.path.join(OS_ROOT, "src/phebtboot/phebtboot.mmp"), arm_only=True),   # Bluetooth power at boot from the stored setting (noncriticalcmdlist_hw.rss)
     "pheshellsel": dict(mmp=os.path.join(OS_ROOT, "src/pheshellsel/pheshellsel.mmp")),   # UI shell selector at boot (S^3 / S^4, dev menu key 1/6)
     # zsh 5.9.2 on the P.I.P.S. libc (os/src/phezsh/README.md): zsh.exe; no fork, externals via posix_spawn
     "phezsh": dict(mmp=os.path.join(OS_ROOT, "src/phezsh/phezsh.mmp"), rom="zsh.exe", defs=["__SOFTFP="], cdriver=True),
