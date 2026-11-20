@@ -479,7 +479,13 @@ private:
                 Post( EFmIdent, 10, aImsi, aTries + 1 );
                 return;
                 }
-            Complete( ipc, KErrNotFound );
+            // CTSY's router unpacks the identity unconditionally (CMmMessageRouterProxy: aDataPackage->UnPackData( imsi ) for
+            // GetSubscriberId, the IMEI for GetPhoneId): an error completion WITHOUT a package dereferenced NULL inside the comms
+            // process and faulted the phone ~75 s after boot (the 60 retries above) -- complete with an empty identity instead
+            TBuf8<KTmpPckgSize> none;
+            CMmDataPackage nopkg;
+            nopkg.PackData( &none );
+            Complete( ipc, &nopkg, KErrNotFound );
             return;
             }
 #endif
