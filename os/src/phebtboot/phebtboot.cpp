@@ -15,6 +15,7 @@
 #include <centralrepository.h>
 #include <btserversdkcrkeys.h>
 #include <btengsettings.h>
+#include <CoreApplicationUIsSDKCRKeys.h>
 
 static const TInt KHoldSeconds = 15;      // the firmware patch download + the stack's init take about 3 s; the engine drops the stack ~3 s after its last client
 
@@ -28,8 +29,13 @@ static void RunL()
 	CRepository* repo = CRepository::NewLC(KCRUidBluetoothPowerState);
 	const TInt err = repo->Get(KBTPowerState, stored);
 	CleanupStack::PopAndDestroy(repo);
-	RDebug::Printf("[phebtboot] stored power state %d (read %d)", stored, err);
-	if (err == KErrNone && stored == EBTPowerOn)
+	// offline mode keeps Bluetooth off, as in the locod BT bearer (btbearer/src/btpluginnotifier.cpp ConstructL)
+	TInt online = ECoreAppUIsNetworkConnectionAllowed;
+	TRAPD(oerr, { CRepository* c = CRepository::NewLC(KCRUidCoreApplicationUIs);
+	              c->Get(KCoreAppUIsNetworkConnectionAllowed, online);
+	              CleanupStack::PopAndDestroy(c); });
+	RDebug::Printf("[phebtboot] stored power state %d (read %d), network allowed %d (%d)", stored, err, online, oerr);
+	if (err == KErrNone && stored == EBTPowerOn && online == ECoreAppUIsNetworkConnectionAllowed)
 		{
 		CBTEngSettings* bt = CBTEngSettings::NewLC();
 		const TInt r = bt->SetPowerState(EBTPowerOn);
