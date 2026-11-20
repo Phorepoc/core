@@ -1,0 +1,14 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// phebtboot.mmp -- OURS: Bluetooth power at boot from the stored setting (phebtboot.cpp)
+TARGET			phebtboot.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157B3
+CAPABILITY		all -tcb
+VENDORID		0
+
+APP_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			phebtboot.cpp
+LIBRARY			euser.lib centralrepository.lib btengsettings.lib
