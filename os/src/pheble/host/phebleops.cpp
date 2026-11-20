@@ -104,21 +104,26 @@ void Event(TInt aType, TUint16 aConn, TInt aError, const TDesC8& aValue = KNullD
 	PheBleServerEvent(ev, aValue);
 	}
 
+// The pending Connect request is answered: the link is up (for a bonded peer, encrypted).
+void CompleteConnect(TUint16 aConn)
+	{
+	if (!gConnectId || aConn != gConnecting)
+		return;
+	TPckgBuf<TUint16> h(aConn);
+	PheBleServerComplete(gConnectId, KErrNone, 0, h);
+	gConnectId = 0;
+	gConnecting = BLE_HS_CONN_HANDLE_NONE;
+	TPheBleEvent ev;
+	Mem::FillZ(&ev, sizeof(ev));
+	ev.iType = EPheBleConnected;
+	ev.iConn = aConn;
+	PheBleServerEvent(ev, KNullDesC8);
+	}
+
 int MtuDone(uint16_t aConn, const ble_gatt_error* aErr, uint16_t aMtu, void*)
 	{
 	OLOG("phebleops: mtu exchange done, handle %d status %d mtu %d", aConn, aErr ? aErr->status : -1, aMtu);
-	if (gConnectId && aConn == gConnecting)
-		{
-		TPckgBuf<TUint16> h(aConn);
-		PheBleServerComplete(gConnectId, KErrNone, 0, h);
-		gConnectId = 0;
-		gConnecting = BLE_HS_CONN_HANDLE_NONE;
-		TPheBleEvent ev;
-		Mem::FillZ(&ev, sizeof(ev));
-		ev.iType = EPheBleConnected;
-		ev.iConn = aConn;
-		PheBleServerEvent(ev, KNullDesC8);
-		}
+	CompleteConnect(aConn);        // (a bonded peer: the connect waited for encryption + this MTU)
 	TPheBleEvent ev;
 	Mem::FillZ(&ev, sizeof(ev));
 	ev.iType = EPheBleMtu;
@@ -170,7 +175,10 @@ int GapConnEvent(ble_gap_event* aEvent, void*)
 				return 0;
 			gConnectWaitsEnc = EFalse;
 			}
-		ble_gattc_exchange_mtu(gConnecting, MtuDone, NULL);
+		// An unbonded peer (a Pebble in pairing mode): the connect is complete once the link is up, the way Gadgetbridge's
+		// PebbleGATTClient does it -- service discovery first, then the pairing-trigger write (which starts the pairing), the MTU
+		// only after encryption (ENC_CHANGE below). Sending an Exchange MTU first got no answer from the Pebble (boot 2824).
+		CompleteConnect(gConnecting);
 		return 0;
 
 	case BLE_GAP_EVENT_DISCONNECT:
@@ -210,6 +218,8 @@ int GapConnEvent(ble_gap_event* aEvent, void*)
 			else
 				ble_gattc_exchange_mtu(conn, MtuDone, NULL);
 			}
+		else if (err == KErrNone && ble_att_mtu(conn) <= 23)
+			ble_gattc_exchange_mtu(conn, MtuDone, NULL);      // first encryption of an unbonded link: now the MTU (339 wanted)
 		if (conn == gPairConn && gPairId)
 			{
 			TPheBleEvent ev;

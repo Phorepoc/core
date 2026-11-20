@@ -164,6 +164,7 @@ private:
 	TThreadId iStackThread;
 
 	RArray<TUint16> iLeHandles;
+	RArray<TUint16> iStackHandles;        // BR/EDR ACL connection handles (Connection Complete .. Disconnection Complete)
 	TInt iAclReserve;                     // buffers kept for LE when the controller shares its ACL buffers
 	TUint16 iStackAclLen;
 	TBool iReady;
@@ -273,6 +274,7 @@ CPheBleRouter::~CPheBleRouter()
 	delete iLeCmdFrame;
 	delete iLeAclFrame;
 	iLeHandles.Close();
+	iStackHandles.Close();
 	iQLock.Close();
 	}
 
@@ -547,6 +549,12 @@ void CPheBleRouter::RouteByHandle(const TDesC8& aEvent, TInt aHandleOffset, TBoo
 	TInt idx = iLeHandles.Find(handle);
 	if (idx == KErrNotFound)
 		{
+		if (aRemove)
+			{
+			TInt si = iStackHandles.Find(handle);
+			if (si != KErrNotFound)
+				iStackHandles.Remove(si);
+			}
 		ToStack(aEvent);
 		return;
 		}
@@ -619,10 +627,23 @@ void CPheBleRouter::MheoProcessEvent(const TDesC8& aEvent)
 		if (aEvent.Length() >= 6 && (aEvent[2] == 0x01 || aEvent[2] == 0x0A) && aEvent[3] == 0)
 			{
 			TUint16 handle = (TUint16)(Get16(aEvent, 4) & 0x0FFF);
+			TInt app = KErrNone;
 			if (!IsLe(handle))
-				iLeHandles.Append(handle);
+				app = iLeHandles.Append(handle);
+			RTRC("pheblerouter: LE handle %03x registered (sub %02x len %d, count %d, append %d)", handle, aEvent[2], aEvent.Length(),
+				iLeHandles.Count(), app);
 			}
 		ToLe(aEvent);
+		break;
+	case 0x03:      // Connection Complete: status(1) handle(2) -- a BR/EDR link
+		if (aEvent.Length() >= 5 && aEvent[2] == 0)
+			{
+			TUint16 handle = (TUint16)(Get16(aEvent, 3) & 0x0FFF);
+			if (iStackHandles.Find(handle) == KErrNotFound)
+				iStackHandles.Append(handle);
+			RTRC("pheblerouter: BR/EDR handle %03x registered (count %d)", handle, iStackHandles.Count());
+			}
+		ToStack(aEvent);
 		break;
 	case 0x05:      // Disconnection Complete: status(1) handle(2)
 		RouteByHandle(aEvent, 3, ETrue);
@@ -652,8 +673,18 @@ void CPheBleRouter::MheoProcessEvent(const TDesC8& aEvent)
 void CPheBleRouter::MhdoProcessAclData(const TDesC8& aData)
 	{
 	if (aData.Length() >= 2)
-		RTRC("pheblerouter: ACL from controller handle %03x len %d (%s)", Get16(aData, 0) & 0x0FFF, aData.Length(),
-			IsLe((TUint16)(Get16(aData, 0) & 0x0FFF)) ? "LE host" : "stack");
+		{
+		const TUint16 h = (TUint16)(Get16(aData, 0) & 0x0FFF);
+		// A handle that is neither a registered LE link nor a known BR/EDR link, while an LE link exists, is the LE link (its
+		// registration was missed or differs): adopt it, so the host's ATT answers are not handed to the BR/EDR stack (boot 2824).
+		if (!IsLe(h) && iLeHandles.Count() > 0 && iStackHandles.Find(h) == KErrNotFound)
+			{
+			RTRC("pheblerouter: ACL handle %03x is in neither list (LE count %d first %03x, stack count %d): taken as LE", h,
+				iLeHandles.Count(), iLeHandles[0], iStackHandles.Count());
+			iLeHandles.Append(h);
+			}
+		RTRC("pheblerouter: ACL from controller handle %03x len %d (%s)", h, aData.Length(), IsLe(h) ? "LE host" : "stack");
+		}
 	if (aData.Length() >= 2 && IsLe((TUint16)(Get16(aData, 0) & 0x0FFF)))
 		{
 		if (iHost)
@@ -708,6 +739,7 @@ void CPheBleRouter::ControllerGone()
 	iReady = EFalse;
 	iCmdInFlight = EFalse;
 	iLeHandles.Reset();
+	iStackHandles.Reset();
 	iQLock.Wait();
 	iLeCmds.ResetAndDestroy();
 	iLeAcl.ResetAndDestroy();
