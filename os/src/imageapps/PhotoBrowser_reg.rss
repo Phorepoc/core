@@ -1,0 +1,46 @@
+/*
+* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
+*
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
+*
+* Contributors: Juha Kauppinen, Mika Hokkanen
+* 
+* Description: Photo Browser
+*
+*/
+
+#include "PhotoBrowser.rls"
+#include <appinfo.rh>
+#include <PhotoBrowser.rsg>
+#include "UidList.txt"
+
+UID2 KUidAppRegistrationResourceFile
+UID3 Imagic_UID3
+
+RESOURCE APP_REGISTRATION_INFO
+  {
+  app_file="PhotoBrowser";
+  localisable_resource_file =  STRING_Imagic_loc_resource_file_1;
+  localisable_resource_id = R_LOCALISABLE_APP_INFO;
+  							
+
+  embeddability=KAppNotEmbeddable;
+  newfile=KAppDoesNotSupportNewFile;
+  // PHOREPOC PATCH (not in the 2010 release): the image types Photo Browser can open, so it is a candidate of the Default applications
+  // "View images" task, and (High priority, the original app) the factory default for them
+  datatype_list =
+    {
+    DATATYPE { priority = EDataTypePriorityHigh; type = "image/jpeg"; },
+    DATATYPE { priority = EDataTypePriorityHigh; type = "image/jpg"; }
+    };
+  }
+
+
+            
+// End of File

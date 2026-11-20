@@ -17,15 +17,35 @@ _PB_INC = []
 for _d in ("group", "Common/Inc", "Common/inc", "EngInc", "IEBgps/inc", "IEBgpClient/inc", "AppInc", "data"):
     _PB_INC += ["-I", _PBD + _d]
 
+
+# Photo Browser's own registration lists no data types, so it is no candidate of Default applications > View images and File Manager
+# cannot hand it a picture. Its mmp is re-written next to the original (same folder, so every relative path stays right) with the
+# registration resource swapped for our patched copy (os/src/imageapps/PhotoBrowser_reg.rss: the JPEG types at High priority).
+_PB_REG = os.path.join(OS_ROOT, "src/imageapps/PhotoBrowser_reg.rss").replace("\\", "/")
+_PB_MMP_SRC = os.path.join(_PBD, "group", "Imagic.mmp")
+_PB_MMP = _PB + "group/Imagic_phe.mmp"
+if os.path.isfile(_PB_MMP_SRC):
+    import re as _re
+    _t = open(_PB_MMP_SRC, encoding="latin-1", newline="").read()
+    _t2 = _re.sub(r"(?im)^(START RESOURCE\s+)PhotoBrowser_reg\.rss", lambda m: m.group(1) + _PB_REG, _t)
+    assert _t2 != _t, "Imagic.mmp: no PhotoBrowser_reg.rss resource to swap"
+    _out = os.path.join(_PBD, "group", "Imagic_phe.mmp")
+    try:
+        if not os.path.isfile(_out) or open(_out, encoding="latin-1", newline="").read() != _t2:
+            open(_out, "w", encoding="latin-1", newline="").write(_t2)
+    except OSError:
+        pass
+
 COMPONENTS = {
     # --- Photo Browser ("Imagic"): Avkon + GLES 1.x; engine = ieutils (common) < iebgps (thumbnail server) < iebgpclient < ieengine
     "ieutils": dict(mmp=_PB + "group/IEUtils.mmp", flags=_PB_INC, drop=["IEEngineUtils.cpp"], extra=["src/imageapps/IEEngineUtils.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/ieutils.def")}),
     "iebgps": dict(mmp=_PB + "IEBgps/group/IEBgps.mmp", flags=_PB_INC, drop=["IETNGenerator.cpp"], extra=["src/imageapps/IETNGenerator.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgps.def")}),
     "iebgpclient": dict(mmp=_PB + "IEBgpClient/group/IEBgpClient.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgpclient.def")}),
     "ieengine": dict(mmp=_PB + "group/IEEngine.mmp", flags=_PB_INC, drop=["IEBitmapLoader.cpp", "IEImageFinder.cpp"], extra=["src/imageapps/IEBitmapLoader.cpp", "src/imageapps/IEImageFinder.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/ieengine.def")}),
-    "photobrowser": dict(mmp=_PB + "group/Imagic.mmp", flags=_PB_INC + ["-fpermissive"],
-                     drop=["DrawUtility.cpp", "ImagicContainerBrowser.cpp", "TextureLoader.cpp"],   # patched copies: implicit int, a case label crossing an initialization
-                     extra=["src/imageapps/DrawUtility.cpp", "src/imageapps/ImagicContainerBrowser.cpp", "src/imageapps/TextureLoader.cpp"]),   # KTNSize: `const KTNSize = 10;` (implicit int)
+    "photobrowser": dict(mmp=_PB_MMP, flags=_PB_INC + ["-fpermissive", "-include", os.path.join(OS_ROOT, "src/imageapps/ImagicAppUi.h")],
+                     rsc_incs=["baseline/symbian-2010/" + _PB + "data"],
+                     drop=["DrawUtility.cpp", "ImagicContainerBrowser.cpp", "TextureLoader.cpp", "ImagicAppUi.cpp"],   # patched copies: implicit int, a case label crossing an initialization; ImagicAppUi(.h/.cpp): opens the one picture File Manager passes (PHOREPOC PATCH; the header is force-included so it wins over AppInc/)
+                     extra=["src/imageapps/DrawUtility.cpp", "src/imageapps/ImagicContainerBrowser.cpp", "src/imageapps/TextureLoader.cpp", "src/imageapps/ImagicAppUi.cpp"]),
     # --- the imaging framework's test viewer, re-made in Avkon (its Techview UI libraries are not in the OS)
     "timageviewer": dict(mmp=os.path.join(OS_ROOT, "src/timageviewer/timageviewer.mmp")),
     # --- Image Editor (app.imgeditor): the app, its manager/UI/engine libraries, the filters (loaded by name) and the editing plug-ins (.pgn, entry = ordinal 1)
