@@ -30,7 +30,9 @@
 _LIT8(KMimeJpeg, "image/jpeg");
 _LIT8(KMimePng, "image/png");
 
-#define DO_NOT_USE_SCALING
+// PHOREPOC PATCH: the app relied on a device JPEG decoder that scales into any destination bitmap; the stock ICL JPEG decoder only reduces
+// by 1/2, 1/4, 1/8 into the top-left of a larger bitmap, so the decode is scaled by CBitmapScaler as the app does without this macro.
+//#define DO_NOT_USE_SCALING
 
 
 
