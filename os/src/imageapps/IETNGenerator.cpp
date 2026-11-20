@@ -82,6 +82,7 @@ void CIETNGeneratorAO::RunL()
     {
     DP0_IMAGIC((_L("CIETNGeneratorAO::RunL ++")));
     iError = iStatus.Int();
+    RDebug::Printf("[imagic-tn] RunL status %d state %d for %S", iStatus.Int(), (TInt)iConvertStatus, &iSourceFileName);
 	
 #ifdef _IMAGIC_DEBUG
     TInt mem = 0;
