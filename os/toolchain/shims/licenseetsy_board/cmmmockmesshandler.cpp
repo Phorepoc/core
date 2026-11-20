@@ -119,10 +119,30 @@ public:
     void PheCodeResult( TInt aErr ) { PostComplete( EMobilePhoneVerifySecurityCode, aErr ); }
     // the SIM state as the security events CTSY's CMmSecurityTsy expects (it caches them until a client listens):
     // no card -> ENoICCFound, PIN -> EPin1Required (the S60 PIN query), PUK -> EPuk1Required, READY after a code -> EPin1Verified
+    // The SIM status SSM acts on (KPSUidStartup/KPSSimStatus, the simstatus SWP) follows the startup adaptation's ESimEvent
+    // (clayer startupadaptationadapter.cpp -> CSsmSimStatusObserver). On a phone the licensee adaptation raises it from the
+    // modem; our adaptation is the 2010 stub, whose only event source is its P&S hook (sastubeventlistener.cpp: category
+    // 0x0AA01499 key 1 = event << 16 | argument). Raise it from the modem's real state: usable only once the card answered
+    // READY, not ready otherwise (no AT port, no card). Without this SSM's critical SIM check (noncriticalcmdlist
+    // r_cmd_simcheck, customcmds ordinal 10) ran without an IMSI to read, failed, and SSM reset the phone every ~90 s.
+    static void SimToSsm( TPheSim aSim )
+        {
+        const TInt KStubEvent = 0x0AA01499, KSimEvent = 103, KSimUsable = 100, KSimNotReady = 102;
+        const TInt arg = aSim == EPheSimReady ? KSimUsable : KSimNotReady;
+        const TInt r = RProperty::Set( TUid::Uid( KStubEvent ), 1, ( KSimEvent << 16 ) | arg );
+        TInt now = -1;
+        RProperty::Get( TUid::Uid( 0x101F8766 ), 0x31, now );     // KPSUidStartup / KPSSimStatus, as SSM has it now
+        RDebug::Printf( "[pheltsy] SIM %d -> startup adaptation SIM event %d: %d (KPSSimStatus before %d)", (TInt)aSim, arg, r, now );
+        }
     void DoSim()
         {
         if ( !iAt )
             return;
+        if ( iAt->Sim() != iSsmSim )
+            {
+            iSsmSim = iAt->Sim();
+            SimToSsm( iSsmSim );
+            }
         RMobilePhone::TMobilePhoneSecurityEvent ev;
         switch ( iAt->Sim() )
             {
@@ -146,6 +166,7 @@ public:
         RDebug::Printf( "[pheltsy] security event %d", (TInt)ev );
         }
     TPheSim iLastSim;
+    TPheSim iSsmSim;                       // the SIM state last told to SSM (SimToSsm); EPheSimUnknown = none yet
 
     // ---- M4 calls over AT: the same CTSY call-state completions the scripted modem makes, driven by AT+CLCC
     TBool iDialPending, iAnswerPending, iHangPending;

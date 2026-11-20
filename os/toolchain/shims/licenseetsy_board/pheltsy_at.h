@@ -239,6 +239,10 @@ private:
 			{
 			if (iOpenTicks == 1 || iOpenTicks % 300 == 1)		// first try, then every 30 s
 				RDebug::Printf("[pheltsy] AT port unit %d not there yet (%d)", KPheUnitAt, r);
+			// no modem to ask after 10 s: no card as far as the phone can tell (SSM's SIM status follows, so its SIM
+			// check does not wait for an IMSI that cannot come); the port's arrival and CPIN READY make it usable again
+			if (iOpenTicks == 101 && iSim == EPheSimUnknown)
+				SetSim(EPheSimAbsent);
 			return;
 			}
 		RDebug::Printf("[pheltsy] AT port: RBusDevComm::Open(%d) (USB serial) -> 0 after %d s", KPheUnitAt, iOpenTicks / 10);
