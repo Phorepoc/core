@@ -19,22 +19,24 @@ for _d in ("group", "Common/Inc", "Common/inc", "EngInc", "IEBgps/inc", "IEBgpCl
 
 
 # Photo Browser's own registration lists no data types, so it is no candidate of Default applications > View images and File Manager
-# cannot hand it a picture. Its mmp is re-written next to the original (same folder, so every relative path stays right) with the
-# registration resource swapped for our patched copy (os/src/imageapps/PhotoBrowser_reg.rss: the JPEG types at High priority).
-_PB_REG = os.path.join(OS_ROOT, "src/imageapps/PhotoBrowser_reg.rss").replace("\\", "/")
+# cannot hand it a picture. Its mmp is re-written next to the original (same folder, so every relative path stays right), with the
+# registration resource swapped for our patched copy (os/src/imageapps/PhotoBrowser_reg.rss: the JPEG types at High priority), which
+# is copied into the original's data/ folder too: the build runs on the host and in containers, where our os/ tree has other paths.
 _PB_MMP_SRC = os.path.join(_PBD, "group", "Imagic.mmp")
 _PB_MMP = _PB + "group/Imagic_phe.mmp"
-if os.path.isfile(_PB_MMP_SRC):
+_PB_REG_SRC = os.path.join(OS_ROOT, "src/imageapps/PhotoBrowser_reg.rss")
+if os.path.isfile(_PB_MMP_SRC) and os.path.isfile(_PB_REG_SRC):
     import re as _re
     _t = open(_PB_MMP_SRC, encoding="latin-1", newline="").read()
-    _t2 = _re.sub(r"(?im)^(START RESOURCE\s+)PhotoBrowser_reg\.rss", lambda m: m.group(1) + _PB_REG, _t)
+    _t2 = _re.sub(r"(?im)^(START RESOURCE\s+)PhotoBrowser_reg\.rss", lambda m: m.group(1) + "PhotoBrowser_phe_reg.rss", _t)
     assert _t2 != _t, "Imagic.mmp: no PhotoBrowser_reg.rss resource to swap"
-    _out = os.path.join(_PBD, "group", "Imagic_phe.mmp")
-    try:
-        if not os.path.isfile(_out) or open(_out, encoding="latin-1", newline="").read() != _t2:
-            open(_out, "w", encoding="latin-1", newline="").write(_t2)
-    except OSError:
-        pass
+    for _dst, _txt in ((os.path.join(_PBD, "group", "Imagic_phe.mmp"), _t2),
+                       (os.path.join(_PBD, "data", "PhotoBrowser_phe_reg.rss"), open(_PB_REG_SRC, encoding="latin-1", newline="").read())):
+        try:
+            if not os.path.isfile(_dst) or open(_dst, encoding="latin-1", newline="").read() != _txt:
+                open(_dst, "w", encoding="latin-1", newline="").write(_txt)
+        except OSError:
+            pass
 
 COMPONENTS = {
     # --- Photo Browser ("Imagic"): Avkon + GLES 1.x; engine = ieutils (common) < iebgps (thumbnail server) < iebgpclient < ieengine
@@ -43,7 +45,6 @@ COMPONENTS = {
     "iebgpclient": dict(mmp=_PB + "IEBgpClient/group/IEBgpClient.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgpclient.def")}),
     "ieengine": dict(mmp=_PB + "group/IEEngine.mmp", flags=_PB_INC, drop=["IEBitmapLoader.cpp", "IEImageFinder.cpp"], extra=["src/imageapps/IEBitmapLoader.cpp", "src/imageapps/IEImageFinder.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/ieengine.def")}),
     "photobrowser": dict(mmp=_PB_MMP, flags=_PB_INC + ["-fpermissive", "-include", os.path.join(OS_ROOT, "src/imageapps/ImagicAppUi.h")],
-                     rsc_incs=["baseline/symbian-2010/" + _PB + "data"],
                      drop=["DrawUtility.cpp", "ImagicContainerBrowser.cpp", "TextureLoader.cpp", "ImagicAppUi.cpp"],   # patched copies: implicit int, a case label crossing an initialization; ImagicAppUi(.h/.cpp): opens the one picture File Manager passes (PHOREPOC PATCH; the header is force-included so it wins over AppInc/)
                      extra=["src/imageapps/DrawUtility.cpp", "src/imageapps/ImagicContainerBrowser.cpp", "src/imageapps/TextureLoader.cpp", "src/imageapps/ImagicAppUi.cpp"]),
     # --- the imaging framework's test viewer, re-made in Avkon (its Techview UI libraries are not in the OS)
