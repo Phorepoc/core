@@ -19,7 +19,7 @@ for _d in ("group", "Common/Inc", "Common/inc", "EngInc", "IEBgps/inc", "IEBgpCl
 
 COMPONENTS = {
     # --- Photo Browser ("Imagic"): Avkon + GLES 1.x; engine = ieutils (common) < iebgps (thumbnail server) < iebgpclient < ieengine
-    "ieutils": dict(mmp=_PB + "group/IEUtils.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/ieutils.def")}),
+    "ieutils": dict(mmp=_PB + "group/IEUtils.mmp", flags=_PB_INC, drop=["IEEngineUtils.cpp"], extra=["src/imageapps/IEEngineUtils.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/ieutils.def")}),
     "iebgps": dict(mmp=_PB + "IEBgps/group/IEBgps.mmp", flags=_PB_INC, drop=["IETNGenerator.cpp"], extra=["src/imageapps/IETNGenerator.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgps.def")}),
     "iebgpclient": dict(mmp=_PB + "IEBgpClient/group/IEBgpClient.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgpclient.def")}),
     "ieengine": dict(mmp=_PB + "group/IEEngine.mmp", flags=_PB_INC, drop=["IEBitmapLoader.cpp", "IEImageFinder.cpp"], extra=["src/imageapps/IEBitmapLoader.cpp", "src/imageapps/IEImageFinder.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/ieengine.def")}),
