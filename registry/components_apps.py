@@ -191,6 +191,11 @@ COMPONENTS = {
     "msgurlhandler": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.messagingmw/messagingfw/msgurlhandler/urlhandler/group/MsgUrlHandler.mmp"),
     "newcontactlauncher": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.contacts/phonebookui/Phonebook2/NewContactLauncher/group/NewContactLauncher.mmp"),
     "schemeapp": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.web/browserutilities/schemehandler/SchemeApp/group/SchemeApp.mmp"),
+    # the BIO controls BVA hosts for the types it registers (it has no UI of its own: with no control for the type it exits at once):
+    # vCard, vCalendar, iCalendar; each ships its BIF (the type -> control table) with the DLL
+    "vcardbc": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/smartmessaging/vcardbc/group/VCardBC.mmp"),
+    "vcalbc": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/smartmessaging/vcalbc/group/VCalBC.mmp"),
+    "icalbc": dict(mmp="../symbian-rcl3/oss.FCL.sf.app.messaging/messagingappbase/smartmessaging/icalbc/group/ICalBC.mmp"),
     # OURS: the apparc recogniser that gives .vcf/.vcs/.cer/.crt/.der/.p12/.pfx files the MIME types BVA and CertSaver register for
     "pherecfiles": dict(mmp=os.path.join(OS_ROOT, "src/pherecfiles/group/pherecfiles.mmp")),
     # --- Certificate saver (mw.securitysrv RCL_3: opens a .cer/.crt from a file or a message) and the touch-screen calibration app
