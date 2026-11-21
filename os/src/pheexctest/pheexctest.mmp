@@ -1,0 +1,16 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// pheexctest: user-side exception delivery (a handled software exception, then a handled page fault under a TRAP).
+// Started by SSM at boot (SSM_TEST=pheexctest); prints PHEEXCTEST PASS/FAIL on the debug port.
+TARGET			pheexctest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157F0
+CAPABILITY		None
+VENDORID		0
+EPOCSTACKSIZE	0x4000
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+SOURCEPATH		.
+SOURCE			pheexctest.cpp
+LIBRARY			euser.lib
+SMPSAFE

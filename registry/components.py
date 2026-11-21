@@ -350,6 +350,8 @@ COMPONENTS = {
     "phemodetest": dict(mmp=os.path.join(OS_ROOT, "src/phemodetest/phemodetest.mmp"), test=True),
     # OURS: R2e test client: a native group (asks for screen mode 0, draws a full-screen grid); SSM_TEST=phenative
     "phenative": dict(mmp=os.path.join(OS_ROOT, "src/phenative/phenative.mmp"), test=True),
+    # OURS: user-side exception delivery test (a handled software exception + a handled page fault); SSM_TEST=pheexctest
+    "pheexctest": dict(mmp=os.path.join(OS_ROOT, "src/pheexctest/pheexctest.mmp"), test=True),
     # "keyrouter.dll" (wsini KEYROUTERPLUGIN overrides) and LEAVES without it -- the NGA boot's EWsPanicFailedToInitialise
     "keyrouter": dict(mmp=f"{G}/windowing/windowserverplugins/keyeventrouting/group/keyeventrouting.mmp", nga=True,
                       drop=["keyrouter.cpp"], extra=["toolchain/shims/keyrouter_board/keyrouter.cpp"],   # no combined power/end key
