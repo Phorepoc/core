@@ -854,7 +854,7 @@ COMPONENTS = {
                             # + the vibra plug-in = OURS: the motor through power HAL 0x5056: src/hwrm/VibraPlugin.cpp
                             drop=["PowerStatePlugin.cpp", "LightPlugin.cpp", "VibraPlugin.cpp"],
                             extra=["src/hwrm/PowerStatePlugin.cpp", "src/hwrm/LightPlugin.cpp", "src/hwrm/VibraPlugin.cpp"],
-                            libs=["hal.lib", "centralrepository.lib"]),   # (the boot guard timeout, developer menu key 3)
+                            libs=["hal.lib", "centralrepository.lib", "efsrv.lib"]),   # (the boot guard timeout, developer menu key 3; efsrv: the installed shells, pheshells.h)
     # key-sound anim plug-in deps: tactile click plug-in + HWRM light client (client side only)
     "tactilearearegistry": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.hapticsservices/tactilefeedback/tactilearearegistry/group/tactilearearegistry.mmp"),
     "tactileclickplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.hapticsservices/tactilefeedback/tactileclickplugin/group/tactileclickplugin.mmp"),

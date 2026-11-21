@@ -15,6 +15,7 @@
 #include <centralrepository.h>
 #include "PowerStatePlugin.h"
 #include "../phorepoc/inc/phhal.h"
+#include "../phedevmenu/pheshells.h"
 
 // The battery is read every second (a HAL call that copies the kernel's last reading: cheap); a change of the charger shows
 // within a second. The guard ping / boot-guard timeout / process checks keep their old 10 s cadence (KGuardEvery polls).
@@ -56,6 +57,54 @@ static TBool ProcessExists( const TDesC& aExe )
             return ETrue;
         }
     return EFalse;
+    }
+
+// The home of the shell that runs: S^3's homescreen.exe, or -- for a shell a package installed (pheshells.h: Etesian, Orbit)
+// -- that shell's launcher, which "lives as long as the shell does" (pheshells.h). Without the second case the guard never
+// pinged under such a shell and reset it to golden slot A after 180 s. Read on each guard tick (10 s): no state of our own
+// (a plug-in DLL has no writable static data; the class is the stub's).
+static void CloseShells( TAny* aShells )
+    {
+    PheShellsClose( *static_cast<RPheShells*>( aShells ) );
+    }
+
+static TBool SelectedShellLauncherExistsL()
+    {
+    CRepository* repo = CRepository::NewL( TUid::Uid( 0xE7015A01 ) );
+    CleanupStack::PushL( repo );
+    HBufC* id = PheSelectedShellIdL( repo );
+    CleanupStack::PopAndDestroy( repo );
+    CleanupStack::PushL( id );
+    TBool hit = EFalse;
+    if ( id->CompareF( KPheShellIdS3 ) != 0 )
+        {
+        RFs fs;
+        User::LeaveIfError( fs.Connect() );
+        CleanupClosePushL( fs );
+        RPheShells shells;
+        CleanupStack::PushL( TCleanupItem( CloseShells, &shells ) );
+        PheListShellsL( fs, shells );
+        for ( TInt i = 0; i < shells.Count() && !hit; ++i )
+            {
+            if ( shells[i]->Id().CompareF( *id ) != 0 || !shells[i]->Launcher().Length() )
+                continue;
+            TFileName exe( _L( "\\" ) );
+            exe.Append( TParsePtrC( shells[i]->Launcher() ).NameAndExt() );
+            hit = ProcessExists( exe );
+            }
+        CleanupStack::PopAndDestroy( 2, &fs );
+        }
+    CleanupStack::PopAndDestroy( id );
+    return hit;
+    }
+
+static TBool ShellHomeExists()
+    {
+    if ( ProcessExists( _L( "\\homescreen.exe" ) ) )
+        return ETrue;
+    TBool hit = EFalse;
+    TRAP_IGNORE( hit = SelectedShellLauncherExistsL() );
+    return hit;
     }
 // (a plug-in DLL has no writable static data: what was last reported = iKeyValue, a byte per key, value + 16; 0 = none)
 
@@ -107,7 +156,7 @@ TInt CPowerStatePlugin::Callback( TAny* aPtr )
         SendGuardTimeout();
     if ( guardTick )
         {
-        const TBool ws = ProcessExists( _L( "\\ewsrv.exe" ) ), hs = ProcessExists( _L( "\\homescreen.exe" ) );
+        const TBool ws = ProcessExists( _L( "\\ewsrv.exe" ) ), hs = ShellHomeExists();
         if ( ws && hs )
             UserSvr::HalFunction( EHalGroupPower, EPhHalPowerGuardPing, 0, 0 );
         if ( self->iKey <= 20 * KGuardEvery )
