@@ -35,6 +35,12 @@ const TUint32 KPheDevKeyShellNote = 12;
 const TInt KPheShellMaxTries = 2;
 const TInt KPheCenRepTextMax = 1024;		// CenRep's own limit for a string value (centralrepository.h KMaxUnicodeStringLength)
 
+// P&S, published by pheshellsel (its own SID as the category) once a non-S^3 shell's launcher has signalled: the launcher's
+// process id (low 32 bits). The boot guard (hwrm PowerStatePlugin) reads it to tell "the shell is up" without the file server
+// or CenRep on HWRM's thread (a shell scan there every 10 s stalled every Etesian boot, 2026-11-21). Absent = no such shell.
+const TUid KPheShellSelCategory = {0xE70157B6};
+const TUint32 KPheShellSelKeyLauncherPid = 1;
+
 _LIT(KPheShellIdS3, "symbian3");
 _LIT(KPheShellIdS4, "symbian4");
 _LIT(KPheShellsDir, "\\resource\\phe\\shells\\");
