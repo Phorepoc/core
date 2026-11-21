@@ -23,6 +23,7 @@
 #include <e32debug.h>
 #include <d32comm.h>
 #include <etelmm.h>
+#include "pheltsy_data.h"
 
 struct TPheNet
 	{
@@ -86,7 +87,7 @@ public:
 	const TDesC8& Imei() const { return iImei; }
 	TBool Ready() const { return iReady; }
 
-	enum TCmdKind { ECmdPoll, ECmdCode, ECmdDial, ECmdAnswer, ECmdHangUp, ECmdClcc, ECmdCmgs, ECmdCmgr, ECmdCmgd, ECmdDiag, ECmdCeer };
+	enum TCmdKind { ECmdPoll, ECmdCode, ECmdDial, ECmdAnswer, ECmdHangUp, ECmdClcc, ECmdCmgs, ECmdCmgr, ECmdCmgd, ECmdDiag, ECmdCeer, ECmdData };
 
 	// PIN1 (aPuk empty) or PUK1 + new PIN: queued ahead of the poll; the result comes back through PheCodeResult
 	TInt EnterCode(const TDesC& aCode, const TDesC& aPuk)
@@ -290,7 +291,17 @@ private:
 				}
 			}
 		else
+			{
 			User::After(10000);				// a line error (break while unpowered): don't spin
+			if (iStatus.Int() != KErrCancel && ++iRxErrors >= 50)
+				{
+				RDebug::Printf("[pheltsy] AT port: %d read errors in a row (last %d): the modem left USB", iRxErrors, iStatus.Int());
+				PortReset();
+				return;
+				}
+			}
+		if (iStatus.Int() == KErrNone)
+			iRxErrors = 0;
 		Read();
 		}
 
@@ -407,6 +418,8 @@ private:
 			Send(TPtrC8((const TUint8*)KDiagCmds[iDiag]));
 			return;
 			}
+		if (iReady && iSim == EPheSimReady && iImsi.Length() >= 5 && iData < KDataDone && DataStep())
+			return;
 		if (iWantCeer)
 			{
 			iWantCeer = EFalse;
@@ -481,6 +494,9 @@ private:
 				return;
 			case ECmdCeer:
 				return;
+			case ECmdData:
+				++iData;
+				return;
 			default:
 				break;
 			}
@@ -521,6 +537,115 @@ private:
 				iObs.PheNetChanged();
 				}
 			}
+		}
+	// Mobile data (2026-11-21). The data path is the modem's USB Ethernet function (CDC ECM, AT+QCFG="usbnet",1: the modem
+	// dials context 1 by itself when it starts) behind the board's Ethernet IAP; the APN of context 1 (AT+CGDCONT, stored in
+	// the modem) is the one thing the phone must give it -- with an empty APN the network answers with a context that routes
+	// nowhere (boots 2959-2968: APN "nodata", only the modem's own gateway answers). Once per SIM, after the diagnostics:
+	//   1. the APN, from the S60 packet-data access point (pheltsy_data.h; provisioned from the operator table if missing);
+	//   2. AT+QCFG="usbnet" and AT+CGDCONT? read;
+	//   3. AT+CGDCONT=1,"IPV4V6","<apn>" only when the stored APN differs (the setting is permanent: never rewritten each boot);
+	//   4. the modem restarted only when something changed: AT+QCFG="usbnet",1 when it is not in ECM mode (the switch
+	//      restarts the modem, which also redials with the new APN), else AT+CFUN=1,1 after an APN change. AT+CGACT=0,1 /
+	//      1,1 does not redial the ECM call (boot 2964: the context kept APN "nodata"), and this firmware has no
+	//      AT+QNETDEVCTL (it answers ERROR), so a modem restart is the only way. The modem leaves USB and comes back: the AT
+	//      port is closed and reopened (PortReset), and the steps run once more to confirm (nothing left to change).
+	enum { KDataDone = 6 };
+	TBool DataStep()
+		{
+		switch (iData)
+			{
+			case 0:
+				{
+				if (iDataRounds >= 2)
+					{ iData = KDataDone; return EFalse; }
+				++iDataRounds;
+				iProv.iPlmn.Copy(iImsi.Left(5));
+				iProv.iApn.Zero();
+				iProv.iErr = KErrNone;
+				const TInt r = iProvThread.Create(_L("PheApnProv"), PheApnThread, 0x4000, 0x1000, 0x40000, &iProv, EOwnerThread);
+				if (r != KErrNone)
+					{
+					RDebug::Printf("[pheltsy] data: provisioning thread %d", r);
+					iData = KDataDone;
+					return EFalse;
+					}
+				iProvThread.Resume();				// polled (ExitType), never Logon: a completion on this thread would be a stray
+													// signal to the TSY's active scheduler
+				iData = 1;
+				return EFalse;
+				}
+			case 1:
+				if (iProvThread.ExitType() == EExitPending)
+					return EFalse;					// next poll round
+				if (iProvThread.ExitType() != EExitKill)
+					iProv.iErr = KErrDied;
+				iProvThread.Close();
+				RDebug::Printf("[pheltsy] data: APN \"%S\" (%d)", &iProv.iApn, iProv.iErr);
+				iData = 2;
+				// fall through
+			case 2:
+				iKind = ECmdData;
+				iUsbnetSeen = EFalse;
+				Send(_L8("AT+QCFG=\"usbnet\""));
+				return ETrue;
+			case 3:
+				iKind = ECmdData;
+				iCtxSeen = EFalse;
+				iCtxApn.Zero();
+				Send(_L8("AT+CGDCONT?"));
+				return ETrue;
+			case 4:
+				if (iProv.iApn.Length() && iCtxSeen && iCtxApn != iProv.iApn)
+					{
+					TBuf8<96> c(_L8("AT+CGDCONT=1,\"IPV4V6\",\""));
+					c.Append(iProv.iApn);
+					c.Append('"');
+					RDebug::Printf("[pheltsy] data: context 1 APN \"%S\" -> \"%S\"", &iCtxApn, &iProv.iApn);
+					iApnChanged = ETrue;
+					iKind = ECmdData;
+					Send(c);
+					return ETrue;
+					}
+				iData = 5;
+				// fall through
+			case 5:
+				{
+				const TBool ecm = iUsbnetSeen && iUsbnet == 1;
+				iData = KDataDone;
+				if (ecm && !iApnChanged)
+					{
+					RDebug::Printf("[pheltsy] data: modem ready (ECM, APN \"%S\")", &iCtxApn);
+					return EFalse;
+					}
+				if (!iUsbnetSeen)
+					return EFalse;					// an older firmware without the setting: leave it alone
+				iApnChanged = EFalse;
+				RDebug::Printf("[pheltsy] data: restarting the modem (%s)", ecm ? "new APN" : "usbnet -> ECM");
+				iKind = ECmdData;
+				Send(ecm ? _L8("AT+CFUN=1,1") : _L8("AT+QCFG=\"usbnet\",1"));
+				User::After(500000);				// the command reaches the modem; it leaves USB without (always) answering
+				PortReset();
+				iData = 0;							// once more after it is back: confirms (nothing to change)
+				return ETrue;
+				}
+			default:
+				return EFalse;
+			}
+		}
+	// the modem left USB (a restart it was told to do, or a lost port): close the AT port and wait for it to come back
+	void PortReset()
+		{
+		Cancel();
+		iPort.Close();
+		iOpen = EFalse;
+		iOpenTicks = -50;						// TryOpenAt again from 5 s on
+		iReady = EFalse;
+		iRdy = EFalse;
+		iStep = 0;
+		iCmdActive = EFalse;
+		iRxErrors = 0;
+		RDebug::Printf("[pheltsy] AT port closed (modem restart): reopened when it is back");
 		}
 	void SetSim(TPheSim aSim)
 		{
@@ -652,6 +777,23 @@ private:
 			{
 			iAudioReady = ETrue;
 			RDebug::Printf("[pheltsy] audio ready, QDAI %S", &l);
+			return;
+			}
+		if (iCmdActive && iKind == ECmdData && aLine.Find(_L8("+QCFG: \"usbnet\",")) == 0)
+			{ TLex8 lx(aLine.Mid(16)); lx.Val(iUsbnet); iUsbnetSeen = ETrue; return; }
+		if (iCmdActive && iKind == ECmdData && aLine.Find(_L8("+CGDCONT: 1,")) == 0)
+			{
+			// +CGDCONT: 1,"<PDP type>","<APN>",...: the APN is between the third and the fourth quote
+			TPtrC8 r(aLine);
+			for (TInt q = 0; q < 3; ++q)
+				{
+				const TInt at = r.Locate('"');
+				if (at < 0) { r.Set(KNullDesC8); break; }
+				r.Set(r.Mid(at + 1));
+				}
+			const TInt end = r.Locate('"');
+			iCtxApn.Copy((end >= 0 ? r.Left(end) : r).Left(iCtxApn.MaxLength()));
+			iCtxSeen = ETrue;
 			return;
 			}
 		if (aLine.Find(_L8("+CPIN: ")) == 0)
@@ -905,6 +1047,11 @@ private:
 	TCmdKind iKind;
 	TBool iInCall, iClccMt, iPduSent, iPduNext, iAudioReady, iCdsNext, iWantCeer;
 	TInt iDiag;
+	TInt iData, iDataRounds, iUsbnet, iRxErrors;	// mobile data setup (DataStep)
+	TBool iUsbnetSeen, iCtxSeen, iApnChanged;
+	TBuf8<64> iCtxApn;
+	TPheApnProv iProv;
+	RThread iProvThread;
 	TInt iLastClcc, iClccStat, iMr, iCmgrIndex, iCmgrPendingIndex;
 	TBuf8<44> iClccNumber;
 	TBuf8<360> iSmsHex;
