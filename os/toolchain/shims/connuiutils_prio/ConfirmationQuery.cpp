@@ -26,7 +26,6 @@
 #include <uikon/eiksrvui.h>
 #include <StringLoader.h>
 #include <ConnUiUtilsNotif.rsg>
-#include <e32debug.h>
 #include <aknglobalpopupprioritycontroller.h>
 #include <GlobalWindowPriorities.h>
 
@@ -34,15 +33,9 @@
 // Avkon's global popup stack ABOVE ordinary notes (priority 0). Left at 0 it sat behind a note raised later ("2 new messages") in the
 // common notifier app server, and its expiry timer then cancelled it unseen (MPM: CMPMConfirmDlgRoaming, EConfirmDlgVisitorNetwork).
 // KGlobalWindowPriority_Alarm = 2 is above the key-lock and battery notes (1) and equal to an alarm (the later one is on top).
-// The trace says whether the popup priority controller is enabled in THIS process (the common notifier app server enables it, so the
-// call must succeed) and what SetPopupPriorityL returned. The window-group priorities themselves cannot be read from here: the ws32
-// client calls that list them (RWsSession::WindowGroupList / GetWindowGroupOrdinalPriority, RWindowTreeNode::OrdinalPosition) are not
-// exported by our ws32 and would be link stubs, which the stub audit refuses.
 static void RaiseQueryPriority( CCoeControl& aPopup )
     {
-    TRAPD( err, AknGlobalPopupPriorityController::SetPopupPriorityL( aPopup, KGlobalWindowPriority_Alarm ) );
-    RDebug::Print( _L( "[confq] query shown: SetPopupPriorityL(%d) -> %d, global popups allowed %d" ),
-        KGlobalWindowPriority_Alarm, err, AknGlobalPopupPriorityController::GlobalPopupsAllowed() );
+    TRAP_IGNORE( AknGlobalPopupPriorityController::SetPopupPriorityL( aPopup, KGlobalWindowPriority_Alarm ) );
     }
 
 // CONSTANTS
