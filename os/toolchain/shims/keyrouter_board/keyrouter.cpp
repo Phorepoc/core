@@ -26,6 +26,7 @@
 
 #include <e32cmn.h>
 #include <e32debug.h>
+#include <e32property.h>
 #include "keyrouterimpl.h"
 #include "keyaliases.h"
 
@@ -449,6 +450,19 @@ TBool CKeyEventRouterImpl::IsRestrictedKey(const TKeyCaptureRequest& aRequest)
 				{
 				return EFalse;
 				}
+#ifndef KEYROUTER_TEST
+			// PHOREPOC delta (2026-11-21): a key reserved for the home screen is also the running shell's home's. An installed
+			// shell's idle application announces itself the S^3 way (KPSUidAiInformation / KActiveIdleUid, published by
+			// pheshellsel); without this its Menu key capture failed -46 (KErrPermissionDenied) under Etesian.
+			if (entry->iAppUidValue == KUidHomeScreen && aRequest.iAppUid.iUid != 0)
+				{
+				TInt idle = 0;
+				if (RProperty::Get(TUid::Uid(0x101FD657), 1, idle) == KErrNone && idle == aRequest.iAppUid.iUid)
+					{
+					return EFalse;
+					}
+				}
+#endif
 			}
 		}
 
