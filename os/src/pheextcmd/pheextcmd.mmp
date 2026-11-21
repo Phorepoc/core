@@ -1,0 +1,17 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// pheextcmd.mmp -- OURS: SSM custom command that runs a System Startup Extension plug-in (pheextcmd.cpp)
+TARGET			pheextcmd.dll
+TARGETTYPE		dll
+UID				0x1000008D 0xE70157F3
+CAPABILITY		all -tcb
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+MW_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			pheextcmd.cpp
+LIBRARY			euser.lib efsrv.lib ecom.lib ssmcmd.lib
+DEFFILE			pheextcmd.def
+SMPSAFE

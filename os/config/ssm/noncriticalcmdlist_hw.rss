@@ -101,6 +101,8 @@ RESOURCE SSM_COMMAND_LIST r_cmds
 	,r_cmd_phedispmode
 	// prio 0x7E06 -- PHOREPOC Bluetooth power at boot (src/phebtboot): applies the stored power setting (KBTPowerState) at boot; exits at once when it is off
 	,r_cmd_phebtboot
+	// prio 0x7E07 -- the Avkon startup extension "enable global notes" (KUikGlobalNotesAllowed = 1), through OUR bridge src/pheextcmd
+	,r_cmd_globalnotes
         };
     }
 
@@ -338,6 +340,32 @@ RESOURCE SSM_CND_FEATURE_VALUE r_cond_feat_smartcardprov
 RESOURCE CMD_PARAM_TIMEOUT r_dlldata_activitymonitor_timeout
     {
     timeout = 2;
+    }
+
+// ---------------------------------------------------------------------------
+// r_cmd_globalnotes -- PHOREPOC (2026-11-21): S60 ran the Avkon System Startup Extension plug-in (ECOM 0x1020506C) with
+// "enable global notes" once the boot was done; that runner was never published. src/pheextcmd runs the same plug-in:
+// it publishes KUikGlobalNotesAllowed = 1 (Avkon transitions, AknCapServer's idle window group, the phone app's notes).
+// ---------------------------------------------------------------------------
+//
+STRUCT PHE_EXT_CMD_PARAMS
+    {
+    BUF8 params = "";
+    }
+
+RESOURCE PHE_EXT_CMD_PARAMS r_dlldata_globalnotes
+    {
+    params = "1020506C enable global notes";
+    }
+
+RESOURCE SSM_START_CUSTOM_COMMAND r_cmd_globalnotes
+    {
+    priority = 0x7E07;
+    severity = ECmdIgnoreFailure;
+    execution_behaviour = ESsmWaitForSignal;
+    dllname = "pheextcmd.dll";
+    ordinal = 1; // PheExtCmdNewL
+    dll_data = r_dlldata_globalnotes;
     }
 
 // monitoring.rss contains resource definitions, so it may not be included

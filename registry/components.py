@@ -822,6 +822,12 @@ COMPONENTS = {
                            **{"def": "../symbian-rcl3/oss.FCL.sf.os.devicesrv/systemhealthmanagement/systemhealthmgr/eabi/restartsysu.def"}),
     "keypublisherplugin": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appsupport/mediakeys/KeyPublisherPlugin/group/KeyPublisherPlugin.mmp", ssm=True),
     "akncustcmds": dict(mmp=f"{CUI}/uifw/AknGlobalUI/akncustcmds/group/akncustcmds.mmp", ssm=True),
+    # the Avkon System Startup Extension plug-in (ECOM 0x1020506C): "enable global notes" publishes KUikGlobalNotesAllowed = 1, which
+    # Avkon's transition manager, AknCapServer (idle window group), the phone app's notes and the WLAN/disk notes wait for;
+    # without it global queries (the roaming query) stay invisible. Run at the end of the boot by OUR SSM bridge pheextcmd
+    # (S60's own plug-in runner was never published)
+    "avkonstartupextensionplugin": dict(mmp=f"{CUI}/uifw/AknGlobalUI/avkonstartupextplg/group/avkonstartupextensionplugin.mmp", ssm=True),
+    "pheextcmd": dict(mmp=os.path.join(OS_ROOT, "src/pheextcmd/pheextcmd.mmp"), ssm=True),
     # + its init script (Z:\private\100059C9\ScriptInit.txt, run by SSM's rfscustcmd at every UI start; a product file
     # runs only the RFS plug-ins' parts (PLUGINS), as the release's own script0/script1 do
     "rfsserver": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.appsupport/coreapplicationuis/Rfs/group/rfsMain.mmp", ssm=True,
