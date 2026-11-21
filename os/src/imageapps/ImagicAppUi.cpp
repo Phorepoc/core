@@ -881,6 +881,13 @@ void CImagicAppUi::OpenPendingFile()
 void CImagicAppUi::ShowCurrentOneByOne()
     {
     RDebug::Printf("PH: show picture %d, view mode was %d (0 = grid)", iBrowserContainer->GetCurrentIndex(), (TInt)iBrowserContainer->GetDrawMode());
+    if (iBrowserContainer->GetDrawMode() == CImagicContainerBrowser::EOneByOne)
+        {
+        // already showing one picture: switch to the new one the way the one-by-one view does for its own next/previous keys
+        // (SetCurrentIndex + SetImageIndex, both set by the caller)
+        iBrowserContainer->DrawNow();
+        return;
+        }
     if (iBrowserContainer->GetDrawMode() != CImagicContainerBrowser::EGrid)
         iBrowserContainer->SetDrawMode(CImagicContainerBrowser::EGrid);
     if (iBrowserContainer->GetDrawMode() == CImagicContainerBrowser::EGrid)
