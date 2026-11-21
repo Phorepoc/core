@@ -9,12 +9,14 @@
 // -> CAknBatteryNotify (the status pane). A board without a battery answers KErrNotSupported: nothing is reported,
 // as with the stub.
 #include <e32svr.h>
+#include <e32property.h>
 #include <e32debug.h>
 #include <u32std.h>
 #include <hwrmpowerstatesdkpskeys.h>
 #include <centralrepository.h>
 #include "PowerStatePlugin.h"
 #include "../phorepoc/inc/phhal.h"
+#include "../phedevmenu/pheshells.h"
 
 // The battery is read every second (a HAL call that copies the kernel's last reading: cheap); a change of the charger shows
 // within a second. The guard ping / boot-guard timeout / process checks keep their old 10 s cadence (KGuardEvery polls).
@@ -56,6 +58,29 @@ static TBool ProcessExists( const TDesC& aExe )
             return ETrue;
         }
     return EFalse;
+    }
+
+// The home of the shell that runs: S^3's homescreen.exe, or -- for a shell a package installed (pheshells.h: Etesian, Orbit)
+// -- that shell's launcher, which "lives as long as the shell does" (pheshells.h). The launcher is the process pheshellsel
+// published once it signalled (P&S KPheShellSelKeyLauncherPid): a P&S read + a process handle, nothing more. No file server
+// and no CenRep here: the earlier per-tick shell scan (RFs + every drive's resource\phe\shells) on HWRM's server thread
+// stalled every Etesian boot after the first guard tick (2026-11-21).
+static TBool SelectedShellLauncherExists()
+    {
+    TInt pid = 0;
+    if ( RProperty::Get( KPheShellSelCategory, KPheShellSelKeyLauncherPid, pid ) != KErrNone || !pid )
+        return EFalse;
+    RProcess p;
+    if ( p.Open( TProcessId( (TUint)pid ) ) != KErrNone )
+        return EFalse;
+    const TBool alive = p.ExitType() == EExitPending;
+    p.Close();
+    return alive;
+    }
+
+static TBool ShellHomeExists()
+    {
+    return ProcessExists( _L( "\\homescreen.exe" ) ) || SelectedShellLauncherExists();
     }
 // (a plug-in DLL has no writable static data: what was last reported = iKeyValue, a byte per key, value + 16; 0 = none)
 
@@ -107,7 +132,7 @@ TInt CPowerStatePlugin::Callback( TAny* aPtr )
         SendGuardTimeout();
     if ( guardTick )
         {
-        const TBool ws = ProcessExists( _L( "\\ewsrv.exe" ) ), hs = ProcessExists( _L( "\\homescreen.exe" ) );
+        const TBool ws = ProcessExists( _L( "\\ewsrv.exe" ) ), hs = ShellHomeExists();
         if ( ws && hs )
             UserSvr::HalFunction( EHalGroupPower, EPhHalPowerGuardPing, 0, 0 );
         if ( self->iKey <= 20 * KGuardEvery )

@@ -408,6 +408,16 @@ static TInt RunShellL()
 			}
 		RDebug::Print(_L("PH: [shellsel] active idle UID %08x published: %d"), shell->iIdleUid, pr);
 		}
+	if (r == KErrNone && !s3)
+		{
+		// the boot guard's "home is up" for this shell (pheshells.h KPheShellSelKeyLauncherPid): readable by all, written by us only
+		_LIT_SECURITY_POLICY_PASS(KReadAll);
+		_LIT_SECURITY_POLICY_S0(KWriteUs, 0xE70157B6);
+		RProperty::Define(KPheShellSelKeyLauncherPid, RProperty::EInt, KReadAll, KWriteUs);
+		const TInt pid = (TInt)(TUint)launcher.Id().Id();
+		const TInt pr = RProperty::Set(KPheShellSelCategory, KPheShellSelKeyLauncherPid, pid);
+		RDebug::Print(_L("PH: [shellsel] launcher pid %d published: %d"), pid, pr);
+		}
 	RProcess::Rendezvous(r);		// SSM's wait-for-signal: the shell's launcher is up (or its error)
 	if (r != KErrNone)
 		{
