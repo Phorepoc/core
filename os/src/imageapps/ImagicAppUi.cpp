@@ -38,6 +38,8 @@
 #include <PhotoBrowser.rsg>
 #include "ImagicUtils.h"
 #include <apacmdln.h>
+#include <aknsgcc.h>
+#include <e32property.h>
 extern TBool gPheSecondInstance;   // ImagicApp.cpp
 #include <apgtask.h>
 #include <apgwgnam.h>
@@ -52,12 +54,49 @@ extern TBool gPheSecondInstance;   // ImagicApp.cpp
 // CImagicAppUi::ConstructL()
 // ----------------------------------------------------------
 //
+// PHOREPOC PATCH. A second launch of Photo Browser (File Manager -> StartDocument) cannot use TApaTask::SwitchOpenFile:
+// the window server wants the SwEvent capability for it, which Photo Browser does not have (and an executable may only load
+// DLLs that hold all of its capabilities). So the second process, which has the same secure id, writes the document name to a
+// property of the first one (category = own secure id, writable by any process) and the first one picks it up here.
+const TUint KPheOpenKey = 1;
+class CPheOpenWatcher : public CActive
+    {
+public:
+    CPheOpenWatcher(CImagicAppUi& aUi, TUid aCategory) : CActive(EPriorityStandard), iUi(aUi)
+        {
+        CActiveScheduler::Add(this);
+        if (iProp.Attach(aCategory, KPheOpenKey) == KErrNone)
+            {
+            iProp.Subscribe(iStatus);
+            SetActive();
+            }
+        }
+    ~CPheOpenWatcher()
+        {
+        Cancel();
+        iProp.Close();
+        }
+private:
+    void RunL()
+        {
+        iProp.Subscribe(iStatus);
+        SetActive();
+        TFileName name;
+        if (iProp.Get(name) == KErrNone && name.Length() > 0)
+            TRAP_IGNORE(iUi.OpenFileL(name));
+        }
+    void DoCancel()
+        {
+        iProp.Cancel();
+        }
+    CImagicAppUi& iUi;
+    RProperty iProp;
+    };
+
 void CImagicAppUi::ConstructL()
     {
     DP0_IMAGIC(_L("CImagicAppUi::ConstructL++"));
-    // PHOREPOC PATCH: let the framework deliver a file to this running instance (TApaTask::SwitchOpenFile -> OpenFileL below);
-    // a second process (gPheSecondInstance, set in ImagicApp.cpp) sends it from ProcessCommandParametersL
-    iEikonEnv->SetRespondsToSwitchFilesEvent(ETrue);
+    // PHOREPOC PATCH: a second process (gPheSecondInstance, set in ImagicApp.cpp) hands its document to this one (see CPheOpenWatcher)
     
     //CArrayFix<TCoeHelpContext>* buf = CCoeAppUi::AppHelpContextL();
     //HlpLauncher::LaunchHelpApplicationL(iEikonEnv->WsSession(), buf);
@@ -99,6 +138,11 @@ void CImagicAppUi::ConstructL()
     BaseConstructL(0x08 | EAknEnableSkin); // Use ELayoutAwareAppFlag (0x08) to make the application support scalable UI on FP3 devices.
     if (gPheSecondInstance)
         return;   // PHOREPOC PATCH: this process only hands its document to the running instance (ProcessCommandParametersL)
+    {
+    const TUid cat = TUid::Uid(RProcess().SecureId().iId);
+    RProperty::Define(cat, KPheOpenKey, RProperty::EText, TSecurityPolicy(TSecurityPolicy::EAlwaysPass), TSecurityPolicy(TSecurityPolicy::EAlwaysPass));
+    iOpenWatcher = new (ELeave) CPheOpenWatcher(*this, cat);
+    }
 
     //Create engine and trap if there is error
     iIEngine = CIEEngine::NewL(*this);
@@ -168,6 +212,7 @@ CImagicAppUi::~CImagicAppUi()
     
     iWizardBitmapArray.Close();
     
+    delete iOpenWatcher;
     if(iPeriodic && iPeriodic->IsActive())
         iPeriodic->Cancel();
     delete iPeriodic;
@@ -745,6 +790,8 @@ TBool CImagicAppUi::ProcessCommandParametersL(CApaCommandLine& aCommandLine)
         RDebug::Printf("PH: imagic second launch, document name length %d", doc.Length());
         if (doc.Length() > 0)
             {
+            const TInt r = RProperty::Set(TUid::Uid(RProcess().SecureId().iId), KPheOpenKey, doc);
+            RDebug::Printf("PH: imagic handed the document to the running instance (property) = %d", r);
             RWsSession& ws = iEikonEnv->WsSession();
             const TInt myWg = iEikonEnv->RootWin().Identifier();
             TInt wgId = 0;
@@ -753,11 +800,7 @@ TBool CImagicAppUi::ProcessCommandParametersL(CApaCommandLine& aCommandLine)
                 CApaWindowGroupName::FindByAppUid(Application()->AppDllUid(), ws, wgId);
                 if (wgId >= 0 && wgId != myWg)
                     {
-                    TApaTask task(ws);
-                    task.SetWgId(wgId);
-                    const TInt r = task.SwitchOpenFile(doc);
-                    task.BringToForeground();
-                    RDebug::Printf("PH: imagic handed the document to the running instance (wg %d) = %d", wgId, r);
+                    CAknSgcClient::MoveApp(wgId, ESgcMoveAppToForeground);
                     break;
                     }
                 } while (wgId >= 0);

@@ -227,6 +227,7 @@ class CImagicAppUi : public CAknViewAppUi, public MIEEngineObserver
     private: //Data
         /** Active object that is the timing source for the clearing OpenGL memory. */
         CPeriodic*                  iPeriodic;
+        CActive*                    iOpenWatcher;   // PHOREPOC PATCH: picks up a file a second launch hands over (see ImagicAppUi.cpp)
         CImagicContainerBrowser*    iBrowserContainer;
         CImagicContainerCrop*       iCropContainer;
         CImagicUtils*               iImagicUtils;
