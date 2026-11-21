@@ -313,6 +313,16 @@ void CImagicAppUi::HandleForegroundEventL(TBool aForeground)
                 iBrowserContainer->DrawNow();
                 iBrowserContainer->EnableDisplayDraw();
                 }
+            // PHOREPOC PATCH: coming back to the front re-initialises the GL view, which starts in the grid again; show the
+            // picture a second launch handed over once more
+            if (iBrowserContainer && iReapplyName.Length() > 0 && iBrowserContainer->GetDrawMode() == CImagicContainerBrowser::EGrid)
+                {
+                RDebug::Printf("PH: imagic foreground, showing the handed-over picture again");
+                iOpenFileName = iReapplyName;
+                iReapplyName.Zero();
+                OpenPendingFile();
+                iReapplyName.Zero();
+                }
             }
         else
             {//We were switched to background
