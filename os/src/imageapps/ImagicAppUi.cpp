@@ -643,6 +643,16 @@ void CImagicAppUi::TNCreationCompleteL(TThumbSize aTnRes)
     ((CImagicViewBrowser*) View(iViewIdBrowser))->TNCreationComplete();
     
     iBrowserContainer->DrawNow();
+    // PHOREPOC PATCH: the thumbnail run ends with the grid shown again; put the picture File Manager opened back
+    if (iReapplyName.Length() > 0)
+        {
+        if (iBrowserContainer->GetDrawMode() == CImagicContainerBrowser::EGrid)
+            {
+            iOpenFileName = iReapplyName;
+            OpenPendingFile();
+            }
+        iReapplyName.Zero();
+        }
     
             
     /*TApplicationFeature appFeature = ((CImagicViewBrowser*)View(iViewIdBrowser))->GetAppFeature(); 
@@ -729,11 +739,11 @@ void CImagicAppUi::OpenPendingFile()
         TFileName n;
         if (iIEngine->GetImageName(i, n, EFullSize) == KErrNone && n.CompareF(iOpenFileName) == 0)
             {
+            iReapplyName = iOpenFileName;
             iOpenFileName.Zero();
             SetImageIndex(i);
             iBrowserContainer->SetCurrentIndex(i);
-            iBrowserContainer->SetDrawMode(CImagicContainerBrowser::EOneByOne);
-            iBrowserContainer->DrawNow();
+            ShowCurrentOneByOne();
             return;
             }
         }
@@ -775,8 +785,22 @@ void CImagicAppUi::OpenPendingFile()
     const TInt idx = list.GetImageIndex(data);
     if (idx < 0)
         return;
+    iReapplyName = name;
     SetImageIndex(idx);
     iBrowserContainer->SetCurrentIndex(idx);
-    iBrowserContainer->SetDrawMode(CImagicContainerBrowser::EOneByOne);
-    iBrowserContainer->DrawNow();
+    ShowCurrentOneByOne();
+    }
+
+// PHOREPOC PATCH: open the current picture the way the OK key does (the grid's own select path, which sets up the one-by-one view)
+void CImagicAppUi::ShowCurrentOneByOne()
+    {
+    if (iBrowserContainer->GetDrawMode() == CImagicContainerBrowser::EGrid)
+        {
+        TKeyEvent ev;
+        ev.iCode = EKeyEnter;
+        ev.iScanCode = EStdKeyEnter;
+        ev.iModifiers = 0;
+        ev.iRepeats = 0;
+        TRAP_IGNORE(iBrowserContainer->OfferKeyEventL(ev, EEventKey));
+        }
     }

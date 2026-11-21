@@ -127,7 +127,9 @@ class CImagicAppUi : public CAknViewAppUi, public MIEEngineObserver
         void OpenFileL(const TDesC& aFileName);
         TBool ProcessCommandParametersL(CApaCommandLine& aCommandLine);
         void OpenPendingFile();
+        void ShowCurrentOneByOne();
         TFileName iOpenFileName;
+        TFileName iReapplyName;
         
     private:
         // From MEikMenuObserver
