@@ -757,7 +757,10 @@ COMPONENTS = {
     "startupadaptationadapter": dict(mmp=f"{_SSM}/systemstatereferenceplugins/clayer/group/startupadaptationadapter.mmp", ssm=True),
     "startupadaptationstub": dict(mmp="oss.FCL.sf.adapt.stubs/systemswstubs/startupadaptationstub/group/startupadaptationstub.mmp", ssm=True,
                                   # -> ekern/xk_power.cpp), as a licensee adaptation does; the stub only answered
-                                  drop=["startupadaptationstub.cpp"], extra=["toolchain/shims/sastub_board/StartupAdaptationStub.cpp"]),
+                                  drop=["startupadaptationstub.cpp"], extra=["toolchain/shims/sastub_board/StartupAdaptationStub.cpp"],
+                                  # the stub's own (commented-out) MACRO: builds sastubeventlistener.cpp, the P&S 0x0AA01499/1 event
+                                  # channel the licensee TSY raises the SIM event through (the shim creates the listener always)
+                                  defs=["__STARTER_MODULE_TEST_SUPPORT__"]),
     "ssmclayersup": dict(mmp=f"{_SSM}/systemstatereferenceplugins/clayer/group/ssmclayersup.mmp", ssm=True),
     "rfstatusswppolicy": dict(mmp=f"{_SSM}/systemstatereferenceplugins/clayer/group/rfstatusswppolicy.mmp", ssm=True),
     "customcmds": dict(mmp=f"{_SSM}/systemstatereferenceplugins/custcmd/group/customcmds.mmp", ssm=True,
