@@ -127,8 +127,16 @@ public:
     // r_cmd_simcheck, customcmds ordinal 10) ran without an IMSI to read, failed, and SSM reset the phone every ~90 s.
     static void SimToSsm( TPheSim aSim )
         {
-        const TInt KStubEvent = 0x0AA01499, KSimEvent = 103, KSimUsable = 100, KSimNotReady = 102;
-        const TInt arg = aSim == EPheSimReady ? KSimUsable : KSimNotReady;
+        // TSimEventType (startupadaptationevents.h): usable / readable (emergency calls only: PIN, PUK, blocked) /
+        // not ready (disconnected but present). A missing card is not a SIM event (the header: total removal is a
+        // fatal error, which shuts the phone down), so absent / unknown raise nothing.
+        const TInt KStubEvent = 0x0AA01499, KSimEvent = 103, KSimUsable = 100, KSimReadable = 101;
+        if ( aSim == EPheSimAbsent || aSim == EPheSimUnknown )
+            {
+            RDebug::Printf( "[pheltsy] SIM %d -> no startup adaptation SIM event (no card)", (TInt)aSim );
+            return;
+            }
+        const TInt arg = aSim == EPheSimReady ? KSimUsable : KSimReadable;
         const TInt r = RProperty::Set( TUid::Uid( KStubEvent ), 1, ( KSimEvent << 16 ) | arg );
         TInt now = -1;
         RProperty::Get( TUid::Uid( 0x101F8766 ), 0x31, now );     // KPSUidStartup / KPSSimStatus, as SSM has it now

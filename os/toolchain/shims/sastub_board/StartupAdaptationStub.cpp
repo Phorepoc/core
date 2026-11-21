@@ -30,6 +30,7 @@
 #include "StartupAdaptationStubDebug.h"
 #include <startupadaptationobserver.h>
 #include <e32power.h>
+#include <e32debug.h>
 
 using namespace StartupAdaptation;
 
@@ -371,9 +372,12 @@ void CStartupAdaptationStub::ConstructL()
     iEngine = CCommandProcessingEngine::NewL( *this );
     iModel = CStartupAdaptationStubModel::NewL();
 
-#ifdef __STARTER_MODULE_TEST_SUPPORT__
-    iEventListener = CSAStubEventListener::NewL( *this );
-#endif // __STARTER_MODULE_TEST_SUPPORT__
+    // PHOREPOC board delta: the stub's event channel (P&S 0x0AA01499 key 1, value (event << 16) | arg) is the
+    // board's way to raise startup adaptation events -- the licensee TSY (pheltsy) reports the SIM state through it
+    // (ESimEvent -> CSsmSimStatusObserver -> KPSSimStatus). The 2010 stub only built it for the starter module
+    // tests; without it the key is never defined and every Set returns KErrNotFound.
+    TRAPD( listenErr, iEventListener = CSAStubEventListener::NewL( *this ) );
+    RDebug::Printf( "[sastub] event listener on P&S 0x0AA01499/1: %d", listenErr );
 
     RDEBUG( _L( "CStartupAdaptationStub::ConstructL finished." ) );
     }
