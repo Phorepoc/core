@@ -38,6 +38,7 @@
 #include <PhotoBrowser.rsg>
 #include "ImagicUtils.h"
 #include <apacmdln.h>
+extern TBool gPheSecondInstance;   // ImagicApp.cpp
 #include <apgtask.h>
 #include <apgwgnam.h>
 #include <e32debug.h>
@@ -55,7 +56,7 @@ void CImagicAppUi::ConstructL()
     {
     DP0_IMAGIC(_L("CImagicAppUi::ConstructL++"));
     // PHOREPOC PATCH: let the framework deliver a file to this running instance (TApaTask::SwitchOpenFile -> OpenFileL below);
-    // the second process that sends it is in Imagic.cpp (NewApplication)
+    // a second process (gPheSecondInstance, set in ImagicApp.cpp) sends it from ProcessCommandParametersL
     iEikonEnv->SetRespondsToSwitchFilesEvent(ETrue);
     
     //CArrayFix<TCoeHelpContext>* buf = CCoeAppUi::AppHelpContextL();
@@ -96,6 +97,8 @@ void CImagicAppUi::ConstructL()
     //The application’s standard resource file will be read unless
     //the ENoAppResourceFile or ENonStandardResourceFile flags are passed.
     BaseConstructL(0x08 | EAknEnableSkin); // Use ELayoutAwareAppFlag (0x08) to make the application support scalable UI on FP3 devices.
+    if (gPheSecondInstance)
+        return;   // PHOREPOC PATCH: this process only hands its document to the running instance (ProcessCommandParametersL)
 
     //Create engine and trap if there is error
     iIEngine = CIEEngine::NewL(*this);
@@ -165,7 +168,7 @@ CImagicAppUi::~CImagicAppUi()
     
     iWizardBitmapArray.Close();
     
-    if(iPeriodic->IsActive())
+    if(iPeriodic && iPeriodic->IsActive())
         iPeriodic->Cancel();
     delete iPeriodic;
 
@@ -238,7 +241,7 @@ void CImagicAppUi::HandleForegroundEventL(TBool aForeground)
             iAppForeGround = ETrue;
             //ScreenImmeadetaUpdate();
             
-            if(iPeriodic->IsActive())
+            if(iPeriodic && iPeriodic->IsActive())
                 iPeriodic->Cancel();
             
             iIEngine->StartAccSensorMonitoring();
@@ -730,8 +733,41 @@ void CImagicAppUi::OpenFileL(const TDesC& aFileName)
 
 TBool CImagicAppUi::ProcessCommandParametersL(CApaCommandLine& aCommandLine)
     {
+    if (gPheSecondInstance)
+        {
+        // the document name, or the file handle File Manager passes (the name is then taken from the handle)
+        TFileName doc(aCommandLine.DocumentName());
+        RFile file;
+        aCommandLine.GetFileByHandleL(file);
+        if (doc.Length() == 0 && file.SubSessionHandle() != KNullHandle)
+            file.FullName(doc);
+        file.Close();
+        RDebug::Printf("PH: imagic second launch, document name length %d", doc.Length());
+        if (doc.Length() > 0)
+            {
+            RWsSession& ws = iEikonEnv->WsSession();
+            const TInt myWg = iEikonEnv->RootWin().Identifier();
+            TInt wgId = 0;
+            do
+                {
+                CApaWindowGroupName::FindByAppUid(Application()->AppDllUid(), ws, wgId);
+                if (wgId >= 0 && wgId != myWg)
+                    {
+                    TApaTask task(ws);
+                    task.SetWgId(wgId);
+                    const TInt r = task.SwitchOpenFile(doc);
+                    task.BringToForeground();
+                    RDebug::Printf("PH: imagic handed the document to the running instance (wg %d) = %d", wgId, r);
+                    break;
+                    }
+                } while (wgId >= 0);
+            }
+        User::Leave(KLeaveExit);
+        }
+
     // the document name only: GetFileByHandleL() adopts a handle from the creator and panics (KERN-EXEC 0) when the app is started without one
     iOpenFileName = aCommandLine.DocumentName();
+    RDebug::Printf("PH: imagic first launch, document name length %d", iOpenFileName.Length());
     OpenPendingFile();
     return CAknViewAppUi::ProcessCommandParametersL(aCommandLine);
     }
