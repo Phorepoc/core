@@ -16,7 +16,6 @@
 */
 
 // Include files
-#include <e32debug.h>
 #include <BAUTILS.H>
 
 #include "IEBgpsController.h"
@@ -103,7 +102,6 @@ void CIEBgpsController::ThumbnailGenerationCompleted(TInt aErrorCode)
     {
     DP0_IMAGIC(_L("CIEBgpsController::ThumbnailGenerationCompleted++"));
     
-    RDebug::Printf("[imagic-bgps] ThumbnailGenerationCompleted err %d, ops 512:%d 128:%d 32:%d, arrayCount %d", aErrorCode, i512x512TNCreationOn, i128x128TNCreationOn, i32x32TNCreationOn, iImageDataArray.Count());
     if (aErrorCode == KErrCancel)
         return;
     
@@ -177,7 +175,8 @@ void CIEBgpsController::ThumbnailGenerationCompleted(TInt aErrorCode)
             iImageData = iIEBgpsControllerObserver.GetImageData(iTnCreationIndex);
             
             //iIEBgpsClient->StartSingleFaceDetection(iTnCreationIndex, *iSingleFBCoordinateArray, iImageData);
-            iSingleFaceDetectionOn = ETrue;
+            // PHOREPOC PATCH: StartSingleFaceDetection is commented out, so this flag would wait for a completion that never comes (thumbnails stalled after 4)
+            //iSingleFaceDetectionOn = ETrue;
 #endif
             }
         }
@@ -186,7 +185,6 @@ void CIEBgpsController::ThumbnailGenerationCompleted(TInt aErrorCode)
         {
         TThumbSize res;
         iTnCreationIndex = FindMissingTN(res);
-        RDebug::Printf("[imagic-bgps] next index %d res %d, selected image %d, count %d", iTnCreationIndex, (TInt)res, iIEBgpsControllerObserver.GetSelectedImageIndex(), iImageDataArray.Count());
         
         iAllTNsDone = ETrue;
         //Check if all TN images are done
