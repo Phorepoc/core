@@ -1,0 +1,33 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// timageviewer.mmp -- OURS: the imaging framework's test viewer (sf.os.mmimaging TImageViewer, a Techview/eikfile UI)
+// re-made as a small Avkon application with the same identity (UID3 0x101F45EA): it decodes a JPEG/PNG/GIF/BMP with
+// CImageDecoder and shows it scaled to the screen; Options steps through the pictures of the folder. Registered for
+// those MIME types so File Manager opens pictures with it.
+TARGET			timageviewer.exe
+TARGETTYPE		exe
+UID				0x100039CE 0x101F45EA
+
+CAPABILITY		ReadUserData WriteUserData
+VENDORID		0
+
+SOURCEPATH		.
+SOURCE			timageviewer.cpp
+
+START RESOURCE	timageviewer.rss
+HEADER
+TARGETPATH		/resource/apps
+END
+
+START RESOURCE	timageviewer_reg.rss
+TARGETPATH		/private/10003a3f/apps
+END
+
+USERINCLUDE		.
+APP_LAYER_SYSTEMINCLUDE
+
+LIBRARY			euser.lib apparc.lib cone.lib eikcore.lib avkon.lib eikcoctl.lib ws32.lib gdi.lib fbscli.lib efsrv.lib bafl.lib imageconversion.lib bitgdi.lib bitmaptransforms.lib
+
+EPOCSTACKSIZE	0x8000
+EPOCHEAPSIZE	0x20000 0x4000000

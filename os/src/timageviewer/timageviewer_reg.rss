@@ -1,0 +1,40 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+#include <appinfo.rh>
+#include <timageviewer.rsg>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0x101F45EA
+
+RESOURCE APP_REGISTRATION_INFO
+	{
+	app_file = "timageviewer";
+	localisable_resource_file = "\\resource\\apps\\timageviewer";
+	localisable_resource_id = R_TIMG_LOCALISABLE_APP_INFO;
+	embeddability = KAppNotEmbeddable;
+	newfile = KAppDoesNotSupportNewFile;
+	// every type of the DefaultAppServer's "View images" task (defaultappserver.rss r_da_tasks); Normal priority: Photo Browser takes the JPEG ones at High
+	datatype_list =
+		{
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/jpeg"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/jpg"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/jp2"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/tiff"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/x-wmf"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/ico"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/gif"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/bmp"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/x-bmp"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/x-bitmap"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/x-xbitmap"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/x-win-bitmap"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/x-windows-bmp"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/ms-bmp"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/x-ms-bmp"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/vnd.wap.wbmp"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/png"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/x-epoc-mbm"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/vnd.nokia.ota-bitmap"; },
+		DATATYPE { priority = EDataTypePriorityNormal; type = "image/x-ota-bitmap"; }
+		};
+	}

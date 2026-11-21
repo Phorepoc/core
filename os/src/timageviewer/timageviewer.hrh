@@ -1,0 +1,6 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+#ifndef TIMAGEVIEWER_HRH
+#define TIMAGEVIEWER_HRH
+enum TImgViewerCmd { EImgCmdNext = 0x6001, EImgCmdPrev };
+#endif

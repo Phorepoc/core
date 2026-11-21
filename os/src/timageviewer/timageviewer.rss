@@ -1,0 +1,39 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+NAME TIMG
+
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.rsg>
+#include <appinfo.rh>
+#include "timageviewer.hrh"
+
+RESOURCE RSS_SIGNATURE { }
+RESOURCE TBUF r_default_document_name { buf = ""; }
+
+RESOURCE EIK_APP_INFO
+	{
+	menubar = r_timg_menubar;
+	cba = R_AVKON_SOFTKEYS_OPTIONS_EXIT;
+	}
+
+RESOURCE MENU_BAR r_timg_menubar
+	{
+	titles = { MENU_TITLE { menu_pane = r_timg_menu; } };
+	}
+
+RESOURCE MENU_PANE r_timg_menu
+	{
+	items =
+		{
+		MENU_ITEM { command = EImgCmdNext; txt = "Next picture"; },
+		MENU_ITEM { command = EImgCmdPrev; txt = "Previous picture"; },
+		MENU_ITEM { command = EAknSoftkeyExit; txt = "Exit"; }
+		};
+	}
+
+RESOURCE LOCALISABLE_APP_INFO r_timg_localisable_app_info
+	{
+	short_caption = "Image viewer";
+	caption_and_icon = CAPTION_AND_ICON_INFO { caption = "Image viewer"; number_of_icons = 0; };
+	}
