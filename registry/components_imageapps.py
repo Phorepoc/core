@@ -43,7 +43,7 @@ COMPONENTS = {
     "ieutils": dict(mmp=_PB + "group/IEUtils.mmp", flags=_PB_INC, drop=["IEEngineUtils.cpp"], extra=["src/imageapps/IEEngineUtils.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/ieutils.def")}),
     "iebgps": dict(mmp=_PB + "IEBgps/group/IEBgps.mmp", flags=_PB_INC, drop=["IETNGenerator.cpp"], extra=["src/imageapps/IETNGenerator.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgps.def")}),
     "iebgpclient": dict(mmp=_PB + "IEBgpClient/group/IEBgpClient.mmp", flags=_PB_INC, drop=["IEImagicGBPSAO.cpp"], extra=["src/imageapps/IEImagicGBPSAO.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgpclient.def")}),
-    "ieengine": dict(mmp=_PB + "group/IEEngine.mmp", flags=_PB_INC, **{"def": os.path.join(OS_ROOT, "src/imageapps/ieengine.def")}),
+    "ieengine": dict(mmp=_PB + "group/IEEngine.mmp", flags=_PB_INC, drop=["IEBgpsController.cpp"], extra=["src/imageapps/IEBgpsController.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/ieengine.def")}),
     "photobrowser": dict(mmp=_PB_MMP, flags=_PB_INC + ["-fpermissive", "-include", os.path.join(OS_ROOT, "src/imageapps/ImagicAppUi.h")],
                      drop=["DrawUtility.cpp", "ImagicContainerBrowser.cpp", "ImagicAppUi.cpp"],   # patched copies: implicit int, a case label crossing an initialization; ImagicAppUi(.h/.cpp): opens the one picture File Manager passes (PHOREPOC PATCH; the header is force-included so it wins over AppInc/)
                      extra=["src/imageapps/DrawUtility.cpp", "src/imageapps/ImagicContainerBrowser.cpp", "src/imageapps/ImagicAppUi.cpp"]),
