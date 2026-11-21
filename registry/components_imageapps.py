@@ -45,8 +45,8 @@ COMPONENTS = {
     "iebgpclient": dict(mmp=_PB + "IEBgpClient/group/IEBgpClient.mmp", flags=_PB_INC, drop=["IEImagicGBPSAO.cpp"], extra=["src/imageapps/IEImagicGBPSAO.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/iebgpclient.def")}),
     "ieengine": dict(mmp=_PB + "group/IEEngine.mmp", flags=_PB_INC, drop=["IEBgpsController.cpp"], extra=["src/imageapps/IEBgpsController.cpp"], **{"def": os.path.join(OS_ROOT, "src/imageapps/ieengine.def")}),
     "photobrowser": dict(mmp=_PB_MMP, flags=_PB_INC + ["-fpermissive", "-include", os.path.join(OS_ROOT, "src/imageapps/ImagicAppUi.h")],
-                     drop=["DrawUtility.cpp", "ImagicContainerBrowser.cpp", "ImagicAppUi.cpp"],   # patched copies: implicit int, a case label crossing an initialization; ImagicAppUi(.h/.cpp): opens the one picture File Manager passes (PHOREPOC PATCH; the header is force-included so it wins over AppInc/)
-                     extra=["src/imageapps/DrawUtility.cpp", "src/imageapps/ImagicContainerBrowser.cpp", "src/imageapps/ImagicAppUi.cpp"]),
+                     drop=["DrawUtility.cpp", "ImagicContainerBrowser.cpp", "ImagicAppUi.cpp", "Imagic.cpp"],   # patched copies: implicit int, a case label crossing an initialization; ImagicAppUi(.h/.cpp): opens the one picture File Manager passes (PHOREPOC PATCH; the header is force-included so it wins over AppInc/)
+                     extra=["src/imageapps/DrawUtility.cpp", "src/imageapps/ImagicContainerBrowser.cpp", "src/imageapps/ImagicAppUi.cpp", "src/imageapps/Imagic.cpp"]),
     # --- the imaging framework's test viewer, re-made in Avkon (its Techview UI libraries are not in the OS)
     "timageviewer": dict(mmp=os.path.join(OS_ROOT, "src/timageviewer/timageviewer.mmp")),
     # --- Image Editor (app.imgeditor): the app, its manager/UI/engine libraries, the filters (loaded by name) and the editing plug-ins (.pgn, entry = ordinal 1)

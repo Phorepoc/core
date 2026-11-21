@@ -54,37 +54,9 @@
 void CImagicAppUi::ConstructL()
     {
     DP0_IMAGIC(_L("CImagicAppUi::ConstructL++"));
-    // PHOREPOC PATCH. Chain: File Manager -> CDocumentHandler::OpenFileEmbeddedL -> CDocDefaultHandler::OpenFileL ->
-    // RApaLsSession::StartDocument starts a second process; CAknApplication::PreDocConstructL finds the running instance,
-    // brings it to the foreground and exits WITHOUT passing the document on. So the second process hands the document name
-    // to the running one (TApaTask::SwitchOpenFile -> CEikAppUi::ProcessMessageL -> OpenFileL below).
+    // PHOREPOC PATCH: let the framework deliver a file to this running instance (TApaTask::SwitchOpenFile -> OpenFileL below);
+    // the second process that sends it is in Imagic.cpp (NewApplication)
     iEikonEnv->SetRespondsToSwitchFilesEvent(ETrue);
-        {
-        CApaCommandLine* cl = NULL;
-        if (CApaCommandLine::GetCommandLineFromProcessEnvironment(cl) == KErrNone && cl)
-            {
-            TFileName doc(cl->DocumentName());
-            delete cl;
-            if (doc.Length() > 0)
-                {
-                RWsSession& ws = iEikonEnv->WsSession();
-                const TInt myWg = iEikonEnv->RootWin().Identifier();
-                TInt wgId = 0;
-                do
-                    {
-                    CApaWindowGroupName::FindByAppUid(Application()->AppDllUid(), ws, wgId);
-                    if (wgId >= 0 && wgId != myWg)
-                        {
-                        TApaTask task(ws);
-                        task.SetWgId(wgId);
-                        TInt r = task.SwitchOpenFile(doc);
-                        RDebug::Printf("PH: forwarded the open of a file to the running Photo Browser (wg %d) = %d", wgId, r);
-                        break;
-                        }
-                    } while (wgId >= 0);
-                }
-            }
-        }
     
     //CArrayFix<TCoeHelpContext>* buf = CCoeAppUi::AppHelpContextL();
     //HlpLauncher::LaunchHelpApplicationL(iEikonEnv->WsSession(), buf);
@@ -751,6 +723,7 @@ TInt CImagicAppUi::GetGleMaxRes()
 // engine's list (the folders it scans) and shown in the one-by-one view.
 void CImagicAppUi::OpenFileL(const TDesC& aFileName)
     {
+    RDebug::Printf("PH: imagic OpenFileL (a file handed over by a second launch), length %d", aFileName.Length());
     iOpenFileName = aFileName;
     OpenPendingFile();
     }
