@@ -354,7 +354,10 @@ private:
 	static TBool OpAllowed(const TDesC8& aCmd)
 		{
 		static const char* const KOk[] = { "AT+QCFG=\"usbnet\"", "AT+QCFG=\"usbnet\",0", "AT+QCFG=\"usbnet\",1", "AT+CFUN=1,1", "AT+CFUN?",
-										   "AT+CGDCONT?", "AT+CGACT?", "AT+CGPADDR", "AT+CGCONTRDP", "AT+CEREG?", "AT+CEER" };
+										   "AT+CGDCONT?", "AT+CGACT?", "AT+CGPADDR", "AT+CGCONTRDP", "AT+CEREG?", "AT+CEER",
+										   // the one-off APN test (2026-11-21): O2-UK's public internet APN, and back to the SIM's own "nodata"
+										   "AT+CGDCONT=1,\"IP\",\"mobile.o2.co.uk\"", "AT+CGDCONT=1,\"IPV4V6\",\"mobile.o2.co.uk\"",
+										   "AT+CGDCONT=1,\"IP\",\"nodata\"", "AT+CGDCONT=1,\"IPV4V6\",\"nodata\"" };
 		for (TUint i = 0; i < sizeof(KOk) / sizeof(KOk[0]); ++i)
 			if (aCmd.CompareF(TPtrC8((const TUint8*)KOk[i])) == 0)
 				return ETrue;
