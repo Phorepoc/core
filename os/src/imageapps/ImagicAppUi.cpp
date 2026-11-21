@@ -38,6 +38,9 @@
 #include <PhotoBrowser.rsg>
 #include "ImagicUtils.h"
 #include <apacmdln.h>
+#include <apgtask.h>
+#include <apgwgnam.h>
+#include <e32debug.h>
 
 
 
@@ -51,6 +54,37 @@
 void CImagicAppUi::ConstructL()
     {
     DP0_IMAGIC(_L("CImagicAppUi::ConstructL++"));
+    // PHOREPOC PATCH. Chain: File Manager -> CDocumentHandler::OpenFileEmbeddedL -> CDocDefaultHandler::OpenFileL ->
+    // RApaLsSession::StartDocument starts a second process; CAknApplication::PreDocConstructL finds the running instance,
+    // brings it to the foreground and exits WITHOUT passing the document on. So the second process hands the document name
+    // to the running one (TApaTask::SwitchOpenFile -> CEikAppUi::ProcessMessageL -> OpenFileL below).
+    iEikonEnv->SetRespondsToSwitchFilesEvent(ETrue);
+        {
+        CApaCommandLine* cl = NULL;
+        if (CApaCommandLine::GetCommandLineFromProcessEnvironment(cl) == KErrNone && cl)
+            {
+            TFileName doc(cl->DocumentName());
+            delete cl;
+            if (doc.Length() > 0)
+                {
+                RWsSession& ws = iEikonEnv->WsSession();
+                const TInt myWg = iEikonEnv->RootWin().Identifier();
+                TInt wgId = 0;
+                do
+                    {
+                    CApaWindowGroupName::FindByAppUid(Application()->AppDllUid(), ws, wgId);
+                    if (wgId >= 0 && wgId != myWg)
+                        {
+                        TApaTask task(ws);
+                        task.SetWgId(wgId);
+                        TInt r = task.SwitchOpenFile(doc);
+                        RDebug::Printf("PH: forwarded the open of a file to the running Photo Browser (wg %d) = %d", wgId, r);
+                        break;
+                        }
+                    } while (wgId >= 0);
+                }
+            }
+        }
     
     //CArrayFix<TCoeHelpContext>* buf = CCoeAppUi::AppHelpContextL();
     //HlpLauncher::LaunchHelpApplicationL(iEikonEnv->WsSession(), buf);
@@ -794,6 +828,9 @@ void CImagicAppUi::OpenPendingFile()
 // PHOREPOC PATCH: open the current picture the way the OK key does (the grid's own select path, which sets up the one-by-one view)
 void CImagicAppUi::ShowCurrentOneByOne()
     {
+    RDebug::Printf("PH: show picture %d, view mode was %d (0 = grid)", iBrowserContainer->GetCurrentIndex(), (TInt)iBrowserContainer->GetDrawMode());
+    if (iBrowserContainer->GetDrawMode() != CImagicContainerBrowser::EGrid)
+        iBrowserContainer->SetDrawMode(CImagicContainerBrowser::EGrid);
     if (iBrowserContainer->GetDrawMode() == CImagicContainerBrowser::EGrid)
         {
         TKeyEvent ev;
