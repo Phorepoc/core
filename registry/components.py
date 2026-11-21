@@ -2692,7 +2692,8 @@ COMPONENTS = {
     "disconnectdlg": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/connectionutilities/ConnectionDialogs/group/DisconnectDlg.mmp",   # board delta: LAN APs as on the emulator (toolchain/shims/conndlg_board)
         drop=["ActiveDisconnectDlgPlugin.cpp"], extra=["toolchain/shims/conndlg_board/ActiveDisconnectDlgPlugin.cpp"]),
     "disconnectdlgclient": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/connectionutilities/ConnectionDialogs/group/DisconnectDlgClient.mmp"),
-    "connuiutilsnotif": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/connectionutilities/ConnectionDialogs/group/ConnUiUtilsNotif.mmp"),
+    "connuiutilsnotif": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/connectionutilities/ConnectionDialogs/group/ConnUiUtilsNotif.mmp",
+                             drop=["ConfirmationQuery.cpp"], extra=["toolchain/shims/connuiutils_prio/ConfirmationQuery.cpp"]),   # the roaming query above ordinary notes (patched copy, see its header)
     "connmon": dict(mmp="../symbian-rcl3/oss.FCL.sf.mw.ipconnmgmt/connectionmonitoring/connmon/connectionmonitor/group/ConnMon.mmp",
                     # board delta: LAN IAPs available as on the emulator (toolchain/shims/connmon_board)
                     drop=["ConnMonBearerLAN.cpp"], extra=["toolchain/shims/connmon_board/ConnMonBearerLAN.cpp"]),   # <- alwaysonlinemanagerserver; ALSO: oss.FCL.sf.mw.ipconnmgmt/connectionmonitoring/connmon/connectionmonitor/group/ConnMon.mmp
