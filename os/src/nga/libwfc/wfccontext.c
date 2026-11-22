@@ -634,6 +634,25 @@ WFC_FastpathCheckTransparency(WFCbitfield transparencyTypes, WFCfloat globalAlph
     return OWF_TRUE;
     }
 
+/* PH (r36): the window server's UI layer is premultiplied ARGB with source transparency (so that video below it shows
+ * through), which the 2010 check refuses for anything but XRGB. When it is the ONLY element and the background is opaque
+ * black, composing it changes nothing: premultiplied src-over black = the source's own colour channels, and the display
+ * ignores alpha. Then the layer is posted as is (the fastpath) instead of the per-pixel pipeline (~17-19 ms at 720x1440). */
+static OWFboolean
+WFC_FastpathAloneOverBlack(WFC_CONTEXT* context, WFC_ELEMENT* element)
+    {
+    const OWF_IMAGE* img = element->source->lockedStream.image;
+    if (!context->committedScene || !context->committedScene->elements || context->committedScene->elements->next)
+        return OWF_FALSE;
+    if ((context->backgroundColor & 0xFFFFFF00) != 0)
+        return OWF_FALSE;
+    if ((element->transparencyTypes & WFC_TRANSPARENCY_ELEMENT_GLOBAL_ALPHA) && element->globalAlpha != 255.0f)
+        return OWF_FALSE;
+    if (element->transparencyTypes & WFC_TRANSPARENCY_MASK)
+        return OWF_FALSE;
+    return (img->format.pixelFormat == OWF_IMAGE_ARGB8888 && img->format.premultiplied) ? OWF_TRUE : OWF_FALSE;
+    }
+
 static OWFboolean
 WFC_FastpathCheckGeometry(WFC_CONTEXT* context, WFC_ELEMENT* element)
     {
@@ -779,7 +798,8 @@ WFC_Context_CheckFastpath(WFC_CONTEXT* context)
         
         if (!WFC_FastpathCheckTransparency(element->transparencyTypes, 
                                            element->globalAlpha, 
-                                           element->source->lockedStream.image->format.pixelFormat))
+                                           element->source->lockedStream.image->format.pixelFormat)
+            && !WFC_FastpathAloneOverBlack(context, element))
             {
             return;
             }
