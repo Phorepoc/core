@@ -25,25 +25,28 @@
 #include <cmmanagerdef.h>
 
 static const TInt KStepTimeout = 20 * 1000000;
+// RConnection::Start may wait on the user: the roaming / data-cost query (MPM) stays up until it is answered, and its own
+// expiry is longer than a network step. Two minutes covers a person reading and answering it.
+static const TInt KStartTimeout = 120 * 1000000;
 
 // wait for aStatus or the timeout; on timeout the request is left to the caller to cancel
-static TInt Await(TRequestStatus& aStatus, const char* aWhat)
+static TInt Await(TRequestStatus& aStatus, const char* aWhat, TInt aTimeout = KStepTimeout)
 	{
 	RTimer t;
 	t.CreateLocal();
 	TRequestStatus ts;
-	t.After(ts, KStepTimeout);
+	t.After(ts, aTimeout);
 	User::WaitForRequest(aStatus, ts);
 	if (aStatus == KRequestPending)
 		{
-		RDebug::Printf("[nettest] %s: TIMED OUT after %d s", aWhat, KStepTimeout / 1000000);
+		RDebug::Printf("PH: nettest %s: TIMED OUT after %d s", aWhat, aTimeout / 1000000);
 		t.Close();
 		return KErrTimedOut;
 		}
 	t.Cancel();
 	User::WaitForRequest(ts);
 	t.Close();
-	RDebug::Printf("[nettest] %s: %d", aWhat, aStatus.Int());
+	RDebug::Printf("PH: nettest %s: %d", aWhat, aStatus.Int());
 	return aStatus.Int();
 	}
 
@@ -57,7 +60,7 @@ static void DumpCedLog()
 	TInt r = f.Open(fs, _L("c:\\ced.log"), EFileRead | EFileShareReadersOnly);
 	if (r != KErrNone)
 		{
-		RDebug::Printf("[nettest] c:\\ced.log: %d", r);
+		RDebug::Printf("PH: nettest c:\\ced.log: %d", r);
 		fs.Close();
 		return;
 		}
@@ -76,7 +79,7 @@ static void DumpCedLog()
 				p[j++] = p[i];
 			p.SetLength(j);
 			}
-		RDebug::Printf("[nettest] c:\\ced.log: %d bytes", p.Length());
+		RDebug::Printf("PH: nettest c:\\ced.log: %d bytes", p.Length());
 		TInt shown = 0, lines = 0;
 		for (TPtrC8 rest(p); rest.Length() && shown < 40; )
 			{
@@ -90,7 +93,7 @@ static void DumpCedLog()
 				|| line.FindF(_L8("warn")) >= 0)) || rest.Length() < 600)
 				{
 				TPtrC8 l = line.Left(150);
-				RDebug::Printf("[nettest] ced.log %d| %S", lines, &l);
+				RDebug::Printf("PH: nettest ced.log %d| %S", lines, &l);
 				++shown;
 				}
 			}
@@ -108,7 +111,7 @@ static void DumpThreads()
 		{
 		TBuf8<96> n8;
 		n8.Copy(n.Left(96));
-		RDebug::Printf("[nettest] thread %S", &n8);
+		RDebug::Printf("PH: nettest thread %S", &n8);
 		}
 	}
 
@@ -129,22 +132,22 @@ static void RunL()
 	TLex(lex.NextToken()).Val(delay);
 	if (delay > 0)
 		{
-		RDebug::Printf("[nettest] waiting %d s", delay);
+		RDebug::Printf("PH: nettest waiting %d s", delay);
 		User::After(delay * 1000000);
 		}
 	TBuf8<128> host8;
 	host8.Copy(host);
-	RDebug::Printf("[nettest] start: %S port %d iap %d", &host8, port, iap);
+	RDebug::Printf("PH: nettest start: %S port %d iap %d", &host8, port, iap);
 
 	RSocketServ ss;
 	TInt r = ss.Connect();
-	RDebug::Printf("[nettest] RSocketServ::Connect: %d", r);
+	RDebug::Printf("PH: nettest RSocketServ::Connect: %d", r);
 	User::LeaveIfError(r);
 	CleanupClosePushL(ss);
 
 	RConnection conn;
 	r = conn.Open(ss);
-	RDebug::Printf("[nettest] RConnection::Open: %d", r);
+	RDebug::Printf("PH: nettest RConnection::Open: %d", r);
 	User::LeaveIfError(r);
 	CleanupClosePushL(conn);
 	TRequestStatus st;
@@ -159,7 +162,7 @@ static void RunL()
 			ext.SetSnapId(-iap);                        // iap -<n>: destination id n, as BrowserNG names it
 		ext.SetNoteBehaviour(TExtendedConnPref::ENoteBehaviourDefault);
 		prefs.AppendL(&ext);
-		RDebug::Printf("[nettest] start via TConnPrefList + TExtendedConnPref (%s %d)", iap == -1 ? "Internet purpose" : "destination", -iap);
+		RDebug::Printf("PH: nettest start via TConnPrefList + TExtendedConnPref (%s %d)", iap == -1 ? "Internet purpose" : "destination", -iap);
 		conn.Start(prefs, st);
 		}
 	else if (iap)
@@ -170,7 +173,7 @@ static void RunL()
 		}
 	else
 		conn.Start(st);
-	if ((r = Await(st, "RConnection::Start")) != KErrNone)
+	if ((r = Await(st, "RConnection::Start", KStartTimeout)) != KErrNone)
 		{
 		if (r == KErrTimedOut)
 			conn.Stop();
@@ -180,7 +183,7 @@ static void RunL()
 
 	RHostResolver hr;
 	r = hr.Open(ss, KAfInet, KProtocolInetUdp, conn);
-	RDebug::Printf("[nettest] RHostResolver::Open: %d", r);
+	RDebug::Printf("PH: nettest RHostResolver::Open: %d", r);
 	User::LeaveIfError(r);
 	CleanupClosePushL(hr);
 	TNameEntry ne;
@@ -196,11 +199,11 @@ static void RunL()
 	addr.Output(a16);
 	TBuf8<64> a8;
 	a8.Copy(a16);
-	RDebug::Printf("[nettest] %S is %S", &host8, &a8);
+	RDebug::Printf("PH: nettest %S is %S", &host8, &a8);
 
 	RSocket sock;
 	r = sock.Open(ss, KAfInet, KSockStream, KProtocolInetTcp, conn);
-	RDebug::Printf("[nettest] RSocket::Open(TCP): %d", r);
+	RDebug::Printf("PH: nettest RSocket::Open(TCP): %d", r);
 	User::LeaveIfError(r);
 	CleanupClosePushL(sock);
 	addr.SetPort(port);
@@ -218,7 +221,7 @@ static void RunL()
 	local.Output(l16);
 	TBuf8<64> l8;
 	l8.Copy(l16);
-	RDebug::Printf("[nettest] local address %S port %d", &l8, local.Port());
+	RDebug::Printf("PH: nettest local address %S port %d", &l8, local.Port());
 
 	TBuf8<256> req;
 	req.Format(_L8("GET / HTTP/1.0\r\nHost: %S\r\nUser-Agent: Phorepoc-nettest\r\n\r\n"), &host8);
@@ -235,7 +238,7 @@ static void RunL()
 			sock.CancelRecv();
 		User::Leave(r);
 		}
-	RDebug::Printf("[nettest] %d bytes received:", resp.Length());
+	RDebug::Printf("PH: nettest %d bytes received:", resp.Length());
 	TPtrC8 rest(resp);
 	for (TInt n = 0; n < 6 && rest.Length(); ++n)
 		{
@@ -243,11 +246,11 @@ static void RunL()
 		TPtrC8 line = nl < 0 ? rest : rest.Left(nl);
 		if (line.Length() && line[line.Length() - 1] == '\r')
 			line.Set(line.Left(line.Length() - 1));
-		RDebug::Printf("[nettest] | %S", &line);
+		RDebug::Printf("PH: nettest | %S", &line);
 		rest.Set(nl < 0 ? TPtrC8() : rest.Mid(nl + 1));
 		}
 	CleanupStack::PopAndDestroy(4, &ss);		// sock, hr, conn, ss
-	RDebug::Printf("[nettest] PASS");
+	RDebug::Printf("PH: nettest PASS");
 	}
 
 GLDEF_C TInt E32Main()
@@ -255,7 +258,7 @@ GLDEF_C TInt E32Main()
 	CTrapCleanup* tc = CTrapCleanup::New();
 	TRAPD(err, RunL());
 	if (err != KErrNone)
-		RDebug::Printf("[nettest] FAIL %d", err);
+		RDebug::Printf("PH: nettest FAIL %d", err);
 	delete tc;
 	RProcess::Rendezvous(err);
 	return err;
