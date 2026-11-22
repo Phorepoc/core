@@ -153,9 +153,18 @@ owfSymContextSourceStreamUpdated(SymbianStreamType stream,
                                     parameter->immediateVisibility = SYM_CONTENT_VISIBLE_NOT_SET;
                                     if (PH_EARLY(PhUpdCount))
                                         RDebug::Printf("PH: wfc content update BEGIN stream=%08x composing=%d prevCommit=%d", (TUint)owfStream, (TInt)pDispCtx->iCompositionOngoing, (TInt)pDispCtx->iPreviousCommit);
-                                    if (pDispCtx->iCompositionOngoing &&
-                                        context->device &&
-                                        pDispCtx->iPreviousCommit == SYM_CONTENT_PREVIOUS_COMMIT_FALSE)
+                                    // OURS (2026-11-22, Big Roll freeze): also complete "available" at once while the context is
+                                    // PASSIVE. ALF's COpenWfcWrapper pauses composition (WFC_MESSAGE_DEACTIVATE) inside a wserv
+                                    // render-stage Begin..End and only resumes it at End -> Compose; End waits for the ALF
+                                    // frame callback, so a DSA Request handled in between (CScreen::ClearDsaSurface ->
+                                    // CScreenDeviceHelper::Update, a synchronous NotifyWhenAvailable wait in the Wserv thread)
+                                    // waited for a composition only Wserv itself could restart: Wserv + the app hung for good.
+                                    // A passive context reads no buffers, so the buffer IS available; the update flags below
+                                    // still make the resumed composition show the content.
+                                    if (context->device &&
+                                        (context->activationState == WFC_CONTEXT_STATE_PASSIVE ||
+                                         (pDispCtx->iCompositionOngoing &&
+                                          pDispCtx->iPreviousCommit == SYM_CONTENT_PREVIOUS_COMMIT_FALSE)))
                                     {
                                         TInt i = 0;
                                         parameter->immediateAvailable = 1;
