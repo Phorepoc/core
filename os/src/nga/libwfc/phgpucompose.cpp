@@ -17,6 +17,7 @@
 // src-over in premultiplied space over the background colour; then the context rotation (clockwise) into the target.
 // Declined (the CPU composes): masks, linear-light / luminance sources, a scene the GPU cannot import, a board without a GPU channel (
 // EGL does not come up), the developer menu switch off (repository 0xE7015A01 key 9).
+#include <string.h>
 #include <e32base.h>
 #include <e32debug.h>
 #include <hal.h>
@@ -133,7 +134,8 @@ namespace
 		return aFn != NULL;
 		}
 
-	// developer menu key 9 "GPU composition" (1 = on, the default; 0 = the 2010 CPU pipeline)
+	// developer menu key 9 "GPU composition" (1 = on, the default; 0 = the 2010 CPU pipeline; 2 = auto: on only over a
+	// hardware GPU, i.e. not Mesa's software rasterizers, which compose slower than libWFC's own CPU pipeline)
 	TInt Setting()
 		{
 		TInt v = 1;
@@ -157,7 +159,8 @@ namespace
 	TBool Init()
 		{
 		gThread = (TUint)RThread().Id();
-		if (!Setting())
+		const TInt setting = Setting();
+		if (!setting)
 			return EFalse;
 		gDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 		EGLint maj = 0, min = 0;
@@ -174,6 +177,21 @@ namespace
 			{
 			RDebug::Printf("PH: wfc gpu: no surfaceless GLES2 context (%x): the CPU composes", eglGetError());
 			return EFalse;
+			}
+		if (setting == 2)
+			{
+			typedef const char* (*TGetString)(GLenum);
+			TGetString getString = (TGetString)eglGetProcAddress("glGetString");
+			const char* r = getString ? getString(0x1F01 /* GL_RENDERER */) : NULL;
+			const TBool soft = !r || strstr(r, "softpipe") || strstr(r, "llvmpipe");
+			RDebug::Printf("PH: wfc gpu: auto: renderer %s -> %s", r ? r : "(none)", soft ? "the CPU composes" : "the GPU composes");
+			if (soft)
+				{
+				eglMakeCurrent(gDpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+				eglDestroyContext(gDpy, gCtx);
+				gCtx = EGL_NO_CONTEXT;
+				return EFalse;
+				}
 			}
 		void** f = (void**)&gl;
 		static const char* const KNames[] = { "glGenTextures", "glDeleteTextures", "glBindTexture", "glActiveTexture",

@@ -47,6 +47,9 @@ int symvmw_devcaps(symvmw_t *v, uint32_t *caps, unsigned count);
 int symvmw_pool_commit(symvmw_t *v, uint32_t offset, uint32_t size);   /* page aligned */
 int symvmw_mob_define(symvmw_t *v, uint32_t mobid, uint32_t offset, uint32_t size);
 int symvmw_mob_destroy(symvmw_t *v, uint32_t mobid);
+/* a MOB over memory of this process that lies in a shared chunk (another process's buffers mapped here, e.g. the surface manager's):
+   page aligned; the kernel driver holds the chunk and pins the pages until symvmw_mob_destroy. KErrNotSupported (-5) from an older driver */
+int symvmw_mob_define_addr(symvmw_t *v, uint32_t mobid, const void *addr, uint32_t size);
 /* Scan-out takeover (a full-screen GL window): the window's render target becomes a screen target, i.e. what the host shows, with no read-back
    and no window server. op 1 = the client defined a screen target, 0 = it took it down, 2 = ask. Returns 1 while it is the display and 0 once
    it is not: the display driver takes it down itself the moment the window server draws anything (a note, a pointer, another window), see
