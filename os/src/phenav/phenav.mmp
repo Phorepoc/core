@@ -1,0 +1,16 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// phenav: the composition benchmark's navigation, driven from inside the guest (docs/phorepoc/composition.md round 38), so hosts without
+// key injection (VMware Workstation) measure the same sequence as the host-side nav.sh. Started by SSM at boot (-O ssm-test=phenav).
+TARGET			phenav.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7017D10
+CAPABILITY		SwEvent
+VENDORID		0
+EPOCSTACKSIZE	0x4000
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+SOURCEPATH		.
+SOURCE			phenav.cpp
+LIBRARY			euser.lib ws32.lib
+SMPSAFE

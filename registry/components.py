@@ -351,6 +351,7 @@ COMPONENTS = {
     "phecomp": dict(mmp=os.path.join(OS_ROOT, "src/phecomp/phecomp.mmp"), nga=True),
     # OURS: R1 test client (etesian-port.md section 29): switches the window server's screen mode and back; SSM_TEST=phemodetest
     "phemodetest": dict(mmp=os.path.join(OS_ROOT, "src/phemodetest/phemodetest.mmp"), test=True),
+    "phenav": dict(mmp=os.path.join(OS_ROOT, "src/phenav/phenav.mmp"), test=True),   # the composition benchmark navigation, in the guest
     # OURS: R2e test client: a native group (asks for screen mode 0, draws a full-screen grid); SSM_TEST=phenative
     "phenative": dict(mmp=os.path.join(OS_ROOT, "src/phenative/phenative.mmp"), test=True),
     # OURS: user-side exception delivery test (a handled software exception + a handled page fault); SSM_TEST=pheexctest
