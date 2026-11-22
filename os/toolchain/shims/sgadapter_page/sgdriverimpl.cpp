@@ -493,6 +493,11 @@ TInt XSgDriverImpl::CreateImageCollections(const TSgImageInfo aInfos[], TInt aIm
 			maxOffsetBetweenBuffers = offsetBetweenBuffers;
 			}
 		}
+	if (maxOffsetBetweenBuffers >= 0x10000)   // PH: large collections page aligned, as CreateImageCollection
+		{
+		offsetToFirstBuffer = (offsetToFirstBuffer + 0xFFF) & ~0xFFF;
+		maxOffsetBetweenBuffers = (maxOffsetBetweenBuffers + 0xFFF) & ~0xFFF;
+		}
 	iMutex.Wait();
 	XSgImageCollectionImpl* firstImpl = NULL;
 	for (TInt i = 0; i < aCollectionCount; ++i)

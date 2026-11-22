@@ -316,7 +316,8 @@ COMPONENTS = {
         mmp=f"{G}/graphicsresourceservices/graphicsresourceadaptation/group/graphicsresourceadapter_sw.mmp", nga=True,
         rom="graphicsresourceadapter.dll",
         # large image collections (the composition targets) page aligned, so the GPU imports them in place
-        drop=["sgdriverimpl.cpp"], extra=["toolchain/shims/sgadapter_page/sgdriverimpl.cpp"],
+        drop=["sgdriverimpl.cpp", "sgimageimpl.cpp"],
+        extra=["toolchain/shims/sgadapter_page/sgdriverimpl.cpp", "toolchain/shims/sgadapter_page/sgimageimpl.cpp"],
         **{"def": f"{G}/graphicsresourceservices/graphicsresource/eabi/graphicsresourceadapteru.def"}),
     # the REAL software sgresource in an NGA=1 ROM (the same build as "sgresource"; NGA_TWINS pairs them)
     "sgresource_nga": dict(
