@@ -642,6 +642,8 @@ static OWFboolean
 WFC_FastpathAloneOverBlack(WFC_CONTEXT* context, WFC_ELEMENT* element)
     {
     const OWF_IMAGE* img = element->source->lockedStream.image;
+    if (PhGpu_Want())   /* the GPU composes (zero-copy imports): cheaper than the CPU copy of the fastpath */
+        return OWF_FALSE;
     if (!context->committedScene || !context->committedScene->elements || context->committedScene->elements->next)
         return OWF_FALSE;
     if ((context->backgroundColor & 0xFFFFFF00) != 0)
