@@ -1,3 +1,4 @@
+// PH patched copy (core toolchain/shims/sgadapter_page): page-aligned buffers of large image collections
 // Copyright (c) 2007-2009 Nokia Corporation and/or its subsidiary(-ies).
 // All rights reserved.
 // This component and the accompanying materials are made available
@@ -413,8 +414,12 @@ TInt XSgDriverImpl::CreateImageCollection(const TSgImageInfo& aInfo, TInt aImage
 	iMutex.Wait();
 	XSgImageCollectionImpl* impl;
 	const TInt stride = SgAlignedDataStride(aInfo.iSizeInPixels.iWidth, aInfo.iPixelFormat);
-	const TInt offsetToFirst = SgOffsetToFirstBuffer(sizeof(TSgImageMetaData));
-	const TInt offsetBetween = SgOffsetBetweenBuffers(stride, aInfo.iSizeInPixels.iHeight);
+	// PH (2026-11-22): buffers of a large collection (the window server's composition targets) start on a page, so the GPU can
+	// import their pages in place (svga: a MOB over the chunk's pages, the image at the MOB start; the Mali import too). Small
+	// collections keep the 2010 packing: the cost is at most two pages per collection
+	const TBool pageAlign = stride * aInfo.iSizeInPixels.iHeight >= 0x10000;
+	const TInt offsetToFirst = pageAlign ? (SgOffsetToFirstBuffer(sizeof(TSgImageMetaData)) + 0xFFF) & ~0xFFF : SgOffsetToFirstBuffer(sizeof(TSgImageMetaData));
+	const TInt offsetBetween = pageAlign ? (SgOffsetBetweenBuffers(stride, aInfo.iSizeInPixels.iHeight) + 0xFFF) & ~0xFFF : SgOffsetBetweenBuffers(stride, aInfo.iSizeInPixels.iHeight);
 	
 	err = XSgImageCollectionImpl::New(impl, *this, aInfo, aImageCount, SgIsCachedImage(aInfo), stride, offsetToFirst, offsetBetween);
 	if (err != KErrNone)

@@ -364,7 +364,13 @@ int PhGpu_SourceOk(const void* aData, int aFormat, int aLinear, int aW, int aH, 
 	{
 	// the GPU import maps whole pages: a buffer that does not start on one (Classic's streams: header + 0x60) stays
 	// on the CPU
-	return ((TUint)aData & 0xFFF) == 0 && MemFormat(aFormat) != 0 && !aLinear && aW > 0 && aH > 0 && aW <= 4096 && aH <= 4096 && (aStride & 7) == 0;
+	const TBool ok = ((TUint)aData & 0xFFF) == 0 && MemFormat(aFormat) != 0 && !aLinear && aW > 0 && aH > 0 && aW <= 4096 && aH <= 4096 && (aStride & 7) == 0;
+	static TInt nlog;
+	if (!ok && nlog++ < 16)
+		RDebug::Printf("PH: wfc gpu: source refused: %s (data %08x format %x linear %d %dx%d stride %d)",
+			((TUint)aData & 0xFFF) ? "not page aligned" : !MemFormat(aFormat) ? "format" : aLinear ? "linear" : (aStride & 7) ? "stride" : "size",
+			(TUint)aData, aFormat, aLinear, aW, aH, aStride);
+	return ok;
 	}
 
 int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int aStride, int aFormat, int aIw, int aIh,
