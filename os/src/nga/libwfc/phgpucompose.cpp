@@ -121,6 +121,10 @@ namespace
 	GLint gUniTex, gUniGa, gUniUseA, gUniPremul;
 	TEntry gEntry[KEntries];
 	TUint gComp;				// compositions so far
+	EGLImageKHR gTargetImage;	// this composition's target (PhGpu_Begin), for eglPresentImagePH
+	typedef EGLBoolean (*TPresent)(EGLDisplay, EGLImageKHR);
+	TPresent gPresent;			// Mesa's eglPresentImagePH (svga: the target becomes the screen target), NULL = none
+	TUint gShown, gNotShown;
 	TBool gFailed;				// this composition hit a GPU failure
 	TInt gTw, gTh, gIw, gIh, gRot;	// the current target, internal (pre-rotation) size, rotation (quarter turns cw)
 	TUint gT0, gTicks, gFrames, gElems;
@@ -239,6 +243,7 @@ namespace
 		gUniUseA = gl.GetUniformLocation(gProg, "useA");
 		gUniPremul = gl.GetUniformLocation(gProg, "premul");
 		HAL::Get(HAL::EFastCounterFrequency, gFreq);
+		gPresent = (TPresent)eglGetProcAddress("eglPresentImagePH");
 		RDebug::Printf("PH: wfc gpu: GPU composition up (EGL %d.%d)", maj, min);
 		return ETrue;
 		}
@@ -386,6 +391,7 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 	TEntry* t = Lookup(aStream, aBuffer, aPixels, aW, aH, aStride, aFormat, 1);
 	if (!t)
 		return 0;
+	gTargetImage = aRot == 0 ? t->iImage : (EGLImageKHR)0;	// (a turned target is copied turned by the display HAL)
 	if (!t->iFbo)
 		{
 		gl.GenFramebuffers(1, &t->iFbo);
@@ -514,7 +520,19 @@ int PhGpu_End(void)
 		gTicks = 0;
 		gElems = 0;
 		}
-	return !(err || gFailed);
+	if (err || gFailed)
+		return 0;
+	// the target straight to the display (svga screen target): no read-back, no copy by the display HAL. 2 = shown
+	if (gPresent && gTargetImage != (EGLImageKHR)0)
+		{
+		const TBool shown = gPresent(gDpy, gTargetImage);
+		shown ? ++gShown : ++gNotShown;
+		if (gShown + gNotShown <= 3 || (gShown + gNotShown) % 600 == 0)
+			RDebug::Printf("PH: wfc gpu: present: %u frames shown as the screen target, %u copied", gShown, gNotShown);
+		if (shown)
+			return 2;
+		}
+	return 1;
 	}
 
 }	// extern "C"

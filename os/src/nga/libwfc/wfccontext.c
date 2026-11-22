@@ -54,6 +54,8 @@ extern int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, in
                          int aPremultiplied, const float* aSrcRect, const float* aDstRect, int aFlip, int aRot,
                          int aLinearFilter, int aSourceAlpha, float aGlobalAlpha);
 extern int PhGpu_End(void);
+/* PhGpu_End() == 2: the GPU target is on the display already (the svga screen target); the composition stream is not posted */
+static int ph_gpu_shown;
 
 
 /*! maximum number of elements per scene */
@@ -1032,7 +1034,9 @@ WFC_Context_UnlockTarget(WFC_CONTEXT* context,OWFboolean aDoPost)
             }
         }
         
-        if (!OWF_Screen_Post_Topmost_Layer(context->displayContext, context->stream, rotation))
+        if (ph_gpu_shown)
+            ph_gpu_shown = 0;   /* (on screen already) */
+        else if (!OWF_Screen_Post_Topmost_Layer(context->displayContext, context->stream, rotation))
             {   //getting a fail here is bad... display did not accept the composition buffer.
             DPRINT(("WFC_Context_UnlockTarget - OWF_Screen_Post_Topmost_Layer failed for composition stream"));
            OWF_ASSERT(0);
@@ -1265,7 +1269,7 @@ WFC_Context_PhGpuCompose(WFC_CONTEXT* context)
                       e->sourceScaleFilter != WFC_SCALE_FILTER_NONE,
                       (e->transparencyTypes & WFC_TRANSPARENCY_SOURCE) != 0, ga ? (float)e->globalAlpha / (float)OWF_ALPHA_MAX_VALUE : 1.0f);
     }
-    PhGpu_End();
+    ph_gpu_shown = PhGpu_End() == 2;
     /* the notifications only once the GPU has sampled the sources: "composed" lets a client draw into a
        single-buffered surface again, and a GPU job still queued would read its half-drawn next frame */
     for (node = scene->elements; NULL != node; node = node->next)
