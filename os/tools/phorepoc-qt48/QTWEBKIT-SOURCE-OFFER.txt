@@ -13,9 +13,9 @@ Corresponding source, for at least three years after the release you installed i
   1. The unmodified Qt 4.8.7 sources (WebKit under src/3rdparty/webkit):
        https://download.qt.io/archive/qt/4.8/4.8.7/qt-everywhere-opensource-src-4.8.7.tar.gz
        SHA-256 e2882295097e47fe089f8ac741a95fef47e0a73a3f3cdf21b56990638f626ea0
-  2. Our changes and the scripts that build and package it:
+  2. Phorepoc's changes and the scripts that build and package it:
        https://github.com/Phorepoc/core   (os/tools/phorepoc-qt48/: qt-patches/, build_qtwebkit_sis.sh)
 
 Written offer: if the links above are no longer available, send a request to the address given on the Phorepoc organisation
-page https://github.com/Phorepoc and we will send you the corresponding source on a medium of your choice for the cost of
+page https://github.com/Phorepoc and Phorepoc will send you the corresponding source on a medium of your choice for the cost of
 the medium.

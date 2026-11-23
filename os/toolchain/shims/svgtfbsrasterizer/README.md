@@ -1,4 +1,4 @@
-# svgtfbsrasterizer factory bridge (OURS)
+# svgtfbsrasterizer factory bridge (Phorepoc)
 
 `SvgtFbsRasterizer.mmp` names `../eabi/fbsrasterizer.def`, which is not in the 2010 release, and its
 factory is `CSvgtFbsRasterizer::New()` — not the `CFbsRasterizer::New()` that FBS's

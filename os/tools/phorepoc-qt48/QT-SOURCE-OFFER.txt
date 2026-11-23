@@ -17,14 +17,14 @@ it from:
        SHA-256 e2882295097e47fe089f8ac741a95fef47e0a73a3f3cdf21b56990638f626ea0
      and the unmodified Qt Mobility 1.2.0 sources, commit fb3e9bc2d941462f1244aaf0ea79425a307f883d (tag v1.2.0) of
        https://github.com/qtproject/qt-mobility
-  2. Our changes to them (the patches in qt-patches/), and the scripts that configure, build and package them:
+  2. Phorepoc's changes to them (the patches in qt-patches/), and the scripts that configure, build and package them:
        https://github.com/Phorepoc/core   (os/tools/phorepoc-qt48/: qt-patches/, build_qt_sis.sh, build_qtmobility_sis.sh)
      with the compiler/toolchain images and component registry in https://github.com/Phorepoc/toolchain,
      https://github.com/Phorepoc/pdk and https://github.com/Phorepoc/core (registry/components_qt48.py); the release
      workflow that publishes the packages is https://github.com/Phorepoc/qt-symbian.
 
 Written offer: if the links above are no longer available, send a request to the address given on the Phorepoc
-organisation page https://github.com/Phorepoc and we will send you the corresponding source on a medium of your choice
+organisation page https://github.com/Phorepoc and Phorepoc will send you the corresponding source on a medium of your choice
 for the cost of the medium.
 
 Qt is a registered trademark of The Qt Company Ltd and is used here only to name the software.

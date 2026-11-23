@@ -1,4 +1,4 @@
-# phepowerkeyplugin (OURS)
+# phepowerkeyplugin (Phorepoc)
 
 Control Panel (GS) page "Power key": what a short / a long (2 s) press of the power key does.
 Two radio-button settings in CenRep 0xE70157B0 (keys 1 / 2; values 0 Power menu, 1 Lock / unlock, 2 Switch off) -- SysAp reads

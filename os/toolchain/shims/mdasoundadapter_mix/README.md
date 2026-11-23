@@ -1,4 +1,4 @@
-# mdasoundadapter_mix -- the Q0 userland audio mixer (OURS)
+# mdasoundadapter_mix -- the Q0 userland audio mixer (Phorepoc)
 
 `ph_mixsc.h` is force-included (`-include`) into the unmodified 2010
 `mdasoundadapter` and swaps `RSoundSc` for the virtual `RMixSoundSc`; `phmixer.cpp` sums all virtual channels onto the

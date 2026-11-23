@@ -1,7 +1,7 @@
 # core
 
-This is Phorepoc OS, the operating system. It holds everything that's the same on every device: our changes to the
-Symbian source, the components we've written ourselves, and the list of every Symbian component together with how to
+This is Phorepoc OS, the operating system. It holds everything that's the same on every device: Phorepoc's changes to the
+Symbian source, the components Phorepoc has written, and the list of every Symbian component together with how to
 build it. The Symbian source itself isn't stored here. `fetch.sh` downloads it at the exact commits listed in
 `sources.lock`.
 
@@ -42,8 +42,8 @@ The [phe manual](https://github.com/Phorepoc/pdk/tree/main/docs/phe) explains ea
 ## Finding your way around
 
 ```
-os/src/                  components we wrote (pheshell, phetty, phgl, phvg and more), with their tests
-os/toolchain/shims/      our replacement copies of Symbian source files, one folder per change
+os/src/                  Phorepoc's own components (pheshell, phetty, phgl, phvg and more), with their tests
+os/toolchain/shims/      Phorepoc's replacement copies of Symbian source files, one folder per change
 os/toolchain/            other headers and runtime pieces every image is built with
 os/shim/                 stand-in headers for interfaces the 2010 release left out
 os/config/               the default settings every device starts from
@@ -51,7 +51,7 @@ os/toolchain/x32/        the x32 user-side runtime (startup, C++ runtime glue, s
 os/tools/                build recipes for third-party code
 registry/components.py   one entry for each component, saying how it's built from its .mmp
 registry/rom_heap.tsv    heap and stack sizes for the programs in the ROM
-sources.lock, fetch.sh   which Symbian source we build, and the script that downloads it
+sources.lock, fetch.sh   which Symbian source is built, and the script that downloads it
 ```
 
 By default `phe` expects this repository in a folder called `core` next to the pdk. If yours is somewhere else, point
@@ -60,8 +60,8 @@ output, which otherwise go into `symbian/` and `build/` here.
 
 ## License
 
-Code we wrote, except the window compositor (`os/src/phecomp`, BSD-2-Clause), and Symbian files we've changed are EPL-2.0, with GPL-2.0-or-later as a Secondary License
-(EPL-1.0 lets us move them to the newer version). Symbian sources we use unchanged are downloaded from upstream and stay
+Phorepoc-authored files, except the window compositor (`os/src/phecomp`, BSD-2-Clause), and modified Symbian files are EPL-2.0, with GPL-2.0-or-later as a Secondary License
+(EPL-1.0 allows moving them to the newer version). Symbian sources used unchanged are downloaded from upstream and stay
 EPL-1.0. A few third-party files carry their own license in their headers. The license texts are in `LICENSES/`.
 
 Contributions are welcome under the same terms. Add your name to `AUTHORS` in your first pull request.
