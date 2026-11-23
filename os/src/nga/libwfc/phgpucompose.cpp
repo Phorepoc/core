@@ -121,6 +121,7 @@ namespace
 	GLint gUniTex, gUniGa, gUniUseA, gUniPremul;
 	TEntry gEntry[KEntries];
 	TUint gComp;				// compositions so far
+	TUint gTLook, gTBegun, gTElems, gTElLook;	// round 41 timing split
 	EGLImageKHR gTargetImage;	// this composition's target (PhGpu_Begin), for eglPresentImagePH
 	typedef EGLBoolean (*TPresent)(EGLDisplay, EGLImageKHR);
 	TPresent gPresent;			// Mesa's eglPresentImagePH (svga: the target becomes the screen target), NULL = none
@@ -389,6 +390,7 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 	if (!MemFormat(aFormat) || (aStride & 7) || ((TUint)aPixels & 0xFFF))
 		return 0;
 	TEntry* t = Lookup(aStream, aBuffer, aPixels, aW, aH, aStride, aFormat, 1);
+	gTLook = User::FastCounter();
 	if (!t)
 		return 0;
 	gTargetImage = aRot == 0 ? t->iImage : (EGLImageKHR)0;	// (a turned target is copied turned by the display HAL)
@@ -420,6 +422,7 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 	gl.Uniform1i(gUniTex, 0);
 	gl.EnableVertexAttribArray(0);
 	gl.EnableVertexAttribArray(1);
+	gTBegun = User::FastCounter();
 	return 1;
 	}
 
@@ -427,7 +430,9 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
                   int aPremultiplied, const float* aSrcRect, const float* aDstRect, int aFlip, int aRot,
                   int aLinearFilter, int aSourceAlpha, float aGlobalAlpha)
 	{
+	const TUint el0 = User::FastCounter();
 	TEntry* e = Lookup(aStream, aBuffer, aPixels, aW, aH, aStride, aFormat);
+	gTElLook += User::FastCounter() - el0;
 	if (!e)
 		{
 		gFailed = ETrue;
@@ -486,6 +491,7 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 	gl.VertexAttribPointer(0, 2, KGlFloat, 0, 0, pv);
 	gl.VertexAttribPointer(1, 2, KGlFloat, 0, 0, uvv);
 	gl.DrawArrays(KGlTriangles, 0, 6);
+	gTElems = User::FastCounter();
 	return 1;
 	}
 
@@ -506,6 +512,15 @@ int PhGpu_End(void)
 	if (gComp <= 40 || gComp % 300 == 0)		// bring-up trace: the first compositions, then a sample
 		RDebug::Printf("PH: wfc gpu: composition %u: %u elements so far, %u us (GPU wait %u us)", gComp, gElems,
 			gFreq ? (TUint)((TUint64)dt * 1000000 / gFreq) : 0, gFreq ? (TUint)((TUint64)(w1 - w0) * 1000000 / gFreq) : 0);
+	if (gFreq && (gComp <= 40 || gComp % 60 == 0))	// round 41: where the time goes (target lookup / setup / element lookups / draws / submit+wait / end)
+		{
+		const TUint64 f = gFreq;
+		RDebug::Printf("PH: wfc gpu: split %u: look %u setup %u ellook %u draw %u finish %u total %u us", gComp,
+			(TUint)((TUint64)(gTLook - gT0) * 1000000 / f), (TUint)((TUint64)(gTBegun - gTLook) * 1000000 / f),
+			(TUint)((TUint64)gTElLook * 1000000 / f), (TUint)((TUint64)(gTElems - gTBegun - gTElLook) * 1000000 / f),
+			(TUint)((TUint64)(w1 - w0) * 1000000 / f), (TUint)((TUint64)dt * 1000000 / f));
+		}
+	gTElLook = 0;
 	if (err || gFailed)
 		{
 		static TInt said;
