@@ -122,6 +122,8 @@ namespace
 	TEntry gEntry[KEntries];
 	TUint gComp;				// compositions so far
 	TUint gTLook, gTBegun, gTElems, gTElLook;	// round 41 timing split
+	TBool gClearPending;		// round 42: the target clear waits for the first element (an opaque full-target layer skips it)
+	TUint gClearSkipped;
 	TUint gTs[10], gTMark;		// round 42: per GL call (0 bind fbo+viewport, 1 clear, 2 program state, 3 bind tex, 4 tex params, 5 blend+uniforms, 6 attrib pointers, 7 draw)
 	EGLImageKHR gTargetImage;	// this composition's target (PhGpu_Begin), for eglPresentImagePH
 	typedef EGLBoolean (*TPresent)(EGLDisplay, EGLImageKHR);
@@ -419,7 +421,7 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 	const TReal32 a = (TReal32)(aBackground & 0xFF) / 255.0f;
 	gl.ClearColor((TReal32)((aBackground >> 24) & 0xFF) / 255.0f * a, (TReal32)((aBackground >> 16) & 0xFF) / 255.0f * a,
 		(TReal32)((aBackground >> 8) & 0xFF) / 255.0f * a, a);
-	gl.Clear(KGlColorBufferBit);
+	gClearPending = ETrue;
 	{ const TUint n = User::FastCounter(); gTs[1] += n - gTMark; gTMark = n; }
 	gl.UseProgram(gProg);
 	gl.ActiveTexture(KGlTexture0);
@@ -486,6 +488,21 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 	gl.TexParameteri(KGlTexture2D, KGlTextureMagFilter, filt);
 	{ const TUint n = User::FastCounter(); gTs[4] += n - gTMark; gTMark = n; }
 	const TBool useA = aSourceAlpha && aFormat == 0x8888;
+	if (gClearPending)
+		{
+		gClearPending = EFalse;
+		// an opaque layer over the whole target hides the clear colour (in svga a clear of the target costs 2-7 ms)
+		const TBool covers = !useA && aGlobalAlpha >= 1.0f && aDstRect[0] <= 0.0f && aDstRect[1] <= 0.0f &&
+			aDstRect[0] + aDstRect[2] >= (TReal32)gTw && aDstRect[1] + aDstRect[3] >= (TReal32)gTh;
+		if (covers)
+			gClearSkipped++;
+		else
+			{
+			const TUint c0 = User::FastCounter();
+			gl.Clear(KGlColorBufferBit);
+			gTs[1] += User::FastCounter() - c0;
+			}
+		}
 	if (useA || aGlobalAlpha < 1.0f)
 		{
 		gl.Enable(KGlBlend);
@@ -512,6 +529,11 @@ int PhGpu_End(void)
 	// current EGL context here -- and returned with the job still running). The CPU cache maintenance on both sides
 	// rides on the job itself (drm_symbian.c sym_drm_sync_hook): sources cleaned ahead of the submit, the target
 	// invalidated when it finished.
+	if (gClearPending)
+		{
+		gClearPending = EFalse;
+		gl.Clear(KGlColorBufferBit);
+		}
 	const TUint w0 = User::FastCounter();
 	gl.Finish();
 	const TUint w1 = User::FastCounter();
@@ -537,8 +559,8 @@ int PhGpu_End(void)
 		TUint u[8];
 		for (TInt i = 0; i < 8; i++)
 			u[i] = (TUint)((TUint64)gTs[i] * 1000000 / gFreq);
-		RDebug::Printf("PH: wfc gpu: calls %u: fbo %u clear %u prog %u | bindtex %u texparam %u uniforms %u attribs %u draw %u us", gComp,
-			u[0], u[1], u[2], u[3], u[4], u[5], u[6], u[7]);
+		RDebug::Printf("PH: wfc gpu: calls %u: fbo %u clear %u (skipped %u) prog %u | bindtex %u texparam %u uniforms %u attribs %u draw %u us", gComp,
+			u[0], u[1], gClearSkipped, u[2], u[3], u[4], u[5], u[6], u[7]);
 		}
 	Mem::FillZ(gTs, sizeof(gTs));
 	if (err || gFailed)
