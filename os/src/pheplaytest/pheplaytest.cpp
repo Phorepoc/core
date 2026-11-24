@@ -4,7 +4,7 @@
 // pheplaytest.cpp -- OURS: the playback regression test. A real CMdaAudioPlayerUtility opens a file (the MMF picks the
 // controller plugin by the file's format: the MP3 controller for .mp3) and plays it to the end:
 //
-//   pheplaytest [file]        default z:\data\pheplaytest.mp3
+//   pheplaytest [file]        default z:\data\pheplaytest.wav (a 2 s 440 Hz tone, 16 kHz mono PCM)
 //
 // Each callback is printed with the clip's duration; `[pheplaytest] DONE <err>` ends it (tonetest checks the device
 // chain under it; this checks the controller/codec layer).
@@ -12,7 +12,7 @@
 #include <e32debug.h>
 #include <mdaaudiosampleplayer.h>
 
-_LIT(KDefaultFile, "z:\data\pheplaytest.mp3");
+_LIT(KDefaultFile, "z:\\data\\pheplaytest.wav");
 
 class CPlayTest : public CBase, public MMdaAudioPlayerCallback
 	{
