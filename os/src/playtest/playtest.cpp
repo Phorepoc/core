@@ -5,12 +5,16 @@
 // (CMdaAudioPlayerUtility -> the controller the MMF picks for the file: WAV = mmfaudiocontroller, MP3 = the
 // advanced audio controller -> DevSound -> A3F -> the HwDevice for the file's FourCC -> ... -> the AC'97 PDD).
 //
-//   playtest <file>        default c:\data\test.wav
+//   playtest <file>
+//   playtest               each default clip that exists, one after the other, 10 s after the start (a boot test:
+//                          SSM_TEST=playtest; a clip played across SSM's switch to Normal ends -2 part-way):
+//                          c:\data\test.wav, z:\data\playtest.wav (PCM), z:\data\playtest.mp3
 //
-// Each callback is printed; `[playtest] DONE <err>` ends it. With QEMU's SOUND_WAV=1 the host checks the capture:
+// Each callback is printed; `[playtest] DONE <err>` ends each clip, `[playtest] ALL <err>` the run. With QEMU's SOUND_WAV=1 the host checks the capture:
 // py tools/phorepoc-x86/wavcheck.py --expect <Hz of the file>
 #include <e32base.h>
 #include <e32debug.h>
+#include <f32file.h>
 #include <mdaaudiosampleplayer.h>
 
 class CPlayTest : public CBase, public MMdaAudioPlayerCallback
@@ -52,22 +56,46 @@ private:
 	CMdaAudioPlayerUtility* iPlayer;
 	};
 
+static TInt PlayL(const TDesC& aFile)
+	{
+	CPlayTest* t = new (ELeave) CPlayTest;
+	CleanupStack::PushL(t);
+	t->StartL(aFile);
+	CActiveScheduler::Start();
+	TInt r = t->iResult;
+	CleanupStack::PopAndDestroy(t);
+	return r;
+	}
+
 static TInt RunL()
 	{
 	TFileName file;
 	User::CommandLine(file);
 	file.Trim();
-	if (file.Length() == 0)
-		file = _L("c:\\data\\test.wav");
 	CActiveScheduler* s = new (ELeave) CActiveScheduler;
 	CleanupStack::PushL(s);
 	CActiveScheduler::Install(s);
-	CPlayTest* t = new (ELeave) CPlayTest;
-	CleanupStack::PushL(t);
-	t->StartL(file);
-	CActiveScheduler::Start();
-	TInt r = t->iResult;
-	CleanupStack::PopAndDestroy(2, s);
+	TInt r = KErrNotFound;
+	if (file.Length())
+		r = PlayL(file);
+	else
+		{
+		User::After(10000000);
+		RFs fs;
+		User::LeaveIfError(fs.Connect());
+		CleanupClosePushL(fs);
+		_LIT(KClip0, "c:\\data\\test.wav");
+		_LIT(KClip1, "z:\\data\\playtest.wav");
+		_LIT(KClip2, "z:\\data\\playtest.mp3");
+		const TDesC* clips[] = { &KClip0(), &KClip1(), &KClip2() };
+		TEntry e;
+		for (TInt i = 0; i < 3 && (r == KErrNone || r == KErrNotFound); ++i)
+			if (fs.Entry(*clips[i], e) == KErrNone)
+				r = PlayL(*clips[i]);
+		CleanupStack::PopAndDestroy(&fs);
+		}
+	RDebug::Printf("[playtest] ALL %d", r);
+	CleanupStack::PopAndDestroy(s);
 	return r;
 	}
 
