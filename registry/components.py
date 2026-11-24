@@ -1151,6 +1151,8 @@ COMPONENTS = {
     "phecaps": dict(mmp=os.path.join(OS_ROOT, "src/phecaps/phecaps.mmp"), test=True),
     # (the browser frontend, phebrowser, lives in the s60-browser-shell repository: a layer and its own Catalogue package)
     "tonetest": dict(mmp=os.path.join(OS_ROOT, "src/tonetest/tonetest.mmp"), test=True),
+    # an audio FILE through the MMF controllers (the MP3 controller for .mp3); SSM_TEST=pheplaytest, needs a clip in the ROM
+    "pheplaytest": dict(mmp=os.path.join(OS_ROOT, "src/pheplaytest/pheplaytest.mmp"), test=True),
     # --- vector graphics: what the default skin's backgrounds + every real icon need (next: vgrenderer,
     "svgengine": dict(mmp="oss.FCL.sf.mw.svgt/svgtopt/SVG/SVGEngine/group/SVGEngine.mmp",
                       # __int64 = an RVCT/MSVC keyword (gfx2d Gfxmath.h); imcvcodc.h (imut, the base64

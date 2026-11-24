@@ -1,0 +1,15 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+
+// pheplaytest.mmp -- OURS: an audio FILE played through the MMF controller framework (the playback regression test)
+TARGET			pheplaytest.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE70157FF
+CAPABILITY		MultimediaDD UserEnvironment ReadUserData
+VENDORID		0
+
+OS_LAYER_SYSTEMINCLUDE
+MW_LAYER_SYSTEMINCLUDE
+SOURCEPATH		.
+SOURCE			pheplaytest.cpp
+LIBRARY			euser.lib mediaclientaudio.lib
