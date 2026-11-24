@@ -122,6 +122,7 @@ namespace
 	TEntry gEntry[KEntries];
 	TUint gComp;				// compositions so far
 	TUint gTLook, gTBegun, gTElems, gTElLook;	// round 41 timing split
+	TUint gTs[10], gTMark;		// round 42: per GL call (0 bind fbo+viewport, 1 clear, 2 program state, 3 bind tex, 4 tex params, 5 blend+uniforms, 6 attrib pointers, 7 draw)
 	EGLImageKHR gTargetImage;	// this composition's target (PhGpu_Begin), for eglPresentImagePH
 	typedef EGLBoolean (*TPresent)(EGLDisplay, EGLImageKHR);
 	TPresent gPresent;			// Mesa's eglPresentImagePH (svga: the target becomes the screen target), NULL = none
@@ -409,20 +410,24 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 			}
 		}
 	gTw = aW; gTh = aH; gIw = aIw; gIh = aIh; gRot = aRot & 3;
+	gTMark = User::FastCounter();
 	gl.BindFramebuffer(KGlFramebuffer, t->iFbo);
 	gl.Viewport(0, 0, aW, aH);
+	{ const TUint n = User::FastCounter(); gTs[0] += n - gTMark; gTMark = n; }
 	gl.Disable(KGlScissorTest);
 	gl.Disable(KGlDither);
 	const TReal32 a = (TReal32)(aBackground & 0xFF) / 255.0f;
 	gl.ClearColor((TReal32)((aBackground >> 24) & 0xFF) / 255.0f * a, (TReal32)((aBackground >> 16) & 0xFF) / 255.0f * a,
 		(TReal32)((aBackground >> 8) & 0xFF) / 255.0f * a, a);
 	gl.Clear(KGlColorBufferBit);
+	{ const TUint n = User::FastCounter(); gTs[1] += n - gTMark; gTMark = n; }
 	gl.UseProgram(gProg);
 	gl.ActiveTexture(KGlTexture0);
 	gl.Uniform1i(gUniTex, 0);
 	gl.EnableVertexAttribArray(0);
 	gl.EnableVertexAttribArray(1);
 	gTBegun = User::FastCounter();
+	gTs[2] += gTBegun - gTMark;
 	return 1;
 	}
 
@@ -473,10 +478,13 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 		pv[i * 2] = p[KTri[i]][0]; pv[i * 2 + 1] = p[KTri[i]][1];
 		uvv[i * 2] = uv[KTri[i]][0]; uvv[i * 2 + 1] = uv[KTri[i]][1];
 		}
+	gTMark = User::FastCounter();
 	gl.BindTexture(KGlTexture2D, e->iTex);
+	{ const TUint n = User::FastCounter(); gTs[3] += n - gTMark; gTMark = n; }
 	const GLint filt = aLinearFilter ? KGlLinear : KGlNearest;
 	gl.TexParameteri(KGlTexture2D, KGlTextureMinFilter, filt);
 	gl.TexParameteri(KGlTexture2D, KGlTextureMagFilter, filt);
+	{ const TUint n = User::FastCounter(); gTs[4] += n - gTMark; gTMark = n; }
 	const TBool useA = aSourceAlpha && aFormat == 0x8888;
 	if (useA || aGlobalAlpha < 1.0f)
 		{
@@ -488,10 +496,13 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 	gl.Uniform1f(gUniGa, aGlobalAlpha);
 	gl.Uniform1f(gUniUseA, useA ? 1.0f : 0.0f);
 	gl.Uniform1f(gUniPremul, aPremultiplied ? 1.0f : 0.0f);
+	{ const TUint n = User::FastCounter(); gTs[5] += n - gTMark; gTMark = n; }
 	gl.VertexAttribPointer(0, 2, KGlFloat, 0, 0, pv);
 	gl.VertexAttribPointer(1, 2, KGlFloat, 0, 0, uvv);
+	{ const TUint n = User::FastCounter(); gTs[6] += n - gTMark; gTMark = n; }
 	gl.DrawArrays(KGlTriangles, 0, 6);
 	gTElems = User::FastCounter();
+	gTs[7] += gTElems - gTMark;
 	return 1;
 	}
 
@@ -521,6 +532,15 @@ int PhGpu_End(void)
 			(TUint)((TUint64)(w1 - w0) * 1000000 / f), (TUint)((TUint64)dt * 1000000 / f));
 		}
 	gTElLook = 0;
+	if (gFreq && (gComp <= 40 || gComp % 60 == 0))
+		{
+		TUint u[8];
+		for (TInt i = 0; i < 8; i++)
+			u[i] = (TUint)((TUint64)gTs[i] * 1000000 / gFreq);
+		RDebug::Printf("PH: wfc gpu: calls %u: fbo %u clear %u prog %u | bindtex %u texparam %u uniforms %u attribs %u draw %u us", gComp,
+			u[0], u[1], u[2], u[3], u[4], u[5], u[6], u[7]);
+		}
+	Mem::FillZ(gTs, sizeof(gTs));
 	if (err || gFailed)
 		{
 		static TInt said;
