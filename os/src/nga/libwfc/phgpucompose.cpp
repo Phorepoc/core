@@ -492,8 +492,13 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 		{
 		gClearPending = EFalse;
 		// an opaque layer over the whole target hides the clear colour (in svga a clear of the target costs 2-7 ms)
+		// (the destination rect is in the INTERNAL, pre-rotation scene: gIw x gIh, not the doubled/rotated target)
 		const TBool covers = !useA && aGlobalAlpha >= 1.0f && aDstRect[0] <= 0.0f && aDstRect[1] <= 0.0f &&
-			aDstRect[0] + aDstRect[2] >= (TReal32)gTw && aDstRect[1] + aDstRect[3] >= (TReal32)gTh;
+			aDstRect[0] + aDstRect[2] >= (TReal32)gIw && aDstRect[1] + aDstRect[3] >= (TReal32)gIh;
+		if (gComp <= 20)
+			RDebug::Printf("PH: wfc gpu: clear? comp %u covers %d: srcalpha %d fmt %x galpha %d%% dst %d,%d %dx%d internal %dx%d target %dx%d",
+				gComp, covers, aSourceAlpha, aFormat, (TInt)(aGlobalAlpha * 100), (TInt)aDstRect[0], (TInt)aDstRect[1],
+				(TInt)aDstRect[2], (TInt)aDstRect[3], gIw, gIh, gTw, gTh);
 		if (covers)
 			gClearSkipped++;
 		else
