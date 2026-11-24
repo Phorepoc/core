@@ -430,6 +430,13 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 	gl.Uniform1i(gUniTex, 0);
 	gl.EnableVertexAttribArray(0);
 	gl.EnableVertexAttribArray(1);
+	{	// round 42d (diagnostic): wait out the GPU here, so the stall is timed on its own (gTs[8]) instead of in
+		// whichever GL call first blocks (round 42c: it moved from the clear into the draw)
+	const TUint w = User::FastCounter();
+	gl.Finish();
+	gTs[8] += User::FastCounter() - w;
+	gTMark = User::FastCounter();
+	}
 	gTBegun = User::FastCounter();
 	gTs[2] += gTBegun - gTMark;
 	return 1;
@@ -569,11 +576,11 @@ int PhGpu_End(void)
 	gTElLook = 0;
 	if (gFreq && (gComp <= 40 || gComp % 60 == 0))
 		{
-		TUint u[8];
-		for (TInt i = 0; i < 8; i++)
+		TUint u[9];
+		for (TInt i = 0; i < 9; i++)
 			u[i] = (TUint)((TUint64)gTs[i] * 1000000 / gFreq);
-		RDebug::Printf("PH: wfc gpu: calls %u: fbo %u clear %u (skipped %u) prog %u | bindtex %u texparam %u uniforms %u attribs %u draw %u us", gComp,
-			u[0], u[1], gClearSkipped, u[2], u[3], u[4], u[5], u[6], u[7]);
+		RDebug::Printf("PH: wfc gpu: calls %u: fbo %u clear %u (skipped %u) prog %u | bindtex %u texparam %u uniforms %u attribs %u draw %u us | pre-wait %u us", gComp,
+			u[0], u[1], gClearSkipped, u[2], u[3], u[4], u[5], u[6], u[7], u[8]);
 		}
 	Mem::FillZ(gTs, sizeof(gTs));
 	if (err || gFailed)
