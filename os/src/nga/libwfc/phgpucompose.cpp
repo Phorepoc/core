@@ -123,6 +123,7 @@ namespace
 	TUint gComp;				// compositions so far
 	TUint gTLook, gTBegun, gTElems, gTElLook;	// round 41 timing split
 	TBool gClearPending;		// round 42: the target clear waits for the first element (an opaque full-target layer skips it)
+	TBool gClearRgbBlack;		// the pending clear colour's rgb is 0 (a full-target alpha layer may stand in for the clear)
 	TUint gClearSkipped;
 	TUint gTs[10], gTMark;		// round 42: per GL call (0 bind fbo+viewport, 1 clear, 2 program state, 3 bind tex, 4 tex params, 5 blend+uniforms, 6 attrib pointers, 7 draw)
 	EGLImageKHR gTargetImage;	// this composition's target (PhGpu_Begin), for eglPresentImagePH
@@ -422,6 +423,7 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 	gl.ClearColor((TReal32)((aBackground >> 24) & 0xFF) / 255.0f * a, (TReal32)((aBackground >> 16) & 0xFF) / 255.0f * a,
 		(TReal32)((aBackground >> 8) & 0xFF) / 255.0f * a, a);
 	gClearPending = ETrue;
+	gClearRgbBlack = (aBackground >> 8) == 0;
 	{ const TUint n = User::FastCounter(); gTs[1] += n - gTMark; gTMark = n; }
 	gl.UseProgram(gProg);
 	gl.ActiveTexture(KGlTexture0);
@@ -488,19 +490,25 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 	gl.TexParameteri(KGlTexture2D, KGlTextureMagFilter, filt);
 	{ const TUint n = User::FastCounter(); gTs[4] += n - gTMark; gTMark = n; }
 	const TBool useA = aSourceAlpha && aFormat == 0x8888;
+	TBool coverDraw = EFalse;
 	if (gClearPending)
 		{
 		gClearPending = EFalse;
 		// an opaque layer over the whole target hides the clear colour (in svga a clear of the target costs 2-7 ms)
 		// (the destination rect is in the INTERNAL, pre-rotation scene: gIw x gIh, not the doubled/rotated target)
-		const TBool covers = !useA && aGlobalAlpha >= 1.0f && aDstRect[0] <= 0.0f && aDstRect[1] <= 0.0f &&
+		// a per-pixel-alpha layer covers too when the clear colour is black: premultiplied src-over onto black = the
+		// source's rgb, so the layer drawn UNBLENDED leaves the same rgb (only the target's alpha differs; scanout ignores it)
+		const TBool covers = (!useA || gClearRgbBlack) && aGlobalAlpha >= 1.0f && aDstRect[0] <= 0.0f && aDstRect[1] <= 0.0f &&
 			aDstRect[0] + aDstRect[2] >= (TReal32)gIw && aDstRect[1] + aDstRect[3] >= (TReal32)gIh;
 		if (gComp <= 20)
 			RDebug::Printf("PH: wfc gpu: clear? comp %u covers %d: srcalpha %d fmt %x galpha %d%% dst %d,%d %dx%d internal %dx%d target %dx%d",
 				gComp, covers, aSourceAlpha, aFormat, (TInt)(aGlobalAlpha * 100), (TInt)aDstRect[0], (TInt)aDstRect[1],
 				(TInt)aDstRect[2], (TInt)aDstRect[3], gIw, gIh, gTw, gTh);
 		if (covers)
+			{
 			gClearSkipped++;
+			coverDraw = ETrue;
+			}
 		else
 			{
 			const TUint c0 = User::FastCounter();
@@ -508,7 +516,7 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 			gTs[1] += User::FastCounter() - c0;
 			}
 		}
-	if (useA || aGlobalAlpha < 1.0f)
+	if (!coverDraw && (useA || aGlobalAlpha < 1.0f))
 		{
 		gl.Enable(KGlBlend);
 		gl.BlendFunc(KGlOne, KGlOneMinusSrcAlpha);
