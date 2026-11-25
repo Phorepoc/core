@@ -92,6 +92,7 @@ namespace
 		void (*EnableVertexAttribArray)(GLuint);
 		void (*DrawArrays)(GLenum, GLint, GLsizei);
 		void (*Finish)();
+		void (*Flush)();
 		GLenum (*GetError)();
 		void (*EGLImageTargetTexture2DOES)(GLenum, GLeglImageOES);
 		EGLImageKHR (*CreateImageKHR)(EGLDisplay, EGLContext, EGLenum, EGLClientBuffer, const EGLint*);
@@ -209,7 +210,7 @@ namespace
 			"glCreateShader", "glShaderSource", "glCompileShader", "glGetShaderiv", "glCreateProgram", "glAttachShader",
 			"glBindAttribLocation", "glLinkProgram", "glGetProgramiv", "glUseProgram", "glGetUniformLocation",
 			"glUniform1i", "glUniform1f", "glVertexAttribPointer", "glEnableVertexAttribArray", "glDrawArrays",
-			"glFinish", "glGetError", "glEGLImageTargetTexture2DOES", "eglCreateImageKHR", "eglDestroyImageKHR" };
+			"glFinish", "glFlush", "glGetError", "glEGLImageTargetTexture2DOES", "eglCreateImageKHR", "eglDestroyImageKHR" };
 		for (TUint i = 0; i < sizeof(KNames) / sizeof(KNames[0]); i++)
 			if (!Proc(f[i], KNames[i]))
 				return EFalse;
@@ -548,7 +549,12 @@ int PhGpu_End(void)
 		gl.Clear(KGlColorBufferBit);
 		}
 	const TUint w0 = User::FastCounter();
-	gl.Finish();
+	// (round 42m) a present through Mesa (svga: eglPresentImagePH) is queued on the same context after the draws, so
+	// a flush orders it; only a target the CPU or another device reads next (lima) needs the finish
+	if (gPresent && gTargetImage != (EGLImageKHR)0)
+		gl.Flush();
+	else
+		gl.Finish();
 	const TUint w1 = User::FastCounter();
 	const GLenum err = gl.GetError();
 	DropIdle();
