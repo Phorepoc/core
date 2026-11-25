@@ -251,7 +251,7 @@ COMPONENTS = {
         mmp=f"{G}/graphicscomposition/surfaceupdate/group/surfaceupdateclient.mmp", nga=True,
         rom="surfaceupdateclient_nga.dll", rom_as="surfaceupdateclient.dll"),
     "wfcinterop": dict(mmp=f"{G}/graphicscomposition/openwfsupport/group/openwfc_interop.mmp", nga=True,
-                       rom="wfcinterop.dll", **{"def": f"{G}/graphicscomposition/openwfsupport/eabi/WFCinteropu.def"},
+                       rom="wfcinterop.dll", **{"def": os.path.join(OS_ROOT, "toolchain/shims/wfcinterop_board/WFCinteropu.def")},   # PH: + PhStreamTakeDamage @ 55
                        drop=["contentupdateproxy.cpp", "streammap.cpp"],
                        extra=["toolchain/shims/wfcinterop_board/contentupdateproxy.cpp", "toolchain/shims/wfcinterop_board/streammap.cpp"],
                        flags=["-include", "e32debug.h"]),

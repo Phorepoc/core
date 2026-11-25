@@ -362,6 +362,15 @@ namespace
 		}
 	}
 
+extern "C" int PhStreamTakeDamage(const void* aId, int* aBox);	// wfcinterop (contentupdateproxy.cpp): the region since last time
+// real damage step 1 (diagnostic): the frame's damaged box in target pixels, from every element's stream damage
+static TInt gDx0 = KMaxTInt, gDy0 = KMaxTInt, gDx1 = KMinTInt, gDy1 = KMinTInt;
+static TUint gDmgFrames, gDmgNone, gDmgFull, gDmgPart, gDmgPartArea;
+static void DamageAdd(TInt aX0, TInt aY0, TInt aX1, TInt aY1)
+	{
+	gDx0 = Min(gDx0, aX0); gDy0 = Min(gDy0, aY0); gDx1 = Max(gDx1, aX1); gDy1 = Max(gDy1, aY1);
+	}
+
 extern "C" {
 
 int PhGpu_Want(void)
@@ -448,6 +457,19 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 		gFailed = ETrue;
 		return 0;
 		}
+	{	// real damage step 1: this element's source damage, mapped to the target (rotated / flipped: its whole rect)
+	int box[4];
+	const int k = PhStreamTakeDamage(aStream, box);
+	const TReal32 dx = aDstRect[0], dy = aDstRect[1], dw = aDstRect[2], dh = aDstRect[3];
+	if (k == 2 || aRot || aFlip || aSrcRect[2] <= 0.0f || aSrcRect[3] <= 0.0f)
+		DamageAdd((TInt)dx, (TInt)dy, (TInt)(dx + dw + 0.999f), (TInt)(dy + dh + 0.999f));
+	else if (k == 1)
+		{
+		const TReal32 fx = dw / aSrcRect[2], fy = dh / aSrcRect[3];
+		DamageAdd((TInt)(dx + (box[0] - aSrcRect[0]) * fx), (TInt)(dy + (box[1] - aSrcRect[1]) * fy),
+			(TInt)(dx + (box[2] - aSrcRect[0]) * fx + 0.999f), (TInt)(dy + (box[3] - aSrcRect[1]) * fy + 0.999f));
+		}
+	}
 	gElems++;
 	if (gComp <= 3 || gComp % 300 == 0)
 		RDebug::Printf("PH: wfc gpu: comp %u element %ux%u stride %d fmt %x pixels %08x src %d,%d %dx%d dst %d,%d %dx%d flip %d rot %d srcA %d ga %d",
@@ -548,6 +570,25 @@ int PhGpu_End(void)
 		gClearPending = EFalse;
 		gl.Clear(KGlColorBufferBit);
 		}
+	{	// real damage step 1: how much of each frame was damaged (every 60 frames; the payoff of damage-only updates)
+	const TInt x0 = Max(gDx0, 0), y0 = Max(gDy0, 0), x1 = Min(gDx1, gIw), y1 = Min(gDy1, gIh);
+	if (x0 >= x1 || y0 >= y1)
+		gDmgNone++;
+	else if (x0 == 0 && y0 == 0 && x1 == gIw && y1 == gIh)
+		gDmgFull++;
+	else
+		{
+		gDmgPart++;
+		gDmgPartArea += (TUint)((TInt64)(x1 - x0) * (y1 - y0) * 100 / ((TInt64)gIw * gIh));
+		}
+	gDx0 = gDy0 = KMaxTInt; gDx1 = gDy1 = KMinTInt;
+	if (++gDmgFrames == 60)
+		{
+		RDebug::Printf("PH: [dmg] x60: none %u, partial %u (avg %u%% of the target), full %u", gDmgNone, gDmgPart,
+			gDmgPart ? gDmgPartArea / gDmgPart : 0, gDmgFull);
+		gDmgFrames = gDmgNone = gDmgFull = gDmgPart = gDmgPartArea = 0;
+		}
+	}
 	const TUint w0 = User::FastCounter();
 	// (round 42m) a present through Mesa (svga: eglPresentImagePH) is queued on the same context after the draws, so
 	// a flush orders it; only a target the CPU or another device reads next (lima) needs the finish

@@ -26,6 +26,78 @@
 #include "streammap.h"
 #include "surfacestream.h"
 #include "contentupdateproxy.h"
+#include <e32atomics.h>
+
+// PH (composition, real damage step 1): the 2010 CSurfaceStream drops the update region. Keep it here per surface: the
+// bounding box of every region since the compositor last took it (no region = the whole surface). The compositor
+// (libwfc phgpucompose) takes it per element with PhStreamTakeDamage. A spin lock: both sides run in WSERV's process.
+namespace {
+const TInt KPhDamageSlots = 32;
+struct TPhDamage { TSurfaceId iId; TInt iX0, iY0, iX1, iY1; TBool iFull; TBool iUsed; };
+TPhDamage gPhDamage[KPhDamageSlots];
+volatile TUint32 gPhDamageLock;
+void PhDamageLock() { while (__e32_atomic_swp_acq32(&gPhDamageLock, 1)) {} }
+void PhDamageUnlock() { __e32_atomic_store_rel32(&gPhDamageLock, 0); }
+TPhDamage* PhDamageSlot(const TSurfaceId& aId, TBool aCreate)
+	{
+	TPhDamage* freeSlot = NULL;
+	for (TInt i = 0; i < KPhDamageSlots; i++)
+		{
+		if (gPhDamage[i].iUsed && gPhDamage[i].iId == aId)
+			return &gPhDamage[i];
+		if (!gPhDamage[i].iUsed && !freeSlot)
+			freeSlot = &gPhDamage[i];
+		}
+	if (!aCreate)
+		return NULL;
+	if (!freeSlot)
+		freeSlot = &gPhDamage[(aId.iInternal[0] ^ aId.iInternal[1]) % KPhDamageSlots];	// full: reuse one (its owner gets a full frame)
+	freeSlot->iId = aId; freeSlot->iUsed = ETrue; freeSlot->iFull = EFalse;
+	freeSlot->iX0 = freeSlot->iY0 = KMaxTInt; freeSlot->iX1 = freeSlot->iY1 = KMinTInt;
+	return freeSlot;
+	}
+void PhDamageAdd(const TSurfaceId& aId, const TRegion* aRegion)
+	{
+	PhDamageLock();
+	TPhDamage* d = PhDamageSlot(aId, ETrue);
+	if (!aRegion || aRegion->CheckError() || aRegion->IsEmpty())
+		d->iFull = ETrue;
+	else
+		{
+		const TRect r = aRegion->BoundingRect();
+		d->iX0 = Min(d->iX0, r.iTl.iX); d->iY0 = Min(d->iY0, r.iTl.iY);
+		d->iX1 = Max(d->iX1, r.iBr.iX); d->iY1 = Max(d->iY1, r.iBr.iY);
+		}
+	PhDamageUnlock();
+	}
+}
+
+// the damage of a surface since the last call, then cleared: 0 = none, 1 = aBox[4] (x0 y0 x1 y1, end exclusive),
+// 2 = the whole surface (no region given, or a surface never seen: assume all of it)
+extern "C" EXPORT_C int PhStreamTakeDamage(const TSurfaceId* aId, int* aBox)
+	{
+	if (!aId)
+		return 2;
+	PhDamageLock();
+	TPhDamage* d = PhDamageSlot(*aId, EFalse);
+	int ret = 2;
+	if (d)
+		{
+		if (d->iFull)
+			ret = 2;
+		else if (d->iX0 >= d->iX1 || d->iY0 >= d->iY1)
+			ret = 0;
+		else
+			{
+			aBox[0] = d->iX0; aBox[1] = d->iY0; aBox[2] = d->iX1; aBox[3] = d->iY1;
+			ret = 1;
+			}
+		d->iFull = EFalse;
+		d->iX0 = d->iY0 = KMaxTInt; d->iX1 = d->iY1 = KMinTInt;
+		}
+	PhDamageUnlock();
+	return ret;
+	}
 
 CExtensionContainer* CContentUpdateProxy::NewL(TInt aScreenNum, COpenWfcStreamMap*	aSingleton,TInt aInternalVersion,TInt aPriority)
 	{
@@ -91,6 +163,7 @@ void CContentUpdateProxy::ContentUpdated
             aBuffer, aRegion, aStatusConsumed, aStatusDisplayed, aTimeStamp, aStatusDispXTimes, aDisplayedXTimes ? *aDisplayedXTimes: 0));
     
     COpenWfcStreamMap* stream = NULL;
+    PhDamageAdd(aSurface, aRegion);	// PH: real damage step 1
     TRAPD(err,stream = &COpenWfcStreamMap::InstanceL());
     if (err != KErrNone)
         {
