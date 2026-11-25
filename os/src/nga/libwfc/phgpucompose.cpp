@@ -459,7 +459,7 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 		}
 	{	// real damage step 1: this element's source damage, mapped to the target (rotated / flipped: its whole rect)
 	int box[4];
-	const int k = PhStreamTakeDamage(aStream, box);
+	const int k = PhStreamTakeDamage(e->iSid, box);	// the surface id (the proxy keys posts by TSurfaceId), not the stream handle: 42o showed every lookup missing
 	const TReal32 dx = aDstRect[0], dy = aDstRect[1], dw = aDstRect[2], dh = aDstRect[3];
 	if (k == 3)
 		gDmgUnknown++;
