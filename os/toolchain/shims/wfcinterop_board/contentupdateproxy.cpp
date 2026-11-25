@@ -60,6 +60,15 @@ void PhDamageAdd(const TSurfaceId& aId, const TRegion* aRegion)
 	{
 	PhDamageLock();
 	TPhDamage* d = PhDamageSlot(aId, ETrue);
+	static TInt logged;
+	if (logged < 6)	// (round 42o) what the window server posts: the surface and its region's box, the first few
+		{
+		++logged;
+		const TRect b = aRegion && !aRegion->CheckError() ? aRegion->BoundingRect() : TRect();
+		RDebug::Printf("PH: [dmg] post %08x %08x: region %s %d,%d-%d,%d", aId.iInternal[0], aId.iInternal[1],
+			!aRegion ? "NULL" : aRegion->CheckError() ? "error" : aRegion->IsEmpty() ? "empty" : "box",
+			b.iTl.iX, b.iTl.iY, b.iBr.iX, b.iBr.iY);
+		}
 	if (!aRegion || aRegion->CheckError() || aRegion->IsEmpty())
 		d->iFull = ETrue;
 	else
@@ -80,7 +89,16 @@ extern "C" EXPORT_C int PhStreamTakeDamage(const TSurfaceId* aId, int* aBox)
 		return 2;
 	PhDamageLock();
 	TPhDamage* d = PhDamageSlot(*aId, EFalse);
-	int ret = 2;
+	int ret = 3;	// (round 42o) 3 = a surface never posted (told apart from 2 = posted without a region)
+	if (!d)
+		{
+		static TInt logged;
+		if (logged < 4)
+			{
+			++logged;
+			RDebug::Printf("PH: [dmg] take %08x %08x: never posted", aId->iInternal[0], aId->iInternal[1]);
+			}
+		}
 	if (d)
 		{
 		if (d->iFull)

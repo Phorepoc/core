@@ -365,7 +365,7 @@ namespace
 extern "C" int PhStreamTakeDamage(const void* aId, int* aBox);	// wfcinterop (contentupdateproxy.cpp): the region since last time
 // real damage step 1 (diagnostic): the frame's damaged box in target pixels, from every element's stream damage
 static TInt gDx0 = KMaxTInt, gDy0 = KMaxTInt, gDx1 = KMinTInt, gDy1 = KMinTInt;
-static TUint gDmgFrames, gDmgNone, gDmgFull, gDmgPart, gDmgPartArea;
+static TUint gDmgFrames, gDmgNone, gDmgFull, gDmgPart, gDmgPartArea, gDmgUnknown;	// (42o) unknown = elements whose surface was never posted
 static void DamageAdd(TInt aX0, TInt aY0, TInt aX1, TInt aY1)
 	{
 	gDx0 = Min(gDx0, aX0); gDy0 = Min(gDy0, aY0); gDx1 = Max(gDx1, aX1); gDy1 = Max(gDy1, aY1);
@@ -461,7 +461,9 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 	int box[4];
 	const int k = PhStreamTakeDamage(aStream, box);
 	const TReal32 dx = aDstRect[0], dy = aDstRect[1], dw = aDstRect[2], dh = aDstRect[3];
-	if (k == 2 || aRot || aFlip || aSrcRect[2] <= 0.0f || aSrcRect[3] <= 0.0f)
+	if (k == 3)
+		gDmgUnknown++;
+	if (k >= 2 || aRot || aFlip || aSrcRect[2] <= 0.0f || aSrcRect[3] <= 0.0f)
 		DamageAdd((TInt)dx, (TInt)dy, (TInt)(dx + dw + 0.999f), (TInt)(dy + dh + 0.999f));
 	else if (k == 1)
 		{
