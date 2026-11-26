@@ -97,6 +97,7 @@ namespace
 		void (*EGLImageTargetTexture2DOES)(GLenum, GLeglImageOES);
 		EGLImageKHR (*CreateImageKHR)(EGLDisplay, EGLContext, EGLenum, EGLClientBuffer, const EGLint*);
 		EGLBoolean (*DestroyImageKHR)(EGLDisplay, EGLImageKHR);
+		void (*Scissor)(GLint, GLint, GLsizei, GLsizei);	// (round 42q) damage-only redraw
 		};
 
 	// one cached EGLImage (a source buffer, or a target buffer with its framebuffer)
@@ -109,6 +110,9 @@ namespace
 		EGLImageKHR iImage;
 		GLuint iTex, iFbo;
 		TUint iUsed;			// composition number of the last use
+		// (round 42q, a target buffer) the internal-scene box damaged since this buffer was last drawn; !iDrawn = all of it
+		TBool iDrawn;
+		TInt iPx0, iPy0, iPx1, iPy1;
 		};
 	const TInt KEntries = 20;		// egl_symbian.c registers at most 32 cache-maintenance ranges per process
 	const TUint KIdleCompositions = 180;	// an image unused this long is dropped (its import pins the chunk's pages)
@@ -128,6 +132,22 @@ namespace
 	TUint gClearSkipped;
 	TUint gTs[10], gTMark;		// round 42: per GL call (0 bind fbo+viewport, 1 clear, 2 program state, 3 bind tex, 4 tex params, 5 blend+uniforms, 6 attrib pointers, 7 draw)
 	EGLImageKHR gTargetImage;	// this composition's target (PhGpu_Begin), for eglPresentImagePH
+	// (round 42q) damage-only redraw: the elements are drawn in PhGpu_End, scissored to the box this target buffer lacks
+	struct TDraw
+		{
+		GLuint iTex;
+		GLint iFilt;
+		TBool iUseA;
+		TReal32 iGa, iPremul;
+		TReal32 iDst[4];
+		GLfloat iPv[12], iUv[12];
+		};
+	const TInt KMaxDraws = 32;
+	TDraw gDraw[KMaxDraws];
+	TInt gDraws;
+	TEntry* gTarget;			// this composition's target entry
+	TUint32 gSig, gLastSig;		// the scene's layout (streams, rects, alpha, ...): a change without a post = a full frame
+	TBool gCleanEnd;			// the last composition ended on the GPU (else the CPU pipeline wrote a target: all are stale)
 	typedef EGLBoolean (*TPresent)(EGLDisplay, EGLImageKHR);
 	TPresent gPresent;			// Mesa's eglPresentImagePH (svga: the target becomes the screen target), NULL = none
 	TUint gShown, gNotShown;
@@ -210,7 +230,7 @@ namespace
 			"glCreateShader", "glShaderSource", "glCompileShader", "glGetShaderiv", "glCreateProgram", "glAttachShader",
 			"glBindAttribLocation", "glLinkProgram", "glGetProgramiv", "glUseProgram", "glGetUniformLocation",
 			"glUniform1i", "glUniform1f", "glVertexAttribPointer", "glEnableVertexAttribArray", "glDrawArrays",
-			"glFinish", "glFlush", "glGetError", "glEGLImageTargetTexture2DOES", "eglCreateImageKHR", "eglDestroyImageKHR" };
+			"glFinish", "glFlush", "glGetError", "glEGLImageTargetTexture2DOES", "eglCreateImageKHR", "eglDestroyImageKHR", "glScissor" };
 		for (TUint i = 0; i < sizeof(KNames) / sizeof(KNames[0]); i++)
 			if (!Proc(f[i], KNames[i]))
 				return EFalse;
@@ -399,6 +419,13 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 	gComp++;
 	gFailed = EFalse;
 	gT0 = User::FastCounter();
+	if (!gCleanEnd)		// the CPU pipeline may have written a target since: none holds what we drew
+		for (TInt i = 0; i < KEntries; i++)
+			gEntry[i].iDrawn = EFalse;
+	gCleanEnd = EFalse;
+	gDraws = 0;
+	gTarget = NULL;
+	gSig = 2166136261u;
 	if (gComp <= 3 || gComp % 300 == 0)
 		RDebug::Printf("PH: wfc gpu: comp %u target %dx%d stride %d fmt %x pixels %08x internal %dx%d rot %d", gComp, aW, aH, aStride, aFormat, (TUint)aPixels, aIw, aIh, aRot);
 	if (!MemFormat(aFormat) || (aStride & 7) || ((TUint)aPixels & 0xFFF))
@@ -422,7 +449,11 @@ int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int
 			return 0;
 			}
 		}
+	if (gTw != aW || gTh != aH || gIw != aIw || gIh != aIh || gRot != (aRot & 3))
+		for (TInt i = 0; i < KEntries; i++)
+			gEntry[i].iDrawn = EFalse;		// a new geometry: every target is drawn whole once
 	gTw = aW; gTh = aH; gIw = aIw; gIh = aIh; gRot = aRot & 3;
+	gTarget = t;
 	gTMark = User::FastCounter();
 	gl.BindFramebuffer(KGlFramebuffer, t->iFbo);
 	gl.Viewport(0, 0, aW, aH);
@@ -507,14 +538,42 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 		pv[i * 2] = p[KTri[i]][0]; pv[i * 2 + 1] = p[KTri[i]][1];
 		uvv[i * 2] = uv[KTri[i]][0]; uvv[i * 2 + 1] = uv[KTri[i]][1];
 		}
+	// (round 42q) recorded, drawn in PhGpu_End once the frame's damage is known
+	if (gDraws >= KMaxDraws)
+		{
+		gFailed = ETrue;		// more layers than recorded: the CPU pipeline composes this frame
+		return 0;
+		}
+	TDraw& dr = gDraw[gDraws++];
+	dr.iTex = e->iTex;
+	dr.iFilt = aLinearFilter ? KGlLinear : KGlNearest;
+	dr.iUseA = aSourceAlpha && aFormat == 0x8888;
+	dr.iGa = aGlobalAlpha;
+	dr.iPremul = aPremultiplied ? 1.0f : 0.0f;
+	Mem::Copy(dr.iDst, aDstRect, sizeof(dr.iDst));
+	Mem::Copy(dr.iPv, pv, sizeof(pv));
+	Mem::Copy(dr.iUv, uvv, sizeof(uvv));
+	{	// the layout signature (FNV-1a): a layer added, removed, moved or faded posts no damage of its own
+	const TUint32 words[] = { (TUint32)(TUint)aStream, (TUint32)aFlip, (TUint32)aRot, (TUint32)aSourceAlpha, (TUint32)aPremultiplied,
+		(TUint32)aLinearFilter, (TUint32)(aGlobalAlpha * 255.0f), (TUint32)aSrcRect[0], (TUint32)aSrcRect[1], (TUint32)aSrcRect[2],
+		(TUint32)aSrcRect[3], (TUint32)aDstRect[0], (TUint32)aDstRect[1], (TUint32)aDstRect[2], (TUint32)aDstRect[3] };
+	for (TUint i = 0; i < sizeof(words) / sizeof(words[0]); i++)
+		gSig = (gSig ^ words[i]) * 16777619u;
+	}
+	gTElems = User::FastCounter();
+	return 1;
+	}
+
+// (round 42q) one recorded layer, as PhGpu_Element drew it before (the clear waits for the first layer: one that covers
+// the whole target stands in for it)
+static void DrawOne(const TDraw& aD)
+	{
 	gTMark = User::FastCounter();
-	gl.BindTexture(KGlTexture2D, e->iTex);
+	gl.BindTexture(KGlTexture2D, aD.iTex);
 	{ const TUint n = User::FastCounter(); gTs[3] += n - gTMark; gTMark = n; }
-	const GLint filt = aLinearFilter ? KGlLinear : KGlNearest;
-	gl.TexParameteri(KGlTexture2D, KGlTextureMinFilter, filt);
-	gl.TexParameteri(KGlTexture2D, KGlTextureMagFilter, filt);
+	gl.TexParameteri(KGlTexture2D, KGlTextureMinFilter, aD.iFilt);
+	gl.TexParameteri(KGlTexture2D, KGlTextureMagFilter, aD.iFilt);
 	{ const TUint n = User::FastCounter(); gTs[4] += n - gTMark; gTMark = n; }
-	const TBool useA = aSourceAlpha && aFormat == 0x8888;
 	TBool coverDraw = EFalse;
 	if (gClearPending)
 		{
@@ -523,12 +582,8 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 		// (the destination rect is in the INTERNAL, pre-rotation scene: gIw x gIh, not the doubled/rotated target)
 		// a per-pixel-alpha layer covers too when the clear colour is black: premultiplied src-over onto black = the
 		// source's rgb, so the layer drawn UNBLENDED leaves the same rgb (only the target's alpha differs; scanout ignores it)
-		const TBool covers = (!useA || gClearRgbBlack) && aGlobalAlpha >= 1.0f && aDstRect[0] <= 0.0f && aDstRect[1] <= 0.0f &&
-			aDstRect[0] + aDstRect[2] >= (TReal32)gIw && aDstRect[1] + aDstRect[3] >= (TReal32)gIh;
-		if (gComp <= 20)
-			RDebug::Printf("PH: wfc gpu: clear? comp %u covers %d: srcalpha %d fmt %x galpha %d%% dst %d,%d %dx%d internal %dx%d target %dx%d",
-				gComp, covers, aSourceAlpha, aFormat, (TInt)(aGlobalAlpha * 100), (TInt)aDstRect[0], (TInt)aDstRect[1],
-				(TInt)aDstRect[2], (TInt)aDstRect[3], gIw, gIh, gTw, gTh);
+		const TBool covers = (!aD.iUseA || gClearRgbBlack) && aD.iGa >= 1.0f && aD.iDst[0] <= 0.0f && aD.iDst[1] <= 0.0f &&
+			aD.iDst[0] + aD.iDst[2] >= (TReal32)gIw && aD.iDst[1] + aD.iDst[3] >= (TReal32)gIh;
 		if (covers)
 			{
 			gClearSkipped++;
@@ -541,24 +596,22 @@ int PhGpu_Element(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, i
 			gTs[1] += User::FastCounter() - c0;
 			}
 		}
-	if (!coverDraw && (useA || aGlobalAlpha < 1.0f))
+	if (!coverDraw && (aD.iUseA || aD.iGa < 1.0f))
 		{
 		gl.Enable(KGlBlend);
 		gl.BlendFunc(KGlOne, KGlOneMinusSrcAlpha);
 		}
 	else
 		gl.Disable(KGlBlend);
-	gl.Uniform1f(gUniGa, aGlobalAlpha);
-	gl.Uniform1f(gUniUseA, useA ? 1.0f : 0.0f);
-	gl.Uniform1f(gUniPremul, aPremultiplied ? 1.0f : 0.0f);
+	gl.Uniform1f(gUniGa, aD.iGa);
+	gl.Uniform1f(gUniUseA, aD.iUseA ? 1.0f : 0.0f);
+	gl.Uniform1f(gUniPremul, aD.iPremul);
 	{ const TUint n = User::FastCounter(); gTs[5] += n - gTMark; gTMark = n; }
-	gl.VertexAttribPointer(0, 2, KGlFloat, 0, 0, pv);
-	gl.VertexAttribPointer(1, 2, KGlFloat, 0, 0, uvv);
+	gl.VertexAttribPointer(0, 2, KGlFloat, 0, 0, aD.iPv);
+	gl.VertexAttribPointer(1, 2, KGlFloat, 0, 0, aD.iUv);
 	{ const TUint n = User::FastCounter(); gTs[6] += n - gTMark; gTMark = n; }
 	gl.DrawArrays(KGlTriangles, 0, 6);
-	gTElems = User::FastCounter();
-	gTs[7] += gTElems - gTMark;
-	return 1;
+	gTs[7] += User::FastCounter() - gTMark;
 	}
 
 int PhGpu_End(void)
@@ -567,11 +620,62 @@ int PhGpu_End(void)
 	// current EGL context here -- and returned with the job still running). The CPU cache maintenance on both sides
 	// rides on the job itself (drm_symbian.c sym_drm_sync_hook): sources cleaned ahead of the submit, the target
 	// invalidated when it finished.
-	if (gClearPending)
+	{	// (round 42q) damage-only redraw: this frame's damage (all of it when the layout changed), plus what this target
+		// buffer missed while the others were drawn (double/triple buffering), as one box in the internal scene
+	if (gSig != gLastSig)
+		DamageAdd(0, 0, gIw, gIh);
+	gLastSig = gSig;
+	const TInt fx0 = Max(gDx0, 0), fy0 = Max(gDy0, 0), fx1 = Min(gDx1, gIw), fy1 = Min(gDy1, gIh);
+	const TBool frameDamaged = fx0 < fx1 && fy0 < fy1;
+	TInt x0 = fx0, y0 = fy0, x1 = fx1, y1 = fy1;
+	if (!gTarget || !gTarget->iDrawn || gRot)		// (a turned target: whole frames, for now)
+		{ x0 = 0; y0 = 0; x1 = gIw; y1 = gIh; }
+	else if (gTarget->iPx0 < gTarget->iPx1 && gTarget->iPy0 < gTarget->iPy1)
 		{
-		gClearPending = EFalse;
-		gl.Clear(KGlColorBufferBit);
+		if (!frameDamaged)
+			{ x0 = gTarget->iPx0; y0 = gTarget->iPy0; x1 = gTarget->iPx1; y1 = gTarget->iPy1; }
+		else
+			{ x0 = Min(x0, gTarget->iPx0); y0 = Min(y0, gTarget->iPy0); x1 = Max(x1, gTarget->iPx1); y1 = Max(y1, gTarget->iPy1); }
 		}
+	for (TInt i = 0; frameDamaged && i < KEntries; i++)		// the other targets miss this frame's damage
+		{
+		TEntry& o = gEntry[i];
+		if (&o == gTarget || !o.iDrawn || !o.iFbo)
+			continue;
+		if (o.iPx0 < o.iPx1 && o.iPy0 < o.iPy1)
+			{ o.iPx0 = Min(o.iPx0, fx0); o.iPy0 = Min(o.iPy0, fy0); o.iPx1 = Max(o.iPx1, fx1); o.iPy1 = Max(o.iPy1, fy1); }
+		else
+			{ o.iPx0 = fx0; o.iPy0 = fy0; o.iPx1 = fx1; o.iPy1 = fy1; }
+		}
+	if (gTarget)
+		{
+		gTarget->iDrawn = ETrue;
+		gTarget->iPx0 = gTarget->iPy0 = gTarget->iPx1 = gTarget->iPy1 = 0;
+		}
+	const TBool full = x0 == 0 && y0 == 0 && x1 == gIw && y1 == gIh;
+	if (x0 < x1 && y0 < y1)
+		{
+		if (!full)
+			{	// unturned: the internal scene maps onto the target scaled, y up from row 0 (Ndc)
+			const TInt sx0 = x0 * gTw / gIw, sy0 = y0 * gTh / gIh, sx1 = (x1 * gTw + gIw - 1) / gIw, sy1 = (y1 * gTh + gIh - 1) / gIh;
+			gl.Enable(KGlScissorTest);
+			gl.Scissor(sx0, sy0, sx1 - sx0, sy1 - sy0);
+			}
+		for (TInt i = 0; i < gDraws; i++)
+			DrawOne(gDraw[i]);
+		if (gClearPending)
+			{
+			gClearPending = EFalse;
+			gl.Clear(KGlColorBufferBit);
+			}
+		gl.Disable(KGlScissorTest);
+		}
+	gClearPending = EFalse;
+	gDraws = 0;
+	gTElems = User::FastCounter();
+	// the counts below: the box actually drawn
+	gDx0 = x0; gDy0 = y0; gDx1 = x1; gDy1 = y1;
+	}
 	{	// real damage step 1: how much of each frame was damaged (every 60 frames; the payoff of damage-only updates)
 	const TInt x0 = Max(gDx0, 0), y0 = Max(gDy0, 0), x1 = Min(gDx1, gIw), y1 = Min(gDy1, gIh);
 	if (x0 >= x1 || y0 >= y1)
@@ -639,6 +743,7 @@ int PhGpu_End(void)
 		gTicks = 0;
 		gElems = 0;
 		}
+	gCleanEnd = !(err || gFailed);	// (round 42q) else the CPU pipeline composes this frame into the target
 	if (err || gFailed)
 		return 0;
 	// the target straight to the display (svga screen target): no read-back, no copy by the display HAL. 2 = shown
