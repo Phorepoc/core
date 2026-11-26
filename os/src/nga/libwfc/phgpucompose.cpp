@@ -158,7 +158,12 @@ namespace
 		{
 		gThread = (TUint)RThread().Id();
 		if (!Setting())
+			{
+			// the renderer setting is off (Classic): every scene that is not a lone layer (the fastpath) is composed by
+			// the CPU -- said once, so a boot shows which path it took (phone_gate: Etesian's Home is never a lone layer)
+			RDebug::Printf("PH: wfc: CPU composition (the GPU renderer is off)");
 			return EFalse;
+			}
 		gDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 		EGLint maj = 0, min = 0;
 		if (gDpy == EGL_NO_DISPLAY || !eglInitialize(gDpy, &maj, &min))
