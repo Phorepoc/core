@@ -26,6 +26,55 @@
 #include "../phedevmenu/pheshellapps.h"
 #include "../phedevmenu/pheshelltheme.h"
 
+// An installer upgrading the shell closes its launcher and Home (sislauncher ShutdownL); SSM's restart monitor then runs us
+// again at once, the shell restarts and its files are in use: the install fails with KErrInUse (Etesian v0.4.4 -> v0.4.5,
+// 2026-11-26). So while SWI runs an install or uninstall (KUidSystemCategory / KSAUidSoftwareInstallKeyValue, the
+// operation in the low byte, swispubsubdefs.h), wait for it, at most 5 minutes; a restart then does not count as a failed start.
+static void WaitForInstaller()
+	{
+	const TUid KSystemCategory = {0x101F75B6};
+	const TUint KSwiKey = 0x102047B7, KSwiOperationMask = 0xFF;
+	RProperty swi;
+	if (swi.Attach(KSystemCategory, KSwiKey) != KErrNone)
+		return;
+	TInt v = 0;
+	if (swi.Get(v) == KErrNone && (v & KSwiOperationMask))
+		{
+		RDebug::Printf("PH: [shellsel] installer busy (%x): waiting", v);
+		RTimer timer;
+		if (timer.CreateLocal() == KErrNone)
+			{
+			TRequestStatus ts;
+			timer.After(ts, 300 * 1000000);
+			while (swi.Get(v) == KErrNone && (v & KSwiOperationMask) && ts == KRequestPending)
+				{
+				TRequestStatus ps;
+				swi.Subscribe(ps);
+				if (swi.Get(v) == KErrNone && !(v & KSwiOperationMask))
+					{
+					swi.Cancel();
+					User::WaitForRequest(ps);
+					break;
+					}
+				User::WaitForRequest(ps, ts);
+				if (ps == KRequestPending)
+					{
+					swi.Cancel();
+					User::WaitForRequest(ps);
+					}
+				}
+			if (ts == KRequestPending)
+				{
+				timer.Cancel();
+				User::WaitForRequest(ts);
+				}
+			timer.Close();
+			}
+		RDebug::Printf("PH: [shellsel] installer done (%x)", v);
+		}
+	swi.Close();
+	}
+
 _LIT(KAiLaunch, "z:\\sys\\bin\\ailaunch.exe");
 _LIT(KMatrixMenu, "z:\\sys\\bin\\matrixmenu.exe");
 
@@ -323,6 +372,7 @@ static TInt RunShellL()
 	if (pick != 0)
 		{
 		// the safety rules, for a shell other than S^3 (index 0)
+		WaitForInstaller();
 		TInt tries = 0;
 		if (repo) repo->Get(KPheDevKeyShellTries, tries);
 		if (MenuKeyHeld())
