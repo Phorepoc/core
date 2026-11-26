@@ -335,6 +335,18 @@ namespace
 
 extern "C" {
 
+// a scene that goes the fastpath (a lone layer posted as is, wfccontext.c) never asks for the GPU, so "GPU composition up"
+// never prints: say once that the composer runs, the way it does (Classic home screen on the phone, phone_gate 2026-11-26)
+void PhGpu_NoteFastpath(void)
+	{
+	static TBool noted = EFalse;
+	if (!noted)
+		{
+		noted = ETrue;
+		RDebug::Printf("PH: wfc: fastpath (a lone layer posted as is)");
+		}
+	}
+
 int PhGpu_Want(void)
 	{
 	if (gState == 0)

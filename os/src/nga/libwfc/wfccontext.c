@@ -47,6 +47,7 @@
 /* OURS (G8): the scene composed by the GPU (phgpucompose.cpp); every function declines (0) when the GPU path is off,
  * unavailable (no GPU channel) or cannot do what the scene asks, and the 2010 CPU pipeline composes instead. */
 extern int PhGpu_Want(void);
+extern void PhGpu_NoteFastpath(void);
 extern int PhGpu_SourceOk(const void* aData, int aFormat, int aLinear, int aW, int aH, int aStride);
 extern int PhGpu_Begin(void* aStream, void* aBuffer, void* aPixels, int aW, int aH, int aStride, int aFormat,
                        int aIw, int aIh, int aRot, unsigned aBackground);
@@ -805,6 +806,7 @@ WFC_Context_CheckFastpath(WFC_CONTEXT* context)
             }
         
         OWF_DisplayContext_EnableFastpath(context->displayContext, element->source->streamHandle);
+        PhGpu_NoteFastpath();   /* OURS: the first one is logged (phone_gate: a fastpath boot never starts the GPU composer) */
         DPRINT(("=== WFC_Context_CheckFastpath(context = %p) - Fastpath Enabled", context));
         }
     }
